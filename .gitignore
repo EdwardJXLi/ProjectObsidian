@@ -6,3 +6,6 @@ vanilla
 
 #Testing Folder
 testing
+
+#Pycache
+__pycache__
