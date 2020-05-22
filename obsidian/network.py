@@ -1,1 +1,3 @@
-#TODO
+import socket
+
+class NetworkHandler

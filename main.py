@@ -5,8 +5,7 @@ Copyright (C) TODO
 import sys
 import argparse
 
-import obsidian
-from obsidian import *
+from obsidian.core import *
 #from obsidian import server
 
 def main():
@@ -18,7 +17,8 @@ def main():
     args = parser.parse_args()
 
     #Init Server
-    server = MinecraftServer(args.address, args.port)
+    server = Server(args.address, args.port, colour=True)
+    server.setup()
     server.start()
 
 if __name__ == '__main__':
