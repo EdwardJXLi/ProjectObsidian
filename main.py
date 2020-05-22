@@ -4,11 +4,12 @@ Copyright (C) TODO
 
 import sys
 import argparse
+import asyncio
 
 from obsidian.core import *
 #from obsidian import server
 
-def main():
+async def main():
     #Initiate Argument Parser
     parser = argparse.ArgumentParser(description="TODO")
     #parser.add_argument('--TEMPLATE', type=int, nargs='?', help='TEMPLATE', default=TEMPLATE)
@@ -22,5 +23,4 @@ def main():
     server.start()
 
 if __name__ == '__main__':
-    main()
-    sys.exit()
+    asyncio.run(main())
