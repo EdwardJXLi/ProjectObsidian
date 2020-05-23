@@ -13,25 +13,26 @@ class Server(object):
         if(colour):
             Colour.init()
 
-    def setup(self):
-        Logger.info(f"Setting Up Server", module="setup")
-        self.loop = asyncio.get_event_loop()
-        self.loop.create_task(asyncio.start_server(self.handleClient, self.address, self.port))
-        #print(self.address, self.port)
-
-    def start(self):
-        Logger.info(f"Starting Server")
-        self.loop.run_forever()
+    async def init(self):
+        Logger.info(f"Setting Up Server", module="init")
+        self.server = await asyncio.start_server(self._get_conn_handler(), self.address, self.port)
         Logger.info(f"Server Starting On {self.address} Port {self.port}")
+   
+    async def run(self):       
+        async with self.server as s:
+            await s.serve_forever()
+    
+    def _get_conn_handler(self):
+        async def handler(reader, writer):
+            while True:
+                data = await reader.readuntil(b'\n')
+                message = data.decode()
+                addr = writer.get_extra_info('peername')
 
-    def stop(self):
-        pass
+                print(f"Received {message!r} from {addr!r}")
 
-    async def handleClient(self, reader, writer):
-        #Temporary Socket Testing Code
-        while True:
-            request = (await reader.read(255)).decode('utf8')
-            response = str(request) + '\n'
-            writer.write(response.encode('utf8'))
-            await writer.drain()
+                print(f"Send: {message!r}")
+                writer.write(data)
+                await writer.drain()
 
+        return handler

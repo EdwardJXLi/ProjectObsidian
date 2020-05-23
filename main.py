@@ -5,6 +5,7 @@ Copyright (C) TODO
 import sys
 import argparse
 import asyncio
+import time
 
 from obsidian.core import *
 #from obsidian import server
@@ -19,8 +20,12 @@ async def main():
 
     #Init Server
     server = Server(args.address, args.port, colour=True)
-    server.setup()
-    server.start()
+    await server.init()
+    asyncio.create_task(server.run())
+
+    while True:
+        await asyncio.sleep(1)
+
 
 if __name__ == '__main__':
     asyncio.run(main())
