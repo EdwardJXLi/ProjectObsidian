@@ -3,22 +3,26 @@ import threading
 
 from obsidian.constants import *
 from obsidian.log import *
-from obsidian.client import *
+from obsidian.network import *
 
 class Server(object):
-    def __init__(self, address, port, colour=True):
+    def __init__(self, address, port, name, motd, colour=True):
         self.address = address
         self.port = port
+        self.name = name
+        self.motd = motd
         #Init Colour
         if(colour):
             Colour.init()
 
     async def init(self):
-        Logger.info(f"Setting Up Server", module="init")
+        #Create Asyncio Socket Server
+        Logger.info(f"Setting Up Server {self.name}", module="init")
         self.server = await asyncio.start_server(self._get_conn_handler(), self.address, self.port)
-        Logger.info(f"Server Starting On {self.address} Port {self.port}")
    
-    async def run(self):       
+    async def run(self):
+        #Start Server
+        Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}")
         async with self.server as s:
             await s.serve_forever()
     
