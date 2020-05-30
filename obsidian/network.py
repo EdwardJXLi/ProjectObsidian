@@ -68,7 +68,12 @@ class NetworkDispacher:
     def __init__(self, handler):
         self.handler = handler
 
+    #Used in main listen loop; expect multiple types of packets!
+    async def listenForPacket(self, timeout=NET_TIMEOUT):
+        pass
+
     #NOTE: or call receivePacket
+    #Used when exact packet is expected
     async def getPacket(self, packet, timeout=NET_TIMEOUT, checkId=True):
         #Get Packet Data
         Logger.verbose(f"Expected Packet {packet.ID} Size {packet.SIZE} from {self.handler.ip}")
