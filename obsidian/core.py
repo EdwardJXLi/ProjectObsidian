@@ -17,8 +17,9 @@ class Server(object):
 
     async def init(self):
         #Create Asyncio Socket Server
+        #When connection, run callback connHandler
         Logger.info(f"Setting Up Server {self.name}", module="init")
-        self.server = await asyncio.start_server(self._get_conn_handler(), self.address, self.port)
+        self.server = await asyncio.start_server(self.connHandler(), self.address, self.port)
    
     async def run(self):
         #Start Server
@@ -26,17 +27,10 @@ class Server(object):
         async with self.server as s:
             await s.serve_forever()
     
-    def _get_conn_handler(self):
+    def connHandler(self):
+        #Callback function on new connection
         async def handler(reader, writer):
-            while True:
-                data = await reader.readuntil(b'\n')
-                message = data.decode()
-                addr = writer.get_extra_info('peername')
-
-                print(f"Received {message!r} from {addr!r}")
-
-                print(f"Send: {message!r}")
-                writer.write(data)
-                await writer.drain()
+            c = NetworkHandler(reader, writer)
+            await c.initConnection()
 
         return handler

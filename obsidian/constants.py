@@ -3,6 +3,12 @@ import os
 #Server Version
 __version__ = 'DEV-X.X.X'
 
+
+#Networking Constants
+NET_TIMEOUT = 15
+
+
+#Console Colour
 CSI = '\u001b[' #ANSII Colour Header 
 
 class Colour():

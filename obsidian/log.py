@@ -24,3 +24,6 @@ class Logger:
     def info(cls, message, module="obsidian"):
         cls.log(message, level="log", module=module, colour=Colour.GREEN, textColour=Colour.WHITE)
     
+    @classmethod
+    def debug(cls, message, module="obsidian"):
+        cls.log(message, level="debug", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
