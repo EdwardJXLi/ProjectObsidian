@@ -3,10 +3,12 @@ import os
 #Server Version
 __version__ = 'DEV-X.X.X'
 
+#Server Constants
+DEBUG = False
+VERBOSE = False
 
 #Networking Constants
 NET_TIMEOUT = 15
-
 
 #Console Colour
 CSI = '\u001b[' #ANSII Colour Header 
@@ -63,34 +65,34 @@ class Colour():
             cls.WHITE  = f"{CSI}37m"
             cls.RESET  = f"{CSI}39m"
             #Foreground Semi-Supported
-            cls.LIGHTBLACK_EX   = f"{CSI}90"
-            cls.LIGHTRED_EX     = f"{CSI}91"
-            cls.LIGHTGREEN_EX   = f"{CSI}92"
-            cls.LIGHTYELLOW_EX  = f"{CSI}93"
-            cls.LIGHTBLUE_EX    = f"{CSI}94"
-            cls.LIGHTMAGENTA_EX = f"{CSI}95"
-            cls.LIGHTCYAN_EX    = f"{CSI}96"
-            cls.LIGHTWHITE_EX   = f"{CSI}97"
+            cls.LIGHTBLACK_EX   = f"{CSI}90m"
+            cls.LIGHTRED_EX     = f"{CSI}91m"
+            cls.LIGHTGREEN_EX   = f"{CSI}92m"
+            cls.LIGHTYELLOW_EX  = f"{CSI}93m"
+            cls.LIGHTBLUE_EX    = f"{CSI}94m"
+            cls.LIGHTMAGENTA_EX = f"{CSI}95m"
+            cls.LIGHTCYAN_EX    = f"{CSI}96m"
+            cls.LIGHTWHITE_EX   = f"{CSI}97m"
 
             #Background Standard
-            cls.BACK_BLACK   = f"{CSI}40"
-            cls.BACK_RED     = f"{CSI}41"
-            cls.BACK_GREEN   = f"{CSI}42"
-            cls.BACK_YELLOW  = f"{CSI}43"
-            cls.BACK_BLUE    = f"{CSI}44"
-            cls.BACK_MAGENTA = f"{CSI}45"
-            cls.BACK_CYAN    = f"{CSI}46"
-            cls.BACK_WHITE   = f"{CSI}47"
-            cls.BACK_RESET   = f"{CSI}49"
+            cls.BACK_BLACK   = f"{CSI}40m"
+            cls.BACK_RED     = f"{CSI}41m"
+            cls.BACK_GREEN   = f"{CSI}42m"
+            cls.BACK_YELLOW  = f"{CSI}43m"
+            cls.BACK_BLUE    = f"{CSI}44m"
+            cls.BACK_MAGENTA = f"{CSI}45m"
+            cls.BACK_CYAN    = f"{CSI}46m"
+            cls.BACK_WHITE   = f"{CSI}47m"
+            cls.BACK_RESET   = f"{CSI}49m"
             #Background Semi-Supported
-            cls.BACK_LIGHTBLACK_EX   = f"{CSI}100"
-            cls.BACK_LIGHTRED_EX     = f"{CSI}101"
-            cls.BACK_LIGHTGREEN_EX   = f"{CSI}102"
-            cls.BACK_LIGHTYELLOW_EX  = f"{CSI}103"
-            cls.BACK_LIGHTBLUE_EX    = f"{CSI}104"
-            cls.BACK_LIGHTMAGENTA_EX = f"{CSI}105"
-            cls.BACK_LIGHTCYAN_EX    = f"{CSI}106"
-            cls.BACK_LIGHTWHITE_EX   = f"{CSI}107"
+            cls.BACK_LIGHTBLACK_EX   = f"{CSI}100m"
+            cls.BACK_LIGHTRED_EX     = f"{CSI}101m"
+            cls.BACK_LIGHTGREEN_EX   = f"{CSI}102m"
+            cls.BACK_LIGHTYELLOW_EX  = f"{CSI}103m"
+            cls.BACK_LIGHTBLUE_EX    = f"{CSI}104m"
+            cls.BACK_LIGHTMAGENTA_EX = f"{CSI}105m"
+            cls.BACK_LIGHTCYAN_EX    = f"{CSI}106m"
+            cls.BACK_LIGHTWHITE_EX   = f"{CSI}107m"
 
         else:
             print("!!! COLOUR PRINTING IS NOT SUPPORTED FOR YOUR SYSTEM !!!")

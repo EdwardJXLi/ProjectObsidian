@@ -11,10 +11,10 @@ class Logger:
     def log(cls, message, level=None, module=None, colour=Colour.NONE, textColour=Colour.NONE):
         if(level != None):
             #Generate Strings
-            timestampStr = f"{colour}{cls.getTimestamp()}{Colour.RESET}"
-            levelStr = f"{colour}{level.upper()}{Colour.RESET}"
-            moduleStr = f"{colour}{module.upper()}{Colour.RESET}"
-            msgString = f"{textColour}{message}{Colour.RESET}"
+            timestampStr = f"{colour}{cls.getTimestamp()}{Colour.RESET}{Colour.BACK_RESET}"
+            levelStr = f"{colour}{level.upper()}{Colour.RESET}{Colour.BACK_RESET}"
+            moduleStr = f"{colour}{module.upper()}{Colour.RESET}{Colour.BACK_RESET}"
+            msgString = f"{textColour}{message}{Colour.RESET}{Colour.BACK_RESET}"
             #Concatenate String
             print(f"[{timestampStr}][{levelStr}][{moduleStr}]: {msgString}")
         else:
@@ -23,7 +23,23 @@ class Logger:
     @classmethod
     def info(cls, message, module="obsidian"):
         cls.log(message, level="log", module=module, colour=Colour.GREEN, textColour=Colour.WHITE)
+
+    @classmethod
+    def warn(cls, message, module="obsidian"):
+        cls.log(message, level="warn", module=module, colour=Colour.YELLOW, textColour=Colour.WHITE)
+
+    @classmethod
+    def error(cls, message, module="obsidian"):
+        cls.log(message, level="log", module=module, colour=Colour.RED, textColour=Colour.WHITE)
+
+    @classmethod
+    def fatal(cls, message, module="obsidian"):
+        cls.log(message, level="FATAL", module=module, colour=Colour.BLACK+Colour.BACK_RED, textColour=Colour.BLACK+Colour.BACK_RED)
     
     @classmethod
     def debug(cls, message, module="obsidian"):
         cls.log(message, level="debug", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
+
+    @classmethod
+    def verbose(cls, message, module="obsidian"):
+        cls.log(message, level="verbose", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
