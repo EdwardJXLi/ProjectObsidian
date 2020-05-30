@@ -3,6 +3,9 @@ import time
 from obsidian.constants import *
 
 class Logger:
+    DEBUG = False
+    VERBOSE = False
+
     @staticmethod
     def getTimestamp():
         return time.strftime("%H:%M:%S", time.localtime())
@@ -38,8 +41,10 @@ class Logger:
     
     @classmethod
     def debug(cls, message, module="obsidian"):
-        cls.log(message, level="debug", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
+        if(cls.DEBUG == True):
+            cls.log(message, level="debug", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
 
     @classmethod
     def verbose(cls, message, module="obsidian"):
-        cls.log(message, level="verbose", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
+        if(cls.DEBUG == True and cls.VERBOSE == True):
+            cls.log(message, level="verbose", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)

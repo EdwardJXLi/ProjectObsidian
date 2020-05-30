@@ -3,10 +3,6 @@ import os
 #Server Version
 __version__ = 'DEV-X.X.X'
 
-#Server Constants
-DEBUG = False
-VERBOSE = False
-
 #Networking Constants
 NET_TIMEOUT = 15
 

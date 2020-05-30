@@ -16,6 +16,9 @@ class Server(object):
             Colour.init()
 
     async def init(self):
+        #Testing If Debug Is Enabled
+        Logger.debug("Debug Is Enabled", module="init")
+        Logger.verbose("Verbose Is Enabled", module="init")
         #Create Asyncio Socket Server
         #When connection, run callback connHandler
         Logger.info(f"Setting Up Server {self.name}", module="init")
