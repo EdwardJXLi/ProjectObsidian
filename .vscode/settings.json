@@ -23,5 +23,6 @@
         "nargs",
         "strftime",
         "struct"
-    ]
+    ],
+    "cSpell.spellCheckDelayMs": 100
 }
