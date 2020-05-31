@@ -8,8 +8,6 @@ import asyncio
 import time
 
 from obsidian.core import *
-from obsidian.log import *
-#from obsidian import server
 
 async def main():
     #Initiate Argument Parser

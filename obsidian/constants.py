@@ -9,6 +9,14 @@ NET_TIMEOUT = 15
 #Console Colour
 CSI = '\u001b[' #ANSII Colour Header 
 
+#Custom Errors
+#Init Errors
+class InitError(Exception):
+    pass
+#Network Errors
+class InvalidPacketError(Exception):
+    pass
+
 class Colour():
     BLACK  = ""
     RED    = ""

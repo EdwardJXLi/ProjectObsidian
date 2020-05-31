@@ -4,12 +4,17 @@ from obsidian.packet import *
 from obsidian.log import *
 
 class NetworkHandler:
-    def __init__(self, reader, writer):
+    def __init__(self, server, reader, writer):
+        self.server = server
         self.reader = reader
         self.writer = writer
         self.ip = self.reader._transport.get_extra_info("peername")
         self.dispacher = NetworkDispacher(self)
         self.player = None
+        
+        #Adding Core Packets To Network Dispacher
+        Logger.info(f"Adding Core Packets", module="init")
+        registerCorePackets(self.dispacher)
 
     async def initConnection(self):
         #Log Connection
@@ -66,7 +71,10 @@ class NetworkHandler:
 
 class NetworkDispacher:
     def __init__(self, handler):
+        self.player = None
         self.handler = handler
+        self.downstream = [] #Array of Downstream Packets
+        self.upstream = [] #Array of Downstream Packets
 
     #Used in main listen loop; expect multiple types of packets!
     async def listenForPacket(self, timeout=NET_TIMEOUT):
@@ -102,7 +110,16 @@ class NetworkDispacher:
         self.handler.writer.write(rawData)
         await self.handler.writer.drain()
 
-
-#Custom Errors
-class InvalidPacketError(Exception):
-    pass
+    #Regerster Packer Handler; Adds Network Protocols To Dispacher
+    def registerPacket(self, packet):
+        #Check Packet Type
+        if(packet.DIRECTION == PacketDirections.DOWNSTREAM):
+            #Append Packet To Downstream Packets
+            self.downstream.append(packet)
+            Logger.debug(f"Registered Downstream Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module="init")
+        elif(packet.DIRECTION == PacketDirections.UPSTREAM):
+            #Append Packet To Downstream Packets
+            self.upstream.append(packet)
+            Logger.debug(f"Registered Upstream Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module="init")
+        else:
+            pass

@@ -11,6 +11,8 @@ class Server(object):
         self.port = port
         self.name = name
         self.motd = motd
+        self.server = None
+        self.packets = {}
         #Init Colour
         if(colour):
             Colour.init()
@@ -19,11 +21,16 @@ class Server(object):
         #Testing If Debug Is Enabled
         Logger.debug(f"Debug Is Enabled", module="init")
         Logger.verbose(f"Verbose Is Enabled", module="init")
+        #Start Initialization
+        Logger.info(f"Initializing Server {self.name}", module="init")
+        #Register Core Packets
+        Logger.info(f"Registering Core Packets", module="init")
+        registerCorePackets(self.dispacher)
         #Create Asyncio Socket Server
-        #When connection, run callback connHandler
+        #When new connection occurs, run callback connHandler
         Logger.info(f"Setting Up Server {self.name}", module="init")
         self.server = await asyncio.start_server(self.connHandler(), self.address, self.port)
-   
+
     async def run(self):
         #Start Server
         Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}")
@@ -33,7 +40,10 @@ class Server(object):
     def connHandler(self):
         #Callback function on new connection
         async def handler(reader, writer):
-            c = NetworkHandler(reader, writer)
+            c = NetworkHandler(self, reader, writer)
             await c.initConnection()
 
         return handler
+
+    def registerPacket(self, packet):
+        pass

@@ -12,9 +12,12 @@ class PacketDirections(enum.Enum):
 
 #Packet Skeleton
 class Message:
-    DIRECTION = None
-    ID = None
-    SIZE = None
+    DIRECTION = None   #Network Direction (Upstream or Downstream)
+    ID = None          #Packet Id
+    SIZE = None        #Side (In Bytes) Of Packet
+    CIRTICAL = None    #Criticality. Dictates What Event Should Occur When Error
+    PLAYERLOOP = None  #Accept Packet During Player Loop
+    MODULE = None      #Packet Module Owner
 
     def init(message):
         pass
@@ -31,12 +34,14 @@ class Message:
     def postDesterilization():
         pass
 
-
 #Downstream Network Packets
 class TestPacket(Message):
     DIRECTION = PacketDirections.DOWNSTREAM
     ID = 0x61
     SIZE = 6
+    CIRTICAL = True
+    PLAYERLOOP = False
+    MODULE = "Main"
 
     def deserialize(rawData):
         _, msg = struct.unpack("B5s", rawData)
@@ -51,6 +56,9 @@ class TestReturnPacket(Message):
     DIRECTION = PacketDirections.UPSTREAM
     ID = 0x61
     SIZE = 14
+    CIRTICAL = True
+    PLAYERLOOP = False
+    MODULE = "Main"
 
     def sterilize():
         msg = bytes("ahello_there!\n", "ascii")
@@ -59,3 +67,10 @@ class TestReturnPacket(Message):
 
     def postSterilization():
         Logger.debug("POST-SER")
+
+def registerCorePackets(manager):
+    #Register Downsteam Packets
+    manager.registerPacket(TestPacket)
+
+    #Register Upstream Packets
+    manager.registerPacket(TestReturnPacket)
