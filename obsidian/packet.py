@@ -1,23 +1,25 @@
 import enum
 import struct
 
-from obsidian.network import *
-from obsidian.constants import *
-from obsidian.log import *
+# from obsidian.network import *
+# from obsidian.constants import *
+from obsidian.log import Logger
 
-#Enums
+
+# Enums
 class PacketDirections(enum.Enum):
     UPSTREAM = 0
     DOWNSTREAM = 1
 
-#Packet Skeleton
-class Message:
-    DIRECTION = None   #Network Direction (Upstream or Downstream)
-    ID = None          #Packet Id
-    SIZE = None        #Side (In Bytes) Of Packet
-    CIRTICAL = None    #Criticality. Dictates What Event Should Occur When Error
-    PLAYERLOOP = None  #Accept Packet During Player Loop
-    MODULE = None      #Packet Module Owner
+
+# Packet Skeleton
+class Packet:
+    DIRECTION: PacketDirections = None   # Network Direction (Upstream or Downstream)
+    ID: int = None           # Packet Id
+    SIZE: int = None         # Side (In Bytes) Of Packet
+    CIRTICAL: bool = None    # Criticality. Dictates What Event Should Occur When Error
+    PLAYERLOOP: bool = None  # Accept Packet During Player Loop
+    MODULE: str = None       # Packet Module Owner
 
     def init(message):
         pass
@@ -31,11 +33,12 @@ class Message:
     def deserialize(*args, **kwargs):
         return None
 
-    def postDesterilization():
+    def postDeserialization():
         pass
 
-#Downstream Network Packets
-class TestPacket(Message):
+
+# Downstream Network Packets
+class TestPacket(Packet):
     DIRECTION = PacketDirections.DOWNSTREAM
     ID = 0x61
     SIZE = 6
@@ -48,11 +51,12 @@ class TestPacket(Message):
         print(msg)
         return None
 
-    def postDesterilization():
+    def postDeserialization():
         Logger.debug("POST-DES")
 
-#Upstream Netowrk Packets
-class TestReturnPacket(Message):
+
+# Upstream Network Packets
+class TestReturnPacket(Packet):
     DIRECTION = PacketDirections.UPSTREAM
     ID = 0x61
     SIZE = 14
@@ -60,7 +64,7 @@ class TestReturnPacket(Message):
     PLAYERLOOP = False
     MODULE = "Main"
 
-    def sterilize():
+    def serialize():
         msg = bytes("ahello_there!\n", "ascii")
         print(msg)
         return msg
@@ -68,9 +72,10 @@ class TestReturnPacket(Message):
     def postSterilization():
         Logger.debug("POST-SER")
 
+
 def registerCorePackets(manager):
-    #Register Downsteam Packets
+    # Register Downsteam Packets
     manager.registerPacket(TestPacket)
 
-    #Register Upstream Packets
+    # Register Upstream Packets
     manager.registerPacket(TestReturnPacket)

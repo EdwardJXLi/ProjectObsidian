@@ -1,0 +1,27 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.ignorePatterns": [
+        ".vscode/*.py",
+        "**/site-packages/**/*.py",
+        "**/testing/**",
+        "**/protocol-test/**"
+    ],
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintUseMinimalCheckers": false,
+    "python.linting.flake8Args": [
+        "--ignore=E501"
+    ],
+    "python.linting.pylintEnabled": false,
+    "files.trimTrailingWhitespace": true,
+    "files.trimFinalNewlines": true,
+    "python.linting.flake8CategorySeverity.E": "Warning",
+    "python.linting.flake8CategorySeverity.W": "Information",
+    "cSpell.words": [
+        "Deserialization",
+        "asyncio",
+        "motd",
+        "nargs",
+        "strftime",
+        "struct"
+    ]
+}

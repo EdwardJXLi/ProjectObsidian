@@ -1,6 +1,7 @@
 import time
 
-from obsidian.constants import *
+from obsidian.constants import Colour
+
 
 class Logger:
     DEBUG = False
@@ -12,13 +13,13 @@ class Logger:
 
     @classmethod
     def log(cls, message, level=None, module=None, colour=Colour.NONE, textColour=Colour.NONE):
-        if(level != None):
-            #Generate Strings
+        if level is not None:
+            # Generate Strings
             timestampStr = f"{colour}{cls.getTimestamp()}{Colour.RESET}{Colour.BACK_RESET}"
             levelStr = f"{colour}{level.upper()}{Colour.RESET}{Colour.BACK_RESET}"
             moduleStr = f"{colour}{module.upper()}{Colour.RESET}{Colour.BACK_RESET}"
             msgString = f"{textColour}{message}{Colour.RESET}{Colour.BACK_RESET}"
-            #Concatenate String
+            # Concatenate String
             print(f"[{timestampStr}][{levelStr}][{moduleStr}]: {msgString}")
         else:
             print(message)
@@ -37,14 +38,14 @@ class Logger:
 
     @classmethod
     def fatal(cls, message, module="obsidian"):
-        cls.log(message, level="FATAL", module=module, colour=Colour.BLACK+Colour.BACK_RED, textColour=Colour.BLACK+Colour.BACK_RED)
-    
+        cls.log(message, level="FATAL", module=module, colour=Colour.BLACK + Colour.BACK_RED, textColour=Colour.BLACK + Colour.BACK_RED)
+
     @classmethod
     def debug(cls, message, module="obsidian"):
-        if(cls.DEBUG == True):
+        if cls.DEBUG:
             cls.log(message, level="debug", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
 
     @classmethod
     def verbose(cls, message, module="obsidian"):
-        if(cls.DEBUG == True and cls.VERBOSE == True):
+        if cls.DEBUG and cls.VERBOSE:
             cls.log(message, level="verbose", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)

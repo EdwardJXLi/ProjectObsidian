@@ -2,17 +2,18 @@
 Copyright (C) TODO
 """
 
-import sys
+# import sys
 import argparse
 import asyncio
-import time
+# import time
 
-from obsidian.core import *
+from obsidian.core import Server, log
+
 
 async def main():
-    #Initiate Argument Parser
+    # Initiate Argument Parser
     parser = argparse.ArgumentParser(description="TODO")
-    #parser.add_argument('--TEMPLATE', type=int, nargs='?', help='TEMPLATE', default=TEMPLATE)
+    # parser.add_argument('--TEMPLATE', type=int, nargs='?', help='TEMPLATE', default=TEMPLATE)
     parser.add_argument('-a', "--address", type=str, nargs='?', help="The Address The Minecraft Server Would Bind To.', default='localhost")
     parser.add_argument('-p', "--port", type=int, nargs='?', help="The Port The Minecraft Server Would Bind To.", default=25565)
     parser.add_argument('-n', "--name", type=str, nargs='?', help="The Name Of The Minecraft Server', default='Minecraft_Server")
@@ -21,16 +22,16 @@ async def main():
     parser.add_argument('-v', "--verbose", help="Increase Debug output verbosity", action="store_true")
     args = parser.parse_args()
 
-    #Set Logging Levels
-    Logger.DEBUG = args.debug
-    Logger.VERBOSE = args.verbose
+    # Set Logging Levels
+    log.Logger.DEBUG = args.debug
+    log.Logger.VERBOSE = args.verboses
 
-    #Create and Init Main Server
+    # Create and Init Main Server
     server = Server(args.address, args.port, args.name, args.motd, colour=True)
     await server.init()
     asyncio.create_task(server.run())
-    
-    #Busy Operation To Keep Main Thread Alive
+
+    # Busy Operation To Keep Main Thread Alive
     while True:
         await asyncio.sleep(1)
 
