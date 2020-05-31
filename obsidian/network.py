@@ -1,6 +1,6 @@
 import asyncio
 
-import obsidian.packet as packet
+import obsidian.packet as corepacket
 from obsidian.packet import PacketDirections
 from obsidian.log import Logger
 from obsidian.constants import NET_TIMEOUT, InvalidPacketError
@@ -17,7 +17,7 @@ class NetworkHandler:
 
         # Adding Core Packets To Network Dispacher
         Logger.info("Adding Core Packets", module="init")
-        packet.registerCorePackets(self.dispacher)
+        corepacket.registerCorePackets(self.dispacher)
 
     async def initConnection(self):
         # Log Connection
@@ -54,11 +54,11 @@ class NetworkHandler:
     async def handleInitialHandshake(self):
         # Wait For Player Identification Packet
         Logger.debug(f"{self.ip} | Waiting For Initial Player Information Packet")
-        await self.dispacher.readPacket(packet.TestPacket)
+        await self.dispacher.readPacket(corepacket.TestPacket)
 
         # Send Server Information Packet
         Logger.debug(f"{self.ip} | Sending Initial Server Information Packet")
-        await self.dispacher.sendPacket(packet.TestReturnPacket)
+        await self.dispacher.sendPacket(corepacket.TestReturnPacket)
 
     '''
     async def handleConnection(self):
@@ -88,12 +88,7 @@ class NetworkDispacher:
 
     # NOTE: or call receivePacket
     # Used when exact packet is expected
-    async def readPacket(
-        self,
-        packet: packet.Packet,
-        timeout=NET_TIMEOUT,
-        checkId=True
-    ):
+    async def readPacket(self, packet: corepacket.Packet, timeout=NET_TIMEOUT, checkId=True):
         # Get Packet Data
         Logger.verbose(f"Expected Packet {packet.ID} Size {packet.SIZE} from {self.handler.ip}")
         rawData = await asyncio.wait_for(

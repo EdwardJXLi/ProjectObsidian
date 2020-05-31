@@ -7,7 +7,8 @@ import argparse
 import asyncio
 # import time
 
-from obsidian.core import Server, log
+from obsidian.core import Server
+from obsidian.log import Logger
 
 
 async def main():
@@ -23,8 +24,8 @@ async def main():
     args = parser.parse_args()
 
     # Set Logging Levels
-    log.Logger.DEBUG = args.debug
-    log.Logger.VERBOSE = args.verboses
+    Logger.DEBUG = args.debug
+    Logger.VERBOSE = args.verbose
 
     # Create and Init Main Server
     server = Server(args.address, args.port, args.name, args.motd, colour=True)
