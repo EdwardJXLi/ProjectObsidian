@@ -336,11 +336,11 @@ def thingThread(conn, addr):
 
     #Send Join Message
     sendToAllPlayers(struct.pack("BB64s", 13, 0, bytes(f"&e{username} Joined &9(ID {getConnId(conn)})&f", "ascii")))
-    
+
     #Send Player Join To All Clients
     spawnPlayer = struct.pack("!BB64shhhBB", 7, getConnId(conn), bytes(username.ljust(64), "ascii"), 0 * 32 + 51, 33 * 32 + 51, 0 * 32 + 51, 64, 0)
     sendToAllPlayers(spawnPlayer, clientSelf=conn, checkSelf=True)
-    
+
     #Send Current Player Info To Joining Player
     for client in players.keys():
         if(client != conn):
@@ -394,7 +394,7 @@ def thingThread(conn, addr):
                         sendToAllPlayers(struct.pack("BB64s", 13, 0, bytes(f"&4{sys.exc_info()[:64]}", "ascii")))
                     except:
                         print("BIG ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    
+
 
 
 
@@ -498,7 +498,7 @@ s.listen(5)
 print("Listening to connections!")
 
 while True:
-    
+
     conn, addr = s.accept()
     print(f"New Connection From {addr}")
     print(f"Creating Thread!")

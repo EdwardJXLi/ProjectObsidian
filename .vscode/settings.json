@@ -24,5 +24,14 @@
         "strftime",
         "struct"
     ],
-    "cSpell.spellCheckDelayMs": 100
+    "cSpell.spellCheckDelayMs": 100,
+    "cSpell.ignorePaths": [
+        "**/package-lock.json",
+        "**/node_modules/**",
+        "**/vscode-extension/**",
+        "**/.git/objects/**",
+        ".vscode",
+        "**/testing/**",
+        "**/protocol-test/*"
+    ]
 }
