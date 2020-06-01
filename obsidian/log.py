@@ -8,14 +8,14 @@ class Logger:
     VERBOSE = False
 
     @staticmethod
-    def getTimestamp():
+    def _getTimestamp():
         return time.strftime("%H:%M:%S", time.localtime())
 
     @classmethod
     def log(cls, message, level=None, module=None, colour=Colour.NONE, textColour=Colour.NONE):
         if level is not None:
             # Generate Strings
-            timestampStr = f"{colour}{cls.getTimestamp()}{Colour.RESET}{Colour.BACK_RESET}"
+            timestampStr = f"{colour}{cls._getTimestamp()}{Colour.RESET}{Colour.BACK_RESET}"
             levelStr = f"{colour}{level.upper()}{Colour.RESET}{Colour.BACK_RESET}"
             moduleStr = f"{colour}{module.upper()}{Colour.RESET}{Colour.BACK_RESET}"
             msgString = f"{textColour}{message}{Colour.RESET}{Colour.BACK_RESET}"
@@ -48,4 +48,4 @@ class Logger:
     @classmethod
     def verbose(cls, message, module="obsidian"):
         if cls.DEBUG and cls.VERBOSE:
-            cls.log(message, level="verbose", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
+            cls.log(message, level="verbose", module=module, colour=Colour.MAGENTA, textColour=Colour.WHITE)

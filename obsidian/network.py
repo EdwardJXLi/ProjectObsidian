@@ -3,7 +3,7 @@ import asyncio
 import obsidian.packet as corepacket
 from obsidian.packet import PacketDirections
 from obsidian.log import Logger
-from obsidian.constants import NET_TIMEOUT, InvalidPacketError
+from obsidian.constants import NET_TIMEOUT, InvalidPacketError, InitError
 
 
 class NetworkHandler:
@@ -16,12 +16,12 @@ class NetworkHandler:
         self.player = None
 
         # Adding Core Packets To Network Dispacher
-        Logger.info("Adding Core Packets", module="init")
+        Logger.info("Adding Core Packets", module="network")
         corepacket.registerCorePackets(self.dispacher)
 
     async def initConnection(self):
         # Log Connection
-        Logger.info(f"New Connection From {self.ip}", module="Network")
+        Logger.info(f"New Connection From {self.ip}", module="network")
 
         # Start the server <-> client login protocol
         Logger.debug(f"{self.ip} | Starting Client <-> Server Handshake")
@@ -79,8 +79,8 @@ class NetworkDispacher:
     def __init__(self, handler):
         self.player = None
         self.handler = handler
-        self.downstream = []  # Array of Downstream Packets
-        self.upstream = []  # Array of Downstream Packets
+        self.request = []  # Array of Request Packets
+        self.response = []  # Array of Request Packets
 
     # Used in main listen loop; expect multiple types of packets!
     async def listenForPacket(self, timeout=NET_TIMEOUT):
@@ -103,9 +103,9 @@ class NetworkDispacher:
             raise InvalidPacketError("Packet Invalid")
 
         # Deserialize Packet
-        packet.deserialize(rawData)
+        serializedData = packet.deserialize(rawData)
         packet.postDeserialization()
-        return None
+        return serializedData
 
     async def sendPacket(self, packet, *args, timeout=NET_TIMEOUT, **kwargs):
         # Generate Packet
@@ -117,18 +117,23 @@ class NetworkDispacher:
         self.handler.writer.write(rawData)
         await self.handler.writer.drain()
 
+    # Initialize Regerster Packer Handler
+    def registerInit(self, module):
+        pass  # Unused for now
+
     # Regerster Packer Handler; Adds Network Protocols To Dispacher
     def registerPacket(self, packet):
         # Check Packet Type
-        if(packet.DIRECTION == PacketDirections.DOWNSTREAM):
-            # Append Packet To Downstream Packets
-            self.downstream.append(packet)
-            Logger.debug(f"Registered Downstream Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module="init")
+        if(packet.DIRECTION == PacketDirections.REQUEST):
+            # Append Packet To Request Packets
+            self.request.append(packet)
+            Logger.debug(f"Registered Request Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
 
-        elif(packet.DIRECTION == PacketDirections.UPSTREAM):
-            # Append Packet To Downstream Packets
-            self.upstream.append(packet)
-            Logger.debug(f"Registered Upstream Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module="init")
+        elif(packet.DIRECTION == PacketDirections.RESPONSE):
+            # Append Packet To Request Packets
+            self.response.append(packet)
+            Logger.debug(f"Registered Response Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
 
         else:
-            pass
+            # Packet Direction Is Unknown
+            raise InitError(f"Unknown Packet Direction {packet.DIRECTION} for Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}!")
