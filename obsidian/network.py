@@ -17,7 +17,7 @@ class NetworkHandler:
 
         # Adding Core Packets To Network Dispacher
         Logger.info("Adding Core Packets", module="network")
-        corepacket.registerCorePackets(self.dispacher)
+        corepacket.registerCoreModules(self.dispacher)
 
     async def initConnection(self):
         # Log Connection

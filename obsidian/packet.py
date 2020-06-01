@@ -91,7 +91,7 @@ class TestReturnPacket(ResponsePacket):
         Logger.debug("POST-SER")
 
 
-def registerCorePackets(manager):
+def registerCoreModules(manager):  # manager accepts any class that supports the registerInit and registerPacket function
     # Run Register Initialization
     manager.registerInit("Test")
 

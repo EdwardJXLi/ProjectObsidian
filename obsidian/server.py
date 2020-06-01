@@ -33,8 +33,8 @@ class Server(object):
         self.packets["response"] = dict()
 
         Logger.info("Initializing Core Module", module="init")
-        Logger.info("Registering Core Packets", module="init")
-        corepacket.registerCorePackets(self)
+        Logger.info("Registering Core Module", module="init")
+        corepacket.registerCoreModules(self)
 
         # Create Asyncio Socket Server
         # When new connection occurs, run callback _getConnHandler
@@ -57,6 +57,8 @@ class Server(object):
 
     # Initialize Regerster Packer Handler
     def registerInit(self, module):
+        Logger.debug("Initialize Core Module Registration", module=module + "-init")
+
         # Add Module To Packet dict
         self.packets["request"][module] = dict()
         self.packets["response"][module] = dict()
