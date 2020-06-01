@@ -18,7 +18,7 @@ class Server(object):
         self.packets = dict()
 
         # Init Colour
-        if(colour):
+        if colour:
             Colour.init()
 
     async def init(self):
@@ -72,20 +72,20 @@ class Server(object):
         # Direction Key Word
         directionKW = None
         # Check Packet Type
-        if(packet.DIRECTION == PacketDirections.REQUEST):
+        if packet.DIRECTION == PacketDirections.REQUEST:
             directionKW = "request"
-        elif(packet.DIRECTION == PacketDirections.RESPONSE):
+        elif packet.DIRECTION == PacketDirections.RESPONSE:
             directionKW = "response"
         else:
             raise InitError(f"Unknown Packet Direction {packet.DIRECTION} for Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}!")
 
         # Check if Packet Id has Already been used.
         packetList = self._getPackets(directionKW).keys()
-        if(packet.ID in packetList):
+        if packet.ID in packetList:
             raise InitError(f"Packet ID {packet.ID} From Packet {packet.__name__} (Module {packet.MODULE}) Has Already Been Registered!")
 
         # Check if Packet Module Has Been Registered
-        if(packet.MODULE not in self.packets[directionKW].keys()):
+        if packet.MODULE not in self.packets[directionKW].keys():
             raise InitError(f"Packet Module '{packet.MODULE}' From Packet {packet.__name__} (ID: {packet.ID}) Has Not Been Registered. Current Registered Modules: {list(self.packets[directionKW].keys())}")
 
         # Adding Packet To Packet Dict

@@ -61,7 +61,7 @@ class Colour():
 
     @classmethod
     def init(cls):
-        if(os.name == "posix"):
+        if os.name == "posix":
             # Foreground Standard
             cls.BLACK = f"{CSI}30m"
             cls.RED = f"{CSI}31m"

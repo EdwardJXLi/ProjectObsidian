@@ -98,7 +98,7 @@ class NetworkDispacher:
         Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}")
 
         # Check If Packet ID is Valid
-        if(checkId and rawData[0] != packet.ID):
+        if checkId and rawData[0] != packet.ID:
             Logger.verbose(f"{self.ip} | Packet Invalid!")
             raise InvalidPacketError("Packet Invalid")
 
@@ -124,12 +124,12 @@ class NetworkDispacher:
     # Regerster Packer Handler; Adds Network Protocols To Dispacher
     def registerPacket(self, packet):
         # Check Packet Type
-        if(packet.DIRECTION == PacketDirections.REQUEST):
+        if packet.DIRECTION == PacketDirections.REQUEST:
             # Append Packet To Request Packets
             self.request.append(packet)
             Logger.debug(f"Registered Request Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
 
-        elif(packet.DIRECTION == PacketDirections.RESPONSE):
+        elif packet.DIRECTION == PacketDirections.RESPONSE:
             # Append Packet To Request Packets
             self.response.append(packet)
             Logger.debug(f"Registered Response Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
