@@ -7,7 +7,7 @@ import argparse
 import asyncio
 # import time
 
-from obsidian.core import Server
+from obsidian.server import Server
 from obsidian.log import Logger
 
 
