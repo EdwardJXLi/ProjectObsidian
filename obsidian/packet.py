@@ -53,7 +53,6 @@ class ResponsePacket(Packet):
 
 # Request Network Packets
 class TestPacket(RequestPacket):
-    DIRECTION = PacketDirections.REQUEST
     ID = 0x61
     FORMAT = "B5s"
     CIRTICAL = True
@@ -73,7 +72,6 @@ class TestPacket(RequestPacket):
 
 # Response Network Packets
 class TestReturnPacket(ResponsePacket):
-    DIRECTION = PacketDirections.RESPONSE
     ID = 0x61
     FORMAT = "B5s"
     SIZE = 14
