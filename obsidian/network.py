@@ -3,7 +3,12 @@ import asyncio
 import obsidian.packet as corepacket
 from obsidian.packet import PacketDirections
 from obsidian.log import Logger
-from obsidian.constants import NET_TIMEOUT, InvalidPacketError, InitError
+from obsidian.constants import (
+    NET_TIMEOUT,
+    ClientError,
+    InvalidPacketError,
+    InitError,
+)
 
 
 class NetworkHandler:
@@ -25,7 +30,7 @@ class NetworkHandler:
 
         # Start the server <-> client login protocol
         Logger.debug(f"{self.ip} | Starting Client <-> Server Handshake")
-        await self.handleInitialHandshake()
+        await self._handleInitialHandshake()
 
         '''
         except asyncio.TimeoutError as te:
@@ -51,14 +56,24 @@ class NetworkHandler:
         await writer.drain()
         '''
 
-    async def handleInitialHandshake(self):
+    async def _handleInitialHandshake(self):
         # Wait For Player Identification Packet
         Logger.debug(f"{self.ip} | Waiting For Initial Player Information Packet")
-        await self.dispacher.readPacket(corepacket.TestPacket)
+        protocolVersion, username, verificationKey = await self.dispacher.readPacket(corepacket.PlayerIdentificationPacket)
+
+        # Checking Client Protocol Version
+        if protocolVersion > self.server.protocolVersion:
+            raise ClientError("Server Outdated")
+        elif protocolVersion < self.server.protocolVersion:
+            raise ClientError("Client Outdated")
 
         # Send Server Information Packet
         Logger.debug(f"{self.ip} | Sending Initial Server Information Packet")
-        await self.dispacher.sendPacket(corepacket.TestReturnPacket)
+        await self.dispacher.sendPacket(corepacket.ServerIdentificationPacket, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
+
+        # Send Level Initialize Packet
+        Logger.debug(f"{self.ip} | Sending Level Initialize Packet")
+        await self.dispacher.sendPacket(corepacket.LevelInitializePacket)
 
     '''
     async def handleConnection(self):
@@ -127,12 +142,12 @@ class NetworkDispacher:
         if packet.DIRECTION == PacketDirections.REQUEST:
             # Append Packet To Request Packets
             self.request.append(packet)
-            Logger.debug(f"Registered Request Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
+            Logger.verbose(f"Registered Request Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
 
         elif packet.DIRECTION == PacketDirections.RESPONSE:
             # Append Packet To Request Packets
             self.response.append(packet)
-            Logger.debug(f"Registered Response Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
+            Logger.verbose(f"Registered Response Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
 
         else:
             # Packet Direction Is Unknown

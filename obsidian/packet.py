@@ -51,7 +51,9 @@ class ResponsePacket(Packet):
         pass
 
 
+#
 # Request Network Packets
+#
 class TestPacket(RequestPacket):
     ID = 0x61
     FORMAT = "B5s"
@@ -70,11 +72,38 @@ class TestPacket(RequestPacket):
         Logger.debug("POST-DES")
 
 
+class PlayerIdentificationPacket(RequestPacket):
+    ID = 0x00
+    FORMAT = "BB64s64sB"
+    CIRTICAL = True
+    PLAYERLOOP = False
+    MODULE = "Core"
+
+    @classmethod
+    def deserialize(cls, rawData):
+        # <Player Identification Packet>
+        # (Byte) Packet ID
+        # (Byte) Protocol Version
+        # (64String) Username
+        # (64String) Verification Key
+        # (Byte) Unused
+        _, protocolVersion, username, verificationKey, _ = struct.unpack(cls.FORMAT, rawData)
+        # Unpackage String
+        username = unpackageString(username)
+        verificationKey = unpackageString(verificationKey)
+        return protocolVersion, username, verificationKey
+
+    @classmethod
+    def postDeserialization(cls):
+        pass
+
+
+#
 # Response Network Packets
+#
 class TestReturnPacket(ResponsePacket):
     ID = 0x61
     FORMAT = "B5s"
-    SIZE = 14
     CIRTICAL = True
     MODULE = "Test"
 
@@ -89,12 +118,90 @@ class TestReturnPacket(ResponsePacket):
         Logger.debug("POST-SER")
 
 
+class ServerIdentificationPacket(ResponsePacket):
+    ID = 0x00
+    FORMAT = "BB64s64sB"
+    CIRTICAL = True
+    MODULE = "Core"
+
+    @classmethod
+    def serialize(cls, protocolVersion, name, motd, userType):
+        # <Server Identification Packet>
+        # (Byte) Packet ID
+        # (Byte) Protocol Version
+        # (64String) Server Name
+        # (64String) Server MOTD
+        # (Byte) User Type
+        msg = struct.pack(cls.FORMAT, cls.ID, protocolVersion, packageString(name), packageString(motd), userType)
+        return msg
+
+    @classmethod
+    def postSterilization(cls):
+        pass
+
+
+class PingPacket(ResponsePacket):
+    ID = 0x01
+    FORMAT = "B"
+    CIRTICAL = False
+    MODULE = "Core"
+
+    @classmethod
+    def serialize(cls):
+        # <Ping Packet>
+        # (Byte) Packet ID
+        msg = struct.pack(cls.FORMAT, cls.ID)
+        return msg
+
+    @classmethod
+    def postSterilization(cls):
+        pass
+
+
+class LevelInitializePacket(ResponsePacket):
+    ID = 0x02
+    FORMAT = "B"
+    CIRTICAL = True
+    MODULE = "Core"
+
+    @classmethod
+    def serialize(cls):
+        # <Level Initialize Packet>
+        # (Byte) Packet ID
+        msg = struct.pack(cls.FORMAT, cls.ID)
+        return msg
+
+    @classmethod
+    def postSterilization(cls):
+        pass
+
+
+def unpackageString(data, encoding="ascii"):
+    Logger.verbose(f"Unpacking String {data}")
+    # Decode Data From Bytes To String
+    # Remove Excess Zeros
+    return data.decode(encoding).strip()
+
+
+def packageString(data, maxSize=64, encoding="ascii"):
+    Logger.verbose(f"Packing String {data}")
+    # Trim Text Down To maxSize
+    # Fill Blank Space With Spaces Using ljust
+    # Encode String Into Bytes Using Encoding
+    return bytes(data[:maxSize].ljust(maxSize), encoding)
+
+
 def registerCoreModules(manager):  # manager accepts any class that supports the registerInit and registerPacket function
     # Run Register Initialization
     manager.registerInit("Test")
+    manager.registerInit("Core")
 
     # Register Downsteam Packets
     manager.registerPacket(TestPacket)
+    manager.registerPacket(PlayerIdentificationPacket)
 
     # Register Response Packets
     manager.registerPacket(TestReturnPacket)
+    manager.registerPacket(ServerIdentificationPacket)
+    manager.registerPacket(PingPacket)
+    manager.registerPacket(LevelInitializePacket)

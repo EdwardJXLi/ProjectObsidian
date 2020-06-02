@@ -16,6 +16,7 @@ class Server(object):
         self.motd = motd
         self.server = None
         self.packets = dict()
+        self.protocolVersion = 0x07
 
         # Init Colour
         if colour:
@@ -57,19 +58,19 @@ class Server(object):
 
     # Initialize Regerster Packer Handler
     def registerInit(self, module):
-        Logger.debug("Initialize Core Module Registration", module=module + "-init")
+        Logger.debug(f"Initialize {module} Module Registration", module=module + "-init")
 
         # Add Module To Packet dict
         self.packets["request"][module] = dict()
         self.packets["response"][module] = dict()
 
     def registerPacket(self, packet):
-        Logger.debug(f"Registering Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-init")
+        Logger.verbose(f"Registering Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-init")
 
-        Logger.debug("Running Packet Init", module=packet.MODULE + "-init")
+        Logger.verbose("Running Packet Init", module=packet.MODULE + "-init")
         packet._init()
 
-        Logger.debug("Adding Packet To Dict", module=packet.MODULE + "-init")
+        Logger.verbose("Adding Packet To Dict", module=packet.MODULE + "-init")
         # Creating Temporary Variables
         # Direction Key Word
         directionKW = None

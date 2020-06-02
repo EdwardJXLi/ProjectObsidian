@@ -21,6 +21,10 @@ class InvalidPacketError(Exception):
     pass
 
 
+class ClientError(Exception):
+    pass
+
+
 class Colour():
     BLACK = ""
     RED = ""
