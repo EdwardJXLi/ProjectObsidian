@@ -1,4 +1,5 @@
 import asyncio
+from typing import Type
 
 import obsidian.packet as corepacket
 from obsidian.packet import PacketDirections
@@ -12,13 +13,13 @@ from obsidian.constants import (
 
 
 class NetworkHandler:
-    def __init__(self, server, reader, writer):
+    def __init__(self, server, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         self.server = server
         self.reader = reader
         self.writer = writer
-        self.ip = self.reader._transport.get_extra_info("peername")
+        self.ip: tuple = self.reader._transport.get_extra_info("peername")  # type: ignore
         self.dispacher = NetworkDispacher(self)
-        self.player = None
+        # self.player = None
 
         # Adding Core Packets To Network Dispacher
         Logger.info("Adding Core Packets", module="network")
@@ -91,7 +92,7 @@ class NetworkHandler:
 
 
 class NetworkDispacher:
-    def __init__(self, handler):
+    def __init__(self, handler: NetworkHandler):
         self.player = None
         self.handler = handler
         self.request = []  # Array of Request Packets
@@ -103,7 +104,12 @@ class NetworkDispacher:
 
     # NOTE: or call receivePacket
     # Used when exact packet is expected
-    async def readPacket(self, packet: corepacket.Packet, timeout=NET_TIMEOUT, checkId=True):
+    async def readPacket(
+        self,
+        packet: Type[corepacket.AbstractRequestPacket],
+        timeout=NET_TIMEOUT,
+        checkId=True,
+    ):
         # Get Packet Data
         Logger.verbose(f"Expected Packet {packet.ID} Size {packet.SIZE} from {self.handler.ip}")
         rawData = await asyncio.wait_for(
@@ -114,7 +120,7 @@ class NetworkDispacher:
 
         # Check If Packet ID is Valid
         if checkId and rawData[0] != packet.ID:
-            Logger.verbose(f"{self.ip} | Packet Invalid!")
+            Logger.verbose(f"{self.handler.ip} | Packet Invalid!")
             raise InvalidPacketError("Packet Invalid")
 
         # Deserialize Packet
@@ -122,7 +128,13 @@ class NetworkDispacher:
         packet.postDeserialization()
         return serializedData
 
-    async def sendPacket(self, packet, *args, timeout=NET_TIMEOUT, **kwargs):
+    async def sendPacket(
+        self,
+        packet: Type[corepacket.AbstractResponsePacket],
+        *args,
+        timeout=NET_TIMEOUT,
+        **kwargs
+    ):
         # Generate Packet
         rawData = packet.serialize(*args, **kwargs)
         packet.postSterilization()
@@ -133,11 +145,11 @@ class NetworkDispacher:
         await self.handler.writer.drain()
 
     # Initialize Regerster Packer Handler
-    def registerInit(self, module):
+    def registerInit(self, module: str):
         pass  # Unused for now
 
     # Regerster Packer Handler; Adds Network Protocols To Dispacher
-    def registerPacket(self, packet):
+    def registerPacket(self, packet: Type[corepacket.AbstractPacket]):
         # Check Packet Type
         if packet.DIRECTION == PacketDirections.REQUEST:
             # Append Packet To Request Packets

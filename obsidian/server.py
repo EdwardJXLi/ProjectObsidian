@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional
 # import threading
 
 import obsidian.packet as corepacket
@@ -9,14 +10,14 @@ from obsidian.network import NetworkHandler
 
 
 class Server(object):
-    def __init__(self, address, port, name, motd, colour=True):
-        self.address = address
-        self.port = port
-        self.name = name
-        self.motd = motd
-        self.server = None
-        self.packets = dict()
-        self.protocolVersion = 0x07
+    def __init__(self, address: str, port: int, name: str, motd: str, colour: bool = True):
+        self.address: str = address
+        self.port: int = port
+        self.name: str = name
+        self.motd: str = motd
+        self.server: Optional[asyncio.AbstractServer] = None
+        self.packets: dict = dict()
+        self.protocolVersion: int = 0x07
 
         # Init Colour
         if colour:
@@ -48,7 +49,7 @@ class Server(object):
         async with self.server as s:
             await s.serve_forever()
 
-    def _getConnHandler(self):
+    def _getConnHandler(self):  # -> Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
         # Callback function on new connection
         async def handler(reader, writer):
             c = NetworkHandler(self, reader, writer)
@@ -66,9 +67,6 @@ class Server(object):
 
     def registerPacket(self, packet):
         Logger.verbose(f"Registering Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-init")
-
-        Logger.verbose("Running Packet Init", module=packet.MODULE + "-init")
-        packet._init()
 
         Logger.verbose("Adding Packet To Dict", module=packet.MODULE + "-init")
         # Creating Temporary Variables
