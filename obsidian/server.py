@@ -1,12 +1,14 @@
 import asyncio
 from typing import Optional
+import importlib
 # import threading
 
 import obsidian.packet as corepacket
-from obsidian.packet import PacketDirections
+from obsidian.packet import PacketDirections, Packets
 from obsidian.constants import Colour, InitError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
+from obsidian.module import ModuleManager, Modules
 
 
 class Server(object):
@@ -30,6 +32,16 @@ class Server(object):
 
         Logger.info(f"Initializing Server {self.name}", module="init")
 
+        importlib.import_module('obsidian.modules.core')
+        #print(PlayerIdentification.doTheThing())
+        print(Packets.PlayerIdentification.doTheThing())
+        print(Packets.PlayerIdentification.MODULE.NAME)
+
+    async def run(self):
+        pass
+
+        '''
+
         Logger.info("Setting Up Packet Dictionary", module="init")
         self.packets["request"] = dict()
         self.packets["response"] = dict()
@@ -42,6 +54,7 @@ class Server(object):
         # When new connection occurs, run callback _getConnHandler
         Logger.info(f"Setting Up Server {self.name}", module="init")
         self.server = await asyncio.start_server(self._getConnHandler(), self.address, self.port)
+
 
     async def run(self):
         # Start Server
@@ -101,3 +114,4 @@ class Server(object):
                 packetDict[packetId] = packet
 
         return packetDict
+'''
