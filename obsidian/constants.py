@@ -16,6 +16,14 @@ class InitError(Exception):
     pass
 
 
+class UndefinedModule(Exception):
+    pass
+
+
+class UndefinedPacket(Exception):
+    pass
+
+
 # Network Errors
 class InvalidPacketError(Exception):
     pass

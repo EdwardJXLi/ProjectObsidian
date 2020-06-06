@@ -34,8 +34,11 @@ class Server(object):
 
         importlib.import_module('obsidian.modules.core')
         #print(PlayerIdentification.doTheThing())
-        print(Packets.PlayerIdentification.doTheThing())
-        print(Packets.PlayerIdentification.MODULE.NAME)
+        #print(Packets._packet_list[PacketDirections.REQUEST]["PlayerIdentification"].doTheThing())
+        print(Packets.Request.PlayerIdentification)
+        print(Packets.Request.PlayerIdentification.doTheThing())
+        print(Packets.Request.PlayerIdentification.SIZE)
+        print(Packets.Request.PlayerIdentification.MODULE.NAME)
 
     async def run(self):
         pass

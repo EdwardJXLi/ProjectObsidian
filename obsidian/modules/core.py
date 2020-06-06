@@ -5,25 +5,20 @@ from obsidian.packet import Packet, AbstractRequestPacket, AbstractResponsePacke
 @Module("Core")
 class CoreModule(AbstractModule):
     def __init__(self):
-        print("dbg")
-        print(self.__dict__.items())
         super().__init__()
 
     @Packet("PlayerIdentification", PacketDirections.REQUEST)
     class PlayerIdentificationPacket(AbstractRequestPacket):
         def __init__(self):
-            print("lol")
             super().__init__(
-                ID = 0x00,
-                FORMAT = "BB64s64sB",
-                CIRTICAL = True,
-                PLAYERLOOP = False,
-                MODULE = "Core",
-                SIZE = 0
+                ID=0x00,
+                FORMAT="BB64s64sB",
+                CIRTICAL=True,
+                PLAYERLOOP=False
             )
 
         def doTheThing(self):
-            print("yay!")
+            return "yay!"
 
 
 
