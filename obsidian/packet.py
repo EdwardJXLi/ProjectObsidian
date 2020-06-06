@@ -1,6 +1,8 @@
 import enum
 import struct
+from typing import Type, Optional
 from dataclasses import dataclass
+from obsidian.module import AbstractModule
 
 # from obsidian.network import *
 from obsidian.constants import InitError
@@ -11,6 +13,7 @@ from obsidian.log import Logger
 class PacketDirections(enum.Enum):
     REQUEST = 0
     RESPONSE = 1
+    NONE = -1
 
 
 # Packet Skeleton
@@ -19,6 +22,10 @@ class AbstractPacket:
     ID: int         # Packet Id
     FORMAT: str     # Packet Structure Format
     CIRTICAL: bool  # Packet Criticality. Dictates What Event Should Occur When Error
+    # Defined Later In _DirectionalPacketManager
+    DIRECTION: PacketDirections = PacketDirections.NONE
+    NAME: str = ""
+    MODULE: Optional[AbstractModule] = None
 
     @property
     def SIZE(self):
@@ -27,7 +34,7 @@ class AbstractPacket:
 
 @dataclass
 class AbstractRequestPacket(AbstractPacket):
-    PLAYERLOOP: bool             # Accept Packet During Player Loop
+    PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
 
@@ -36,7 +43,7 @@ class AbstractResponsePacket(AbstractPacket):
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
 
-def Packet(name, direction):
+def Packet(name: str, direction: PacketDirections):
     def internal(cls):
         cls.obsidian_packet = dict()
         cls.obsidian_packet["name"] = name
@@ -48,14 +55,14 @@ def Packet(name, direction):
 
 # Internal Directional Packet Manager
 class _DirectionalPacketManager():
-    def __init__(self, direction):
+    def __init__(self, direction: PacketDirections):
         # Creates List Of Packets That Has The Packet Name As Keys
         self._packet_list = {}
         self.direction = direction
 
     # Registration. Called by Packet Decorator
-    def register(self, name, packet, module):
-        obj = packet()  # Create Object
+    def register(self, name: str, packet: Type[AbstractRequestPacket], module):
+        obj = packet()  # type: ignore    # Create Object
         # Attach Name, Direction, and Module As Attribute
         obj.DIRECTION = self.direction
         obj.NAME = name
@@ -63,7 +70,7 @@ class _DirectionalPacketManager():
         self._packet_list[name] = obj
 
     # Handles _DirectionalPacketManager["item"]
-    def __getitem__(self, packet):
+    def __getitem__(self, packet: str):
         return self._packet_list[packet]
 
     # Handles _DirectionalPacketManager.item
@@ -81,7 +88,7 @@ class _PacketManager():
         self.Response = self.ResponseManager  # Alias for ResponseManager
 
     # Registration. Called by Packet Decorator
-    def register(self, direction, *args, **kwargs):
+    def register(self, direction: PacketDirections, *args, **kwargs):
         # Check Direction
         if(direction == PacketDirections.REQUEST):
             self.RequestManager.register(*args, **kwargs)
@@ -97,7 +104,7 @@ PacketManager = _PacketManager()
 Packets = PacketManager
 
 
-#Packet Utils
+# Packet Utils
 def unpackageString(data, encoding="ascii"):
     Logger.verbose(f"Unpacking String {data}")
     # Decode Data From Bytes To String

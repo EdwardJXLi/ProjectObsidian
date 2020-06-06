@@ -37,7 +37,7 @@ class Server(object):
         #print(Packets._packet_list[PacketDirections.REQUEST]["PlayerIdentification"].doTheThing())
         print(Packets.Request.PlayerIdentification)
         print(Packets.Request.PlayerIdentification.doTheThing())
-        print(Packets.Request.PlayerIdentification.SIZE)
+        print(Packets.Request.PlayerIdentification.FORMAT)
         print(Packets.Request.PlayerIdentification.MODULE.NAME)
 
     async def run(self):
