@@ -4,7 +4,7 @@ import importlib
 # import threading
 
 import obsidian.packet as corepacket
-from obsidian.packet import PacketDirections, Packets
+from obsidian.packet import PacketDirections, PacketManager, Packets
 from obsidian.constants import Colour, InitError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
@@ -33,6 +33,15 @@ class Server(object):
         Logger.info(f"Initializing Server {self.name}", module="init")
 
         ModuleManager.initModules()
+
+        Logger.info(f"{ModuleManager.numModules} Modules, {PacketManager.numPackets} Packets Initialized!", module="init")
+        # Print Pretty List of All Modules
+        Logger.info("Module List:", module="init")
+        print(ModuleManager.generateTable())
+        # Only print Packet List If Debug Enabled
+        if(Logger.DEBUG):
+            Logger.debug("Packets List:", module="init")
+            print(PacketManager.generateTable())
 
         #print(PlayerIdentification.doTheThing())
         #print(Packets._packet_list[PacketDirections.REQUEST]["PlayerIdentification"].doTheThing())

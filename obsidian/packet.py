@@ -6,6 +6,7 @@ from obsidian.module import AbstractModule
 
 # from obsidian.network import *
 from obsidian.constants import InitError
+from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 
 
@@ -59,7 +60,7 @@ def Packet(name: str, direction: PacketDirections, description: str = None):
 class _DirectionalPacketManager():
     def __init__(self, direction: PacketDirections):
         # Creates List Of Packets That Has The Packet Name As Keys
-        self._packet_list = {}
+        self._packet_list = dict()
         self.direction = direction
 
     # Registration. Called by Packet Decorator
@@ -100,6 +101,39 @@ class _PacketManager():
             self.ResponseManager.register(*args, **kwargs)
         else:
             raise InitError(f"Unknown Direction {direction} While Registering Packet")
+
+    # Generate a Pretty List of Packets
+    def generateTable(self):
+        table = PrettyTableLite()  # Create Pretty List Class
+
+        table.field_names = ["Direction", "Packet", "Id", "Module"]
+        # Loop Through All Request Modules And Add Value
+        for _, packet in self.RequestManager._packet_list.items():
+            table.add_row(["Request", packet.NAME, packet.ID, packet.MODULE.NAME])
+
+        return table
+
+    # Property Method To Get Number Of Packets
+    @property
+    def numPackets(self):
+        return len(self.RequestManager._packet_list) + len(self.ResponseManager._packet_list)
+
+
+
+# Packet Utils
+def unpackageString(data, encoding="ascii"):
+    Logger.verbose(f"Unpacking String {data}")
+    # Decode Data From Bytes To String
+    # Remove Excess Zeros
+    return data.decode(encoding).strip()
+
+
+def packageString(data, maxSize=64, encoding="ascii"):
+    Logger.verbose(f"Packing String {data}")
+    # Trim Text Down To maxSize
+    # Fill Blank Space With Spaces Using ljust
+    # Encode String Into Bytes Using Encoding
+    return bytes(data[:maxSize].ljust(maxSize), encoding)
 
 
 # Creates Global PacketManager As Singleton

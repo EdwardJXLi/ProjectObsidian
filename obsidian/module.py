@@ -4,6 +4,7 @@ import importlib
 import pkgutil
 
 from obsidian.constants import InitError, MODULESIMPORT, MODULESFOLDER
+from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 
 # Module Skeleton
@@ -19,7 +20,7 @@ class AbstractModule():
 class _ModuleManager():
     def __init__(self):
         # Creates List Of Modules That Has The Module Name As Keys
-        self._module_list = {}
+        self._module_list = dict()
         self._completed = False
 
     # Registration. Called by Module Decorator
@@ -66,6 +67,22 @@ class _ModuleManager():
             self._completed = True  # setting completed flag to prevent re-importation
         else:
             Logger.info("Modules Already Initialized; Skipping.", module="init")
+
+    # Generate a Pretty List of Modules
+    def generateTable(self):
+        table = PrettyTableLite()  # Create Pretty List Class
+
+        table.field_names = ["Module", "Version"]
+        # Loop Through All Modules And Add Value
+        for _, module in self._module_list.items():
+            table.add_row([module.NAME, module.VERSION])
+
+        return table
+
+    # Property Method To Get Number Of Modules
+    @property
+    def numModules(self):
+        return len(self._module_list)
 
     # Handles _ModuleManager["item"]
     def __getitem__(self, module: str):

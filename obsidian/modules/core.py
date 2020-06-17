@@ -1,12 +1,12 @@
 from obsidian.module import Module, AbstractModule
 from obsidian.packet import Packet, AbstractRequestPacket, AbstractResponsePacket, PacketDirections
-from obsidian.utils import unpackageString, packageString
+from obsidian.constants import __version__
 
 
 @Module(
     "Core",
     description="Central Module For All Services",
-    version="V.X.X.X"
+    version=__version__
 )
 class CoreModule(AbstractModule):
     def __init__(self):
