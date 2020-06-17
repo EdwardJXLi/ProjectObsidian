@@ -1,13 +1,17 @@
 import os
 
 # Server Version
-__version__ = 'DEV-X.X.X'
+__version__ = "DEV-X.X.X"
 
 # Networking Constants
 NET_TIMEOUT = 15
 
 # Console Colour
-CSI = '\u001b['  # ANSI Colour Header
+CSI = "\u001b["  # ANSI Colour Header
+
+# Module Constants
+MODULESFOLDER = os.path.dirname(os.path.abspath(__file__)) + "/modules/"
+MODULESIMPORT = "obsidian.modules."
 
 
 # Custom Errors

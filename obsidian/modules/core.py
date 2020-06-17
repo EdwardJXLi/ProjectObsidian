@@ -1,13 +1,22 @@
 from obsidian.module import Module, AbstractModule
 from obsidian.packet import Packet, AbstractRequestPacket, AbstractResponsePacket, PacketDirections
+from obsidian.utils import unpackageString, packageString
 
 
-@Module("Core")
+@Module(
+    "Core",
+    description="Central Module For All Services",
+    version="V.X.X.X"
+)
 class CoreModule(AbstractModule):
     def __init__(self):
         super().__init__()
 
-    @Packet("PlayerIdentification", PacketDirections.REQUEST)
+    @Packet(
+        "PlayerIdentification",
+        PacketDirections.REQUEST,
+        description="Handle First Packet Sent By Player"
+    )
     class PlayerIdentificationPacket(AbstractRequestPacket):
         def __init__(self):
             super().__init__(

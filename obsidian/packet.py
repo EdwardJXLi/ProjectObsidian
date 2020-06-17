@@ -25,6 +25,7 @@ class AbstractPacket:
     # Defined Later In _DirectionalPacketManager
     DIRECTION: PacketDirections = PacketDirections.NONE
     NAME: str = ""
+    DESCRIPTION: str = ""
     MODULE: Optional[AbstractModule] = None
 
     @property
@@ -43,11 +44,12 @@ class AbstractResponsePacket(AbstractPacket):
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
 
-def Packet(name: str, direction: PacketDirections):
+def Packet(name: str, direction: PacketDirections, description: str = None):
     def internal(cls):
         cls.obsidian_packet = dict()
         cls.obsidian_packet["name"] = name
         cls.obsidian_packet["direction"] = direction
+        cls.obsidian_packet["description"] = description
         cls.obsidian_packet["packet"] = cls
         return cls
     return internal
@@ -61,11 +63,13 @@ class _DirectionalPacketManager():
         self.direction = direction
 
     # Registration. Called by Packet Decorator
-    def register(self, name: str, packet: Type[AbstractRequestPacket], module):
+    def register(self, name: str, description: str, packet: Type[AbstractRequestPacket], module):
+        Logger.debug(f"Registering Packet {name} From Module {module.NAME}", module="init-" + module.NAME)
         obj = packet()  # type: ignore    # Create Object
         # Attach Name, Direction, and Module As Attribute
         obj.DIRECTION = self.direction
         obj.NAME = name
+        obj.DESCRIPTION = description
         obj.MODULE = module
         self._packet_list[name] = obj
 
@@ -98,23 +102,7 @@ class _PacketManager():
             raise InitError(f"Unknown Direction {direction} While Registering Packet")
 
 
-# Creates PacketManager As Singleton
+# Creates Global PacketManager As Singleton
 PacketManager = _PacketManager()
 # Adds Alias To PacketManager
 Packets = PacketManager
-
-
-# Packet Utils
-def unpackageString(data, encoding="ascii"):
-    Logger.verbose(f"Unpacking String {data}")
-    # Decode Data From Bytes To String
-    # Remove Excess Zeros
-    return data.decode(encoding).strip()
-
-
-def packageString(data, maxSize=64, encoding="ascii"):
-    Logger.verbose(f"Packing String {data}")
-    # Trim Text Down To maxSize
-    # Fill Blank Space With Spaces Using ljust
-    # Encode String Into Bytes Using Encoding
-    return bytes(data[:maxSize].ljust(maxSize), encoding)

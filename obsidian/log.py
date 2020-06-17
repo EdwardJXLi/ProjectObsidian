@@ -38,7 +38,7 @@ class Logger:
 
     @classmethod
     def fatal(cls, message, module="obsidian"):
-        cls.log(message, level="FATAL", module=module, colour=Colour.BLACK + Colour.BACK_RED, textColour=Colour.BLACK + Colour.BACK_RED)
+        cls.log(message, level="FATAL", module=module, colour=Colour.BLACK + Colour.BACK_RED, textColour=Colour.WHITE)
 
     @classmethod
     def debug(cls, message, module="obsidian"):

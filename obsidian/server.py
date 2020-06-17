@@ -32,7 +32,8 @@ class Server(object):
 
         Logger.info(f"Initializing Server {self.name}", module="init")
 
-        importlib.import_module('obsidian.modules.core')
+        ModuleManager.initModules()
+
         #print(PlayerIdentification.doTheThing())
         #print(Packets._packet_list[PacketDirections.REQUEST]["PlayerIdentification"].doTheThing())
         print(Packets.Request.PlayerIdentification)
