@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Type
 import importlib
+import pkgutil
 
 from obsidian.constants import InitError, MODULESIMPORT, MODULESFOLDER
-from obsidian.utils import getFiles
 from obsidian.log import Logger
 
 # Module Skeleton
@@ -49,7 +49,6 @@ class _ModuleManager():
     def initModules(self, blacklist=[], ensureCore=True):
         if not self._completed:
             Logger.info("Initializing Modules", module="init")
-            blacklist.append("__init__")  # Force Ignoring Init File
             if ensureCore:
                 try:
                     importlib.import_module(MODULESIMPORT + "core")
@@ -60,19 +59,10 @@ class _ModuleManager():
                     raise InitError("Core Module Not Found!")
                 except Exception as e:
                     raise e
-            # Get list of all modules
-            detectedModules = getFiles(MODULESFOLDER, extention=".py", removeExtention=True)
-            # print(detectedModules)
-            for module in detectedModules:
-                if module not in blacklist:
-                    try:
-                        importlib.import_module(MODULESIMPORT + module)
-                        Logger.info(f"Loaded Module {module}", module="init")
-                    except ModuleNotFoundError:
-                        Logger.fatal("Module Not Found!!! This should NOT happen!")
-                        raise InitError(f"Module {module} Not Found!")
-                    except Exception as e:
-                        raise e
+            for loader, module_name, _ in pkgutil.walk_packages([MODULESFOLDER]):
+                if module_name not in blacklist:
+                    _module = loader.find_module(module_name).load_module(module_name)
+                    globals()[module_name] = _module
             self._completed = True  # setting completed flag to prevent re-importation
         else:
             Logger.info("Modules Already Initialized; Skipping.", module="init")

@@ -21,6 +21,7 @@
         "asyncio",
         "motd",
         "nargs",
+        "pkgutil",
         "strftime",
         "struct"
     ],

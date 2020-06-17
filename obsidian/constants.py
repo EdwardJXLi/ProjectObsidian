@@ -3,6 +3,9 @@ import os
 # Server Version
 __version__ = "DEV-X.X.X"
 
+# Server Location
+SERVERPATH = os.path.dirname(os.path.abspath(__file__))
+
 # Networking Constants
 NET_TIMEOUT = 15
 
@@ -10,7 +13,7 @@ NET_TIMEOUT = 15
 CSI = "\u001b["  # ANSI Colour Header
 
 # Module Constants
-MODULESFOLDER = os.path.dirname(os.path.abspath(__file__)) + "/modules/"
+MODULESFOLDER = SERVERPATH + "/modules/"
 MODULESIMPORT = "obsidian.modules."
 
 
