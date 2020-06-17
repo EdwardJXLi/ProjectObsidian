@@ -73,6 +73,7 @@ class _ModuleManager():
                         raise InitError(f"Module {module} Not Found!")
                     except Exception as e:
                         raise e
+            self._completed = True  # setting completed flag to prevent re-importation
         else:
             Logger.info("Modules Already Initialized; Skipping.", module="init")
 
