@@ -1,14 +1,12 @@
 import asyncio
 from typing import Optional
-import importlib
 # import threading
 
-import obsidian.packet as corepacket
-from obsidian.packet import PacketDirections, PacketManager, Packets
+from obsidian.packet import PacketDirections, PacketManager
 from obsidian.constants import Colour, InitError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
-from obsidian.module import ModuleManager, Modules
+from obsidian.module import ModuleManager
 
 
 class Server(object):
@@ -43,31 +41,19 @@ class Server(object):
             Logger.debug("Packets List:", module="init")
             print(PacketManager.generateTable())
 
+        # Create Asyncio Socket Server
+        # When new connection occurs, run callback _getConnHandler
+        Logger.info(f"Setting Up Server {self.name}", module="init")
+        self.server = await asyncio.start_server(self._getConnHandler(), self.address, self.port)
+
+        '''
         #print(PlayerIdentification.doTheThing())
         #print(Packets._packet_list[PacketDirections.REQUEST]["PlayerIdentification"].doTheThing())
         print(Packets.Request.PlayerIdentification)
         print(Packets.Request.PlayerIdentification.doTheThing())
         print(Packets.Request.PlayerIdentification.FORMAT)
         print(Packets.Request.PlayerIdentification.MODULE.NAME)
-
-    async def run(self):
-        pass
-
         '''
-
-        Logger.info("Setting Up Packet Dictionary", module="init")
-        self.packets["request"] = dict()
-        self.packets["response"] = dict()
-
-        Logger.info("Initializing Core Module", module="init")
-        Logger.info("Registering Core Module", module="init")
-        corepacket.registerCoreModules(self)
-
-        # Create Asyncio Socket Server
-        # When new connection occurs, run callback _getConnHandler
-        Logger.info(f"Setting Up Server {self.name}", module="init")
-        self.server = await asyncio.start_server(self._getConnHandler(), self.address, self.port)
-
 
     async def run(self):
         # Start Server
@@ -127,4 +113,3 @@ class Server(object):
                 packetDict[packetId] = packet
 
         return packetDict
-'''

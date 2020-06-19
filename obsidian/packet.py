@@ -110,6 +110,9 @@ class _PacketManager():
         # Loop Through All Request Modules And Add Value
         for _, packet in self.RequestManager._packet_list.items():
             table.add_row(["Request", packet.NAME, packet.ID, packet.MODULE.NAME])
+        # Loop Through All Response Modules And Add Value
+        for _, packet in self.ResponseManager._packet_list.items():
+            table.add_row(["Response", packet.NAME, packet.ID, packet.MODULE.NAME])
 
         return table
 
@@ -117,7 +120,6 @@ class _PacketManager():
     @property
     def numPackets(self):
         return len(self.RequestManager._packet_list) + len(self.ResponseManager._packet_list)
-
 
 
 # Packet Utils
