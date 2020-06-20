@@ -1,14 +1,16 @@
 import asyncio
 from typing import Type
 
-import obsidian.packet as corepacket
-from obsidian.packet import PacketDirections
 from obsidian.log import Logger
+from obsidian.packet import (
+    Packets,
+    AbstractRequestPacket,
+    AbstractResponsePacket
+)
 from obsidian.constants import (
     NET_TIMEOUT,
     ClientError,
-    InvalidPacketError,
-    InitError,
+    InvalidPacketError
 )
 
 
@@ -20,10 +22,6 @@ class NetworkHandler:
         self.ip: tuple = self.reader._transport.get_extra_info("peername")  # type: ignore
         self.dispacher = NetworkDispacher(self)
         # self.player = None
-
-        # Adding Core Packets To Network Dispacher
-        Logger.info("Adding Core Packets", module="network")
-        corepacket.registerCoreModules(self.dispacher)
 
     async def initConnection(self):
         # Log Connection
@@ -60,7 +58,7 @@ class NetworkHandler:
     async def _handleInitialHandshake(self):
         # Wait For Player Identification Packet
         Logger.debug(f"{self.ip} | Waiting For Initial Player Information Packet")
-        protocolVersion, username, verificationKey = await self.dispacher.readPacket(corepacket.PlayerIdentificationPacket)
+        protocolVersion, username, verificationKey = await self.dispacher.readPacket(Packets.Request.PlayerIdentification)
 
         # Checking Client Protocol Version
         if protocolVersion > self.server.protocolVersion:
@@ -70,11 +68,11 @@ class NetworkHandler:
 
         # Send Server Information Packet
         Logger.debug(f"{self.ip} | Sending Initial Server Information Packet")
-        await self.dispacher.sendPacket(corepacket.ServerIdentificationPacket, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
+        await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
         # Send Level Initialize Packet
         Logger.debug(f"{self.ip} | Sending Level Initialize Packet")
-        await self.dispacher.sendPacket(corepacket.LevelInitializePacket)
+        await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
 
     '''
     async def handleConnection(self):
@@ -106,7 +104,7 @@ class NetworkDispacher:
     # Used when exact packet is expected
     async def readPacket(
         self,
-        packet: Type[corepacket.AbstractRequestPacket],
+        packet: Type[AbstractRequestPacket],
         timeout=NET_TIMEOUT,
         checkId=True,
     ):
@@ -124,20 +122,19 @@ class NetworkDispacher:
             raise InvalidPacketError("Packet Invalid")
 
         # Deserialize Packet
-        serializedData = packet.deserialize(rawData)
-        packet.postDeserialization()
+        # TODO: Fix type complaint!
+        serializedData = packet.deserialize(rawData)  # type: ignore
         return serializedData
 
     async def sendPacket(
         self,
-        packet: Type[corepacket.AbstractResponsePacket],
+        packet: Type[AbstractResponsePacket],
         *args,
         timeout=NET_TIMEOUT,
         **kwargs
     ):
         # Generate Packet
         rawData = packet.serialize(*args, **kwargs)
-        packet.postSterilization()
 
         # Send Packet
         Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.ip} | ID: {packet.ID} | SIZE: {packet.SIZE} | DATA: {rawData}")
@@ -147,20 +144,3 @@ class NetworkDispacher:
     # Initialize Regerster Packer Handler
     def registerInit(self, module: str):
         pass  # Unused for now
-
-    # Regerster Packer Handler; Adds Network Protocols To Dispacher
-    def registerPacket(self, packet: Type[corepacket.AbstractPacket]):
-        # Check Packet Type
-        if packet.DIRECTION == PacketDirections.REQUEST:
-            # Append Packet To Request Packets
-            self.request.append(packet)
-            Logger.verbose(f"Registered Request Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
-
-        elif packet.DIRECTION == PacketDirections.RESPONSE:
-            # Append Packet To Request Packets
-            self.response.append(packet)
-            Logger.verbose(f"Registered Response Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-network")
-
-        else:
-            # Packet Direction Is Unknown
-            raise InitError(f"Unknown Packet Direction {packet.DIRECTION} for Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}!")

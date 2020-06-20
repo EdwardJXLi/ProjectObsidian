@@ -39,10 +39,16 @@ class AbstractRequestPacket(AbstractPacket):
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
+    def deserialize(*args, **kwargs):
+        return None
+
 
 @dataclass
 class AbstractResponsePacket(AbstractPacket):
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
+
+    def serialize(*args, **kwargs):
+        return bytes()
 
 
 def Packet(name: str, direction: PacketDirections, description: str = None):

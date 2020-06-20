@@ -57,16 +57,17 @@ class _ModuleManager():
                 try:
                     importlib.import_module(MODULESIMPORT + "core")
                     blacklist.append("core")  # Adding core to whitelist to prevent re-importing
-                    Logger.info("Loaded (mandatory) Module core", module="module-init")
+                    Logger.debug("Loaded (mandatory) Module core", module="module-init")
                 except ModuleNotFoundError:
                     Logger.fatal("Core Module Not Found! (Failed ensureCore). Check if 'core.py' module is present in modules folder!")
                     raise InitError("Core Module Not Found!")
                 except Exception as e:
                     raise e
+            Logger.verbose(f"Scanning all potential modules in {MODULESFOLDER}", module="module-init")
             for loader, module_name, _ in pkgutil.walk_packages([MODULESFOLDER]):
                 Logger.verbose(f"Detected Module {module_name}", module="module-init")
                 if module_name not in blacklist:
-                    Logger.verbose(f"Module Not In Blacklist. Adding!", module="module-init")
+                    Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="module-init")
                     _module = loader.find_module(module_name).load_module(module_name)
                     globals()[module_name] = _module
             self._completed = True  # setting completed flag to prevent re-importation
