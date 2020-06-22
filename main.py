@@ -28,7 +28,7 @@ async def main():
     Logger.VERBOSE = args.verbose
 
     # Create and Init Main Server
-    server = Server(args.address, args.port, args.name, args.motd, colour=True)
+    server = Server(args.address, args.port, args.name, args.motd, colour=True, moduleBlacklist=["errortest"])
     await server.init()
     asyncio.create_task(server.run())
 
@@ -38,4 +38,7 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        Logger.fatal(f"Unhandled Server Exception - {type(e).__name__}: {e}", "main", printTb=False)

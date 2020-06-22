@@ -38,6 +38,10 @@ class ClientError(Exception):
     pass
 
 
+class FatalError(Exception):
+    pass
+
+
 # Colour handler
 class Colour():
     BLACK = ""

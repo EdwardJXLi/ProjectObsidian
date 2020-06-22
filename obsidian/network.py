@@ -9,7 +9,8 @@ from obsidian.packet import (
 )
 from obsidian.constants import (
     NET_TIMEOUT,
-    ClientError
+    ClientError,
+    FatalError
 )
 
 
@@ -20,39 +21,43 @@ class NetworkHandler:
         self.writer = writer
         self.ip: tuple = self.reader._transport.get_extra_info("peername")  # type: ignore
         self.dispacher = NetworkDispacher(self)
+        self.isConnected = True  # Connected Flag So Outbound Queue Buffer Can Stop
         # self.player = None
 
-    async def initConnection(self):
+    async def initConnection(self, *args, **kwargs):
+        try:
+            return await self._initConnection(*args, **kwargs)
+        except ClientError as e:
+            Logger.warn(f"Client Error, Disconnecting Ip {self.ip} - {type(e).__name__}: {e}", module="network")
+            await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, "Disconnected: " + str(e))
+            self.writer.close()
+        except BrokenPipeError:
+            Logger.warn(f"Ip {self.ip} Broken Pipe. Closing Connection.", module="network")
+            self.isConnected = False
+            self.writer.close()
+        except ConnectionResetError:
+            Logger.warn(f"Ip {self.ip} Connection Reset. Closing Connection.", module="network")
+            self.isConnected = False
+            self.writer.close()
+        except FatalError:
+            # Pass Down Fatal Error To Base Server
+            raise FatalError()
+        except Exception as e:
+            Logger.error(f"Error While Handling Connection {self.ip} - {type(e).__name__}: {e}", "network")
+            self.isConnected = False
+            try:
+                await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, "Disconnected: Internal Server Error")
+                self.writer.close()
+            except Exception:
+                Logger.warn("Internal Server Error Disconnect Packet Failed To Send!!!!!")
+
+    async def _initConnection(self):
         # Log Connection
         Logger.info(f"New Connection From {self.ip}", module="network")
 
         # Start the server <-> client login protocol
         Logger.debug(f"{self.ip} | Starting Client <-> Server Handshake")
         await self._handleInitialHandshake()
-
-        '''
-        except asyncio.TimeoutError as te:
-            pass
-        except asyncio.IncompleteReadError as ire:
-            pass
-        except InvalidPacketError as ipe:
-            pass
-        except Exception as e:
-            pass
-        '''
-
-        # finally:
-        #     pass
-
-        '''
-        data = await reader.readuntil(b'\n')
-        message = data.decode()
-        addr = writer.get_extra_info('peername')
-        print(f"Received {message!r} from {addr!r}")
-        print(f"Send: {message!r}")
-        writer.write(data)
-        await writer.drain()
-        '''
 
     async def _handleInitialHandshake(self):
         # Wait For Player Identification Packet
@@ -61,9 +66,9 @@ class NetworkHandler:
 
         # Checking Client Protocol Version
         if protocolVersion > self.server.protocolVersion:
-            raise ClientError("Server Outdated")
+            raise ClientError(f"Server Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion:})")
         elif protocolVersion < self.server.protocolVersion:
-            raise ClientError("Client Outdated")
+            raise ClientError(f"Client Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion:})")
 
         # Send Server Information Packet
         Logger.debug(f"{self.ip} | Sending Initial Server Information Packet")
@@ -72,6 +77,10 @@ class NetworkHandler:
         # Send Level Initialize Packet
         Logger.debug(f"{self.ip} | Sending Level Initialize Packet")
         await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
+
+        while True:
+            await self.dispacher.sendPacket(Packets.Response.Ping)
+            await asyncio.sleep(1)
 
     '''
     async def handleConnection(self):
@@ -107,23 +116,28 @@ class NetworkDispacher:
         timeout=NET_TIMEOUT,
         checkId=True,
     ):
-        # Get Packet Data
-        Logger.verbose(f"Expected Packet {packet.ID} Size {packet.SIZE} from {self.handler.ip}")
-        rawData = await asyncio.wait_for(
-            self.handler.reader.readexactly(
-                packet.SIZE
-            ), timeout)
-        Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}")
+        try:
+            # Get Packet Data
+            Logger.verbose(f"Expected Packet {packet.ID} Size {packet.SIZE} from {self.handler.ip}", module="network")
+            rawData = await asyncio.wait_for(
+                self.handler.reader.readexactly(
+                    packet.SIZE
+                ), timeout)
+            Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}", module="network")
 
-        # Check If Packet ID is Valid
-        if checkId and rawData[0] != packet.ID:
-            Logger.verbose(f"{self.handler.ip} | Packet Invalid!")
-            raise ClientError("Invalid Packet")
+            # Check If Packet ID is Valid
+            if checkId and rawData[0] != packet.ID:
+                Logger.verbose(f"{self.handler.ip} | Packet Invalid!", module="network")
+                raise ClientError(f"Invalid Packet {rawData[0]}")
 
-        # Deserialize Packet
-        # TODO: Fix type complaint!
-        serializedData = packet.deserialize(rawData)  # type: ignore
-        return serializedData
+            # Deserialize Packet
+            # TODO: Fix type complaint!
+            serializedData = packet.deserialize(rawData)  # type: ignore
+            return serializedData
+        except asyncio.TimeoutError:
+            raise ClientError(f"Did Not Receive Packet {packet.ID} In Time!")
+        except Exception as e:
+            raise e  # Pass Down Exception To Lower Layer
 
     async def sendPacket(
         self,
@@ -132,13 +146,19 @@ class NetworkDispacher:
         timeout=NET_TIMEOUT,
         **kwargs
     ):
-        # Generate Packet
-        rawData = packet.serialize(*args, **kwargs)
+        try:
+            # Generate Packet
+            rawData = packet.serialize(*args, **kwargs)
 
-        # Send Packet
-        Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.ip} | ID: {packet.ID} | SIZE: {packet.SIZE} | DATA: {rawData}")
-        self.handler.writer.write(rawData)
-        await self.handler.writer.drain()
+            # Send Packet
+            Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.ip} | ID: {packet.ID} | SIZE: {packet.SIZE} | DATA: {rawData}", module="network")
+            if self.handler.isConnected:
+                self.handler.writer.write(rawData)
+                await self.handler.writer.drain()
+            else:
+                Logger.debug(f"Packet {packet.NAME} Skipped Due To Closed Connection!")
+        except Exception as e:
+            raise e  # Pass Down Exception To Lower Layer
 
     # Initialize Regerster Packer Handler
     def registerInit(self, module: str):

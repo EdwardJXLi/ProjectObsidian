@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from obsidian.module import AbstractModule
 
 # from obsidian.network import *
-from obsidian.constants import InitError
+from obsidian.constants import InitError, FatalError
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 
@@ -110,17 +110,23 @@ class _PacketManager():
 
     # Generate a Pretty List of Packets
     def generateTable(self):
-        table = PrettyTableLite()  # Create Pretty List Class
+        try:
+            table = PrettyTableLite()  # Create Pretty List Class
 
-        table.field_names = ["Direction", "Packet", "Id", "Module"]
-        # Loop Through All Request Modules And Add Value
-        for _, packet in self.RequestManager._packet_list.items():
-            table.add_row(["Request", packet.NAME, packet.ID, packet.MODULE.NAME])
-        # Loop Through All Response Modules And Add Value
-        for _, packet in self.ResponseManager._packet_list.items():
-            table.add_row(["Response", packet.NAME, packet.ID, packet.MODULE.NAME])
+            table.field_names = ["Direction", "Packet", "Id", "Module"]
+            # Loop Through All Request Modules And Add Value
+            for _, packet in self.RequestManager._packet_list.items():
+                table.add_row(["Request", packet.NAME, packet.ID, packet.MODULE.NAME])
+            # Loop Through All Response Modules And Add Value
+            for _, packet in self.ResponseManager._packet_list.items():
+                table.add_row(["Response", packet.NAME, packet.ID, packet.MODULE.NAME])
 
-        return table
+            return table
+        except FatalError:
+            # Pass Down Fatal Error To Base Server
+            raise FatalError()
+        except Exception as e:
+            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", "server")
 
     # Property Method To Get Number Of Packets
     @property

@@ -3,7 +3,7 @@ from typing import Type
 import importlib
 import pkgutil
 
-from obsidian.constants import InitError, MODULESIMPORT, MODULESFOLDER
+from obsidian.constants import InitError, FatalError, MODULESIMPORT, MODULESFOLDER
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 
@@ -62,29 +62,45 @@ class _ModuleManager():
                 except ModuleNotFoundError:
                     Logger.fatal("Core Module Not Found! (Failed ensureCore). Check if 'core.py' module is present in modules folder!")
                     raise InitError("Core Module Not Found!")
+                except FatalError:
+                    # Pass Down Fatal Error To Base Server
+                    raise FatalError()
                 except Exception as e:
-                    raise e
+                    Logger.fatal(f"Error While Loading Module core - {type(e).__name__}: {e}", "module-init")
+                    raise FatalError()
             Logger.verbose(f"Scanning all potential modules in {MODULESFOLDER}", module="module-init")
             for loader, module_name, _ in pkgutil.walk_packages([MODULESFOLDER]):
                 Logger.verbose(f"Detected Module {module_name}", module="module-init")
                 if module_name not in blacklist:
-                    Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="module-init")
-                    _module = loader.find_module(module_name).load_module(module_name)
-                    globals()[module_name] = _module
+                    try:
+                        Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="module-init")
+                        _module = loader.find_module(module_name).load_module(module_name)
+                        globals()[module_name] = _module
+                    except FatalError:
+                        # Pass Down Fatal Error To Base Server
+                        raise FatalError()
+                    except Exception as e:
+                        Logger.error(f"Error While Loading Module {module_name} - {type(e).__name__}: {e}", "module-init")
             self._completed = True  # setting completed flag to prevent re-importation
         else:
             Logger.info("Modules Already Initialized; Skipping.", module="module-init")
 
     # Generate a Pretty List of Modules
     def generateTable(self):
-        table = PrettyTableLite()  # Create Pretty List Class
+        try:
+            table = PrettyTableLite()  # Create Pretty List Class
 
-        table.field_names = ["Module", "Version"]
-        # Loop Through All Modules And Add Value
-        for _, module in self._module_list.items():
-            table.add_row([module.NAME, module.VERSION])
+            table.field_names = ["Module", "Version"]
+            # Loop Through All Modules And Add Value
+            for _, module in self._module_list.items():
+                table.add_row([module.NAME, module.VERSION])
 
-        return table
+            return table
+        except FatalError:
+            # Pass Down Fatal Error To Base Server
+            raise FatalError()
+        except Exception as e:
+            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", "server")
 
     # Property Method To Get Number Of Modules
     @property

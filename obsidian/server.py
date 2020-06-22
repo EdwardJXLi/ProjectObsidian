@@ -1,36 +1,53 @@
 import asyncio
-from typing import Optional
+from typing import Optional, List
 # import threading
 
 from obsidian.packet import PacketManager
-from obsidian.constants import Colour
+from obsidian.constants import Colour, ServerError, FatalError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
 
 
 class Server(object):
-    def __init__(self, address: str, port: int, name: str, motd: str, colour: bool = True):
+    def __init__(
+        self,
+        address: str,
+        port: int,
+        name: str,
+        motd: str,
+        colour: bool = True,
+        moduleBlacklist: List[str] = []
+    ):
         self.address: str = address
         self.port: int = port
         self.name: str = name
         self.motd: str = motd
         self.server: Optional[asyncio.AbstractServer] = None
-        self.packets: dict = dict()
+        self.moduleBlacklist: List[str] = moduleBlacklist
         self.protocolVersion: int = 0x07
+        self.initialized = False
 
         # Init Colour
         if colour:
             Colour.init()
 
-    async def init(self):
+    async def init(self, *args, **kwargs):
+        try:
+            return await self._init(*args, **kwargs)
+        except FatalError as e:
+            Logger.fatal(f"Fatal Error Detected. Stopping Server - {type(e).__name__}: {e}", "main", printTb=False)
+        except Exception as e:
+            Logger.fatal(f"Error While Initializing Server - {type(e).__name__}: {e}", "server")
+
+    async def _init(self):
         # Testing If Debug Is Enabled
         Logger.debug("Debug Is Enabled", module="init")
         Logger.verbose("Verbose Is Enabled", module="init")
 
         Logger.info(f"Initializing Server {self.name}", module="init")
 
-        ModuleManager.initModules()
+        ModuleManager.initModules(blacklist=self.moduleBlacklist)
 
         Logger.info(f"{ModuleManager.numModules} Modules, {PacketManager.numPackets} Packets Initialized!", module="init")
         # Print Pretty List of All Modules
@@ -46,6 +63,8 @@ class Server(object):
         Logger.info(f"Setting Up Server {self.name}", module="init")
         self.server = await asyncio.start_server(self._getConnHandler(), self.address, self.port)
 
+        self.initialized = True
+
         '''
         #print(PlayerIdentification.doTheThing())
         #print(Packets._packet_list[PacketDirections.REQUEST]["PlayerIdentification"].doTheThing())
@@ -56,10 +75,18 @@ class Server(object):
         '''
 
     async def run(self):
-        # Start Server
-        Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}")
-        async with self.server as s:
-            await s.serve_forever()
+        try:
+            if(self.initialized):
+                # Start Server
+                Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}")
+                async with self.server as s:
+                    await s.serve_forever()
+            else:
+                raise ServerError("Server Did Not Initialize. This May Be Because server.init() Was Never Called Or An Error Occurred While Initializing")
+        except ServerError as e:
+            Logger.fatal(f"Error While Starting Server - {type(e).__name__}: {e}", "server", printTb=False)
+        except Exception as e:
+            Logger.fatal(f"Error While Starting Server - {type(e).__name__}: {e}", "server")
 
     def _getConnHandler(self):  # -> Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
         # Callback function on new connection

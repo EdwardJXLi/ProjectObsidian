@@ -1,4 +1,5 @@
 import time
+import traceback
 
 from obsidian.constants import Colour
 
@@ -26,26 +27,66 @@ class Logger:
 
     @classmethod
     def info(cls, message, module="obsidian"):
-        cls.log(message, level="log", module=module, colour=Colour.GREEN, textColour=Colour.WHITE)
+        cls.log(
+            str(message),
+            level="log",
+            module=module,
+            colour=Colour.GREEN,
+            textColour=Colour.WHITE
+        )
 
     @classmethod
     def warn(cls, message, module="obsidian"):
-        cls.log(message, level="warn", module=module, colour=Colour.YELLOW, textColour=Colour.WHITE)
+        cls.log(
+            str(message),
+            level="warn",
+            module=module,
+            colour=Colour.YELLOW,
+            textColour=Colour.WHITE
+        )
 
     @classmethod
-    def error(cls, message, module="obsidian"):
-        cls.log(message, level="log", module=module, colour=Colour.RED, textColour=Colour.WHITE)
+    def error(cls, message, module="obsidian", printTb=True):
+        if cls.DEBUG and printTb:
+            traceback.print_exc()
+        cls.log(
+            str(message) + (" | Enable Debug For More Information" if not cls.DEBUG else ""),
+            level="log",
+            module=module,
+            colour=Colour.RED,
+            textColour=Colour.WHITE
+        )
 
     @classmethod
-    def fatal(cls, message, module="obsidian"):
-        cls.log(message, level="FATAL", module=module, colour=Colour.BLACK + Colour.BACK_RED, textColour=Colour.WHITE)
+    def fatal(cls, message, module="obsidian", printTb=True):
+        if cls.DEBUG and printTb:
+            traceback.print_exc()
+        cls.log(
+            str(message) + (" | Enable Debug For More Information" if not cls.DEBUG else ""),
+            level="FATAL",
+            module=module,
+            colour=Colour.BLACK + Colour.BACK_RED,
+            textColour=Colour.WHITE
+        )
 
     @classmethod
     def debug(cls, message, module="obsidian"):
         if cls.DEBUG:
-            cls.log(message, level="debug", module=module, colour=Colour.CYAN, textColour=Colour.WHITE)
+            cls.log(
+                str(message),
+                level="debug",
+                module=module,
+                colour=Colour.CYAN,
+                textColour=Colour.WHITE
+            )
 
     @classmethod
     def verbose(cls, message, module="obsidian"):
         if cls.DEBUG and cls.VERBOSE:
-            cls.log(message, level="verbose", module=module, colour=Colour.MAGENTA, textColour=Colour.WHITE)
+            cls.log(
+                str(message),
+                level="verbose",
+                module=module,
+                colour=Colour.MAGENTA,
+                textColour=Colour.WHITE
+            )

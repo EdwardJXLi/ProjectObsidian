@@ -108,3 +108,22 @@ class CoreModule(AbstractModule):
             # (Byte) Packet ID
             msg = struct.pack(self.FORMAT, self.ID)
             return msg
+
+    @Packet(
+        "DisconnectPlayer",
+        PacketDirections.RESPONSE,
+        description="Packet Sent To Client To Force Disconnect"
+    )
+    class DisconnectPlayerPacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x0e,
+                FORMAT="B64s",
+                CIRTICAL=True
+            )
+
+        def serialize(self, reason):
+            # <Level Initialize Packet>
+            # (Byte) Packet ID
+            msg = struct.pack(self.FORMAT, self.ID, packageString(reason))
+            return msg
