@@ -1,5 +1,5 @@
 """
-Copyright (C) TODO
+Copyright (C) RadioactiveHydra (Edward)
 """
 
 # import sys

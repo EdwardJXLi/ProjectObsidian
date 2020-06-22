@@ -2,8 +2,8 @@ import asyncio
 from typing import Optional
 # import threading
 
-from obsidian.packet import PacketDirections, PacketManager
-from obsidian.constants import Colour, InitError
+from obsidian.packet import PacketManager
+from obsidian.constants import Colour
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
@@ -17,7 +17,7 @@ class Server(object):
         self.motd: str = motd
         self.server: Optional[asyncio.AbstractServer] = None
         self.packets: dict = dict()
-        self.protocolVersion: int = 0x07
+        self.protocolVersion: int = 0x06
 
         # Init Colour
         if colour:
@@ -68,48 +68,3 @@ class Server(object):
             await c.initConnection()
 
         return handler
-
-    # Initialize Regerster Packer Handler
-    def registerInit(self, module):
-        Logger.debug(f"Initialize {module} Module Registration", module=module + "-init")
-
-        # Add Module To Packet dict
-        self.packets["request"][module] = dict()
-        self.packets["response"][module] = dict()
-
-    def registerPacket(self, packet):
-        Logger.verbose(f"Registering Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}", module=packet.MODULE + "-init")
-
-        Logger.verbose("Adding Packet To Dict", module=packet.MODULE + "-init")
-        # Creating Temporary Variables
-        # Direction Key Word
-        directionKW = None
-        # Check Packet Type
-        if packet.DIRECTION == PacketDirections.REQUEST:
-            directionKW = "request"
-        elif packet.DIRECTION == PacketDirections.RESPONSE:
-            directionKW = "response"
-        else:
-            raise InitError(f"Unknown Packet Direction {packet.DIRECTION} for Packet {packet.__name__} (ID: {packet.ID}) From Module {packet.MODULE}!")
-
-        # Check if Packet Id has Already been used.
-        packetList = self._getPackets(directionKW).keys()
-        if packet.ID in packetList:
-            raise InitError(f"Packet ID {packet.ID} From Packet {packet.__name__} (Module {packet.MODULE}) Has Already Been Registered!")
-
-        # Check if Packet Module Has Been Registered
-        if packet.MODULE not in self.packets[directionKW].keys():
-            raise InitError(f"Packet Module '{packet.MODULE}' From Packet {packet.__name__} (ID: {packet.ID}) Has Not Been Registered. Current Registered Modules: {list(self.packets[directionKW].keys())}")
-
-        # Adding Packet To Packet Dict
-        self.packets[directionKW][packet.MODULE][packet.ID] = packet
-
-    # Returns Dictionary With All Directional Packets, With IDs As Keys
-    def _getPackets(self, direction):
-        packetDict = dict()
-        # Loop Through All Modules and Packets
-        for module, packets in self.packets[direction].items():
-            for packetId, packet in packets.items():
-                packetDict[packetId] = packet
-
-        return packetDict

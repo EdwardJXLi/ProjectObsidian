@@ -7,6 +7,7 @@ from obsidian.constants import InitError, MODULESIMPORT, MODULESFOLDER
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 
+
 # Module Skeleton
 @dataclass
 class AbstractModule():

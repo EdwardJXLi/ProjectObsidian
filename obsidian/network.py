@@ -9,8 +9,7 @@ from obsidian.packet import (
 )
 from obsidian.constants import (
     NET_TIMEOUT,
-    ClientError,
-    InvalidPacketError
+    ClientError
 )
 
 
@@ -119,7 +118,7 @@ class NetworkDispacher:
         # Check If Packet ID is Valid
         if checkId and rawData[0] != packet.ID:
             Logger.verbose(f"{self.handler.ip} | Packet Invalid!")
-            raise InvalidPacketError("Packet Invalid")
+            raise ClientError("Invalid Packet")
 
         # Deserialize Packet
         # TODO: Fix type complaint!

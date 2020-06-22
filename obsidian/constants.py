@@ -18,13 +18,19 @@ MODULESIMPORT = "obsidian.modules."
 
 
 # Custom Errors
-# Init Errors
 class InitError(Exception):
     pass
 
 
-# Network Errors
-class InvalidPacketError(Exception):
+class ModuleError(Exception):
+    pass
+
+
+class ServerError(Exception):
+    pass
+
+
+class NetworkError(Exception):
     pass
 
 
@@ -32,6 +38,7 @@ class ClientError(Exception):
     pass
 
 
+# Colour handler
 class Colour():
     BLACK = ""
     RED = ""
