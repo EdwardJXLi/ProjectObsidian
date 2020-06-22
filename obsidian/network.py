@@ -119,7 +119,7 @@ class NetworkDispacher:
         except asyncio.TimeoutError:
             raise ClientError(f"Did Not Receive Packet {packet.ID} In Time!")
         except Exception as e:
-            if(packet.CRITICAL):
+            if packet.CRITICAL:
                 raise e  # Pass Down Exception To Lower Layer
             else:
                 # TODO: Remove Hacky Type Ignore
@@ -148,7 +148,7 @@ class NetworkDispacher:
         except ConnectionResetError as e:
             raise e  # Pass Down Exception To Lower Layer
         except Exception as e:
-            if(packet.CRITICAL):
+            if packet.CRITICAL:
                 raise e  # Pass Down Exception To Lower Layer
             else:
                 # TODO: Remove Hacky Type Ignore

@@ -113,9 +113,9 @@ class _PacketManager():
     # Registration. Called by Packet Decorator
     def register(self, direction: PacketDirections, *args, **kwargs):
         # Check Direction
-        if(direction == PacketDirections.REQUEST):
+        if direction is PacketDirections.REQUEST:
             self.RequestManager.register(*args, **kwargs)
-        elif(direction == PacketDirections.RESPONSE):
+        elif direction is PacketDirections.RESPONSE:
             self.ResponseManager.register(*args, **kwargs)
         else:
             raise InitError(f"Unknown Direction {direction} While Registering Packet")

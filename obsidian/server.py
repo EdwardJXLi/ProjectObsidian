@@ -54,7 +54,7 @@ class Server(object):
         Logger.info("Module List:", module="init")
         print(ModuleManager.generateTable())
         # Only print Packet List If Debug Enabled
-        if(Logger.DEBUG):
+        if Logger.DEBUG:
             Logger.debug("Packets List:", module="init")
             print(PacketManager.generateTable())
 
@@ -76,7 +76,7 @@ class Server(object):
 
     async def run(self):
         try:
-            if(self.initialized):
+            if self.initialized:
                 # Start Server
                 Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}")
                 async with self.server as s:
