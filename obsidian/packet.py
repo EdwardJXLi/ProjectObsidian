@@ -2,7 +2,7 @@ import enum
 import struct
 from typing import Type, Optional
 from dataclasses import dataclass
-from obsidian.module import AbstractModule
+from obsidian.module import AbstractModule, ModuleManager
 
 # from obsidian.network import *
 from obsidian.constants import InitError, InitRegisterError, FatalError
@@ -128,6 +128,7 @@ class _PacketManager():
             table.field_names = ["Direction", "Packet", "Id", "Module"]
             # Loop Through All Request Modules And Add Value
             for _, packet in self.RequestManager._packet_list.items():
+                # Adding Row To Table
                 table.add_row(["Request", packet.NAME, packet.ID, packet.MODULE.NAME])
             # Loop Through All Response Modules And Add Value
             for _, packet in self.ResponseManager._packet_list.items():

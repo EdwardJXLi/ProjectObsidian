@@ -58,6 +58,11 @@ class Server(object):
             Logger.debug("Packets List:", module="init")
             print(PacketManager.generateTable())
 
+        # Printing Error If Error Occurs During Init
+        if len(ModuleManager._errorList) != 0:
+            Logger.warn("Some Module Files Failed To Load!", module="init")
+            Logger.warn(f"Failed: {ModuleManager._errorList}", module="init")
+
         # Create Asyncio Socket Server
         # When new connection occurs, run callback _getConnHandler
         Logger.info(f"Setting Up Server {self.name}", module="init")

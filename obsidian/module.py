@@ -30,6 +30,7 @@ class _ModuleManager():
         # Creates List Of Modules That Has The Module Name As Keys
         self._module_list = dict()
         self._completed = False
+        self._errorList = []  # Logging Which Modules Encountered Errors While Loading Up
 
     # Registration. Called by Module Decorator
     def register(self, name: str, description: str, version: str, module: Type[AbstractModule]):
@@ -76,6 +77,7 @@ class _ModuleManager():
                     # Pass Down Fatal Error To Base Server
                     raise FatalError()
                 except Exception as e:
+                    self._errorList.append("core")  # Module Loaded WITH Errors
                     Logger.fatal(f"Error While Loading Module core - {type(e).__name__}: {e}", "module-init")
                     raise FatalError()
             Logger.verbose(f"Scanning all potential modules in {MODULESFOLDER}", module="module-init")
@@ -90,6 +92,7 @@ class _ModuleManager():
                         # Pass Down Fatal Error To Base Server
                         raise FatalError()
                     except Exception as e:
+                        self._errorList.append(module_name)  # Module Loaded WITH Errors
                         if type(e) is InitRegisterError:
                             printTb = False
                         else:
@@ -107,8 +110,12 @@ class _ModuleManager():
             table.field_names = ["Module", "Version"]
             # Loop Through All Modules And Add Value
             for _, module in self._module_list.items():
-                table.add_row([module.NAME, module.VERSION])
+                # Adding Special Characters And Handlers
+                if module.VERSION is None:
+                    module.VERSION = "Unknown"
 
+                # Add Row To Table
+                table.add_row([module.NAME, module.VERSION])
             return table
         except FatalError:
             # Pass Down Fatal Error To Base Server
