@@ -31,7 +31,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 ID=0x00,
                 FORMAT="BB64s64sB",
-                CIRTICAL=True,
+                CRITICAL=True,
                 PLAYERLOOP=False
             )
 
@@ -58,7 +58,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 ID=0x00,
                 FORMAT="BB64s64sB",
-                CIRTICAL=True
+                CRITICAL=True
             )
 
         def serialize(self, protocolVersion, name, motd, userType):
@@ -81,7 +81,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 ID=0x01,
                 FORMAT="B",
-                CIRTICAL=False
+                CRITICAL=False
             )
 
         def serialize(self):
@@ -100,7 +100,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 ID=0x02,
                 FORMAT="B",
-                CIRTICAL=True
+                CRITICAL=True
             )
 
         def serialize(self):
@@ -119,7 +119,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 ID=0x0e,
                 FORMAT="B64s",
-                CIRTICAL=True
+                CRITICAL=True
             )
 
         def serialize(self, reason):

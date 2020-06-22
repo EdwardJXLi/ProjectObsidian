@@ -22,12 +22,16 @@ class PacketDirections(enum.Enum):
 class AbstractPacket:
     ID: int         # Packet Id
     FORMAT: str     # Packet Structure Format
-    CIRTICAL: bool  # Packet Criticality. Dictates What Event Should Occur When Error
+    CRITICAL: bool  # Packet Criticality. Dictates What Event Should Occur When Error
     # Defined Later In _DirectionalPacketManager
     DIRECTION: PacketDirections = PacketDirections.NONE
     NAME: str = ""
     DESCRIPTION: str = ""
     MODULE: Optional[AbstractModule] = None
+
+    # Error Handler. Called If Critical If False And An Error Occurs
+    def onError(self, error):
+        Logger.error(f"Packet {self.NAME} Received Error {error}")
 
     @property
     def SIZE(self):
