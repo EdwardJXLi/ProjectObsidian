@@ -38,6 +38,10 @@ class NetworkHandler:
             Logger.warn(f"Ip {self.ip} Connection Reset. Closing Connection.", module="network")
             self.isConnected = False
             self.writer.close()
+        except asyncio.IncompleteReadError:
+            Logger.warn(f"Ip {self.ip} Incomplete Read Error. Closing Connection.", module="network")
+            self.isConnected = False
+            self.writer.close()
         except Exception as e:
             Logger.error(f"Error While Handling Connection {self.ip} - {type(e).__name__}: {e}", "network")
             self.isConnected = False
@@ -143,12 +147,13 @@ class NetworkDispacher:
                 await self.handler.writer.drain()
             else:
                 Logger.debug(f"Packet {packet.NAME} Skipped Due To Closed Connection!")
-        except BrokenPipeError as e:
-            raise e  # Pass Down Exception To Lower Layer
-        except ConnectionResetError as e:
-            raise e  # Pass Down Exception To Lower Layer
         except Exception as e:
-            if packet.CRITICAL:
+            if packet.CRITICAL or type(e) in [
+                # Making Sure These Errors Always Gets Raised (Ignore onError)
+                BrokenPipeError,
+                ConnectionResetError,
+                asyncio.IncompleteReadError
+            ]:
                 raise e  # Pass Down Exception To Lower Layer
             else:
                 # TODO: Remove Hacky Type Ignore

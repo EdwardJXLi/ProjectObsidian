@@ -15,7 +15,7 @@ async def main():
     # Initiate Argument Parser
     parser = argparse.ArgumentParser(description="TODO")
     # parser.add_argument('--TEMPLATE', type=int, nargs='?', help='TEMPLATE', default=TEMPLATE)
-    parser.add_argument('-a', "--address", type=str, nargs='?', help="The Address The Minecraft Server Would Bind To.", default="localhost")
+    parser.add_argument('-a', "--address", type=str, nargs='?', help="The Address The Minecraft Server Would Bind To.", default="0.0.0.0")
     parser.add_argument('-p', "--port", type=int, nargs='?', help="The Port The Minecraft Server Would Bind To.", default=25565)
     parser.add_argument('-n', "--name", type=str, nargs='?', help="The Name Of The Minecraft Server", default="Minecraft Server")
     parser.add_argument('-m', "--motd", type=str, nargs='?', help="The MOTD Of The Minecraft Server", default="Python Server Implementation")
