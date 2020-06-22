@@ -9,8 +9,7 @@ from obsidian.packet import (
 )
 from obsidian.constants import (
     NET_TIMEOUT,
-    ClientError,
-    FatalError
+    ClientError
 )
 
 
@@ -39,9 +38,6 @@ class NetworkHandler:
             Logger.warn(f"Ip {self.ip} Connection Reset. Closing Connection.", module="network")
             self.isConnected = False
             self.writer.close()
-        except FatalError:
-            # Pass Down Fatal Error To Base Server
-            raise FatalError()
         except Exception as e:
             Logger.error(f"Error While Handling Connection {self.ip} - {type(e).__name__}: {e}", "network")
             self.isConnected = False
@@ -127,7 +123,7 @@ class NetworkDispacher:
                 raise e  # Pass Down Exception To Lower Layer
             else:
                 # TODO: Remove Hacky Type Ignore
-                packet.onError(e)  # type: ignore
+                return packet.onError(e)  # type: ignore
 
     async def sendPacket(
         self,
@@ -156,7 +152,7 @@ class NetworkDispacher:
                 raise e  # Pass Down Exception To Lower Layer
             else:
                 # TODO: Remove Hacky Type Ignore
-                packet.onError(e)  # type: ignore
+                return packet.onError(e)  # type: ignore
 
     # Initialize Regerster Packer Handler
     def registerInit(self, module: str):
