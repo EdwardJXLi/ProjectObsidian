@@ -1,5 +1,5 @@
 """
-Copyright (C) RadioactiveHydra (Edward)
+Copyright (C) RadioactiveHydra (Edward) 2020
 """
 
 # import sys

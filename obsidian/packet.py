@@ -2,7 +2,7 @@ import enum
 import struct
 from typing import Type, Optional
 from dataclasses import dataclass
-from obsidian.module import AbstractModule, ModuleManager
+from obsidian.module import AbstractModule
 
 # from obsidian.network import *
 from obsidian.constants import InitError, InitRegisterError, FatalError

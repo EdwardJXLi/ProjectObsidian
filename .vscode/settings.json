@@ -18,6 +18,7 @@
     "python.linting.flake8CategorySeverity.W": "Information",
     "cSpell.words": [
         "Deserialization",
+        "Hacky",
         "asyncio",
         "motd",
         "nargs",

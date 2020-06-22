@@ -1,6 +1,5 @@
 import asyncio
 from typing import Optional, List
-# import threading
 
 from obsidian.packet import PacketManager
 from obsidian.constants import Colour, ServerError, FatalError
@@ -69,15 +68,6 @@ class Server(object):
         self.server = await asyncio.start_server(self._getConnHandler(), self.address, self.port)
 
         self.initialized = True
-
-        '''
-        #print(PlayerIdentification.doTheThing())
-        #print(Packets._packet_list[PacketDirections.REQUEST]["PlayerIdentification"].doTheThing())
-        print(Packets.Request.PlayerIdentification)
-        print(Packets.Request.PlayerIdentification.doTheThing())
-        print(Packets.Request.PlayerIdentification.FORMAT)
-        print(Packets.Request.PlayerIdentification.MODULE.NAME)
-        '''
 
     async def run(self):
         try:
