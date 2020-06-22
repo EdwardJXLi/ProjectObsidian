@@ -3,7 +3,7 @@ from typing import Type
 import importlib
 import pkgutil
 
-from obsidian.constants import InitError, FatalError, MODULESIMPORT, MODULESFOLDER
+from obsidian.constants import InitError, InitRegisterError, FatalError, MODULESIMPORT, MODULESFOLDER
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 
@@ -15,6 +15,13 @@ class AbstractModule():
     NAME: str = ""
     DESCRIPTION: str = ""
     VERSION: str = ""
+
+
+# Module Registration Decorator
+def Module(name: str, description: str = None, version: str = None):
+    def internal(cls):
+        ModuleManager.register(name, description, version, cls)
+    return internal
 
 
 # Internal Module Manager Singleton
@@ -29,6 +36,9 @@ class _ModuleManager():
         Logger.debug(f"Registering Module {name}", module="init-" + name)
         from obsidian.packet import PacketManager  # Prevent Circular Looping :/
         obj = module()  # Create Object
+        # Checking If Module Is Already In Modules List
+        if name in self._module_list.keys():
+            raise InitRegisterError(f"Module {name} Has Already Been Registered!")
         # Attach Values As Attribute
         obj.NAME = name
         obj.DESCRIPTION = description
@@ -80,7 +90,11 @@ class _ModuleManager():
                         # Pass Down Fatal Error To Base Server
                         raise FatalError()
                     except Exception as e:
-                        Logger.error(f"Error While Loading Module {module_name} - {type(e).__name__}: {e}", "module-init")
+                        if type(e) is InitRegisterError:
+                            printTb = False
+                        else:
+                            printTb = True
+                        Logger.error(f"Error While Loading Module {module_name} - {type(e).__name__}: {e}", "module-init", printTb=printTb)
             self._completed = True  # setting completed flag to prevent re-importation
         else:
             Logger.info("Modules Already Initialized; Skipping.", module="module-init")
@@ -114,13 +128,6 @@ class _ModuleManager():
     # Handles _ModuleManager.item
     def __getattr__(self, *args, **kwargs):
         return self.__getitem__(*args, **kwargs)
-
-
-# Module Registration Decorator
-def Module(name: str, description: str = None, version: str = None):
-    def internal(cls):
-        ModuleManager.register(name, description, version, cls)
-    return internal
 
 
 # Creates Global ModuleManager As Singleton

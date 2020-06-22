@@ -28,7 +28,7 @@ async def main():
     Logger.VERBOSE = args.verbose
 
     # Create and Init Main Server
-    server = Server(args.address, args.port, args.name, args.motd, colour=True, moduleBlacklist=["errortest"])
+    server = Server(args.address, args.port, args.name, args.motd, colour=True, moduleBlacklist=[""])
     await server.init()
     asyncio.create_task(server.run())
 

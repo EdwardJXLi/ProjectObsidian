@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from obsidian.module import AbstractModule
 
 # from obsidian.network import *
-from obsidian.constants import InitError, FatalError
+from obsidian.constants import InitError, InitRegisterError, FatalError
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 
@@ -77,12 +77,20 @@ class _DirectionalPacketManager():
     def register(self, name: str, description: str, packet: Type[AbstractRequestPacket], module):
         Logger.debug(f"Registering Packet {name} From Module {module.NAME}", module="init-" + module.NAME)
         obj = packet()  # type: ignore    # Create Object
+        # Checking If Packet And PacketId Is Already In Packets List
+        if name in self._packet_list.keys():
+            raise InitRegisterError(f"Packet {name} Has Already Been Registered!")
+        if obj.ID in self.getAllPacketIds():
+            raise InitRegisterError(f"Packet Id {obj.ID} Has Already Been Registered!")
         # Attach Name, Direction, and Module As Attribute
         obj.DIRECTION = self.direction
         obj.NAME = name
         obj.DESCRIPTION = description
         obj.MODULE = module
         self._packet_list[name] = obj
+
+    def getAllPacketIds(self):
+        return [obj.ID for obj in self._packet_list.values()]
 
     # Handles _DirectionalPacketManager["item"]
     def __getitem__(self, packet: str):

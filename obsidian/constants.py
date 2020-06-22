@@ -22,6 +22,10 @@ class InitError(Exception):
     pass
 
 
+class InitRegisterError(Exception):
+    pass
+
+
 class ModuleError(Exception):
     pass
 

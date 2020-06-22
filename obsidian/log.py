@@ -50,7 +50,7 @@ class Logger:
         if cls.DEBUG and printTb:
             traceback.print_exc()
         cls.log(
-            str(message) + (" | Enable Debug For More Information" if not cls.DEBUG else ""),
+            str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
             level="log",
             module=module,
             colour=Colour.RED,
@@ -62,7 +62,7 @@ class Logger:
         if cls.DEBUG and printTb:
             traceback.print_exc()
         cls.log(
-            str(message) + (" | Enable Debug For More Information" if not cls.DEBUG else ""),
+            str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
             level="FATAL",
             module=module,
             colour=Colour.BLACK + Colour.BACK_RED,
