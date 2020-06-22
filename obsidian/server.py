@@ -17,7 +17,7 @@ class Server(object):
         self.motd: str = motd
         self.server: Optional[asyncio.AbstractServer] = None
         self.packets: dict = dict()
-        self.protocolVersion: int = 0x06
+        self.protocolVersion: int = 0x07
 
         # Init Colour
         if colour:
