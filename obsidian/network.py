@@ -9,6 +9,8 @@ from obsidian.packet import (
 )
 from obsidian.constants import (
     NET_TIMEOUT,
+    CRITICAL_REQUEST_ERRORS,
+    CRITICAL_RESPONSE_ERRORS,
     ClientError
 )
 
@@ -123,7 +125,7 @@ class NetworkDispacher:
         except asyncio.TimeoutError:
             raise ClientError(f"Did Not Receive Packet {packet.ID} In Time!")
         except Exception as e:
-            if packet.CRITICAL:
+            if packet.CRITICAL or type(e) in CRITICAL_REQUEST_ERRORS:
                 raise e  # Pass Down Exception To Lower Layer
             else:
                 # TODO: Remove Hacky Type Ignore
@@ -148,12 +150,8 @@ class NetworkDispacher:
             else:
                 Logger.debug(f"Packet {packet.NAME} Skipped Due To Closed Connection!")
         except Exception as e:
-            if packet.CRITICAL or type(e) in [
-                # Making Sure These Errors Always Gets Raised (Ignore onError)
-                BrokenPipeError,
-                ConnectionResetError,
-                asyncio.IncompleteReadError
-            ]:
+            # Making Sure These Errors Always Gets Raised (Ignore onError)
+            if packet.CRITICAL or type(e) in CRITICAL_RESPONSE_ERRORS:
                 raise e  # Pass Down Exception To Lower Layer
             else:
                 # TODO: Remove Hacky Type Ignore

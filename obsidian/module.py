@@ -73,9 +73,9 @@ class _ModuleManager():
                 except ModuleNotFoundError:
                     Logger.fatal("Core Module Not Found! (Failed ensureCore). Check if 'core.py' module is present in modules folder!")
                     raise InitError("Core Module Not Found!")
-                except FatalError:
+                except FatalError as e:
                     # Pass Down Fatal Error To Base Server
-                    raise FatalError()
+                    raise e
                 except Exception as e:
                     self._errorList.append("core")  # Module Loaded WITH Errors
                     Logger.fatal(f"Error While Loading Module core - {type(e).__name__}: {e}", "module-init")
@@ -88,9 +88,9 @@ class _ModuleManager():
                         Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="module-init")
                         _module = loader.find_module(module_name).load_module(module_name)
                         globals()[module_name] = _module
-                    except FatalError:
+                    except FatalError as e:
                         # Pass Down Fatal Error To Base Server
-                        raise FatalError()
+                        raise e
                     except Exception as e:
                         self._errorList.append(module_name)  # Module Loaded WITH Errors
                         if type(e) is InitRegisterError:
@@ -117,9 +117,9 @@ class _ModuleManager():
                 # Add Row To Table
                 table.add_row([module.NAME, module.VERSION])
             return table
-        except FatalError:
+        except FatalError as e:
             # Pass Down Fatal Error To Base Server
-            raise FatalError()
+            raise e
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", "server")
 

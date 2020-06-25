@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 # Server Version
 __version__ = "DEV-X.X.X"
@@ -8,6 +9,15 @@ SERVERPATH = os.path.dirname(os.path.abspath(__file__))
 
 # Networking Constants
 NET_TIMEOUT = 15
+CRITICAL_REQUEST_ERRORS = [
+    # These errors will bypass the packet.onError() handler and get forced raised
+]
+CRITICAL_RESPONSE_ERRORS = [
+    # These errors will bypass the packet.onError() handler and get forced raised
+    BrokenPipeError,
+    ConnectionResetError,
+    asyncio.IncompleteReadError
+]
 
 # Console Colour
 CSI = "\u001b["  # ANSI Colour Header
