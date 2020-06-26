@@ -8,7 +8,7 @@ from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
 
 
-class Server(object):
+class Server:
     def __init__(
         self,
         address: str,

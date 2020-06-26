@@ -3,14 +3,20 @@ from typing import Type
 import importlib
 import pkgutil
 
-from obsidian.constants import InitError, InitRegisterError, FatalError, MODULESIMPORT, MODULESFOLDER
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
+from obsidian.constants import (
+    InitError,
+    InitRegisterError,
+    FatalError,
+    MODULESIMPORT,
+    MODULESFOLDER
+)
 
 
 # Module Skeleton
 @dataclass
-class AbstractModule():
+class AbstractModule:
     # Defined Later In _ModuleManager
     NAME: str = ""
     DESCRIPTION: str = ""
@@ -25,7 +31,7 @@ def Module(name: str, description: str = None, version: str = None):
 
 
 # Internal Module Manager Singleton
-class _ModuleManager():
+class _ModuleManager:
     def __init__(self):
         # Creates List Of Modules That Has The Module Name As Keys
         self._module_list = dict()

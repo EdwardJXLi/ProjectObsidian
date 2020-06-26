@@ -67,7 +67,7 @@ def Packet(name: str, direction: PacketDirections, description: str = None):
 
 
 # Internal Directional Packet Manager
-class _DirectionalPacketManager():
+class _DirectionalPacketManager:
     def __init__(self, direction: PacketDirections):
         # Creates List Of Packets That Has The Packet Name As Keys
         self._packet_list = dict()
@@ -102,7 +102,7 @@ class _DirectionalPacketManager():
 
 
 # Internal Packet Manager Singleton
-class _PacketManager():
+class _PacketManager:
     def __init__(self):
         # Creates List Of Packets That Has The Packet Name As Keys
         self.RequestManager = _DirectionalPacketManager(PacketDirections.REQUEST)
