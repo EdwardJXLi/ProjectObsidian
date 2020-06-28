@@ -40,6 +40,10 @@ class ModuleError(Exception):
     pass
 
 
+class WorldGenerationError(Exception):
+    pass
+
+
 class ServerError(Exception):
     pass
 

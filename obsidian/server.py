@@ -6,6 +6,8 @@ from obsidian.constants import Colour, ServerError, FatalError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
+from obsidian.world import WorldManager, WorldGeneratorManager
+from obsidian.player import PlayerManager
 
 
 class Server:
@@ -15,15 +17,23 @@ class Server:
         port: int,
         name: str,
         motd: str,
+        worldSaveLocation: Optional[str] = None,
+        defaultWorld: str = "default",
         colour: bool = True,
-        moduleBlacklist: List[str] = []
+        moduleBlacklist: List[str] = [],
+        worldBlacklist: List[str] = []
     ):
         self.address: str = address
         self.port: int = port
         self.name: str = name
         self.motd: str = motd
         self.server: Optional[asyncio.AbstractServer] = None
+        self.worldSaveLocation: Optional[str] = worldSaveLocation
+        self.defaultWorld: str = defaultWorld
+        self.worldManager: Optional[WorldManager] = None
+        self.playerManager: Optional[PlayerManager] = None
         self.moduleBlacklist: List[str] = moduleBlacklist
+        self.worldBlacklist: List[str] = worldBlacklist
         self.protocolVersion: int = 0x07
         self.initialized = False
 
@@ -44,6 +54,7 @@ class Server:
         # Testing If Debug Is Enabled
         Logger.debug("Debug Is Enabled", module="init")
         Logger.verbose("Verbose Is Enabled", module="init")
+        Logger.info("Use '-d' and/or '-v' To Enable Debug Mode Or Verbose Mode", module="init")
 
         Logger.info(f"Initializing Server {self.name}", module="init")
 
@@ -57,11 +68,22 @@ class Server:
         if Logger.DEBUG:
             Logger.debug("Packets List:", module="init")
             print(PacketManager.generateTable())
+            Logger.debug("World Generators List:", module="init")
+            print(WorldGeneratorManager.generateTable())
 
         # Printing Error If Error Occurs During Init
         if len(ModuleManager._errorList) != 0:
             Logger.warn("Some Module Files Failed To Load!", module="init")
             Logger.warn(f"Failed: {ModuleManager._errorList}", module="init")
+
+        # Initialize WorldManager
+        Logger.info("Initializing World Manager", module="init")
+        self.worldManager = WorldManager(self, blacklist=self.worldBlacklist)
+        self.worldManager.loadWorlds()
+
+        # Initialize PlayerManager
+        Logger.info("Initializing Player Manager", module="init")
+        self.playerManager = PlayerManager()
 
         # Create Asyncio Socket Server
         # When new connection occurs, run callback _getConnHandler

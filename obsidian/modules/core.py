@@ -8,6 +8,7 @@ from obsidian.packet import (
     unpackageString,
     packageString
 )
+from obsidian.world import AbstraceWorldGenerator, WorldGenerator
 
 import struct
 
@@ -127,3 +128,20 @@ class CoreModule(AbstractModule):
             # (Byte) Packet ID
             msg = struct.pack(self.FORMAT, self.ID, packageString(reason))
             return msg
+
+    @WorldGenerator(
+        "Flat",
+        description="Default World Generator. Just Flat.",
+        version="V1.0.0"
+    )
+    class FlatWorldGenerator(AbstraceWorldGenerator):
+        def __init__(self):
+            super().__init__()
+
+        def generateWorld(self, sizeX, sizeY, sizeZ):
+            mapData = bytearray(sizeX * sizeY * sizeZ)
+            for x in range(256):
+                for y in range(64):
+                    for z in range(256):
+                        mapData[x + 256 * (z + 256 * y)] = 0 if y > 32 else (2 if y == 32 else 3)
+            return mapData
