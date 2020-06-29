@@ -121,17 +121,20 @@ class WorldManager:
 
     def generateWorld(self, sizeX, sizeY, sizeZ, generator: AbstractWorldGenerator, *args, **kwargs):
         Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
+        # Call Generate World Function From Generator
         generatedWorld = generator.generateWorld(sizeX, sizeY, sizeZ, *args, **kwargs)
-        size = sizeX * sizeY * sizeZ
+
         # Verify World Data Size
-        if len(generatedWorld) == size:
-            return generatedWorld
-        else:
-            raise WorldGenerationError(f"Expected World Size {size} While Generating Word. Got {len(generatedWorld)}")
+        expectedSize = sizeX * sizeY * sizeZ
+        if len(generatedWorld) != expectedSize:
+            raise WorldGenerationError(f"Expected World Size {expectedSize} While Generating World. Got {len(generatedWorld)}")
+
+        # Return Generated World Bytesarray
+        return generatedWorld
 
     def loadWorlds(self):
         if self.persistant:
-            # TODO: World Loading
+            # TODO: File World Loading
             pass
         else:
             Logger.debug(f"Creating Temporary World {self.server.defaultWorld}", module="init-world")
@@ -140,12 +143,23 @@ class WorldManager:
                 self.server.defaultWorld,  # Pass In World Name
                 WorldGenerators.Flat,  # Pass In World Generator
                 32, 32, 32,  # Passing World X, Y, Z
-                self.generateWorld(32, 32, 32, WorldGenerators.Flat, grassHeight=16)  # Generating World Data
+                self.generateWorld(32, 32, 32, WorldGenerators.Flat, grassHeight=16),  # Generating World Data
+                persistant=self.persistant  # Pass In Persistant Flag
             )
 
 
 class World:
-    def __init__(self, worldManager: WorldManager, generator: AbstractWorldGenerator, name: str, sizeX: int, sizeY: int, sizeZ: int, mapArray: bytearray):
+    def __init__(
+        self,
+        worldManager: WorldManager,
+        generator: AbstractWorldGenerator,
+        name: str,
+        sizeX: int,
+        sizeY: int,
+        sizeZ: int,
+        mapArray: bytearray,
+        persistant: bool = True
+    ):
         # Y is the height
         self.worldManager = worldManager
         self.name = name
@@ -154,6 +168,7 @@ class World:
         self.sizeY = sizeY
         self.sizeZ = sizeZ
         self.mapArray = mapArray
+        self.persistant = persistant
 
     def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
         # If Gzip Compression Level Is -1, Use Default!
@@ -176,7 +191,7 @@ class World:
         buf = io.BytesIO()
         # Check If Size Header Is Needed
         header = bytes()
-        if includeSizeHeader is True:
+        if includeSizeHeader:
             Logger.debug("Packing Size Header", module="world")
             header = header + bytes(struct.pack('!I', len(self.mapArray)))
         # Gzip World

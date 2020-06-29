@@ -198,6 +198,7 @@ class CoreModule(AbstractModule):
         def __init__(self):
             super().__init__()
 
+        # Default World Generator (Creates Flat Map Of Grass And Dirt)
         def generateWorld(self, sizeX, sizeY, sizeZ, grassHeight=32):
             mapData = bytearray(sizeX * sizeY * sizeZ)
             for x in range(sizeX):

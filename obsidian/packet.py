@@ -19,14 +19,14 @@ class PacketDirections(enum.Enum):
 
 # Packet Utils
 def unpackageString(data, encoding="ascii"):
-    Logger.verbose(f"Unpacking String {data}")
+    Logger.verbose(f"Unpacking String {data}", module="packet")
     # Decode Data From Bytes To String
     # Remove Excess Zeros
     return data.decode(encoding).strip()
 
 
 def packageString(data, maxSize=64, encoding="ascii"):
-    Logger.verbose(f"Packing String {data}")
+    Logger.verbose(f"Packing String {data}", module="packet")
     # Trim Text Down To maxSize
     # Fill Blank Space With Spaces Using ljust
     # Encode String Into Bytes Using Encoding

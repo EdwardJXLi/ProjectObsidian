@@ -78,14 +78,14 @@ class NetworkHandler:
 
         # Sending World Data Of Default World
         Logger.debug(f"{self.ip} | Preparing To Send World {self.server.defaultWorld}", module="network")
-        await self._sendWorldData(self.server.defaultWorld)
+        await self.sendWorldData(self.server.defaultWorld)
 
         # Setting Up Ping Loop To Check Connection
         while True:
             await self.dispacher.sendPacket(Packets.Response.Ping)
             await asyncio.sleep(1)
 
-    async def _sendWorldData(self, world):
+    async def sendWorldData(self, world):
         # Send Level Initialize Packet
         Logger.debug(f"{self.ip} | Sending Level Initialize Packet", module="network")
         await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
@@ -100,7 +100,7 @@ class NetworkHandler:
         # Looping Through All Chunks And Sending Data
         for chunkCount, chunk in enumerate(chunks):
             # Sending Chunk Data
-            Logger.debug(f"{self.ip} | Sending Chunk Data {chunkCount} of {len(chunks)}", module="network")
+            Logger.debug(f"{self.ip} | Sending Chunk Data {chunkCount + 1} of {len(chunks)}", module="network")
             await self.dispacher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
 
         # Send Level Finalize Packet
