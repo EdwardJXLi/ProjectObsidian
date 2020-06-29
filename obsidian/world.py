@@ -30,7 +30,7 @@ def WorldGenerator(name: str, description: str = None, version: str = None):
 
 # World Generator Skeleton
 @dataclass
-class AbstraceWorldGenerator:
+class AbstractWorldGenerator:
     NAME: str = ""
     DESCRIPTION: str = ""
     VERSION: str = ""
@@ -47,7 +47,7 @@ class _WorldGeneratorManager:
         self._generator_list = dict()
 
     # Registration. Called by World Generator Decorator
-    def register(self, name: str, description: str, version: str, generator: Type[AbstraceWorldGenerator], module):
+    def register(self, name: str, description: str, version: str, generator: Type[AbstractWorldGenerator], module):
         Logger.debug(f"Registering World Generator {name} From Module {module.NAME}", module="init-" + module.NAME)
         obj = generator()  # type: ignore    # Create Object
         # Checking If WorldGenerator Name Is Already In Generators List
@@ -119,7 +119,7 @@ class WorldManager:
             Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
             self.persistant = False
 
-    def generateWorld(self, sizeX, sizeY, sizeZ, generator: AbstraceWorldGenerator, *args, **kwargs):
+    def generateWorld(self, sizeX, sizeY, sizeZ, generator: AbstractWorldGenerator, *args, **kwargs):
         Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
         generatedWorld = generator.generateWorld(sizeX, sizeY, sizeZ, *args, **kwargs)
         size = sizeX * sizeY * sizeZ
@@ -145,7 +145,7 @@ class WorldManager:
 
 
 class World:
-    def __init__(self, worldManager: WorldManager, generator: AbstraceWorldGenerator, name: str, sizeX: int, sizeY: int, sizeZ: int, mapArray: bytearray):
+    def __init__(self, worldManager: WorldManager, generator: AbstractWorldGenerator, name: str, sizeX: int, sizeY: int, sizeZ: int, mapArray: bytearray):
         # Y is the height
         self.worldManager = worldManager
         self.name = name

@@ -8,7 +8,7 @@ from obsidian.packet import (
     unpackageString,
     packageString
 )
-from obsidian.world import AbstraceWorldGenerator, WorldGenerator
+from obsidian.world import AbstractWorldGenerator, WorldGenerator
 
 import struct
 
@@ -194,7 +194,7 @@ class CoreModule(AbstractModule):
         description="Default World Generator. Just Flat.",
         version="V1.0.0"
     )
-    class FlatWorldGenerator(AbstraceWorldGenerator):
+    class FlatWorldGenerator(AbstractWorldGenerator):
         def __init__(self):
             super().__init__()
 
