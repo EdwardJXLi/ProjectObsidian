@@ -17,10 +17,12 @@
     "python.linting.flake8CategorySeverity.E": "Warning",
     "python.linting.flake8CategorySeverity.W": "Information",
     "cSpell.words": [
+        "Bhhh",
         "Deserialization",
         "Hacky",
         "asynced",
         "asyncio",
+        "gzipped",
         "motd",
         "nargs",
         "pkgutil",

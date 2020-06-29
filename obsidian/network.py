@@ -58,12 +58,12 @@ class NetworkHandler:
         Logger.info(f"New Connection From {self.ip}", module="network")
 
         # Start the server <-> client login protocol
-        Logger.debug(f"{self.ip} | Starting Client <-> Server Handshake")
+        Logger.debug(f"{self.ip} | Starting Client <-> Server Handshake", module="network")
         await self._handleInitialHandshake()
 
     async def _handleInitialHandshake(self):
         # Wait For Player Identification Packet
-        Logger.debug(f"{self.ip} | Waiting For Initial Player Information Packet")
+        Logger.debug(f"{self.ip} | Waiting For Initial Player Information Packet", module="network")
         protocolVersion, username, verificationKey = await self.dispacher.readPacket(Packets.Request.PlayerIdentification)
 
         # Checking Client Protocol Version
@@ -73,16 +73,44 @@ class NetworkHandler:
             raise ClientError(f"Client Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion:})")
 
         # Send Server Information Packet
-        Logger.debug(f"{self.ip} | Sending Initial Server Information Packet")
+        Logger.debug(f"{self.ip} | Sending Initial Server Information Packet", module="network")
         await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
-        # Send Level Initialize Packet
-        Logger.debug(f"{self.ip} | Sending Level Initialize Packet")
-        await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
+        # Sending World Data Of Default World
+        Logger.debug(f"{self.ip} | Preparing To Send World {self.server.defaultWorld}", module="network")
+        await self._sendWorldData(self.server.defaultWorld)
 
+        # Setting Up Ping Loop To Check Connection
         while True:
             await self.dispacher.sendPacket(Packets.Response.Ping)
             await asyncio.sleep(1)
+
+    async def _sendWorldData(self, world):
+        # Send Level Initialize Packet
+        Logger.debug(f"{self.ip} | Sending Level Initialize Packet", module="network")
+        await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
+
+        # Preparing To Send Map
+        Logger.debug(f"{self.ip} | Preparing To Send Map", module="network")
+        worldObj = self.server.worldManager.worlds[world]  # Get World Class Object
+        worldGzip = worldObj.gzipMap(includeSizeHeader=True)  # Generate GZIP
+        # World Data Needs To Be Sent In Chunks Of 1024 Characters
+        chunks = [worldGzip[i: i + 1024] for i in range(0, len(worldGzip), 1024)]
+
+        # Looping Through All Chunks And Sending Data
+        for chunkCount, chunk in enumerate(chunks):
+            # Sending Chunk Data
+            Logger.debug(f"{self.ip} | Sending Chunk Data {chunkCount} of {len(chunks)}", module="network")
+            await self.dispacher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
+
+        # Send Level Finalize Packet
+        Logger.debug(f"{self.ip} | Sending Level Finalize Packet", module="network")
+        await self.dispacher.sendPacket(
+            Packets.Response.LevelFinalize,
+            worldObj.sizeX,
+            worldObj.sizeY,
+            worldObj.sizeZ
+        )
 
 
 class NetworkDispacher:

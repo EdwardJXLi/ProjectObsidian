@@ -23,7 +23,7 @@ class CoreModule(AbstractModule):
         super().__init__()
 
     #
-    # CORE PACKETS
+    # REQUEST PACKETS
     #
 
     @Packet(
@@ -52,6 +52,10 @@ class CoreModule(AbstractModule):
             username = unpackageString(username)
             verificationKey = unpackageString(verificationKey)
             return protocolVersion, username, verificationKey
+
+    #
+    # RESPONSE PACKETS
+    #
 
     @Packet(
         "ServerIdentification",
@@ -112,6 +116,54 @@ class CoreModule(AbstractModule):
             # <Level Initialize Packet>
             # (Byte) Packet ID
             msg = struct.pack(self.FORMAT, self.ID)
+            return msg
+
+    @Packet(
+        "LevelDataChunk",
+        PacketDirections.RESPONSE,
+        description="Packet Containing Chunk Of Gzipped Map"
+    )
+    class LevelDataChunkPacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x03,
+                FORMAT="!Bh1024sB",
+                CRITICAL=True
+            )
+
+        def serialize(self, chunk, percentComplete=0):
+            # <Level Data Chunk Packet>
+            # (Byte) Packet ID
+            # (Short) Chunk Size
+            # (1024ByteArray) Chunk Data
+            # (Byte) Percent Complete
+
+            # Chunks have to be padded by 0x00s
+            formattedChunk = bytes(chunk).ljust(1024, b'\0')
+
+            msg = struct.pack(self.FORMAT, self.ID, len(chunk), formattedChunk, percentComplete)
+            return msg
+
+    @Packet(
+        "LevelFinalize",
+        PacketDirections.RESPONSE,
+        description="Packet To Finish World Data Transfer"
+    )
+    class LevelFinalizePacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x04,
+                FORMAT="!Bhhh",
+                CRITICAL=True
+            )
+
+        def serialize(self, sizeX, sizeY, sizeZ):
+            # <Level Initialize Packet>
+            # (Byte) Packet ID
+            # (Short) X Size
+            # (Short) Y Size
+            # (Short) Z Size
+            msg = struct.pack(self.FORMAT, self.ID, sizeX, sizeY, sizeZ)
             return msg
 
     @Packet(

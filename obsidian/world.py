@@ -1,61 +1,13 @@
 from typing import List, Type, Optional
 from dataclasses import dataclass
+import io
+import gzip
+import struct
 
 from obsidian.log import Logger
 from obsidian.module import AbstractModule
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.constants import InitRegisterError, WorldGenerationError, FatalError
-
-
-#
-# WORLD MANAGER
-#
-
-
-class WorldManager:
-    def __init__(self, server, blacklist: List[str] = []):
-        self.server = server
-        self.worlds = dict()
-        self.blacklist = blacklist
-        self.persistant = True
-
-        # If World Location Was Not Given, Disable Persistance
-        # (Don't Save / Load)
-        if self.server.worldSaveLocation is None:
-            Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
-            self.persistant = False
-
-    def generateWorld(self, sizeX, sizeY, sizeZ, *args, generator: str = "Flat", **kwargs):
-        Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator}", module="init-world")
-        if generator in WorldGenerators._generator_list.keys():
-            generatedWorld = WorldGenerators[generator].generateWorld(sizeX, sizeY, sizeZ, *args, **kwargs)
-            size = sizeX * sizeY * sizeZ
-            # Verify World Data Size
-            if len(generatedWorld) == size:
-                return generatedWorld
-            else:
-                raise WorldGenerationError(f"Expected World Size {size} While Generating Word. Got {len(generatedWorld)}")
-        else:
-            raise WorldGenerationError(f"Unrecognized World Generation Type {generator} While Generating World")
-
-    def loadWorlds(self):
-        if self.persistant:
-            # TODO: World Loading
-            pass
-        else:
-            Logger.debug(f"Creating Temporary World {self.server.defaultWorld}", module="init-world")
-            self.worlds[self.server.defaultWorld] = World(
-                256, 256, 256,  # Passing World X, Y, Z
-                self.generateWorld(256, 256, 256)  # Generating World Data
-            )
-
-
-class World:
-    def __init__(self, sizeX: int, sizeY: int, sizeZ: int, mapArray: bytearray):
-        self.sizeX = sizeX
-        self.sizeY = sizeY
-        self.sizeZ = sizeZ
-        self.mapArray = mapArray
 
 
 #
@@ -147,3 +99,91 @@ class _WorldGeneratorManager:
 WorldGeneratorManager = _WorldGeneratorManager()
 # Adds Alias To WorldGeneratorManager
 WorldGenerators = WorldGeneratorManager
+
+
+#
+# WORLD MANAGER
+#
+
+
+class WorldManager:
+    def __init__(self, server, blacklist: List[str] = []):
+        self.server = server
+        self.worlds = dict()
+        self.blacklist = blacklist
+        self.persistant = True
+
+        # If World Location Was Not Given, Disable Persistance
+        # (Don't Save / Load)
+        if self.server.worldSaveLocation is None:
+            Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
+            self.persistant = False
+
+    def generateWorld(self, sizeX, sizeY, sizeZ, generator: AbstraceWorldGenerator, *args, **kwargs):
+        Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
+        generatedWorld = generator.generateWorld(sizeX, sizeY, sizeZ, *args, **kwargs)
+        size = sizeX * sizeY * sizeZ
+        # Verify World Data Size
+        if len(generatedWorld) == size:
+            return generatedWorld
+        else:
+            raise WorldGenerationError(f"Expected World Size {size} While Generating Word. Got {len(generatedWorld)}")
+
+    def loadWorlds(self):
+        if self.persistant:
+            # TODO: World Loading
+            pass
+        else:
+            Logger.debug(f"Creating Temporary World {self.server.defaultWorld}", module="init-world")
+            self.worlds[self.server.defaultWorld] = World(
+                self,  # Pass In World Manager
+                self.server.defaultWorld,  # Pass In World Name
+                WorldGenerators.Flat,  # Pass In World Generator
+                256, 256, 256,  # Passing World X, Y, Z
+                self.generateWorld(256, 256, 256, WorldGenerators.Flat)  # Generating World Data
+            )
+
+
+class World:
+    def __init__(self, worldManager: WorldManager, generator: AbstraceWorldGenerator, name: str, sizeX: int, sizeY: int, sizeZ: int, mapArray: bytearray):
+        # Y is the height
+        self.worldManager = worldManager
+        self.name = name
+        self.generator = generator
+        self.sizeX = sizeX
+        self.sizeY = sizeY
+        self.sizeZ = sizeZ
+        self.mapArray = mapArray
+
+    def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
+        # If Gzip Compression Level Is -1, Use Default!
+        # includeSizeHeader Dictates If Output Should Include Map Size Header Used For Level Init
+
+        # Check If Compression Is -1 (Use Server gzipCompressionLevel)
+        if compressionLevel == -1:
+            compressionLevel = self.worldManager.server.gzipCompressionLevel
+        # Check If Compression Level Is Valid
+        elif compressionLevel >= 0 and compressionLevel <= 9:
+            pass
+        # Invalid Compression Level!
+        else:
+            Logger.error(f"Invalid GZIP Compression Level Of {compressionLevel}!!!", module="world")
+            Logger.warn("Using Fallback Compression Level Of 0", module="world")
+            compressionLevel = 0
+
+        Logger.debug(f"Compressing Map {self.name} With Compression Level {compressionLevel}", module="world")
+        # Create File Buffer
+        buf = io.BytesIO()
+        # Check If Size Header Is Needed
+        header = bytes()
+        if includeSizeHeader is True:
+            Logger.debug("Packing Size Header", module="world")
+            header = header + bytes(struct.pack('!I', len(self.mapArray)))
+        # Gzip World
+        with gzip.GzipFile(fileobj=buf, mode='wb', compresslevel=compressionLevel) as f:
+            f.write(header + bytes(self.mapArray))
+
+        # Extract and Return Gzip Data
+        gzipData = buf.getvalue()
+        Logger.debug(f"GZipped Map! GZ SIZE: {len(gzipData)}", module="world")
+        return gzipData

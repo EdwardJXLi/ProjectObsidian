@@ -19,6 +19,7 @@ class Server:
         motd: str,
         worldSaveLocation: Optional[str] = None,
         defaultWorld: str = "default",
+        gzipCompressionLevel: int = 9,
         colour: bool = True,
         moduleBlacklist: List[str] = [],
         worldBlacklist: List[str] = []
@@ -30,6 +31,7 @@ class Server:
         self.server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object
         self.worldSaveLocation: Optional[str] = worldSaveLocation  # Location of Save Folder
         self.defaultWorld: str = defaultWorld  # String Containing Name Of Default World
+        self.gzipCompressionLevel: int = gzipCompressionLevel  # Int Containing Level Of Gzip Compression
         self.worldManager: Optional[WorldManager] = None  # World Manager Class
         self.playerManager: Optional[PlayerManager] = None  # Player Manager CLass
         self.moduleBlacklist: List[str] = moduleBlacklist  # Module Init Blacklist
