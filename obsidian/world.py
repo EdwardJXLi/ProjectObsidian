@@ -145,8 +145,8 @@ class WorldManager:
             Logger.debug(f"Creating Temporary World {self.server.defaultWorld}", module="init-world")
             self.worlds[self.server.defaultWorld] = World(
                 self,  # Pass In World Manager
-                self.server.defaultWorld,  # Pass In World Name
                 WorldGenerators.Flat,  # Pass In World Generator
+                self.server.defaultWorld,  # Pass In World Name
                 32, 32, 32,  # Passing World X, Y, Z
                 self.generateWorld(32, 32, 32, WorldGenerators.Flat, grassHeight=16),  # Generating World Data
                 persistant=self.persistant  # Pass In Persistant Flag

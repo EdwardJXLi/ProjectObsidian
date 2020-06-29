@@ -7,6 +7,7 @@ import asyncio
 from typing import Type
 
 from obsidian.log import Logger
+from obsidian.world import World
 from obsidian.packet import (
     Packets,
     AbstractRequestPacket,
@@ -83,22 +84,21 @@ class NetworkHandler:
 
         # Sending World Data Of Default World
         Logger.debug(f"{self.ip} | Preparing To Send World {self.server.defaultWorld}", module="network")
-        await self.sendWorldData(self.server.defaultWorld)
+        await self.sendWorldData(self.server.worldManager.worlds[self.server.defaultWorld])
 
         # Setting Up Ping Loop To Check Connection
         while True:
             await self.dispacher.sendPacket(Packets.Response.Ping)
             await asyncio.sleep(1)
 
-    async def sendWorldData(self, world):
+    async def sendWorldData(self, world: World):
         # Send Level Initialize Packet
         Logger.debug(f"{self.ip} | Sending Level Initialize Packet", module="network")
         await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
 
         # Preparing To Send Map
         Logger.debug(f"{self.ip} | Preparing To Send Map", module="network")
-        worldObj = self.server.worldManager.worlds[world]  # Get World Class Object
-        worldGzip = worldObj.gzipMap(includeSizeHeader=True)  # Generate GZIP
+        worldGzip = world.gzipMap(includeSizeHeader=True)  # Generate GZIP
         # World Data Needs To Be Sent In Chunks Of 1024 Characters
         chunks = [worldGzip[i: i + 1024] for i in range(0, len(worldGzip), 1024)]
 
@@ -112,9 +112,9 @@ class NetworkHandler:
         Logger.debug(f"{self.ip} | Sending Level Finalize Packet", module="network")
         await self.dispacher.sendPacket(
             Packets.Response.LevelFinalize,
-            worldObj.sizeX,
-            worldObj.sizeY,
-            worldObj.sizeZ
+            world.sizeX,
+            world.sizeY,
+            world.sizeZ
         )
 
 
