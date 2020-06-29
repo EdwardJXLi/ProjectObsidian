@@ -22,6 +22,10 @@ class CoreModule(AbstractModule):
     def __init__(self):
         super().__init__()
 
+    #
+    # CORE PACKETS
+    #
+
     @Packet(
         "PlayerIdentification",
         PacketDirections.REQUEST,
@@ -128,6 +132,10 @@ class CoreModule(AbstractModule):
             # (Byte) Packet ID
             msg = struct.pack(self.FORMAT, self.ID, packageString(reason))
             return msg
+
+    #
+    # WORLD GENERATORS
+    #
 
     @WorldGenerator(
         "Flat",

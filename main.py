@@ -37,6 +37,7 @@ async def main():
         await asyncio.sleep(1)
 
 
+# Make sure main gets asynced when run
 if __name__ == '__main__':
     try:
         asyncio.run(main())

@@ -7,45 +7,64 @@ from obsidian.utils.ptl import PrettyTableLite
 from obsidian.constants import InitRegisterError, WorldGenerationError, FatalError
 
 
+#
+# WORLD MANAGER
+#
+
+
 class WorldManager:
     def __init__(self, server, blacklist: List[str] = []):
         self.server = server
         self.worlds = dict()
         self.blacklist = blacklist
         self.persistant = True
-        self._errorList = []  # Logging Which Worlds Encountered Errors While Loading Up
 
         # If World Location Was Not Given, Disable Persistance
         # (Don't Save / Load)
-        if(self.server.worldSaveLocation is None):
+        if self.server.worldSaveLocation is None:
             Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
             self.persistant = False
 
     def generateWorld(self, sizeX, sizeY, sizeZ, *args, generator: str = "Flat", **kwargs):
-        if(generator in WorldGenerators._generator_list.keys()):
-            WorldGenerators[generator].generateWorld(sizeX, sizeY, sizeZ, *args, **kwargs)
+        Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator}", module="init-world")
+        if generator in WorldGenerators._generator_list.keys():
+            generatedWorld = WorldGenerators[generator].generateWorld(sizeX, sizeY, sizeZ, *args, **kwargs)
+            size = sizeX * sizeY * sizeZ
+            # Verify World Data Size
+            if len(generatedWorld) == size:
+                return generatedWorld
+            else:
+                raise WorldGenerationError(f"Expected World Size {size} While Generating Word. Got {len(generatedWorld)}")
         else:
             raise WorldGenerationError(f"Unrecognized World Generation Type {generator} While Generating World")
 
     def loadWorlds(self):
-        if(self.persistant):
+        if self.persistant:
             # TODO: World Loading
             pass
         else:
-            worldData = World(
-                256,
-                256,
-                256,
-                self.generateWorld(256, 256, 256)
+            Logger.debug(f"Creating Temporary World {self.server.defaultWorld}", module="init-world")
+            self.worlds[self.server.defaultWorld] = World(
+                256, 256, 256,  # Passing World X, Y, Z
+                self.generateWorld(256, 256, 256)  # Generating World Data
             )
-            self.worlds[self.server.defaultWorld] = worldData
 
 
 class World:
-    def __init__(self, sizeX, sizeY, sizeZ, mapArray):
-        pass
+    def __init__(self, sizeX: int, sizeY: int, sizeZ: int, mapArray: bytearray):
+        self.sizeX = sizeX
+        self.sizeY = sizeY
+        self.sizeZ = sizeZ
+        self.mapArray = mapArray
 
 
+#
+# WORLD GENERATOR
+#
+
+
+# World Generator Decorator
+# Used In @WorldGenerator
 def WorldGenerator(name: str, description: str = None, version: str = None):
     def internal(cls):
         cls.obsidian_world_generator = dict()
@@ -60,13 +79,13 @@ def WorldGenerator(name: str, description: str = None, version: str = None):
 # World Generator Skeleton
 @dataclass
 class AbstraceWorldGenerator:
-    NAME: str = ""         # World Generator Name
-    DESCRIPTION: str = ""  # World Generator Description
+    NAME: str = ""
+    DESCRIPTION: str = ""
     VERSION: str = ""
     MODULE: Optional[AbstractModule] = None
 
     def generateWorld(self, sizeX, sizeY, sizeZ, *args, **kwargs):
-        return bytes()
+        return bytearray()
 
 
 # Internal World Generator Manager Singleton

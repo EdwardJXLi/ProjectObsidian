@@ -89,8 +89,6 @@ class NetworkDispacher:
     def __init__(self, handler: NetworkHandler):
         self.player = None
         self.handler = handler
-        self.request = []  # Array of Request Packets
-        self.response = []  # Array of Request Packets
 
     # Used in main listen loop; expect multiple types of packets!
     async def listenForPacket(self, timeout=NET_TIMEOUT):

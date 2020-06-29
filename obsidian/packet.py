@@ -17,6 +17,22 @@ class PacketDirections(enum.Enum):
     NONE = -1
 
 
+# Packet Utils
+def unpackageString(data, encoding="ascii"):
+    Logger.verbose(f"Unpacking String {data}")
+    # Decode Data From Bytes To String
+    # Remove Excess Zeros
+    return data.decode(encoding).strip()
+
+
+def packageString(data, maxSize=64, encoding="ascii"):
+    Logger.verbose(f"Packing String {data}")
+    # Trim Text Down To maxSize
+    # Fill Blank Space With Spaces Using ljust
+    # Encode String Into Bytes Using Encoding
+    return bytes(data[:maxSize].ljust(maxSize), encoding)
+
+
 # Packet Skeleton
 @dataclass
 class AbstractPacket:
@@ -55,6 +71,8 @@ class AbstractResponsePacket(AbstractPacket):
         return bytes()
 
 
+# Packet Decorator
+# Used In @Packet
 def Packet(name: str, direction: PacketDirections, description: str = None):
     def internal(cls):
         cls.obsidian_packet = dict()
@@ -145,22 +163,6 @@ class _PacketManager:
     @property
     def numPackets(self):
         return len(self.RequestManager._packet_list) + len(self.ResponseManager._packet_list)
-
-
-# Packet Utils
-def unpackageString(data, encoding="ascii"):
-    Logger.verbose(f"Unpacking String {data}")
-    # Decode Data From Bytes To String
-    # Remove Excess Zeros
-    return data.decode(encoding).strip()
-
-
-def packageString(data, maxSize=64, encoding="ascii"):
-    Logger.verbose(f"Packing String {data}")
-    # Trim Text Down To maxSize
-    # Fill Blank Space With Spaces Using ljust
-    # Encode String Into Bytes Using Encoding
-    return bytes(data[:maxSize].ljust(maxSize), encoding)
 
 
 # Creates Global PacketManager As Singleton

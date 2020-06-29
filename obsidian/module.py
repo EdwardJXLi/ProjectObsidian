@@ -23,13 +23,6 @@ class AbstractModule:
     VERSION: str = ""
 
 
-# Module Registration Decorator
-def Module(name: str, description: str = None, version: str = None):
-    def internal(cls):
-        ModuleManager.register(name, description, version, cls)
-    return internal
-
-
 # Internal Module Manager Singleton
 class _ModuleManager:
     def __init__(self):
@@ -155,6 +148,14 @@ class _ModuleManager:
     # Handles _ModuleManager.item
     def __getattr__(self, *args, **kwargs):
         return self.__getitem__(*args, **kwargs)
+
+
+# Module Registration Decorator
+# Used In @Module
+def Module(name: str, description: str = None, version: str = None):
+    def internal(cls):
+        ModuleManager.register(name, description, version, cls)
+    return internal
 
 
 # Creates Global ModuleManager As Singleton

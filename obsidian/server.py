@@ -23,19 +23,19 @@ class Server:
         moduleBlacklist: List[str] = [],
         worldBlacklist: List[str] = []
     ):
-        self.address: str = address
-        self.port: int = port
-        self.name: str = name
-        self.motd: str = motd
-        self.server: Optional[asyncio.AbstractServer] = None
-        self.worldSaveLocation: Optional[str] = worldSaveLocation
-        self.defaultWorld: str = defaultWorld
-        self.worldManager: Optional[WorldManager] = None
-        self.playerManager: Optional[PlayerManager] = None
-        self.moduleBlacklist: List[str] = moduleBlacklist
-        self.worldBlacklist: List[str] = worldBlacklist
-        self.protocolVersion: int = 0x07
-        self.initialized = False
+        self.address: str = address  # Ip Address Of Server
+        self.port: int = port  # Port Number Of Server
+        self.name: str = name  # Name Of Server
+        self.motd: str = motd  # Message Of The Day
+        self.server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object
+        self.worldSaveLocation: Optional[str] = worldSaveLocation  # Location of Save Folder
+        self.defaultWorld: str = defaultWorld  # String Containing Name Of Default World
+        self.worldManager: Optional[WorldManager] = None  # World Manager Class
+        self.playerManager: Optional[PlayerManager] = None  # Player Manager CLass
+        self.moduleBlacklist: List[str] = moduleBlacklist  # Module Init Blacklist
+        self.worldBlacklist: List[str] = worldBlacklist  # World Init Blacklist
+        self.protocolVersion: int = 0x07  # Minecraft Protocol Version
+        self.initialized = False  # Flag Set When Everything Is Fully Loaded
 
         # Init Colour
         if colour:
@@ -46,7 +46,7 @@ class Server:
             return await self._init(*args, **kwargs)
         except FatalError:
             # NOTE: e is already formatted with the type and stuff
-            Logger.fatal(f"Fatal Error Detected. Stopping Server.", "main", printTb=False)
+            Logger.fatal("Fatal Error Detected. Stopping Server.", "main", printTb=False)
         except Exception as e:
             Logger.fatal(f"Error While Initializing Server - {type(e).__name__}: {e}", "server")
 
@@ -64,7 +64,7 @@ class Server:
         # Print Pretty List of All Modules
         Logger.info("Module List:", module="init")
         print(ModuleManager.generateTable())
-        # Only print Packet List If Debug Enabled
+        # Only Print Packet And World Generators List If Debug Enabled
         if Logger.DEBUG:
             Logger.debug("Packets List:", module="init")
             print(PacketManager.generateTable())
