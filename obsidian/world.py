@@ -1,3 +1,8 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from obsidian.server import Server
+
 from typing import List, Type, Optional
 from dataclasses import dataclass
 import io
@@ -107,7 +112,7 @@ WorldGenerators = WorldGeneratorManager
 
 
 class WorldManager:
-    def __init__(self, server, blacklist: List[str] = []):
+    def __init__(self, server: Server, blacklist: List[str] = []):
         self.server = server
         self.worlds = dict()
         self.blacklist = blacklist

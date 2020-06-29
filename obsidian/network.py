@@ -1,3 +1,8 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from obsidian.server import Server
+
 import asyncio
 from typing import Type
 
@@ -16,7 +21,7 @@ from obsidian.constants import (
 
 
 class NetworkHandler:
-    def __init__(self, server, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    def __init__(self, server: Server, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         self.server = server
         self.reader = reader
         self.writer = writer
