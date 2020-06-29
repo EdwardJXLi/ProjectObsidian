@@ -198,10 +198,10 @@ class CoreModule(AbstractModule):
         def __init__(self):
             super().__init__()
 
-        def generateWorld(self, sizeX, sizeY, sizeZ):
+        def generateWorld(self, sizeX, sizeY, sizeZ, grassHeight=32):
             mapData = bytearray(sizeX * sizeY * sizeZ)
-            for x in range(256):
-                for y in range(64):
-                    for z in range(256):
-                        mapData[x + 256 * (z + 256 * y)] = 0 if y > 32 else (2 if y == 32 else 3)
+            for x in range(sizeX):
+                for y in range(sizeY):
+                    for z in range(sizeZ):
+                        mapData[x + sizeZ * (z + sizeX * y)] = 0 if y > grassHeight else (2 if y == grassHeight else 3)
             return mapData

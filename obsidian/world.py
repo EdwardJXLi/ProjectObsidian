@@ -139,8 +139,8 @@ class WorldManager:
                 self,  # Pass In World Manager
                 self.server.defaultWorld,  # Pass In World Name
                 WorldGenerators.Flat,  # Pass In World Generator
-                256, 256, 256,  # Passing World X, Y, Z
-                self.generateWorld(256, 256, 256, WorldGenerators.Flat)  # Generating World Data
+                32, 32, 32,  # Passing World X, Y, Z
+                self.generateWorld(32, 32, 32, WorldGenerators.Flat, grassHeight=16)  # Generating World Data
             )
 
 
