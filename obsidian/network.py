@@ -83,8 +83,22 @@ class NetworkHandler:
         await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
         # Sending World Data Of Default World
+        defaultWorld = self.server.worldManager.worlds[self.server.defaultWorld]
         Logger.debug(f"{self.ip} | Preparing To Send World {self.server.defaultWorld}", module="network")
-        await self.sendWorldData(self.server.worldManager.worlds[self.server.defaultWorld])
+        await self.sendWorldData(defaultWorld)
+
+        # TEMPORARY Player Spawn Packet
+        Logger.debug(f"{self.ip} | Preparing To Send Spawn Player Information", module="network")
+        await self.dispacher.sendPacket(
+            Packets.Response.SpawnPlayer,
+            255,  # Temporary Player Id TODO
+            username,
+            defaultWorld.spawnX,
+            defaultWorld.spawnY,
+            defaultWorld.spawnZ,
+            defaultWorld.spawnYaw,
+            defaultWorld.spawnPitch
+        )
 
         # Setting Up Ping Loop To Check Connection
         while True:

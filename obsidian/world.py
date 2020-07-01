@@ -149,7 +149,11 @@ class WorldManager:
                 self.server.defaultWorld,  # Pass In World Name
                 32, 32, 32,  # Passing World X, Y, Z
                 self.generateWorld(32, 32, 32, WorldGenerators.Flat, grassHeight=16),  # Generating World Data
-                persistant=self.persistant  # Pass In Persistant Flag
+                persistant=self.persistant,  # Pass In Persistant Flag
+                # Spawn Information
+                spawnX=8 * 32 + 51,
+                spawnY=17 * 32 + 51,
+                spawnZ=8 * 32 + 51
             )
 
 
@@ -163,7 +167,12 @@ class World:
         sizeY: int,
         sizeZ: int,
         mapArray: bytearray,
-        persistant: bool = True
+        persistant: bool = True,
+        spawnX: int = 0,
+        spawnY: int = 0,
+        spawnZ: int = 0,
+        spawnYaw: int = 0,
+        spawnPitch: int = 0
     ):
         # Y is the height
         self.worldManager = worldManager
@@ -174,6 +183,11 @@ class World:
         self.sizeZ = sizeZ
         self.mapArray = mapArray
         self.persistant = persistant
+        self.spawnX = spawnX
+        self.spawnY = spawnY
+        self.spawnZ = spawnZ
+        self.spawnYaw = spawnYaw
+        self.spawnPitch = spawnPitch
 
     def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
         # If Gzip Compression Level Is -1, Use Default!

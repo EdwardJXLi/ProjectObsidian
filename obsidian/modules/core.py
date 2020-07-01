@@ -180,9 +180,36 @@ class CoreModule(AbstractModule):
             )
 
         def serialize(self, reason):
-            # <Level Initialize Packet>
+            # <Player Disconnect Packet>
             # (Byte) Packet ID
+            # (64String) Disconnect Reason
             msg = struct.pack(self.FORMAT, self.ID, packageString(reason))
+            return msg
+
+    @Packet(
+        "SpawnPlayer",
+        PacketDirections.RESPONSE,
+        description="Packet Sent To All Players Initializing Player Spawn"
+    )
+    class SpawnPlayerPacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x07,
+                FORMAT="!BB64shhhBB",
+                CRITICAL=True
+            )
+
+        def serialize(self, playerId, playerName, x, y, z, yaw, pitch):
+            # <Spawn Player Packet>
+            # (Byte) Packet ID
+            # (Signed Byte) Player ID
+            # (64String) Player Name
+            # (Short) Spawn X Coords
+            # (Short) Spawn Y Coords
+            # (Short) Spawn Z Coords
+            # (Byte) Spawn Yaw
+            # (Byte) Spawn Pitch
+            msg = struct.pack(self.FORMAT, self.ID, playerId, packageString(playerName), x, y, z, yaw, pitch)
             return msg
 
     #
