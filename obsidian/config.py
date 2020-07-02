@@ -8,6 +8,8 @@ class ServerConfig:
     configPath: Optional[str] = None  # Path Location Of Config File (Used for reloads)
     # Module Configuration
     moduleBlacklist: List[str] = field(default_factory=list)  # Module Init Blacklist
+    # Network Configuration
+    ipBlacklist: List[str] = field(default_factory=list)  # List Of Ips To Block Connection
     # World Configuration
     worldSaveLocation: Optional[str] = None  # Location of Save Folder
     defaultWorld: str = "default"  # String Containing Name Of Default World

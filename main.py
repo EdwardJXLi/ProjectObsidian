@@ -20,7 +20,7 @@ async def main():
     parser.add_argument('-n', "--name", type=str, nargs='?', help="The Name Of The Minecraft Server", default="Minecraft Server")
     parser.add_argument('-m', "--motd", type=str, nargs='?', help="The MOTD Of The Minecraft Server", default="Python Server Implementation")
     parser.add_argument('-d', "--debug", help="Enable Debug Logging", action="store_true")
-    parser.add_argument('-v', "--verbose", help="Increase Debug output verbosity", action="store_true")
+    parser.add_argument('-v', "--verbose", help="Increase Debug Output Verbosity", action="store_true")
     args = parser.parse_args()
 
     # Set Logging Levels
@@ -31,6 +31,7 @@ async def main():
     server = Server(args.address, args.port, args.name, args.motd, colour=True)
     # Add Test Modules To Blacklist
     server.config.moduleBlacklist = ["errortest", "errortest2", "errortest3"]
+    # server.config.ipBlacklist = ["127.0.0.1"]  # Blacklist Testing
     await server.init()
     asyncio.create_task(server.run())
 

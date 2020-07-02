@@ -36,32 +36,28 @@ class NetworkHandler:
             return await self._initConnection(*args, **kwargs)
         except ClientError as e:
             Logger.warn(f"Client Error, Disconnecting Ip {self.ip} - {type(e).__name__}: {e}", module="network")
-            await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, "Disconnected: " + str(e))
-            self.writer.close()
+            await self.closeConnection(reason=str(e), notifyPlayer=True)
         except BrokenPipeError:
             Logger.warn(f"Ip {self.ip} Broken Pipe. Closing Connection.", module="network")
-            self.isConnected = False
-            self.writer.close()
+            await self.closeConnection(reason="Broken Pipe")
         except ConnectionResetError:
             Logger.warn(f"Ip {self.ip} Connection Reset. Closing Connection.", module="network")
-            self.isConnected = False
-            self.writer.close()
+            await self.closeConnection(reason="Connection Reset")
         except asyncio.IncompleteReadError:
             Logger.warn(f"Ip {self.ip} Incomplete Read Error. Closing Connection.", module="network")
-            self.isConnected = False
-            self.writer.close()
+            await self.closeConnection(reason="Incomplete Read Error")
         except Exception as e:
             Logger.error(f"Error While Handling Connection {self.ip} - {type(e).__name__}: {e}", "network")
-            self.isConnected = False
-            try:
-                await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, "Disconnected: Internal Server Error")
-                self.writer.close()
-            except Exception:
-                Logger.warn("Internal Server Error Disconnect Packet Failed To Send!!!!!")
+            await self.closeConnection(reason="Internal Server Error", notifyPlayer=True)
 
     async def _initConnection(self):
         # Log Connection
         Logger.info(f"New Connection From {self.ip}", module="network")
+
+        # Check if user is IP banned
+        if self.ip[0] in self.server.config.ipBlacklist:
+            Logger.info(f"IP {self.ip} Is Blacklisted. Kicking!", module="network")
+            raise ClientError("This IP Has Been Blacklisted From The Server!")
 
         # Start the server <-> client login protocol
         Logger.debug(f"{self.ip} | Starting Client <-> Server Handshake", module="network")
@@ -130,6 +126,22 @@ class NetworkHandler:
             world.sizeY,
             world.sizeZ
         )
+
+    async def closeConnection(self, reason=None, notifyPlayer=False):
+        # Setting Up Reason If None
+        if reason is None:
+            reason = "No Reason Provided"
+
+        Logger.debug(f"Closing Connection {self.ip} For Reason {reason}", module="network")
+        # Attempting To Send Disconnect Message
+        if notifyPlayer:
+            try:
+                await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
+            except Exception:
+                Logger.warn("Disconnect Packet Failed To Send!")
+        # Set Disconnect Flags
+        self.isConnected = False
+        self.writer.close()
 
 
 class NetworkDispacher:
