@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional, List
+from typing import Optional, Any
 
+from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager
-from obsidian.constants import Colour, ServerError, FatalError
+from obsidian.constants import Colour, InitError, ServerError, FatalError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
@@ -20,27 +21,34 @@ class Server:
         port: int,
         name: str,
         motd: str,
-        worldSaveLocation: Optional[str] = None,
-        defaultWorld: str = "default",
-        gzipCompressionLevel: int = 9,
         colour: bool = True,
-        moduleBlacklist: List[str] = [],
-        worldBlacklist: List[str] = []
+        # Configuration Information. Could Be Either:
+        # None - Use Default Values
+        # Str - Pass In Configuration File Location
+        # ServerConfig - Pass In Already Parsed Server Configuration Class
+        config: Any[None, str, ServerConfig] = None
     ):
         self.address: str = address  # Ip Address Of Server
         self.port: int = port  # Port Number Of Server
         self.name: str = name  # Name Of Server
         self.motd: str = motd  # Message Of The Day
         self.server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object
-        self.worldSaveLocation: Optional[str] = worldSaveLocation  # Location of Save Folder
-        self.defaultWorld: str = defaultWorld  # String Containing Name Of Default World
-        self.gzipCompressionLevel: int = gzipCompressionLevel  # Int Containing Level Of Gzip Compression
         self.worldManager: Optional[WorldManager] = None  # World Manager Class
         self.playerManager: Optional[PlayerManager] = None  # Player Manager CLass
-        self.moduleBlacklist: List[str] = moduleBlacklist  # Module Init Blacklist
-        self.worldBlacklist: List[str] = worldBlacklist  # World Init Blacklist
+        self.config: Optional[ServerConfig] = None  # Server Config Class; To Be Init Later
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized = False  # Flag Set When Everything Is Fully Loaded
+
+        # Initialize Config, Depending On What Type It Is
+        if config is None:
+            self.config = ServerConfig()
+        elif type(config) == str:
+            self.config = ServerConfig(configPath=config)
+            self.config.init()
+        elif type(config) == ServerConfig:
+            self.config = config
+        else:
+            raise InitError(f"Unknown Config Type {type(config)}")
 
         # Init Colour
         if colour:
@@ -63,7 +71,7 @@ class Server:
 
         Logger.info(f"Initializing Server {self.name}", module="init")
 
-        ModuleManager.initModules(blacklist=self.moduleBlacklist)
+        ModuleManager.initModules(blacklist=self.config.moduleBlacklist)
 
         Logger.info(f"{ModuleManager.numModules} Modules, {PacketManager.numPackets} Packets Initialized!", module="init")
         # Print Pretty List of All Modules
@@ -83,7 +91,7 @@ class Server:
 
         # Initialize WorldManager
         Logger.info("Initializing World Manager", module="init")
-        self.worldManager = WorldManager(self, blacklist=self.worldBlacklist)
+        self.worldManager = WorldManager(self, blacklist=self.config.worldBlacklist)
         Logger.info("Loading Worlds", module="init")
         self.worldManager.loadWorlds()
 

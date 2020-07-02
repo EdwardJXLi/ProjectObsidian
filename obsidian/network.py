@@ -83,8 +83,8 @@ class NetworkHandler:
         await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
         # Sending World Data Of Default World
-        defaultWorld = self.server.worldManager.worlds[self.server.defaultWorld]
-        Logger.debug(f"{self.ip} | Preparing To Send World {self.server.defaultWorld}", module="network")
+        defaultWorld = self.server.worldManager.worlds[self.server.config.defaultWorld]
+        Logger.debug(f"{self.ip} | Preparing To Send World {defaultWorld.name}", module="network")
         await self.sendWorldData(defaultWorld)
 
         # TEMPORARY Player Spawn Packet

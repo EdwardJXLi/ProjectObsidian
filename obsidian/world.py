@@ -22,7 +22,7 @@ class WorldManager:
 
         # If World Location Was Not Given, Disable Persistance
         # (Don't Save / Load)
-        if self.server.worldSaveLocation is None:
+        if self.server.config.worldSaveLocation is None:
             Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
             self.persistant = False
 
@@ -44,11 +44,12 @@ class WorldManager:
             # TODO: File World Loading
             pass
         else:
-            Logger.debug(f"Creating Temporary World {self.server.defaultWorld}", module="init-world")
-            self.worlds[self.server.defaultWorld] = World(
+            defaultWorld = self.server.config.defaultWorld
+            Logger.debug(f"Creating Temporary World {defaultWorld}", module="init-world")
+            self.worlds[defaultWorld] = World(
                 self,  # Pass In World Manager
                 MapGenerators.Flat,  # Pass In World Generator
-                self.server.defaultWorld,  # Pass In World Name
+                defaultWorld,  # Pass In World Name
                 32, 32, 32,  # Passing World X, Y, Z
                 self.generateMap(32, 32, 32, MapGenerators.Flat, grassHeight=16),  # Generating Map Data
                 persistant=self.persistant,  # Pass In Persistant Flag
@@ -97,7 +98,7 @@ class World:
 
         # Check If Compression Is -1 (Use Server gzipCompressionLevel)
         if compressionLevel == -1:
-            compressionLevel = self.worldManager.server.gzipCompressionLevel
+            compressionLevel = self.worldManager.server.config.gzipCompressionLevel
         # Check If Compression Level Is Valid
         elif compressionLevel >= 0 and compressionLevel <= 9:
             pass

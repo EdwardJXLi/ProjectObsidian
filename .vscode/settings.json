@@ -38,5 +38,6 @@
         ".vscode",
         "**/testing/**",
         "**/protocol-test/*"
-    ]
+    ],
+    "python.dataScience.jupyterServerURI": "http://192.168.0.161:8000/?token=a4cf05702bd14d069a57b0e8e0b80ad7"
 }
