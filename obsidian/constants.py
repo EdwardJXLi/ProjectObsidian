@@ -42,7 +42,7 @@ class ModuleError(Exception):
     pass
 
 
-class WorldGenerationError(Exception):
+class MapGenerationError(Exception):
     pass
 
 

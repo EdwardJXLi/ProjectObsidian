@@ -8,7 +8,10 @@ from obsidian.packet import (
     unpackageString,
     packageString
 )
-from obsidian.world import AbstractWorldGenerator, WorldGenerator
+from obsidian.mapgen import (
+    AbstractMapGenerator,
+    MapGenerator
+)
 
 import struct
 
@@ -213,20 +216,20 @@ class CoreModule(AbstractModule):
             return msg
 
     #
-    # WORLD GENERATORS
+    # Map GENERATORS
     #
 
-    @WorldGenerator(
+    @MapGenerator(
         "Flat",
-        description="Default World Generator. Just Flat.",
+        description="Default Map Generator. Just Flat.",
         version="V1.0.0"
     )
-    class FlatWorldGenerator(AbstractWorldGenerator):
+    class FlatMapGenerator(AbstractMapGenerator):
         def __init__(self):
             super().__init__()
 
-        # Default World Generator (Creates Flat Map Of Grass And Dirt)
-        def generateWorld(self, sizeX, sizeY, sizeZ, grassHeight=32):
+        # Default Map Generator (Creates Flat Map Of Grass And Dirt)
+        def generateMap(self, sizeX, sizeY, sizeZ, grassHeight=32):
             mapData = bytearray(sizeX * sizeY * sizeZ)
             for x in range(sizeX):
                 for y in range(sizeY):

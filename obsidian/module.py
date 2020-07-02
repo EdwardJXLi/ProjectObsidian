@@ -39,7 +39,7 @@ class _ModuleManager:
         Logger.debug(f"Registering Module {name}", module="init-" + name)
         # Prevent Circular Looping :/
         from obsidian.packet import PacketManager
-        from obsidian.world import WorldGeneratorManager
+        from obsidian.mapgen import MapGeneratorManager
         moduleObj = module()  # Create Object
         # Checking If Module Is Already In Modules List
         if name in self._module_list.keys():
@@ -62,15 +62,15 @@ class _ModuleManager:
                     packet["packet"],
                     moduleObj
                 )
-            elif hasattr(item, "obsidian_world_generator"):  # Check If Item Has "obsidian_world_generator" Flag
-                Logger.verbose(f"{item} Is A World Generator! Adding As World Generator.", module="init-" + name)
-                generator = item.obsidian_world_generator
-                # Register Packet Using information Provided By "obsidian_world_generator"
-                WorldGeneratorManager.register(
+            elif hasattr(item, "obsidian_map_generator"):  # Check If Item Has "obsidian_map_generator" Flag
+                Logger.verbose(f"{item} Is A Map Generator! Adding As Map Generator.", module="init-" + name)
+                generator = item.obsidian_map_generator
+                # Register Packet Using information Provided By "obsidian_map_generator"
+                MapGeneratorManager.register(
                     generator["name"],
                     generator["description"],
                     generator["version"],
-                    generator["world_generator"],
+                    generator["map_generator"],
                     moduleObj
                 )
         self._module_list[name] = moduleObj

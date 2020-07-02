@@ -8,7 +8,8 @@ from obsidian.constants import Colour, ServerError, FatalError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
-from obsidian.world import WorldManager, WorldGeneratorManager
+from obsidian.world import WorldManager
+from obsidian.mapgen import MapGeneratorManager
 from obsidian.player import PlayerManager
 
 
@@ -72,8 +73,8 @@ class Server:
         if Logger.DEBUG:
             Logger.debug("Packets List:", module="init")
             print(PacketManager.generateTable())
-            Logger.debug("World Generators List:", module="init")
-            print(WorldGeneratorManager.generateTable())
+            Logger.debug("Map Generators List:", module="init")
+            print(MapGeneratorManager.generateTable())
 
         # Printing Error If Error Occurs During Init
         if len(ModuleManager._errorList) != 0:
@@ -83,6 +84,7 @@ class Server:
         # Initialize WorldManager
         Logger.info("Initializing World Manager", module="init")
         self.worldManager = WorldManager(self, blacklist=self.worldBlacklist)
+        Logger.info("Loading Worlds", module="init")
         self.worldManager.loadWorlds()
 
         # Initialize PlayerManager

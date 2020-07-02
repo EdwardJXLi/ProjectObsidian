@@ -3,112 +3,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
 
-from typing import List, Type, Optional
-from dataclasses import dataclass
+from typing import List
 import io
 import gzip
 import struct
 
 from obsidian.log import Logger
-from obsidian.module import AbstractModule
-from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, WorldGenerationError, FatalError
-
-
-#
-# WORLD GENERATOR
-#
-
-
-# World Generator Decorator
-# Used In @WorldGenerator
-def WorldGenerator(name: str, description: str = None, version: str = None):
-    def internal(cls):
-        cls.obsidian_world_generator = dict()
-        cls.obsidian_world_generator["name"] = name
-        cls.obsidian_world_generator["description"] = description
-        cls.obsidian_world_generator["version"] = version
-        cls.obsidian_world_generator["world_generator"] = cls
-        return cls
-    return internal
-
-
-# World Generator Skeleton
-@dataclass
-class AbstractWorldGenerator:
-    NAME: str = ""
-    DESCRIPTION: str = ""
-    VERSION: str = ""
-    MODULE: Optional[AbstractModule] = None
-
-    def generateWorld(self, sizeX, sizeY, sizeZ, *args, **kwargs):
-        return bytearray()
-
-
-# Internal World Generator Manager Singleton
-class _WorldGeneratorManager:
-    def __init__(self):
-        # Creates List Of World Generators That Has The Module Name As Keys
-        self._generator_list = dict()
-
-    # Registration. Called by World Generator Decorator
-    def register(self, name: str, description: str, version: str, generator: Type[AbstractWorldGenerator], module):
-        Logger.debug(f"Registering World Generator {name} From Module {module.NAME}", module="init-" + module.NAME)
-        obj = generator()  # type: ignore    # Create Object
-        # Checking If WorldGenerator Name Is Already In Generators List
-        if name in self._generator_list.keys():
-            raise InitRegisterError(f"World Generator {name} Has Already Been Registered!")
-        # Attach Name, Direction, and Module As Attribute
-        obj.NAME = name
-        obj.DESCRIPTION = description
-        obj.VERSION = version
-        obj.MODULE = module
-        self._generator_list[name] = obj
-
-    # Generate a Pretty List of World Generators
-    def generateTable(self):
-        try:
-            table = PrettyTableLite()  # Create Pretty List Class
-
-            table.field_names = ["World Generator", "Version", "Module"]
-            # Loop Through All World Generators And Add Value
-            for _, generator in self._generator_list.items():
-                # Adding Special Characters And Handlers
-                if generator.VERSION is None:
-                    generator.VERSION = "Unknown"
-
-                # Add Row To Table
-                table.add_row([generator.NAME, generator.VERSION, generator.MODULE.NAME])
-            return table
-        except FatalError as e:
-            # Pass Down Fatal Error To Base Server
-            raise e
-        except Exception as e:
-            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", "server")
-
-    # Property Method To Get Number Of World Generators
-    @property
-    def numWorldGenerators(self):
-        return len(self._generator_list)
-
-    # Handles _WorldGeneratorManager["item"]
-    def __getitem__(self, worldGenerator: str):
-        return self._generator_list[worldGenerator]
-
-    # Handles _WorldGeneratorManager.item
-    def __getattr__(self, *args, **kwargs):
-        return self.__getitem__(*args, **kwargs)
-
-
-# Creates Global WorldGeneratorManager As Singleton
-WorldGeneratorManager = _WorldGeneratorManager()
-# Adds Alias To WorldGeneratorManager
-WorldGenerators = WorldGeneratorManager
-
-
-#
-# WORLD MANAGER
-#
+from obsidian.mapgen import MapGenerators, AbstractMapGenerator
+from obsidian.constants import MapGenerationError
 
 
 class WorldManager:
@@ -124,18 +26,18 @@ class WorldManager:
             Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
             self.persistant = False
 
-    def generateWorld(self, sizeX, sizeY, sizeZ, generator: AbstractWorldGenerator, *args, **kwargs):
+    def generateMap(self, sizeX, sizeY, sizeZ, generator: AbstractMapGenerator, *args, **kwargs):
         Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
-        # Call Generate World Function From Generator
-        generatedWorld = generator.generateWorld(sizeX, sizeY, sizeZ, *args, **kwargs)
+        # Call Generate Map Function From Generator
+        generatedMap = generator.generateMap(sizeX, sizeY, sizeZ, *args, **kwargs)
 
-        # Verify World Data Size
+        # Verify Map Data Size
         expectedSize = sizeX * sizeY * sizeZ
-        if len(generatedWorld) != expectedSize:
-            raise WorldGenerationError(f"Expected World Size {expectedSize} While Generating World. Got {len(generatedWorld)}")
+        if len(generatedMap) != expectedSize:
+            raise MapGenerationError(f"Expected Map Size {expectedSize} While Generating World. Got {len(generatedMap)}")
 
-        # Return Generated World Bytesarray
-        return generatedWorld
+        # Return Generated Map Bytesarray
+        return generatedMap
 
     def loadWorlds(self):
         if self.persistant:
@@ -145,10 +47,10 @@ class WorldManager:
             Logger.debug(f"Creating Temporary World {self.server.defaultWorld}", module="init-world")
             self.worlds[self.server.defaultWorld] = World(
                 self,  # Pass In World Manager
-                WorldGenerators.Flat,  # Pass In World Generator
+                MapGenerators.Flat,  # Pass In World Generator
                 self.server.defaultWorld,  # Pass In World Name
                 32, 32, 32,  # Passing World X, Y, Z
-                self.generateWorld(32, 32, 32, WorldGenerators.Flat, grassHeight=16),  # Generating World Data
+                self.generateMap(32, 32, 32, MapGenerators.Flat, grassHeight=16),  # Generating Map Data
                 persistant=self.persistant,  # Pass In Persistant Flag
                 # Spawn Information
                 spawnX=8 * 32 + 51,
@@ -161,7 +63,7 @@ class World:
     def __init__(
         self,
         worldManager: WorldManager,
-        generator: AbstractWorldGenerator,
+        generator: AbstractMapGenerator,
         name: str,
         sizeX: int,
         sizeY: int,
