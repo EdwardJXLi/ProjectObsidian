@@ -3,12 +3,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
 
-from typing import List
+from typing import List, Optional
 import io
 import gzip
 import struct
 
 from obsidian.log import Logger
+from obsidian.player import WorldPlayerManager
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
 from obsidian.constants import MapGenerationError
 
@@ -75,7 +76,8 @@ class World:
         spawnY: int = 0,
         spawnZ: int = 0,
         spawnYaw: int = 0,
-        spawnPitch: int = 0
+        spawnPitch: int = 0,
+        maxPlayers: int = 255
     ):
         # Y is the height
         self.worldManager = worldManager
@@ -91,6 +93,11 @@ class World:
         self.spawnZ = spawnZ
         self.spawnYaw = spawnYaw
         self.spawnPitch = spawnPitch
+        self.maxPlayers = maxPlayers
+
+        # Initialize WorldPlayerManager
+        Logger.info("Initializing World Player Manager", module="init-world")
+        self.playerManager = WorldPlayerManager(self)
 
     def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
         # If Gzip Compression Level Is -1, Use Default!

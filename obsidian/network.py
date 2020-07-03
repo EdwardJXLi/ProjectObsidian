@@ -8,6 +8,7 @@ from typing import Type
 
 from obsidian.log import Logger
 from obsidian.world import World
+from obsidian.player import Player
 from obsidian.packet import (
     Packets,
     AbstractRequestPacket,
@@ -29,7 +30,7 @@ class NetworkHandler:
         self.ip: tuple = self.reader._transport.get_extra_info("peername")  # type: ignore
         self.dispacher = NetworkDispacher(self)
         self.isConnected = True  # Connected Flag So Outbound Queue Buffer Can Stop
-        # self.player = None
+        self.player = None
 
     async def initConnection(self, *args, **kwargs):
         try:
@@ -82,6 +83,14 @@ class NetworkHandler:
         defaultWorld = self.server.worldManager.worlds[self.server.config.defaultWorld]
         Logger.debug(f"{self.ip} | Preparing To Send World {defaultWorld.name}", module="network")
         await self.sendWorldData(defaultWorld)
+
+        # Create Player
+        Logger.debug(f"{self.ip} | Creating Player {username}", module="network")
+        self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
+
+        # Join Default World
+        Logger.debug(f"{self.ip} | Joining Default World {defaultWorld.name}", module="network")
+        self.player.joinWorld(defaultWorld)
 
         # TEMPORARY Player Spawn Packet
         Logger.debug(f"{self.ip} | Preparing To Send Spawn Player Information", module="network")

@@ -50,6 +50,10 @@ class ServerError(Exception):
     pass
 
 
+class WorldError(Exception):
+    pass
+
+
 class NetworkError(Exception):
     pass
 
