@@ -25,9 +25,11 @@ def MapGenerator(name: str, description: str = None, version: str = None):
 # Map Generator Skeleton
 @dataclass
 class AbstractMapGenerator:
+    # Optional Values Defined In Module Decorator
     NAME: str = ""
     DESCRIPTION: str = ""
     VERSION: str = ""
+    # Mandatory Values Defined During Module Initialization
     MODULE: Optional[AbstractModule] = None
 
     def generateMap(self, sizeX, sizeY, sizeZ, *args, **kwargs):

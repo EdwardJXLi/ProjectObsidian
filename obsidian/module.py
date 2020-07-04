@@ -19,7 +19,7 @@ from obsidian.constants import (
 # Module Skeleton
 @dataclass
 class AbstractModule:
-    # Defined Later In _ModuleManager
+    # Optional Values Defined In Module Decorator
     NAME: str = ""
     DESCRIPTION: str = ""
     AUTHOR: str = ""

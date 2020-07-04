@@ -38,13 +38,16 @@ def packageString(data, maxSize=64, encoding="ascii"):
 # Packet Skeleton
 @dataclass
 class AbstractPacket:
+    # Mandatory Values Defined In Packet Init
     ID: int         # Packet Id
     FORMAT: str     # Packet Structure Format
     CRITICAL: bool  # Packet Criticality. Dictates What Event Should Occur When Error
-    # Defined Later In _DirectionalPacketManager
+    # Mandatory Values Defined In Packet Decorator
     DIRECTION: PacketDirections = PacketDirections.NONE
     NAME: str = ""
+    # Optional Values Defined In Packet Decorator
     DESCRIPTION: str = ""
+    # Mandatory Values Defined During Module Initialization
     MODULE: Optional[AbstractModule] = None
 
     # Error Handler. Called If Critical If False And An Error Occurs
@@ -58,6 +61,7 @@ class AbstractPacket:
 
 @dataclass
 class AbstractRequestPacket(AbstractPacket):
+    # Mandatory Values Defined In Packet Init
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
@@ -67,6 +71,7 @@ class AbstractRequestPacket(AbstractPacket):
 
 @dataclass
 class AbstractResponsePacket(AbstractPacket):
+    # Mandatory Values Defined In Packet Init
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
     def serialize(*args, **kwargs):
