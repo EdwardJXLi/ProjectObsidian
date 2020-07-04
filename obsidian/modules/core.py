@@ -19,6 +19,7 @@ import struct
 @Module(
     "Core",
     description="Central Module For All Services",
+    author="Obsidian",
     version=__version__
 )
 class CoreModule(AbstractModule):

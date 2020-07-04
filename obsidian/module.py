@@ -22,6 +22,7 @@ class AbstractModule:
     # Defined Later In _ModuleManager
     NAME: str = ""
     DESCRIPTION: str = ""
+    AUTHOR: str = ""
     VERSION: str = ""
 
 
@@ -34,7 +35,7 @@ class _ModuleManager:
         self._errorList = []  # Logging Which Modules Encountered Errors While Loading Up
 
     # Registration. Called by Module Decorator
-    def register(self, name: str, description: str, version: str, module: Type[AbstractModule]):
+    def register(self, name: str, description: str, author: str, version: str, module: Type[AbstractModule]):
         Logger.info(f"Discovered Module {name}.", module="init-" + name)
         Logger.debug(f"Registering Module {name}", module="init-" + name)
         # Prevent Circular Looping :/
@@ -47,6 +48,7 @@ class _ModuleManager:
         # Attach Values As Attribute
         moduleObj.NAME = name
         moduleObj.DESCRIPTION = description
+        moduleObj.AUTHOR = author
         moduleObj.VERSION = version
         Logger.verbose(f"Looping Through All Items In {name}", module="init-" + name)
         for _, item in module.__dict__.items():  # Loop Through All Items In Class
@@ -123,15 +125,17 @@ class _ModuleManager:
         try:
             table = PrettyTableLite()  # Create Pretty List Class
 
-            table.field_names = ["Module", "Version"]
+            table.field_names = ["Module", "Author", "Version"]
             # Loop Through All Modules And Add Value
             for _, module in self._module_list.items():
                 # Adding Special Characters And Handlers
                 if module.VERSION is None:
                     module.VERSION = "Unknown"
+                if module.AUTHOR is None:
+                    module.AUTHOR = "Unknown"
 
                 # Add Row To Table
-                table.add_row([module.NAME, module.VERSION])
+                table.add_row([module.NAME, module.AUTHOR, module.VERSION])
             return table
         except FatalError as e:
             # Pass Down Fatal Error To Base Server
@@ -155,9 +159,9 @@ class _ModuleManager:
 
 # Module Registration Decorator
 # Used In @Module
-def Module(name: str, description: str = None, version: str = None):
+def Module(name: str, description: str = None, author: str = None, version: str = None):
     def internal(cls):
-        ModuleManager.register(name, description, version, cls)
+        ModuleManager.register(name, description, author, version, cls)
     return internal
 
 

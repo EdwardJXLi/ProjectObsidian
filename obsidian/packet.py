@@ -94,7 +94,7 @@ class _DirectionalPacketManager:
         self.direction = direction
         # Only Used If Request
         if self.direction is PacketDirections.REQUEST:
-            self.loopPackets = []  # Fast Cache Of Packet Ids That Are Used During GameLoop
+            self.loopPackets = []  # Fast Cache Of Packet Ids That Are Used During PlayerLoop
 
     # Registration. Called by Packet Decorator
     def register(self, name: str, description: str, packet: Type[AbstractRequestPacket], module):
@@ -113,9 +113,9 @@ class _DirectionalPacketManager:
         self._packet_list[name] = obj
         # Only Used If Request
         if self.direction is PacketDirections.REQUEST:
-            # Add To Packet Cache If Packet Is Used In Main Game Loop
+            # Add To Packet Cache If Packet Is Used In Main Player Loop
             if obj.PLAYERLOOP:
-                Logger.verbose(f"Adding Packet {obj.ID} To Main Game Loop Request Packet Cache", module="init-" + module.NAME)
+                Logger.verbose(f"Adding Packet {obj.ID} To Main Player Loop Request Packet Cache", module="init-" + module.NAME)
                 self.loopPackets.append(obj.ID)
 
     def getAllPacketIds(self):
@@ -154,14 +154,14 @@ class _PacketManager:
         try:
             table = PrettyTableLite()  # Create Pretty List Class
 
-            table.field_names = ["Direction", "Packet", "Id", "Module"]
+            table.field_names = ["Direction", "Packet", "Id", "Player Loop", "Module"]
             # Loop Through All Request Modules And Add Value
             for _, packet in self.RequestManager._packet_list.items():
                 # Adding Row To Table
-                table.add_row(["Request", packet.NAME, packet.ID, packet.MODULE.NAME])
+                table.add_row(["Request", packet.NAME, packet.ID, packet.PLAYERLOOP, packet.MODULE.NAME])
             # Loop Through All Response Modules And Add Value
             for _, packet in self.ResponseManager._packet_list.items():
-                table.add_row(["Response", packet.NAME, packet.ID, packet.MODULE.NAME])
+                table.add_row(["Response", packet.NAME, packet.ID, "N/A", packet.MODULE.NAME])
 
             return table
         except FatalError:
