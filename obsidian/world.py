@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
 
-from typing import List, Optional
+from typing import List
 import io
 import gzip
 import struct

@@ -26,6 +26,7 @@
         "motd",
         "nargs",
         "pkgutil",
+        "pyright",
         "strftime",
         "struct"
     ],

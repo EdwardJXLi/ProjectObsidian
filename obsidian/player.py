@@ -13,9 +13,10 @@ from obsidian.log import Logger
 
 # The Overall Server Player Manager
 class PlayerManager:
-    def __init__(self, server: Server):
+    def __init__(self, server: Server, maxSize: int = 1024):
         self.server = server
         self.players = dict()  # Key: Asyncio Network Data
+        self.maxSize = maxSize
 
     def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
         Logger.debug(f"Creating Player For Ip {network.ip}", module="player")
@@ -23,14 +24,18 @@ class PlayerManager:
         player = Player(self, network, username, verificationKey)
         # Adding Player Class
         if network.ip not in self.players.keys():
-            self.players[network.ip] = player
-            return player
+            if len(self.players) < self.maxSize:
+                self.players[network.ip] = player
+                return player
+            else:
+                raise ClientError("Server Is Full!")
         else:
             raise ServerError(f"Player {network.ip} is already registered! This should not happen!")
 
     def deletePlayer(self, player: Player):
+        Logger.debug(f"Removing Player {player.name}", module="player")
         # Remove Player From World If Necessary
-        if player.worldPlayerManager is not None:
+        if player.worldPlayerManager is not None and player.playerId is not None:
             Logger.debug("User Leaving World", module="player")
             player.worldPlayerManager.removePlayer(player)
 
@@ -45,7 +50,7 @@ class WorldPlayerManager:
     def __init__(self, world: World):
         self.world = world
         self.players = dict()  # Key: Player ID
-        self.idAllocator = playerIdAllocator(maxIds=self.world.maxPlayers)
+        self.idAllocator = playerIdAllocator(self.world.maxPlayers)
 
     def joinPlayer(self, player: Player):
         # Trying To Allocate Id
@@ -61,11 +66,14 @@ class WorldPlayerManager:
         Logger.debug(f"Player {player.networkHandler.ip} Username {player.name} Id {playerId} Joined World {self.world.name}", module="world-player")
 
     def removePlayer(self, player: Player):
+        Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
         # Delete User From Player List
         del self.players[player.playerId]
 
         # Deallocate Id
-        self.idAllocator.deallocateId(player.playerId)
+        # Kinda hacky but I have to use pyright ignore here
+        # player.playerId is guaranteed Non-None Before Here
+        self.idAllocator.deallocateId(player.playerId)  # type: ignore
 
         Logger.debug(f"Removed Player {player.networkHandler.ip} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
@@ -77,7 +85,7 @@ class Player:
         self.playerManager = playerManager
         self.networkHandler = networkHandler
         self.worldPlayerManager = None
-        self.playerId = 255  # Default Value 255
+        self.playerId = None
 
     def joinWorld(self, world: World):
         Logger.debug(f"Player {self.name} Joining World {world.name}", module="player")
@@ -88,7 +96,7 @@ class Player:
 
 
 class playerIdAllocator:
-    def __init__(self, maxIds=255):
+    def __init__(self, maxIds):
         self.maxIds = maxIds
         self.ids = [False] * self.maxIds  # Create Array Of `False` With Length maxIds
 
@@ -108,3 +116,5 @@ class playerIdAllocator:
         if self.ids[id] is False:
             Logger.warn(f"Trying To Deallocated Non Allocated Id {id}", "id-allocator")
         self.ids[id] = False
+
+        Logger.debug(f"Deallocated Id {id}", "id-allocator")
