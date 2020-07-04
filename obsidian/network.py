@@ -8,7 +8,6 @@ from typing import Type
 
 from obsidian.log import Logger
 from obsidian.world import World
-from obsidian.player import Player
 from obsidian.packet import (
     Packets,
     AbstractRequestPacket,
@@ -49,7 +48,10 @@ class NetworkHandler:
             await self.closeConnection(reason="Incomplete Read Error")
         except Exception as e:
             Logger.error(f"Error While Handling Connection {self.ip} - {type(e).__name__}: {e}", "network")
-            await self.closeConnection(reason="Internal Server Error", notifyPlayer=True)
+            try:
+                await self.closeConnection(reason="Internal Server Error", notifyPlayer=True)
+            except Exception as e:
+                Logger.error(f"Close Connected Failed To Complete Successfully - {type(e).__name__}: {e}", "network")
 
     async def _initConnection(self):
         # Log Connection
@@ -86,7 +88,7 @@ class NetworkHandler:
 
         # Create Player
         Logger.debug(f"{self.ip} | Creating Player {username}", module="network")
-        self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
+        self.player = self.server.playerManager.createPlayer(self, username, verificationKey)
 
         # Join Default World
         Logger.debug(f"{self.ip} | Joining Default World {defaultWorld.name}", module="network")
@@ -142,12 +144,15 @@ class NetworkHandler:
             reason = "No Reason Provided"
 
         Logger.debug(f"Closing Connection {self.ip} For Reason {reason}", module="network")
-        # Attempting To Send Disconnect Message
+        # Send Disconnect Message
         if notifyPlayer:
-            try:
-                await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
-            except Exception:
-                Logger.warn("Disconnect Packet Failed To Send!")
+            await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
+
+        # Removing and Cleaning Up Player If Necessary
+        if self.player is not None:
+            Logger.debug("Closing and Cleaning Up User", module="network")
+            self.player.playerManager.deletePlayer(self.player)
+
         # Set Disconnect Flags
         self.isConnected = False
         self.writer.close()

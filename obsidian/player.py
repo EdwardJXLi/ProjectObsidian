@@ -17,7 +17,7 @@ class PlayerManager:
         self.server = server
         self.players = dict()  # Key: Asyncio Network Data
 
-    async def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
+    def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
         Logger.debug(f"Creating Player For Ip {network.ip}", module="player")
         # Creating Player Class
         player = Player(self, network, username, verificationKey)
@@ -28,8 +28,16 @@ class PlayerManager:
         else:
             raise ServerError(f"Player {network.ip} is already registered! This should not happen!")
 
-    async def deletePlayer(self):
-        pass
+    def deletePlayer(self, player: Player):
+        # Remove Player From World If Necessary
+        if player.worldPlayerManager is not None:
+            Logger.debug("User Leaving World", module="player")
+            player.worldPlayerManager.removePlayer(player)
+
+        # Remove Player From PlayerManager
+        del self.players[player.networkHandler.ip]
+
+        Logger.debug(f"Successfully Removed Player {player.name}", module="player")
 
 
 # The Specific Player Manager Per World
@@ -48,8 +56,18 @@ class WorldPlayerManager:
             raise ClientError(f"World {self.world.name} Is Full")
 
         # Adding Player To Players List Using Id
+        player.playerId = playerId
         self.players[playerId] = player
         Logger.debug(f"Player {player.networkHandler.ip} Username {player.name} Id {playerId} Joined World {self.world.name}", module="world-player")
+
+    def removePlayer(self, player: Player):
+        # Delete User From Player List
+        del self.players[player.playerId]
+
+        # Deallocate Id
+        self.idAllocator.deallocateId(player.playerId)
+
+        Logger.debug(f"Removed Player {player.networkHandler.ip} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
 
 class Player:
@@ -59,11 +77,14 @@ class Player:
         self.playerManager = playerManager
         self.networkHandler = networkHandler
         self.worldPlayerManager = None
+        self.playerId = 255  # Default Value 255
 
     def joinWorld(self, world: World):
         Logger.debug(f"Player {self.name} Joining World {world.name}", module="player")
+        # Setting Self World Player Manager
+        self.worldPlayerManager = world.playerManager
         # Attaching Player Onto World Player Manager
-        world.playerManager.joinPlayer(self)
+        self.worldPlayerManager.joinPlayer(self)
 
 
 class playerIdAllocator:
@@ -73,7 +94,7 @@ class playerIdAllocator:
 
     def allocateId(self):
         # Loop Through All Ids, Return Id That Is Not Free
-        Logger.debug("Trying To Allocate Id", module="player")
+        Logger.debug("Trying To Allocate Id", module="id-allocator")
         for idIndex, allocatedStatus in enumerate(self.ids):
             if allocatedStatus is False:
                 # Set Flag To True And Return Id
@@ -83,5 +104,7 @@ class playerIdAllocator:
         raise WorldError("Id Allocator Failed To Allocate Open Id")
 
     def deallocateId(self, id: int):
-        # TODO
+        # Check If Id Is Already Deallocated
+        if self.ids[id] is False:
+            Logger.warn(f"Trying To Deallocated Non Allocated Id {id}", "id-allocator")
         self.ids[id] = False
