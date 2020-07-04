@@ -92,6 +92,9 @@ class _DirectionalPacketManager:
         # Creates List Of Packets That Has The Packet Name As Keys
         self._packet_list = dict()
         self.direction = direction
+        # Only Used If Request
+        if self.direction is PacketDirections.REQUEST:
+            self.loopPackets = []  # Fast Cache Of Packet Ids That Are Used During GameLoop
 
     # Registration. Called by Packet Decorator
     def register(self, name: str, description: str, packet: Type[AbstractRequestPacket], module):
@@ -108,6 +111,12 @@ class _DirectionalPacketManager:
         obj.DESCRIPTION = description
         obj.MODULE = module
         self._packet_list[name] = obj
+        # Only Used If Request
+        if self.direction is PacketDirections.REQUEST:
+            # Add To Packet Cache If Packet Is Used In Main Game Loop
+            if obj.PLAYERLOOP:
+                Logger.verbose(f"Adding Packet {obj.ID} To Main Game Loop Request Packet Cache", module="init-" + module.NAME)
+                self.loopPackets.append(obj.ID)
 
     def getAllPacketIds(self):
         return [obj.ID for obj in self._packet_list.values()]
