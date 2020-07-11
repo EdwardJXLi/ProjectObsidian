@@ -26,6 +26,24 @@ class CoreModule(AbstractModule):
     def __init__(self):
         super().__init__()
 
+    '''
+    @Packet(
+        "XXX",
+        PacketDirections.RESPONSE,
+        description="XXXXXXXXX"
+    )
+    class XXXPacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0xFF,
+                FORMAT="XXX",
+                CRITICAL=True
+            )
+
+        def serialize(self):
+            return None  # TODO
+    '''
+
     #
     # REQUEST PACKETS
     #
@@ -56,6 +74,57 @@ class CoreModule(AbstractModule):
             username = unpackageString(username)
             verificationKey = unpackageString(verificationKey)
             return protocolVersion, username, verificationKey
+
+    @Packet(
+        "UpdateBlock",
+        PacketDirections.REQUEST,
+        description="Packet Sent When Block Placed/Broken"
+    )
+    class UpdateBlockPacket(AbstractRequestPacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x05,
+                FORMAT="!BhhhBB",
+                CRITICAL=False,
+                PLAYERLOOP=True
+            )
+
+        def deserialize(self, rawData):
+            return None  # TODO
+
+    @Packet(
+        "PlayerUpdate",
+        PacketDirections.REQUEST,
+        description="Sent When Player Position And Orentation Is Sent"
+    )
+    class PlayerUpdatePacket(AbstractRequestPacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x08,
+                FORMAT="!BBhhhBB",
+                CRITICAL=False,
+                PLAYERLOOP=True
+            )
+
+        def deserialize(self, rawData):
+            return None  # TODO
+
+    @Packet(
+        "Message",
+        PacketDirections.REQUEST,
+        description="Sent When Player Sends A Message"
+    )
+    class ReceiveMessagePacket(AbstractRequestPacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x0d,
+                FORMAT="BB64s",
+                CRITICAL=False,
+                PLAYERLOOP=True
+            )
+
+        def deserialize(self, rawData):
+            return None  # TODO
 
     #
     # RESPONSE PACKETS
@@ -171,24 +240,20 @@ class CoreModule(AbstractModule):
             return msg
 
     @Packet(
-        "DisconnectPlayer",
+        "SetBlock",
         PacketDirections.RESPONSE,
-        description="Packet Sent To Client To Force Disconnect"
+        description="Sent To Update Block Changes"
     )
-    class DisconnectPlayerPacket(AbstractResponsePacket):
+    class SetBlockPacket(AbstractResponsePacket):
         def __init__(self):
             super().__init__(
-                ID=0x0e,
-                FORMAT="B64s",
-                CRITICAL=True
+                ID=0x06,
+                FORMAT="!BhhhB",
+                CRITICAL=False
             )
 
-        def serialize(self, reason):
-            # <Player Disconnect Packet>
-            # (Byte) Packet ID
-            # (64String) Disconnect Reason
-            msg = struct.pack(self.FORMAT, self.ID, packageString(reason))
-            return msg
+        def serialize(self, blockX, blockY, blockZ, blockType):
+            return None  # TODO
 
     @Packet(
         "SpawnPlayer",
@@ -215,6 +280,138 @@ class CoreModule(AbstractModule):
             # (Byte) Spawn Pitch
             msg = struct.pack(self.FORMAT, self.ID, playerId, packageString(playerName), x, y, z, yaw, pitch)
             return msg
+
+    @Packet(
+        "PlayerMovementUpdate",
+        PacketDirections.RESPONSE,
+        description="Sent To Update Player Position and Rotation"
+    )
+    class PlayerMovementUpdatePacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x08,
+                FORMAT="!BBhhhBB",
+                CRITICAL=False
+            )
+
+        def serialize(self):
+            return None  # TODO
+
+    @Packet(
+        "PositionOrientationUpdate",
+        PacketDirections.RESPONSE,
+        description="Sent to Update Changes in Position and Orientation"
+    )
+    class PositionOrientationUpdatePacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x09,
+                FORMAT="!BBbbbBB",
+                CRITICAL=False
+            )
+
+        def serialize(self):
+            return None  # TODO
+
+    @Packet(
+        "PositionUpdate",
+        PacketDirections.RESPONSE,
+        description="Sent to Update Changes in Position"
+    )
+    class PositionUpdatePacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x0a,
+                FORMAT="!BBbb",
+                CRITICAL=False
+            )
+
+        def serialize(self):
+            return None  # TODO
+
+    @Packet(
+        "OrientationUpdate",
+        PacketDirections.RESPONSE,
+        description="Sent to Update Changes in Orientation"
+    )
+    class OrientationUpdatePacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x0b,
+                FORMAT="!BBBB",
+                CRITICAL=False
+            )
+
+        def serialize(self):
+            return None  # TODO
+
+    @Packet(
+        "DespawnPlayer",
+        PacketDirections.RESPONSE,
+        description="Sent to Despawn Existing Player"
+    )
+    class DespawnPlayerPacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x0c,
+                FORMAT="BB",
+                CRITICAL=True
+            )
+
+        def serialize(self):
+            return None  # TODO
+
+    @Packet(
+        "Message",
+        PacketDirections.RESPONSE,
+        description="Broadcasts Message To Player"
+    )
+    class SendMessagePacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x0d,
+                FORMAT="BB64s",
+                CRITICAL=False
+            )
+
+        def serialize(self):
+            return None  # TODO
+
+    @Packet(
+        "DisconnectPlayer",
+        PacketDirections.RESPONSE,
+        description="Packet Sent To Client To Force Disconnect"
+    )
+    class DisconnectPlayerPacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x0e,
+                FORMAT="B64s",
+                CRITICAL=True
+            )
+
+        def serialize(self, reason):
+            # <Player Disconnect Packet>
+            # (Byte) Packet ID
+            # (64String) Disconnect Reason
+            msg = struct.pack(self.FORMAT, self.ID, packageString(reason))
+            return msg
+
+    @Packet(
+        "UpdateUserType",
+        PacketDirections.RESPONSE,
+        description="Sent to Update User OP Status. User type is 0x64 for op, 0x00 for normal user."
+    )
+    class UpdateUserTypePacket(AbstractResponsePacket):
+        def __init__(self):
+            super().__init__(
+                ID=0x0f,
+                FORMAT="BB",
+                CRITICAL=False
+            )
+
+        def serialize(self):
+            return None  # TODO
 
     #
     # Map GENERATORS
