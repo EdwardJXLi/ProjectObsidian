@@ -26,24 +26,6 @@ class CoreModule(AbstractModule):
     def __init__(self):
         super().__init__()
 
-    '''
-    @Packet(
-        "XXX",
-        PacketDirections.RESPONSE,
-        description="XXXXXXXXX"
-    )
-    class XXXPacket(AbstractResponsePacket):
-        def __init__(self):
-            super().__init__(
-                ID=0xFF,
-                FORMAT="XXX",
-                CRITICAL=True
-            )
-
-        def serialize(self):
-            return None  # TODO
-    '''
-
     #
     # REQUEST PACKETS
     #
@@ -62,7 +44,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=False
             )
 
-        def deserialize(self, rawData):
+        async def deserialize(self, rawData):
             # <Player Identification Packet>
             # (Byte) Packet ID
             # (Byte) Protocol Version
@@ -89,7 +71,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        def deserialize(self, rawData):
+        async def deserialize(self, rawData):
             return None  # TODO
 
     @Packet(
@@ -106,7 +88,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        def deserialize(self, rawData):
+        async def deserialize(self, rawData):
             return None  # TODO
 
     @Packet(
@@ -123,7 +105,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        def deserialize(self, rawData):
+        async def deserialize(self, rawData):
             return None  # TODO
 
     #
@@ -143,7 +125,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        def serialize(self, protocolVersion, name, motd, userType):
+        async def serialize(self, protocolVersion, name, motd, userType):
             # <Server Identification Packet>
             # (Byte) Packet ID
             # (Byte) Protocol Version
@@ -166,7 +148,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        def serialize(self):
+        async def serialize(self):
             # <Ping Packet>
             # (Byte) Packet ID
             msg = struct.pack(self.FORMAT, self.ID)
@@ -185,7 +167,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        def serialize(self):
+        async def serialize(self):
             # <Level Initialize Packet>
             # (Byte) Packet ID
             msg = struct.pack(self.FORMAT, self.ID)
@@ -204,7 +186,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        def serialize(self, chunk, percentComplete=0):
+        async def serialize(self, chunk, percentComplete=0):
             # <Level Data Chunk Packet>
             # (Byte) Packet ID
             # (Short) Chunk Size
@@ -230,7 +212,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        def serialize(self, sizeX, sizeY, sizeZ):
+        async def serialize(self, sizeX, sizeY, sizeZ):
             # <Level Initialize Packet>
             # (Byte) Packet ID
             # (Short) X Size
@@ -252,7 +234,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        def serialize(self, blockX, blockY, blockZ, blockType):
+        async def serialize(self, blockX, blockY, blockZ, blockType):
             return None  # TODO
 
     @Packet(
@@ -268,7 +250,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        def serialize(self, playerId, playerName, x, y, z, yaw, pitch):
+        async def serialize(self, playerId, playerName, x, y, z, yaw, pitch):
             # <Spawn Player Packet>
             # (Byte) Packet ID
             # (Signed Byte) Player ID
@@ -294,7 +276,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        def serialize(self):
+        async def serialize(self):
             return None  # TODO
 
     @Packet(
@@ -310,7 +292,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        def serialize(self):
+        async def serialize(self):
             return None  # TODO
 
     @Packet(
@@ -326,7 +308,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        def serialize(self):
+        async def serialize(self):
             return None  # TODO
 
     @Packet(
@@ -342,7 +324,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        def serialize(self):
+        async def serialize(self):
             return None  # TODO
 
     @Packet(
@@ -358,7 +340,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        def serialize(self):
+        async def serialize(self):
             return None  # TODO
 
     @Packet(
@@ -374,7 +356,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        def serialize(self):
+        async def serialize(self):
             return None  # TODO
 
     @Packet(
@@ -390,7 +372,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        def serialize(self, reason):
+        async def serialize(self, reason):
             # <Player Disconnect Packet>
             # (Byte) Packet ID
             # (64String) Disconnect Reason
@@ -410,7 +392,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        def serialize(self):
+        async def serialize(self):
             return None  # TODO
 
     #

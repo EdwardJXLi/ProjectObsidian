@@ -65,7 +65,7 @@ class AbstractRequestPacket(AbstractPacket):
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
-    def deserialize(*args, **kwargs):
+    async def deserialize(self, *args, **kwargs):
         return None
 
 
@@ -74,7 +74,7 @@ class AbstractResponsePacket(AbstractPacket):
     # Mandatory Values Defined In Packet Init
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
-    def serialize(*args, **kwargs):
+    async def serialize(self, *args, **kwargs):
         return bytes()
 
 

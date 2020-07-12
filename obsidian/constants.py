@@ -42,6 +42,10 @@ class ModuleError(Exception):
     pass
 
 
+class PacketError(Exception):
+    pass
+
+
 class MapGenerationError(Exception):
     pass
 

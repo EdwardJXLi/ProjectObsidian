@@ -191,7 +191,7 @@ class NetworkDispacher:
 
             # Deserialize Packet
             # TODO: Fix type complaint!
-            serializedData = packet.deserialize(rawData)  # type: ignore
+            serializedData = await packet.deserialize(rawData)  # type: ignore
             return serializedData
         except asyncio.TimeoutError:
             raise ClientError(f"Did Not Receive Packet {packet.ID} In Time!")
@@ -211,7 +211,7 @@ class NetworkDispacher:
     ):
         try:
             # Generate Packet
-            rawData = packet.serialize(*args, **kwargs)
+            rawData = await packet.serialize(*args, **kwargs)
 
             # Send Packet
             Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.ip} | ID: {packet.ID} | SIZE: {packet.SIZE} | DATA: {rawData}", module="network")
