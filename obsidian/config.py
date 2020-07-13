@@ -22,4 +22,5 @@ class ServerConfig:
 
     # Reload; Reset Information From File
     def reload(self):
-        pass  # TODO
+        # TODO
+        raise NotImplementedError("Server Config Loading Is Not Implemented")

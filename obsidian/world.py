@@ -42,8 +42,8 @@ class WorldManager:
 
     def loadWorlds(self):
         if self.persistant:
-            # TODO: File World Loading
-            pass
+            # TODO: World File Loading
+            raise NotImplementedError("Persistant World Loading Is Not Implemented")
         else:
             defaultWorld = self.server.config.defaultWorld
             Logger.debug(f"Creating Temporary World {defaultWorld}", module="init-world")

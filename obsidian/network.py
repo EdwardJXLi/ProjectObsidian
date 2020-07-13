@@ -293,7 +293,3 @@ class NetworkDispacher:
             raise ClientError("Did Not Receive Packet In Time!")
         except Exception as e:
             raise e  # Pass Down Exception To Lower Layer
-
-    # Initialize Regerster Packer Handler
-    def registerInit(self, module: str):
-        pass  # Unused for now
