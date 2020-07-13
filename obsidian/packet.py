@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from obsidian.module import AbstractModule
 
 # from obsidian.network import *
-from obsidian.constants import InitError, InitRegisterError, FatalError
+from obsidian.constants import InitError, InitRegisterError, PacketError, FatalError
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 
@@ -99,7 +99,7 @@ class _DirectionalPacketManager:
         self.direction = direction
         # Only Used If Request
         if self.direction is PacketDirections.REQUEST:
-            self.loopPackets = []  # Fast Cache Of Packet Ids That Are Used During PlayerLoop
+            self.loopPackets = {}  # Fast Cache Of Packet Ids to Packet Objects That Are Used During PlayerLoop
 
     # Registration. Called by Packet Decorator
     def register(self, name: str, description: str, packet: Type[AbstractRequestPacket], module):
@@ -121,10 +121,17 @@ class _DirectionalPacketManager:
             # Add To Packet Cache If Packet Is Used In Main Player Loop
             if obj.PLAYERLOOP:
                 Logger.verbose(f"Adding Packet {obj.ID} To Main Player Loop Request Packet Cache", module="init-" + module.NAME)
-                self.loopPackets.append(obj.ID)
+                self.loopPackets[obj.ID] = obj
 
     def getAllPacketIds(self):
         return [obj.ID for obj in self._packet_list.values()]
+
+    def getPacketById(self, packetId):
+        # Search Packet With Matching packetId
+        for packet in self._packet_list.values():
+            if packet.ID == packetId:
+                return packet
+        raise PacketError(f"Packet {packetId} Was Not Found")
 
     # Handles _DirectionalPacketManager["item"]
     def __getitem__(self, packet: str):

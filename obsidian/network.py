@@ -9,7 +9,7 @@ from typing import Type
 from obsidian.log import Logger
 from obsidian.world import World
 from obsidian.packet import (
-    Packets,
+    PacketManager, Packets,
     AbstractRequestPacket,
     AbstractResponsePacket
 )
@@ -107,10 +107,23 @@ class NetworkHandler:
             defaultWorld.spawnPitch
         )
 
+        '''
         # Setting Up Ping Loop To Check Connection
         while True:
             await self.dispacher.sendPacket(Packets.Response.Ping)
             await asyncio.sleep(1)
+        '''
+
+        # Setup And Begin Player Loop
+        Logger.debug(f"{self.ip} | Starting Player Loop", module="network")
+        await self._beginPlayerLoop()
+
+    async def _beginPlayerLoop(self):
+        # Called to handle Player Loop Packets
+        # (Packets Sent During Normal Player Gameplay)
+        while self.isConnected:
+            # Listen and Handle Incoming Packets
+            await self.dispacher.listenForPackets(packetDict=PacketManager.Request.loopPackets)
 
     async def sendWorldData(self, world: World):
         # Send Level Initialize Packet
@@ -163,17 +176,13 @@ class NetworkDispacher:
         self.player = None
         self.handler = handler
 
-    # Used in main listen loop; expect multiple types of packets!
-    async def listenForPacket(self, timeout=NET_TIMEOUT):
-        pass
-
     # NOTE: or call receivePacket
     # Used when exact packet is expected
     async def readPacket(
         self,
         packet: Type[AbstractRequestPacket],
         timeout=NET_TIMEOUT,
-        checkId=True,
+        checkId=True
     ):
         try:
             # Get Packet Data
@@ -181,7 +190,8 @@ class NetworkDispacher:
             rawData = await asyncio.wait_for(
                 self.handler.reader.readexactly(
                     packet.SIZE
-                ), timeout)
+                ), timeout
+            )
             Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}", module="network")
 
             # Check If Packet ID is Valid
@@ -227,6 +237,51 @@ class NetworkDispacher:
             else:
                 # TODO: Remove Hacky Type Ignore
                 return packet.onError(e)  # type: ignore
+
+    # Used in main listen loop; expect multiple types of packets!
+    async def listenForPackets(
+        self,
+        packetDict={},
+        ignoreUnknownPackets=False,
+        timeout=NET_TIMEOUT
+    ):
+        try:
+            # Reading First Byte For Packet Header
+            rawData = await asyncio.wait_for(
+                self.handler.reader.readexactly(
+                    1  # Size of packet header
+                ), timeout
+            )
+            Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | Incoming Player Loop Packet Id {rawData}", module="network")
+
+            # Convert Packet Header to Int
+            packetHeader = int.from_bytes(rawData, byteorder="big")
+
+            # Check if packet is to be expected
+            if packetHeader not in packetDict.keys():
+                # Ignore if ignoreUnknownPackets flag is set
+                if not ignoreUnknownPackets:
+                    raise ClientError(f"Unknown Packet {packetHeader}")
+
+            # Get packet using packetId
+            packet = PacketManager.Request.getPacketById(packetHeader)
+
+            # Reading and Appending Rest Of Packet Data (Packet Body)
+            rawData += await asyncio.wait_for(
+                self.handler.reader.readexactly(
+                    packet.SIZE - 1  # Size of packet body (packet minus header size)
+                ), timeout
+            )
+            Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}", module="network")
+
+            # Deserialize Packet
+            # TODO: Fix type complaint!
+            await packet.deserialize(rawData)  # type: ignore
+
+        except asyncio.TimeoutError:
+            raise ClientError("Did Not Receive Packet In Time!")
+        except Exception as e:
+            raise e  # Pass Down Exception To Lower Layer
 
     # Initialize Regerster Packer Handler
     def registerInit(self, module: str):
