@@ -94,7 +94,7 @@ class CoreModule(AbstractModule):
             return None  # TODO
 
     @Packet(
-        "Message",
+        "PlayerMessage",
         PacketDirections.REQUEST,
         description="Sent When Player Sends A Message"
     )
@@ -347,7 +347,7 @@ class CoreModule(AbstractModule):
             return None  # TODO
 
     @Packet(
-        "Message",
+        "PlayerMessage",
         PacketDirections.RESPONSE,
         description="Broadcasts Message To Player"
     )

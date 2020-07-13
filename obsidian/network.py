@@ -242,6 +242,7 @@ class NetworkDispacher:
     async def listenForPackets(
         self,
         packetDict={},
+        headerSize=1,
         ignoreUnknownPackets=False,
         timeout=NET_TIMEOUT
     ):
@@ -249,7 +250,7 @@ class NetworkDispacher:
             # Reading First Byte For Packet Header
             rawData = await asyncio.wait_for(
                 self.handler.reader.readexactly(
-                    1  # Size of packet header
+                    headerSize  # Size of packet header
                 ), timeout
             )
             Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | Incoming Player Loop Packet Id {rawData}", module="network")
@@ -261,6 +262,7 @@ class NetworkDispacher:
             if packetHeader not in packetDict.keys():
                 # Ignore if ignoreUnknownPackets flag is set
                 if not ignoreUnknownPackets:
+                    Logger.debug(f"Player Sent Unknown Packet Header {rawData} ({packetHeader})", module="network")
                     raise ClientError(f"Unknown Packet {packetHeader}")
 
             # Get packet using packetId
@@ -269,14 +271,23 @@ class NetworkDispacher:
             # Reading and Appending Rest Of Packet Data (Packet Body)
             rawData += await asyncio.wait_for(
                 self.handler.reader.readexactly(
-                    packet.SIZE - 1  # Size of packet body (packet minus header size)
+                    packet.SIZE - headerSize  # Size of packet body (packet minus header size)
                 ), timeout
             )
             Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}", module="network")
 
-            # Deserialize Packet
-            # TODO: Fix type complaint!
-            await packet.deserialize(rawData)  # type: ignore
+            # Attempting to Deserialize Packets
+            try:
+                # Deserialize Packet
+                serializedData = await packet.deserialize(rawData)
+                return packetHeader, serializedData
+
+            except Exception as e:
+                if packet.CRITICAL or type(e) in CRITICAL_REQUEST_ERRORS:
+                    raise e  # Pass Down Exception To Lower Layer
+                else:
+                    # TODO: Remove Hacky Type Ignore
+                    return packetHeader, packet.onError(e)  # type: ignore
 
         except asyncio.TimeoutError:
             raise ClientError("Did Not Receive Packet In Time!")
