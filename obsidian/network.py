@@ -88,11 +88,11 @@ class NetworkHandler:
 
         # Create Player
         Logger.debug(f"{self.ip} | Creating Player {username}", module="network")
-        self.player = self.server.playerManager.createPlayer(self, username, verificationKey)
+        self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
 
         # Join Default World
         Logger.debug(f"{self.ip} | Joining Default World {defaultWorld.name}", module="network")
-        self.player.joinWorld(defaultWorld)
+        await self.player.joinWorld(defaultWorld)
 
         # TEMPORARY Player Spawn Packet
         Logger.debug(f"{self.ip} | Preparing To Send Spawn Player Information", module="network")
@@ -168,7 +168,7 @@ class NetworkHandler:
         # Removing and Cleaning Up Player If Necessary
         if self.player is not None:
             Logger.debug("Closing and Cleaning Up User", module="network")
-            self.player.playerManager.deletePlayer(self.player)
+            await self.player.playerManager.deletePlayer(self.player)
 
         # Set Disconnect Flags
         self.isConnected = False

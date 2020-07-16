@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 from typing import List
 
 from obsidian.constants import CRITICAL_RESPONSE_ERRORS, ServerError, WorldError, ClientError
-from obsidian.packet import AbstractPacket
+from obsidian.packet import AbstractPacket, Packets
 from obsidian.log import Logger
 
 
@@ -19,7 +19,7 @@ class PlayerManager:
         self.players = dict()  # Key: Asyncio Network Data, Value: Player Obj
         self.maxSize = maxSize
 
-    def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
+    async def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
         Logger.debug(f"Creating Player For Ip {network.ip}", module="player")
         # Creating Player Class
         player = Player(self, network, username, verificationKey)
@@ -33,12 +33,12 @@ class PlayerManager:
         else:
             raise ServerError(f"Player {network.ip} is already registered! This should not happen!")
 
-    def deletePlayer(self, player: Player):
+    async def deletePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name}", module="player")
         # Remove Player From World If Necessary
         if player.worldPlayerManager is not None and player.playerId is not None:
             Logger.debug("User Leaving World", module="player")
-            player.worldPlayerManager.removePlayer(player)
+            await player.worldPlayerManager.removePlayer(player)
 
         # Remove Player From PlayerManager
         del self.players[player.networkHandler.ip]
@@ -70,7 +70,7 @@ class WorldPlayerManager:
         self.players = dict()  # Key: Player ID
         self.idAllocator = playerIdAllocator(self.world.maxPlayers)
 
-    def joinPlayer(self, player: Player):
+    async def joinPlayer(self, player: Player):
         # Trying To Allocate Id
         # Fails If All Slots Are Taken
         try:
@@ -83,7 +83,7 @@ class WorldPlayerManager:
         self.players[playerId] = player
         Logger.debug(f"Player {player.networkHandler.ip} Username {player.name} Id {playerId} Joined World {self.world.name}", module="world-player")
 
-    def removePlayer(self, player: Player):
+    async def removePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
         # Delete User From Player List
         del self.players[player.playerId]
@@ -122,12 +122,12 @@ class Player:
         self.worldPlayerManager = None
         self.playerId = None
 
-    def joinWorld(self, world: World):
+    async def joinWorld(self, world: World):
         Logger.debug(f"Player {self.name} Joining World {world.name}", module="player")
         # Setting Self World Player Manager
         self.worldPlayerManager = world.playerManager
         # Attaching Player Onto World Player Manager
-        self.worldPlayerManager.joinPlayer(self)
+        await self.worldPlayerManager.joinPlayer(self)
 
 
 class playerIdAllocator:
