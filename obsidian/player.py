@@ -5,9 +5,10 @@ if TYPE_CHECKING:
     from obsidian.world import World
     from obsidian.network import NetworkHandler
 
-# from typing import Dict
+from typing import List
 
-from obsidian.constants import ServerError, WorldError, ClientError
+from obsidian.constants import CRITICAL_RESPONSE_ERRORS, ServerError, WorldError, ClientError
+from obsidian.packet import AbstractPacket
 from obsidian.log import Logger
 
 
@@ -15,7 +16,7 @@ from obsidian.log import Logger
 class PlayerManager:
     def __init__(self, server: Server, maxSize: int = 1024):
         self.server = server
-        self.players = dict()  # Key: Asyncio Network Data
+        self.players = dict()  # Key: Asyncio Network Data, Value: Player Obj
         self.maxSize = maxSize
 
     def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
@@ -43,6 +44,23 @@ class PlayerManager:
         del self.players[player.networkHandler.ip]
 
         Logger.debug(f"Successfully Removed Player {player.name}", module="player")
+
+    async def sendGlobalPacket(self, packet: AbstractPacket, *args, ignoreList: List[Player] = [], **kwargs):
+        Logger.debug(f"Sending Packet {packet.NAME} To All Connected Players", module="player-network")
+        # Loop Through All Players
+        for player in self.players.values():
+            # Checking if player is not in ignoreList
+            if player not in ignoreList:
+                try:
+                    # Sending Packet To Player
+                    await player.networkHandler.dispacher.sendPacket(packet, *args, **kwargs)
+                except Exception as e:
+                    if e not in CRITICAL_RESPONSE_ERRORS:
+                        # Something Broke!
+                        Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
+                    else:
+                        # Bad Timing with Connection Closure. Ignoring
+                        Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.ip}")
 
 
 # The Specific Player Manager Per World
@@ -76,6 +94,23 @@ class WorldPlayerManager:
         self.idAllocator.deallocateId(player.playerId)  # type: ignore
 
         Logger.debug(f"Removed Player {player.networkHandler.ip} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
+
+    async def sendWorldPacket(self, packet: AbstractPacket, *args, ignoreList: List[Player] = [], **kwargs):
+        Logger.debug(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")
+        # Loop Through All Players
+        for player in self.players.values():
+            # Checking if player is not in ignoreList
+            if player not in ignoreList:
+                try:
+                    # Sending Packet To Player
+                    await player.networkHandler.dispacher.sendPacket(packet, *args, **kwargs)
+                except Exception as e:
+                    if e not in CRITICAL_RESPONSE_ERRORS:
+                        # Something Broke!
+                        Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
+                    else:
+                        # Bad Timing with Connection Closure. Ignoring
+                        Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.ip}")
 
 
 class Player:

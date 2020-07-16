@@ -1,5 +1,6 @@
 from obsidian.module import Module, AbstractModule
 from obsidian.constants import __version__
+from obsidian.log import Logger
 from obsidian.packet import (
     Packet,
     AbstractRequestPacket,
@@ -94,7 +95,7 @@ class CoreModule(AbstractModule):
             return None  # TODO
 
     @Packet(
-        "PlayerMessage",
+        "ReceiveMessage",
         PacketDirections.REQUEST,
         description="Sent When Player Sends A Message"
     )
@@ -347,7 +348,7 @@ class CoreModule(AbstractModule):
             return None  # TODO
 
     @Packet(
-        "PlayerMessage",
+        "SendMessage",
         PacketDirections.RESPONSE,
         description="Broadcasts Message To Player"
     )
@@ -359,8 +360,15 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        async def serialize(self):
-            return None  # TODO
+        async def serialize(self, message, playerId=0):
+            # <Player Message Packet>
+            # (Byte) Packet ID
+            # (Byte) Player ID (Seems to be unused?)
+            # (64String) Message
+            if len(message) > 64:
+                Logger.warn(f"Trying to send message {message} over 64 character limit!", module="packet-serializer")
+            msg = struct.pack(self.FORMAT, self.ID, playerId, packageString(message))
+            return msg
 
     @Packet(
         "DisconnectPlayer",
