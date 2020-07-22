@@ -5,10 +5,10 @@ if TYPE_CHECKING:
     from obsidian.world import World
     from obsidian.network import NetworkHandler
 
-from typing import List
+from typing import List, Optional, Type
 
 from obsidian.constants import CRITICAL_RESPONSE_ERRORS, ServerError, WorldError, ClientError
-from obsidian.packet import AbstractPacket, Packets
+from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
 
 
@@ -16,22 +16,19 @@ from obsidian.log import Logger
 class PlayerManager:
     def __init__(self, server: Server, maxSize: int = 1024):
         self.server = server
-        self.players = dict()  # Key: Asyncio Network Data, Value: Player Obj
+        self.players = []  # List of players (no order)
         self.maxSize = maxSize
 
     async def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
         Logger.debug(f"Creating Player For Ip {network.ip}", module="player")
         # Creating Player Class
         player = Player(self, network, username, verificationKey)
+        # Checking if server is full
+        if len(self.players) >= self.maxSize:
+            raise ClientError("Server Is Full!")
         # Adding Player Class
-        if network.ip not in self.players.keys():
-            if len(self.players) < self.maxSize:
-                self.players[network.ip] = player
-                return player
-            else:
-                raise ClientError("Server Is Full!")
-        else:
-            raise ServerError(f"Player {network.ip} is already registered! This should not happen!")
+        self.players.append(player)
+        return player
 
     async def deletePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name}", module="player")
@@ -41,14 +38,16 @@ class PlayerManager:
             await player.worldPlayerManager.removePlayer(player)
 
         # Remove Player From PlayerManager
-        del self.players[player.networkHandler.ip]
+        for playerIndex, playerObj in enumerate(self.players):
+            if(playerObj.networkHandler.ip == player.networkHandler.ip):
+                del self.players[playerIndex]
 
         Logger.debug(f"Successfully Removed Player {player.name}", module="player")
 
-    async def sendGlobalPacket(self, packet: AbstractPacket, *args, ignoreList: List[Player] = [], **kwargs):
+    async def sendGlobalPacket(self, packet: AbstractResponsePacket, *args, ignoreList: List[Player] = [], **kwargs):
         Logger.debug(f"Sending Packet {packet.NAME} To All Connected Players", module="player-network")
         # Loop Through All Players
-        for player in self.players.values():
+        for player in self.players:
             # Checking if player is not in ignoreList
             if player not in ignoreList:
                 try:
@@ -67,60 +66,118 @@ class PlayerManager:
 class WorldPlayerManager:
     def __init__(self, world: World):
         self.world = world
-        self.players = dict()  # Key: Player ID
-        self.idAllocator = playerIdAllocator(self.world.maxPlayers)
+        self.players: List[Optional[Player]] = [None] * world.maxPlayers  # type: ignore
 
     async def joinPlayer(self, player: Player):
         # Trying To Allocate Id
         # Fails If All Slots Are Taken
         try:
-            playerId = self.idAllocator.allocateId()
+            playerId = self.allocateId()
         except WorldError:
             raise ClientError(f"World {self.world.name} Is Full")
 
         # Adding Player To Players List Using Id
+        Logger.debug(f"Player {player.networkHandler.ip} Username {player.name} Id {playerId} Is Joining World {self.world.name}", module="world-player")
         player.playerId = playerId
         self.players[playerId] = player
-        Logger.debug(f"Player {player.networkHandler.ip} Username {player.name} Id {playerId} Joined World {self.world.name}", module="world-player")
+
+        # Set Player Location
+        # TODO saving player location
+        player.posX = self.world.spawnX
+        player.posY = self.world.spawnY
+        player.posZ = self.world.spawnZ
+        player.posYaw = self.world.spawnYaw
+        player.posPitch = self.world.spawnPitch
+
+        # Send Player Join Packet To All Players (Except Joining User)
+        await self.sendWorldPacket(
+            Packets.Response.SpawnPlayer,
+            player.playerId,
+            player.name,
+            player.posX,
+            player.posY,
+            player.posZ,
+            player.posYaw,
+            player.posPitch,
+            ignoreList=[player]  # Don't send packet to self!
+        )
+
+        # Sending Join Chat Message
+        await self.sendWorldPacket(Packets.Response.SendMessage, f"&e{player.name} Joined The Game &9(ID {player.playerId})&f")
 
     async def removePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
         # Delete User From Player List
-        del self.players[player.playerId]
+        if player.playerId is not None:
+            self.players[player.playerId] = None
+        else:
+            raise ServerError(f"Trying to Remove Player {player.name} With No Player Id")
 
         # Deallocate Id
         # Kinda hacky but I have to use pyright ignore here
         # player.playerId is guaranteed Non-None Before Here
-        self.idAllocator.deallocateId(player.playerId)  # type: ignore
+        self.deallocateId(player.playerId)  # type: ignore
 
         Logger.debug(f"Removed Player {player.networkHandler.ip} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
-    async def sendWorldPacket(self, packet: AbstractPacket, *args, ignoreList: List[Player] = [], **kwargs):
+        # Sending Leave Chat Message
+        await self.sendWorldPacket(Packets.Response.SendMessage, f"&e{player.name} Left The Game &9(ID {player.playerId})&f")
+
+    def allocateId(self):
+        # Loop Through All Ids, Return Id That Is Not Free
+        Logger.debug("Trying To Allocate Id", module="id-allocator")
+        for idIndex, playerObj in enumerate(self.players):
+            if playerObj is None:
+                # Return Free ID
+                return idIndex
+
+        raise WorldError("Id Allocator Failed To Allocate Open Id")
+
+    def deallocateId(self, id: int):
+        # Check If Id Is Already Deallocated
+        if self.players[id] is None:
+            Logger.warn(f"Trying To Deallocated Non Allocated Id {id}", "id-allocator")
+        self.players[id] = None
+
+        Logger.debug(f"Deallocated Id {id}", "id-allocator")
+
+    async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
         Logger.debug(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")
         # Loop Through All Players
-        for player in self.players.values():
+        for player in self.players:
+            # Checking if Player Exists
+            if player is None:
+                continue
+
             # Checking if player is not in ignoreList
-            if player not in ignoreList:
-                try:
-                    # Sending Packet To Player
-                    await player.networkHandler.dispacher.sendPacket(packet, *args, **kwargs)
-                except Exception as e:
-                    if e not in CRITICAL_RESPONSE_ERRORS:
-                        # Something Broke!
-                        Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
-                    else:
-                        # Bad Timing with Connection Closure. Ignoring
-                        Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.ip}")
+            if player in ignoreList:
+                continue
+
+            # Attempting to Send Packet
+            try:
+                await player.networkHandler.dispacher.sendPacket(packet, *args, **kwargs)
+            except Exception as e:
+                if e not in CRITICAL_RESPONSE_ERRORS:
+                    # Something Broke!
+                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
+                else:
+                    # Bad Timing with Connection Closure. Ignoring
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.ip}")
 
 
 class Player:
     def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, name, key):
         self.name = name
+        self.posX = 0,
+        self.posY = 0,
+        self.posZ = 0,
+        self.posYaw = 0,
+        self.posPitch = 0,
         self.verificationKey = key
         self.playerManager = playerManager
         self.networkHandler = networkHandler
         self.worldPlayerManager = None
-        self.playerId = None
+        self.playerId: Optional[int] = None
 
     async def joinWorld(self, world: World):
         Logger.debug(f"Player {self.name} Joining World {world.name}", module="player")
@@ -128,28 +185,3 @@ class Player:
         self.worldPlayerManager = world.playerManager
         # Attaching Player Onto World Player Manager
         await self.worldPlayerManager.joinPlayer(self)
-
-
-class playerIdAllocator:
-    def __init__(self, maxIds):
-        self.maxIds = maxIds
-        self.ids = [False] * self.maxIds  # Create Array Of `False` With Length maxIds
-
-    def allocateId(self):
-        # Loop Through All Ids, Return Id That Is Not Free
-        Logger.debug("Trying To Allocate Id", module="id-allocator")
-        for idIndex, allocatedStatus in enumerate(self.ids):
-            if allocatedStatus is False:
-                # Set Flag To True And Return Id
-                self.ids[idIndex] = True
-                return idIndex
-
-        raise WorldError("Id Allocator Failed To Allocate Open Id")
-
-    def deallocateId(self, id: int):
-        # Check If Id Is Already Deallocated
-        if self.ids[id] is False:
-            Logger.warn(f"Trying To Deallocated Non Allocated Id {id}", "id-allocator")
-        self.ids[id] = False
-
-        Logger.debug(f"Deallocated Id {id}", "id-allocator")
