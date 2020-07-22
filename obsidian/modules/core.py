@@ -255,7 +255,6 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self, playerId, playerName, x, y, z, yaw, pitch):
-            print(playerId, playerName, x, y, z, yaw, pitch)
             # <Spawn Player Packet>
             # (Byte) Packet ID
             # (Signed Byte) Player ID

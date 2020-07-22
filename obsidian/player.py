@@ -102,8 +102,42 @@ class WorldPlayerManager:
             ignoreList=[player]  # Don't send packet to self!
         )
 
+        # Update User On Currently Connected Players
+        await self.spawnCurrentPlayers(player)
+
         # Sending Join Chat Message
         await self.sendWorldPacket(Packets.Response.SendMessage, f"&e{player.name} Joined The Game &9(ID {player.playerId})&f")
+
+    async def spawnCurrentPlayers(self, playerSelf: Player):  # Update Joining Players of The Currently In-Game Players
+        # Loop Through All Players
+        for player in self.players:
+            # Checking if Player Exists
+            if player is None:
+                continue
+
+            # Checking if player is not self
+            if player is playerSelf:
+                continue
+
+            # Attempting to Send Packet
+            try:
+                await playerSelf.networkHandler.dispacher.sendPacket(
+                    Packets.Response.SpawnPlayer,
+                    player.playerId,
+                    player.name,
+                    player.posX,
+                    player.posY,
+                    player.posZ,
+                    player.posYaw,
+                    player.posPitch,
+                )
+            except Exception as e:
+                if e not in CRITICAL_RESPONSE_ERRORS:
+                    # Something Broke!
+                    Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
+                else:
+                    # Bad Timing with Connection Closure. Ignoring
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.ip}")
 
     async def removePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
