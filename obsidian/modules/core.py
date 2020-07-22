@@ -73,7 +73,7 @@ class CoreModule(AbstractModule):
             )
 
         async def deserialize(self, rawData):
-            print("update block")
+            # print("update block")
             return None  # TODO
 
     @Packet(
@@ -91,7 +91,7 @@ class CoreModule(AbstractModule):
             )
 
         async def deserialize(self, rawData):
-            print("player move")
+            # print("player move")
             return None  # TODO
 
     @Packet(
@@ -109,7 +109,7 @@ class CoreModule(AbstractModule):
             )
 
         async def deserialize(self, rawData):
-            print("send message")
+            # print("send message")
             return None  # TODO
 
     #
