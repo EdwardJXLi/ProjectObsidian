@@ -105,6 +105,8 @@ class WorldPlayerManager:
         # Update User On Currently Connected Players
         await self.spawnCurrentPlayers(player)
 
+        Logger.debug(f"Finished Handling Player Join For {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
+
         # Sending Join Chat Message
         await self.sendWorldPacket(Packets.Response.SendMessage, f"&e{player.name} Joined The Game &9(ID {player.playerId})&f")
 
@@ -141,16 +143,18 @@ class WorldPlayerManager:
 
     async def removePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
-        # Delete User From Player List
+        # Delete User From Player List + Deallocate ID
         if player.playerId is not None:
-            self.players[player.playerId] = None
+            self.deallocateId(player.playerId)
         else:
             raise ServerError(f"Trying to Remove Player {player.name} With No Player Id")
 
-        # Deallocate Id
-        # Kinda hacky but I have to use pyright ignore here
-        # player.playerId is guaranteed Non-None Before Here
-        self.deallocateId(player.playerId)  # type: ignore
+        # Send Player Disconnect Packet To All Players (Except Joining User)
+        await self.sendWorldPacket(
+            Packets.Response.DespawnPlayer,
+            player.playerId,
+            ignoreList=[player]  # Don't send packet to self!
+        )
 
         Logger.debug(f"Removed Player {player.networkHandler.ip} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
@@ -167,13 +171,13 @@ class WorldPlayerManager:
 
         raise WorldError("Id Allocator Failed To Allocate Open Id")
 
-    def deallocateId(self, id: int):
+    def deallocateId(self, playerId: int):
         # Check If Id Is Already Deallocated
-        if self.players[id] is None:
-            Logger.warn(f"Trying To Deallocated Non Allocated Id {id}", "id-allocator")
-        self.players[id] = None
+        if self.players[playerId] is None:
+            Logger.error(f"Trying To Deallocate Non Allocated Id {playerId}", "id-allocator", printTb=False)
+        self.players[playerId] = None
 
-        Logger.debug(f"Deallocated Id {id}", "id-allocator")
+        Logger.debug(f"Deallocated Id {playerId}", "id-allocator")
 
     async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
         Logger.debug(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")

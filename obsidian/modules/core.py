@@ -373,8 +373,16 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        async def serialize(self):
-            return None  # TODO
+        async def serialize(self, playerId: int):
+            # <Despawn Player Packet>
+            # (Byte) Packet ID
+            # (Byte) Player ID
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                int(playerId)
+            )
+            return msg
 
     @Packet(
         "SendMessage",
@@ -458,7 +466,7 @@ class CoreModule(AbstractModule):
             super().__init__()
 
         # Default Map Generator (Creates Flat Map Of Grass And Dirt)
-        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: int=32):
+        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: int = 32):
             mapData = bytearray(sizeX * sizeY * sizeZ)
             for x in range(sizeX):
                 for y in range(sizeY):
