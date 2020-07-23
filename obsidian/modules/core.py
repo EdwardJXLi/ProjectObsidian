@@ -140,8 +140,8 @@ class CoreModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 int(protocolVersion),
-                str(packageString(name)),
-                str(packageString(motd)),
+                bytearray(packageString(name)),
+                bytearray(packageString(motd)),
                 int(userType)
             )
             return msg
@@ -287,7 +287,7 @@ class CoreModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 int(playerId),
-                str(packageString(playerName)),
+                bytearray(packageString(playerName)),
                 int(x),
                 int(y),
                 int(z),
@@ -400,7 +400,7 @@ class CoreModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 int(playerId),
-                str(packageString(message))
+                bytearray(packageString(message))
             )
             return msg
 
@@ -424,7 +424,7 @@ class CoreModule(AbstractModule):
             msg = struct.pack(
                 self.FORMAT,
                 self.ID,
-                str(packageString(reason))
+                bytearray(packageString(reason))
             )
             return msg
 
