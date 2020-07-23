@@ -32,7 +32,7 @@ def packageString(data, maxSize=64, encoding="ascii"):
     # Trim Text Down To maxSize
     # Fill Blank Space With Spaces Using ljust
     # Encode String Into Bytes Using Encoding
-    return bytes(data[:maxSize].ljust(maxSize), encoding)
+    return bytearray(data[:maxSize].ljust(maxSize), encoding)
 
 
 # Packet Skeleton
@@ -75,7 +75,7 @@ class AbstractResponsePacket(AbstractPacket):
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
     async def serialize(self, *args, **kwargs):
-        return bytes()
+        return bytearray()
 
 
 # Packet Decorator

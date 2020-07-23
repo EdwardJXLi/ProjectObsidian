@@ -198,7 +198,7 @@ class CoreModule(AbstractModule):
             # (Byte) Percent Complete
 
             # Chunks have to be padded by 0x00s
-            formattedChunk = bytes(chunk).ljust(1024, b'\0')
+            formattedChunk = bytearray(chunk).ljust(1024, b'\0')
 
             msg = struct.pack(self.FORMAT, self.ID, len(chunk), formattedChunk, percentComplete)
             return msg
