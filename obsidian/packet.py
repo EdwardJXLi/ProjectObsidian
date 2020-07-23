@@ -32,7 +32,7 @@ def packageString(data, maxSize=64, encoding="ascii"):
     # Trim Text Down To maxSize
     # Fill Blank Space With Spaces Using ljust
     # Encode String Into Bytes Using Encoding
-    return bytearray(data[:maxSize].ljust(maxSize), encoding)
+    return bytearray(str(data)[:maxSize].ljust(maxSize), encoding)
 
 
 # Packet Skeleton

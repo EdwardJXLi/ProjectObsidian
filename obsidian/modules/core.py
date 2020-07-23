@@ -45,14 +45,14 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=False
             )
 
-        async def deserialize(self, rawData):
+        async def deserialize(self, rawData: bytearray):
             # <Player Identification Packet>
             # (Byte) Packet ID
             # (Byte) Protocol Version
             # (64String) Username
             # (64String) Verification Key
             # (Byte) Unused
-            _, protocolVersion, username, verificationKey, _ = struct.unpack(self.FORMAT, rawData)
+            _, protocolVersion, username, verificationKey, _ = struct.unpack(self.FORMAT, bytearray(rawData))
             # Unpackage String
             username = unpackageString(username)
             verificationKey = unpackageString(verificationKey)
@@ -72,7 +72,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, rawData):
+        async def deserialize(self, rawData: bytearray):
             # print("update block")
             return None  # TODO
 
@@ -90,7 +90,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, rawData):
+        async def deserialize(self, rawData: bytearray):
             # print("player move")
             return None  # TODO
 
@@ -108,7 +108,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, rawData):
+        async def deserialize(self, rawData: bytearray):
             # print("send message")
             return None  # TODO
 
@@ -129,14 +129,21 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        async def serialize(self, protocolVersion, name, motd, userType):
+        async def serialize(self, protocolVersion: int, name: str, motd: str, userType: int):
             # <Server Identification Packet>
             # (Byte) Packet ID
             # (Byte) Protocol Version
             # (64String) Server Name
             # (64String) Server MOTD
             # (Byte) User Type
-            msg = struct.pack(self.FORMAT, self.ID, protocolVersion, packageString(name), packageString(motd), userType)
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                int(protocolVersion),
+                str(packageString(name)),
+                str(packageString(motd)),
+                int(userType)
+            )
             return msg
 
     @Packet(
@@ -190,7 +197,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        async def serialize(self, chunk, percentComplete=0):
+        async def serialize(self, chunk: bytearray, percentComplete: int = 0):
             # <Level Data Chunk Packet>
             # (Byte) Packet ID
             # (Short) Chunk Size
@@ -200,7 +207,13 @@ class CoreModule(AbstractModule):
             # Chunks have to be padded by 0x00s
             formattedChunk = bytearray(chunk).ljust(1024, b'\0')
 
-            msg = struct.pack(self.FORMAT, self.ID, len(chunk), formattedChunk, percentComplete)
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                int(len(chunk)),
+                bytearray(formattedChunk),
+                int(percentComplete)
+            )
             return msg
 
     @Packet(
@@ -216,13 +229,19 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        async def serialize(self, sizeX, sizeY, sizeZ):
+        async def serialize(self, sizeX: int, sizeY: int, sizeZ: int):
             # <Level Initialize Packet>
             # (Byte) Packet ID
             # (Short) X Size
             # (Short) Y Size
             # (Short) Z Size
-            msg = struct.pack(self.FORMAT, self.ID, sizeX, sizeY, sizeZ)
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                int(sizeX),
+                int(sizeY),
+                int(sizeZ)
+            )
             return msg
 
     @Packet(
@@ -238,7 +257,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        async def serialize(self, blockX, blockY, blockZ, blockType):
+        async def serialize(self, blockX: int, blockY: int, blockZ: int, blockType: int):
             return None  # TODO
 
     @Packet(
@@ -254,7 +273,7 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        async def serialize(self, playerId, playerName, x, y, z, yaw, pitch):
+        async def serialize(self, playerId: int, playerName: str, x: int, y: int, z: int, yaw: int, pitch: int):
             # <Spawn Player Packet>
             # (Byte) Packet ID
             # (Signed Byte) Player ID
@@ -264,7 +283,17 @@ class CoreModule(AbstractModule):
             # (Short) Spawn Z Coords
             # (Byte) Spawn Yaw
             # (Byte) Spawn Pitch
-            msg = struct.pack(self.FORMAT, self.ID, playerId, packageString(playerName), x, y, z, yaw, pitch)
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                int(playerId),
+                str(packageString(playerName)),
+                int(x),
+                int(y),
+                int(z),
+                int(yaw),
+                int(pitch)
+            )
             return msg
 
     @Packet(
@@ -360,14 +389,19 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        async def serialize(self, message, playerId=0):
+        async def serialize(self, message: str, playerId: int = 0):
             # <Player Message Packet>
             # (Byte) Packet ID
             # (Byte) Player ID (Seems to be unused?)
             # (64String) Message
             if len(message) > 64:
                 Logger.warn(f"Trying to send message {message} over 64 character limit!", module="packet-serializer")
-            msg = struct.pack(self.FORMAT, self.ID, playerId, packageString(message))
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                int(playerId),
+                str(packageString(message))
+            )
             return msg
 
     @Packet(
@@ -383,11 +417,15 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        async def serialize(self, reason):
+        async def serialize(self, reason: str):
             # <Player Disconnect Packet>
             # (Byte) Packet ID
             # (64String) Disconnect Reason
-            msg = struct.pack(self.FORMAT, self.ID, packageString(reason))
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                str(packageString(reason))
+            )
             return msg
 
     @Packet(
@@ -420,7 +458,7 @@ class CoreModule(AbstractModule):
             super().__init__()
 
         # Default Map Generator (Creates Flat Map Of Grass And Dirt)
-        def generateMap(self, sizeX, sizeY, sizeZ, grassHeight=32):
+        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: int=32):
             mapData = bytearray(sizeX * sizeY * sizeZ)
             for x in range(sizeX):
                 for y in range(sizeY):
