@@ -5,11 +5,17 @@ if TYPE_CHECKING:
     from obsidian.world import World
     from obsidian.network import NetworkHandler
 
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
-from obsidian.constants import CRITICAL_RESPONSE_ERRORS, ServerError, WorldError, ClientError
 from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
+from obsidian.constants import (
+    Colour,
+    CRITICAL_RESPONSE_ERRORS,
+    ServerError,
+    WorldError,
+    ClientError
+)
 
 
 # The Overall Server Player Manager
@@ -61,6 +67,31 @@ class PlayerManager:
                         # Bad Timing with Connection Closure. Ignoring
                         Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.ip}")
 
+    async def sendGlobalMessage(
+        self,
+        message,
+        author: Union[None, str, Player] = None,
+        globalTag: bool = False,
+        ignoreList: List[Player] = []
+    ):
+        # Format Message To Be Sent
+        # Add Author Tag
+        if isinstance(author, str):
+            message = f"<{author}> {message}"
+        elif isinstance(author, Player):
+            # Special Formatting For OPs
+            if author.opStatus:
+                message = f"<{author.name}> {message}"
+            else:
+                message = f"<{author.name}> {message}"
+
+        # Add Global Tag (If Requested)
+        if globalTag:
+            message = f"[GLOBAL] {message}"
+
+        # Finally, send formatted message
+        await self.sendGlobalPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
+
 
 # The Specific Player Manager Per World
 class WorldPlayerManager:
@@ -108,7 +139,7 @@ class WorldPlayerManager:
         Logger.debug(f"Finished Handling Player Join For {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
         # Sending Join Chat Message
-        await self.sendWorldPacket(Packets.Response.SendMessage, f"&e{player.name} Joined The Game &9(ID {player.playerId})&f")
+        await self.sendWorldMessage(f"&e{player.name} Joined The World &9(ID {player.playerId})&f")
 
     async def spawnCurrentPlayers(self, playerSelf: Player):  # Update Joining Players of The Currently In-Game Players
         # Loop Through All Players
@@ -159,7 +190,7 @@ class WorldPlayerManager:
         Logger.debug(f"Removed Player {player.networkHandler.ip} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
         # Sending Leave Chat Message
-        await self.sendWorldPacket(Packets.Response.SendMessage, f"&e{player.name} Left The Game &9(ID {player.playerId})&f")
+        await self.sendWorldMessage(f"&e{player.name} Left The World &9(ID {player.playerId})&f")
 
     def allocateId(self):
         # Loop Through All Ids, Return Id That Is Not Free
@@ -178,6 +209,35 @@ class WorldPlayerManager:
         self.players[playerId] = None
 
         Logger.debug(f"Deallocated Id {playerId}", "id-allocator")
+
+    async def sendWorldMessage(
+        self,
+        message,
+        author: Union[None, str, Player] = None,
+        world: Union[None, str, World] = None,
+        ignoreList: List[Player] = []
+    ):
+        # Hacky Way To Get isintance World
+        from obsidian.world import World
+        # Format Message To Be Sent
+        # Add Author Tag
+        if isinstance(author, str):
+            message = f"<{author}> {message}"
+        elif isinstance(author, Player):
+            # Special Formatting For OPs
+            if author.opStatus:
+                message = f"<{author.name}> {message}"
+            else:
+                message = f"<{author.name}> {message}"
+
+        # Add World Tag
+        if isinstance(world, str):
+            message = f"[{world}] {message}"
+        elif isinstance(world, World):
+            message = f"[{world}] {message}"
+
+        # Finally, send formatted message
+        await self.sendWorldPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
 
     async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
         Logger.debug(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")
@@ -204,7 +264,7 @@ class WorldPlayerManager:
 
 
 class Player:
-    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, name, key):
+    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, name, key, opStatus=False):
         self.name = name
         self.posX = 0,
         self.posY = 0,
@@ -212,6 +272,7 @@ class Player:
         self.posYaw = 0,
         self.posPitch = 0,
         self.verificationKey = key
+        self.opStatus = opStatus
         self.playerManager = playerManager
         self.networkHandler = networkHandler
         self.worldPlayerManager = None
