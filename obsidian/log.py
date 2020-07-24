@@ -15,24 +15,25 @@ class Logger:
         return time.strftime("%H:%M:%S", time.localtime())
 
     @classmethod
-    def log(cls, message, level=None, module=None, colour=Colour.NONE, textColour=Colour.NONE):
-        if level is not None:
-            # Generate Strings
-            timestampStr = f"{colour}{cls._getTimestamp()}{Colour.RESET}{Colour.BACK_RESET}"
-            levelStr = f"{colour}{level.upper()}{Colour.RESET}{Colour.BACK_RESET}"
-            moduleStr = f"{colour}{module.upper()}{Colour.RESET}{Colour.BACK_RESET}"
-            msgString = f"{textColour}{message}{Colour.RESET}{Colour.BACK_RESET}"
-            # Concatenate String
-            print(f"[{timestampStr}][{levelStr}][{moduleStr}]: {msgString}")
+    def log(cls, message, tags=[], colour=Colour.NONE, textColour=Colour.NONE):
+        # Generating Message (Add Tags, Message, Format, Etc)
+        output = ""
+        # Adding Tags
+        for tag in tags:
+            output = f"{output}[{colour}{tag.upper()}{Colour.RESET}{Colour.BACK_RESET}]"
+        # Add Message
+        if len(tags) != 0:
+            output = f"{output}: {textColour}{message}{Colour.BACK_RESET}"
         else:
-            print(message)
+            output = f"{textColour}{message}{Colour.BACK_RESET}]{message}"
+        # Print Final String
+        print(output)
 
     @classmethod
     def info(cls, message, module="obsidian"):
         cls.log(
             str(message),
-            level="log",
-            module=module,
+            tags=[cls._getTimestamp(), "log", module],
             colour=Colour.GREEN,
             textColour=Colour.WHITE
         )
@@ -41,8 +42,7 @@ class Logger:
     def warn(cls, message, module="obsidian"):
         cls.log(
             str(message),
-            level="warn",
-            module=module,
+            tags=[cls._getTimestamp(), "warn", module],
             colour=Colour.YELLOW,
             textColour=Colour.WHITE
         )
@@ -53,8 +53,7 @@ class Logger:
             traceback.print_exc()
         cls.log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
-            level="log",
-            module=module,
+            tags=[cls._getTimestamp(), "error", module],
             colour=Colour.RED,
             textColour=Colour.WHITE
         )
@@ -65,8 +64,7 @@ class Logger:
             traceback.print_exc()
         cls.log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
-            level="FATAL",
-            module=module,
+            tags=[cls._getTimestamp(), "fatal", module],
             colour=Colour.BLACK + Colour.BACK_RED,
             textColour=Colour.WHITE
         )
@@ -76,8 +74,7 @@ class Logger:
         if cls.DEBUG:
             cls.log(
                 str(message),
-                level="debug",
-                module=module,
+                tags=[cls._getTimestamp(), "debug", module],
                 colour=Colour.CYAN,
                 textColour=Colour.WHITE
             )
@@ -87,8 +84,7 @@ class Logger:
         if cls.DEBUG and cls.VERBOSE:
             cls.log(
                 str(message),
-                level="verbose",
-                module=module,
+                tags=[cls._getTimestamp(), "obsidian", module],
                 colour=Colour.MAGENTA,
                 textColour=Colour.WHITE
             )
