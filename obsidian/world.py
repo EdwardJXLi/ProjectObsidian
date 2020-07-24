@@ -118,14 +118,14 @@ class World:
         Logger.debug(f"Compressing Map {self.name} With Compression Level {compressionLevel}", module="world")
         # Create File Buffer
         buf = io.BytesIO()
-        # Check If Size Header Is Needed
-        header = bytearray()
+        # Check If Size Header Is Needed (Using Bytes For '+' Capabilities)
+        header = bytes()
         if includeSizeHeader:
             Logger.debug("Packing Size Header", module="world")
-            header = header + bytearray(struct.pack('!I', len(self.mapArray)))
+            header = header + bytes(struct.pack('!I', len(self.mapArray)))
         # Gzip World
         with gzip.GzipFile(fileobj=buf, mode='wb', compresslevel=compressionLevel) as f:
-            f.write(header + bytearray(self.mapArray))
+            f.write(header + bytes(self.mapArray))
 
         # Extract and Return Gzip Data
         gzipData = buf.getvalue()

@@ -1,6 +1,7 @@
 from obsidian.module import Module, AbstractModule
 from obsidian.constants import __version__
 from obsidian.log import Logger
+from obsidian.player import Player
 from obsidian.packet import (
     Packet,
     AbstractRequestPacket,
@@ -61,7 +62,7 @@ class CoreModule(AbstractModule):
     @Packet(
         "UpdateBlock",
         PacketDirections.REQUEST,
-        description="Packet Sent When Block Placed/Broken"
+        description="Packet Received When Block Placed/Broken"
     )
     class UpdateBlockPacket(AbstractRequestPacket):
         def __init__(self):
@@ -72,14 +73,14 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, rawData: bytearray):
+        async def deserialize(self, ctx: Player, rawData: bytearray):
             # print("update block")
             return None  # TODO
 
     @Packet(
         "PlayerUpdate",
         PacketDirections.REQUEST,
-        description="Sent When Player Position And Orentation Is Sent"
+        description="Received When Player Position And Orentation Is Sent"
     )
     class PlayerUpdatePacket(AbstractRequestPacket):
         def __init__(self):
@@ -90,16 +91,16 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, rawData: bytearray):
+        async def deserialize(self, ctx: Player, rawData: bytearray):
             # print("player move")
             return None  # TODO
 
     @Packet(
-        "ReceiveMessage",
+        "PlayerMessage",
         PacketDirections.REQUEST,
-        description="Sent When Player Sends A Message"
+        description="Received When Player Sends A Message"
     )
-    class ReceiveMessagePacket(AbstractRequestPacket):
+    class PlayerMessagePacket(AbstractRequestPacket):
         def __init__(self):
             super().__init__(
                 ID=0x0d,
@@ -108,9 +109,15 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, rawData: bytearray):
-            # print("send message")
-            return None  # TODO
+        async def deserialize(self, ctx: Player, rawData: bytearray):
+            # <Player Message Packet>
+            # (Byte) Packet ID
+            # (Byte) Unused (Should Always Be 0xFF)
+            # (64String) Message
+            _, _, message = struct.unpack(self.FORMAT, bytearray(rawData))
+            # Unpackage String
+            message = unpackageString(message)
+            return None # Nothing should be returned
 
     #
     # RESPONSE PACKETS

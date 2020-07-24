@@ -230,7 +230,7 @@ class NetworkDispacher:
             # Send Packet
             Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.ip} | ID: {packet.ID} | SIZE: {packet.SIZE} | DATA: {rawData}", module="network")
             if self.handler.isConnected:
-                self.handler.writer.write(rawData)
+                self.handler.writer.write(bytes(rawData))
                 await self.handler.writer.drain()
             else:
                 Logger.debug(f"Packet {packet.NAME} Skipped Due To Closed Connection!")
@@ -283,7 +283,7 @@ class NetworkDispacher:
             # Attempting to Deserialize Packets
             try:
                 # Deserialize Packet
-                serializedData = await packet.deserialize(rawData)
+                serializedData = await packet.deserialize(self.player, rawData)
                 return packetHeader, serializedData
 
             except Exception as e:
