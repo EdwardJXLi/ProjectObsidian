@@ -115,8 +115,8 @@ class NetworkHandler:
         '''
 
         # Sending Test Global and World Messages
-        await self.server.playerManager.sendGlobalPacket(Packets.Response.SendMessage, "This is a global message test!")
-        await defaultWorld.playerManager.sendWorldPacket(Packets.Response.SendMessage, "This is a world message test!")
+        await self.server.playerManager.sendGlobalMessage("This is a global message test!")
+        await defaultWorld.playerManager.sendWorldMessage("This is a world message test!")
 
         # Setup And Begin Player Loop
         Logger.debug(f"{self.ip} | Starting Player Loop", module="network")

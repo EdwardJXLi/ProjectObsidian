@@ -90,6 +90,12 @@ class PlayerManager:
             message = f"[GLOBAL] {message}"
 
         # Finally, send formatted message
+        Logger.log(
+            message,
+            tags=[Logger._getTimestamp(), "chat", "global"],
+            colour=Colour.GREEN,
+            textColour=Colour.WHITE
+        )
         await self.sendGlobalPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
 
 
@@ -214,11 +220,10 @@ class WorldPlayerManager:
         self,
         message,
         author: Union[None, str, Player] = None,
-        world: Union[None, str, World] = None,
+        worldTag: bool = False,
         ignoreList: List[Player] = []
     ):
         # Hacky Way To Get isintance World
-        from obsidian.world import World
         # Format Message To Be Sent
         # Add Author Tag
         if isinstance(author, str):
@@ -231,12 +236,16 @@ class WorldPlayerManager:
                 message = f"<{author.name}> {message}"
 
         # Add World Tag
-        if isinstance(world, str):
-            message = f"[{world}] {message}"
-        elif isinstance(world, World):
-            message = f"[{world}] {message}"
+        if worldTag:
+            message = f"[{self.world.name}] {message}"
 
         # Finally, send formatted message
+        Logger.log(
+            message,
+            tags=[Logger._getTimestamp(), "chat", "world", self.world.name],
+            colour=Colour.GREEN,
+            textColour=Colour.WHITE
+        )
         await self.sendWorldPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
 
     async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
