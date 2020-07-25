@@ -194,9 +194,9 @@ class _PacketManager:
                 table.add_row(["Response", packet.NAME, packet.ID, "N/A", packet.MODULE.NAME])
 
             return table
-        except FatalError:
+        except FatalError as e:
             # Pass Down Fatal Error To Base Server
-            raise FatalError()
+            raise e
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", "server")
 
