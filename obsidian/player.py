@@ -77,17 +77,17 @@ class PlayerManager:
         # Format Message To Be Sent
         # Add Author Tag
         if isinstance(author, str):
-            message = f"<{author}> {message}"
+            message = f"<&e{author}&f> {message}"
         elif isinstance(author, Player):
             # Special Formatting For OPs
             if author.opStatus:
-                message = f"<{author.name}> {message}"
+                message = f"<&c{author.name}&f> {message}"
             else:
-                message = f"<{author.name}> {message}"
+                message = f"<&b{author.name}&f> {message}"
 
         # Add Global Tag (If Requested)
         if globalTag:
-            message = f"[GLOBAL] {message}"
+            message = f"[&7GLOBAL&f] {message}"
 
         # Finally, send formatted message
         Logger.log(
@@ -227,17 +227,17 @@ class WorldPlayerManager:
         # Format Message To Be Sent
         # Add Author Tag
         if isinstance(author, str):
-            message = f"<{author}> {message}"
+            message = f"<&e{author}&f> {message}"
         elif isinstance(author, Player):
             # Special Formatting For OPs
             if author.opStatus:
-                message = f"<{author.name}> {message}"
+                message = f"<&c{author.name}&f> {message}"
             else:
-                message = f"<{author.name}> {message}"
+                message = f"<&b{author.name}&f> {message}"
 
-        # Add World Tag
+        # Add World Tag (If Requested)
         if worldTag:
-            message = f"[{self.world.name}] {message}"
+            message = f"[&7{self.world.name}&f] {message}"
 
         # Finally, send formatted message
         Logger.log(
@@ -293,3 +293,7 @@ class Player:
         self.worldPlayerManager = world.playerManager
         # Attaching Player Onto World Player Manager
         await self.worldPlayerManager.joinPlayer(self)
+
+    async def sendMessage(self, message: str):
+        Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
+        await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))

@@ -136,11 +136,20 @@ class CoreModule(AbstractModule):
             try:
                 message = unpackageString(message, strictness=StringStrictness.PRINTABLE)
             except PacketError:
-                raise ClientError("Invalid Character In Message")
+                await ctx.sendMessage("&4ERROR: Message Failed To Send - Invalid Character In Message&f")
+                return None  # Don't Complete Message Sending
 
             # Check If Last Character Is '&' (Crashes All Clients)
             if message[-1:] == "&":
-                message = message[:-1]  # Cut Last Colour
+                message = message[:-1]  # Cut Last Character
+
+            if len(message) > 32:  # Cut Message If Too Long
+                # Cut Message In Half, then print each half
+                await ctx.worldPlayerManager.sendWorldMessage(message[:32] + " - ", author=ctx)
+                await ctx.worldPlayerManager.sendWorldMessage(" - " + message[32:], author=ctx)
+                await ctx.sendMessage("&eWARN: Message Was Cut To Fit On Screen&f")
+            else:
+                await ctx.worldPlayerManager.sendWorldMessage(message, author=ctx)
 
             return None  # Nothing should be returned
 

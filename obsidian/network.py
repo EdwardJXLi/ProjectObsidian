@@ -177,7 +177,6 @@ class NetworkHandler:
 
 class NetworkDispacher:
     def __init__(self, handler: NetworkHandler):
-        self.player = None
         self.handler = handler
 
     # NOTE: or call receivePacket
@@ -283,7 +282,7 @@ class NetworkDispacher:
             # Attempting to Deserialize Packets
             try:
                 # Deserialize Packet
-                serializedData = await packet.deserialize(self.player, rawData)
+                serializedData = await packet.deserialize(self.handler.player, rawData)
                 return packetHeader, serializedData
 
             except Exception as e:
