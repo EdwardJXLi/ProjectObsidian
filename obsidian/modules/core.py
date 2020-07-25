@@ -1,5 +1,5 @@
 from obsidian.module import Module, AbstractModule
-from obsidian.constants import __version__
+from obsidian.constants import ClientError, PacketError, __version__
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.packet import (
@@ -8,7 +8,8 @@ from obsidian.packet import (
     AbstractResponsePacket,
     PacketDirections,
     unpackageString,
-    packageString
+    packageString,
+    StringStrictness
 )
 from obsidian.mapgen import (
     AbstractMapGenerator,
@@ -54,9 +55,23 @@ class CoreModule(AbstractModule):
             # (64String) Verification Key
             # (Byte) Unused
             _, protocolVersion, username, verificationKey, _ = struct.unpack(self.FORMAT, bytearray(rawData))
+
             # Unpackage String
-            username = unpackageString(username)
-            verificationKey = unpackageString(verificationKey)
+            # Username
+            try:
+                username = unpackageString(username, strictness=StringStrictness.ALPHANUM)
+            except PacketError:
+                raise ClientError("Invalid Character In Username")
+            # Verification String
+            try:
+                verificationKey = unpackageString(verificationKey, strictness=StringStrictness.PRINTABLE)
+            except PacketError:
+                raise ClientError("Invalid Character In Verification Key")
+
+            # Check Username Length (Hard Capped At 16 To Prevent Length Bugs)
+            if(len(username) > 16):
+                raise ClientError("Your Username Is Too Long (Max 16 Chars)")
+
             return protocolVersion, username, verificationKey
 
     @Packet(
@@ -115,9 +130,19 @@ class CoreModule(AbstractModule):
             # (Byte) Unused (Should Always Be 0xFF)
             # (64String) Message
             _, _, message = struct.unpack(self.FORMAT, bytearray(rawData))
+
             # Unpackage String
-            message = unpackageString(message)
-            return None # Nothing should be returned
+            # Message
+            try:
+                message = unpackageString(message, strictness=StringStrictness.PRINTABLE)
+            except PacketError:
+                raise ClientError("Invalid Character In Message")
+
+            # Check If Last Character Is '&' (Crashes All Clients)
+            if message[-1:] == "&":
+                message = message[:-1]  # Cut Last Colour
+
+            return None  # Nothing should be returned
 
     #
     # RESPONSE PACKETS
