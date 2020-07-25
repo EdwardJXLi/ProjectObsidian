@@ -1,5 +1,5 @@
 from obsidian.module import Module, AbstractModule
-from obsidian.constants import ClientError, PacketError, __version__
+from obsidian.constants import ClientError, ServerError, PacketError, __version__
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.packet import (
@@ -17,6 +17,7 @@ from obsidian.mapgen import (
 )
 
 import struct
+from typing import Optional
 
 
 @Module(
@@ -47,7 +48,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=False
             )
 
-        async def deserialize(self, rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
             # <Player Identification Packet>
             # (Byte) Packet ID
             # (Byte) Protocol Version
@@ -88,7 +89,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Player, rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
             # print("update block")
             return None  # TODO
 
@@ -106,7 +107,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Player, rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
             # print("player move")
             return None  # TODO
 
@@ -124,12 +125,16 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Player, rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
             # <Player Message Packet>
             # (Byte) Packet ID
             # (Byte) Unused (Should Always Be 0xFF)
             # (64String) Message
             _, _, message = struct.unpack(self.FORMAT, bytearray(rawData))
+
+            # Check if player was passes
+            if ctx is None:
+                raise ServerError("Player Context Was Not Passed!")
 
             # Unpackage String
             # Message

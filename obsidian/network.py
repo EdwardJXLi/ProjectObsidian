@@ -204,7 +204,7 @@ class NetworkDispacher:
 
             # Deserialize Packet
             # TODO: Fix type complaint!
-            serializedData = await packet.deserialize(rawData)  # type: ignore
+            serializedData = await packet.deserialize(self.handler.player, rawData)  # type: ignore
             return serializedData
         except asyncio.TimeoutError:
             raise ClientError(f"Did Not Receive Packet {packet.ID} In Time!")
