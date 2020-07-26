@@ -52,7 +52,7 @@ class PlayerManager:
 
     async def sendGlobalPacket(self, packet: AbstractResponsePacket, *args, ignoreList: List[Player] = [], **kwargs):
         # Send packet to ALL members connected to server (all worlds)
-        Logger.debug(f"Sending Packet {packet.NAME} To All Connected Players", module="player-network")
+        Logger.verbose(f"Sending Packet {packet.NAME} To All Connected Players", module="player-network")
         # Loop Through All Players
         for player in self.players:
             # Checking if player is not in ignoreList
@@ -219,7 +219,7 @@ class WorldPlayerManager:
 
     async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
         # Send packet to all members in world
-        Logger.debug(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")
+        Logger.verbose(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")
         # Loop Through All Players
         for player in self.players:
             # Checking if Player Exists
@@ -300,8 +300,31 @@ class Player:
         Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
 
+    async def handlePlayerMovement(self, posX, posY, posZ, posYaw, posPitch):
+        # Format, Process, and Handle incoming player movement requests.
+        Logger.verbose(f"Handling Player Movement From Player {self.name}", module="player")
+
+        # Updating Current Player Position
+        self.posX = posX
+        self.posY = posY
+        self.posZ = posZ
+        self.posYaw = posYaw
+        self.posPitch = posPitch
+
+        # Sending Player Position Update Packet To All Players
+        await self.worldPlayerManager.sendWorldPacket(
+            Packets.Response.PlayerPositionUpdate,
+            self.playerId,
+            posX,
+            posY,
+            posZ,
+            posYaw,
+            posPitch,
+            ignoreList=[self]  # not sending to self as that may cause some de-sync issues
+        )
+
     async def handlePlayerMessage(self, message: str):
-        # Format and deal with incoming player message requests.
+        # Format, Process, and Handle incoming player message requests.
         Logger.debug(f"Handling Player Message From Player {self.name}", module="player")
 
         # Check If Last Character Is '&' (Crashes All Clients)

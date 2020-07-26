@@ -77,7 +77,7 @@ class World:
         spawnZ: int = 0,
         spawnYaw: int = 0,
         spawnPitch: int = 0,
-        maxPlayers: int = 255
+        maxPlayers: int = 250
     ):
         # Y is the height
         self.worldManager = worldManager

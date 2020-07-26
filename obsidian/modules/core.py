@@ -94,11 +94,11 @@ class CoreModule(AbstractModule):
             return None  # TODO
 
     @Packet(
-        "PlayerUpdate",
+        "MovementUpdate",
         PacketDirections.REQUEST,
         description="Received When Player Position And Orentation Is Sent"
     )
-    class PlayerUpdatePacket(AbstractRequestPacket):
+    class MovementUpdatePacket(AbstractRequestPacket):
         def __init__(self):
             super().__init__(
                 ID=0x08,
@@ -108,8 +108,21 @@ class CoreModule(AbstractModule):
             )
 
         async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
-            # print("player move")
-            return None  # TODO
+            # <Player Movement Packet>
+            # (Byte) Packet ID
+            # (Byte) Player ID  <- Should Always Be 255
+            # (Short) X Position
+            # (Short) Y Position
+            # (Short) Z Position
+            # (Byte) Yaw
+            # (Byte) Pitch
+            _, _, posX, posY, posZ, posYaw, posPitch = struct.unpack(self.FORMAT, bytearray(rawData))
+
+            # Handle Player Movement
+            await ctx.handlePlayerMovement(posX, posY, posZ, posYaw, posPitch)
+
+            return None  # Nothing should be returned
+
 
     @Packet(
         "PlayerMessage",
@@ -334,11 +347,11 @@ class CoreModule(AbstractModule):
             return msg
 
     @Packet(
-        "PlayerMovementUpdate",
+        "PlayerPositionUpdate",
         PacketDirections.RESPONSE,
         description="Sent To Update Player Position and Rotation"
     )
-    class PlayerMovementUpdatePacket(AbstractResponsePacket):
+    class PlayerPositionUpdatePacket(AbstractResponsePacket):
         def __init__(self):
             super().__init__(
                 ID=0x08,
@@ -346,8 +359,26 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        async def serialize(self):
-            return None  # TODO
+        async def serialize(self, playerId: int, x: int, y: int, z: int, yaw: int, pitch: int):
+            # <Player Movement Packet>
+            # (Byte) Packet ID
+            # (Signed Byte) Player ID
+            # (Short) Spawn X Coords
+            # (Short) Spawn Y Coords
+            # (Short) Spawn Z Coords
+            # (Byte) Spawn Yaw
+            # (Byte) Spawn Pitch
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                int(playerId),
+                int(x),
+                int(y),
+                int(z),
+                int(yaw),
+                int(pitch)
+            )
+            return msg
 
     @Packet(
         "PositionOrientationUpdate",
