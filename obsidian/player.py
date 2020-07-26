@@ -299,3 +299,19 @@ class Player:
     async def sendMessage(self, message: str):
         Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
+
+    async def handlePlayerMessage(self, message: str):
+        # Format and deal with incoming player message requests.
+        Logger.debug(f"Handling Player Message From Player {self.name}", module="player")
+
+        # Check If Last Character Is '&' (Crashes All Clients)
+        if message[-1:] == "&":
+            message = message[:-1]  # Cut Last Character
+
+        if len(message) > 32:  # Cut Message If Too Long
+            # Cut Message In Half, then print each half
+            await self.worldPlayerManager.sendWorldMessage(message[:32] + " - ", author=self)
+            await self.worldPlayerManager.sendWorldMessage(" - " + message[32:], author=self)
+            await self.sendMessage("&eWARN: Message Was Cut To Fit On Screen&f")
+        else:
+            await self.worldPlayerManager.sendWorldMessage(message, author=self)
