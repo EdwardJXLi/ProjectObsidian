@@ -51,6 +51,7 @@ class PlayerManager:
         Logger.debug(f"Successfully Removed Player {player.name}", module="player")
 
     async def sendGlobalPacket(self, packet: AbstractResponsePacket, *args, ignoreList: List[Player] = [], **kwargs):
+        # Send packet to ALL members connected to server (all worlds)
         Logger.debug(f"Sending Packet {packet.NAME} To All Connected Players", module="player-network")
         # Loop Through All Players
         for player in self.players:
@@ -70,9 +71,9 @@ class PlayerManager:
     async def sendGlobalMessage(
         self,
         message,
-        author: Union[None, str, Player] = None,
-        globalTag: bool = False,
-        ignoreList: List[Player] = []
+        author: Union[None, str, Player] = None,  # Information on the message author
+        globalTag: bool = False,  # Flag dictating if the [world] header should be added
+        ignoreList: List[Player] = []  # List of players to not send the message not
     ):
         # Format Message To Be Sent
         # Add Author Tag
@@ -216,12 +217,36 @@ class WorldPlayerManager:
 
         Logger.debug(f"Deallocated Id {playerId}", "id-allocator")
 
+    async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
+        # Send packet to all members in world
+        Logger.debug(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")
+        # Loop Through All Players
+        for player in self.players:
+            # Checking if Player Exists
+            if player is None:
+                continue
+
+            # Checking if player is not in ignoreList
+            if player in ignoreList:
+                continue
+
+            # Attempting to Send Packet
+            try:
+                await player.networkHandler.dispacher.sendPacket(packet, *args, **kwargs)
+            except Exception as e:
+                if e not in CRITICAL_RESPONSE_ERRORS:
+                    # Something Broke!
+                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
+                else:
+                    # Bad Timing with Connection Closure. Ignoring
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.ip}")
+
     async def sendWorldMessage(
         self,
         message,
-        author: Union[None, str, Player] = None,
-        worldTag: bool = False,
-        ignoreList: List[Player] = []
+        author: Union[None, str, Player] = None,  # Information on the message author
+        worldTag: bool = False,  # Flag dictating if the [world] header should be added
+        ignoreList: List[Player] = []  # List of players to not send the message not
     ):
         # Hacky Way To Get isintance World
         # Format Message To Be Sent
@@ -247,29 +272,6 @@ class WorldPlayerManager:
             textColour=Colour.WHITE
         )
         await self.sendWorldPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
-
-    async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
-        Logger.debug(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")
-        # Loop Through All Players
-        for player in self.players:
-            # Checking if Player Exists
-            if player is None:
-                continue
-
-            # Checking if player is not in ignoreList
-            if player in ignoreList:
-                continue
-
-            # Attempting to Send Packet
-            try:
-                await player.networkHandler.dispacher.sendPacket(packet, *args, **kwargs)
-            except Exception as e:
-                if e not in CRITICAL_RESPONSE_ERRORS:
-                    # Something Broke!
-                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
-                else:
-                    # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.ip}")
 
 
 class Player:
