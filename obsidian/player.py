@@ -91,7 +91,7 @@ class PlayerManager:
             if author.opStatus:
                 message = f"<&c{author.name}&f> {message}"
             else:
-                message = f"<&b{author.name}&f> {message}"
+                message = f"<&a{author.name}&f> {message}"
 
         # Add Global Tag (If Requested)
         if globalTag:
@@ -154,6 +154,11 @@ class WorldPlayerManager:
 
         # Sending Join Chat Message
         await self.sendWorldMessage(f"&e{player.name} Joined The World &9(ID {player.playerId})&f")
+
+        # Sending Warning If World Is Non-Persistant
+        if not self.world.persistant:
+            await self.sendWorldMessage("&cWARNING: This world is Non-Persistant!&f")
+            await self.sendWorldMessage("&cAny changes WILL NOT be saved!!&f")
 
     async def spawnCurrentPlayers(self, playerSelf: Player):  # Update Joining Players of The Currently In-Game Players
         # Loop Through All Players
@@ -272,7 +277,7 @@ class WorldPlayerManager:
             if author.opStatus:
                 message = f"<&c{author.name}&f> {message}"
             else:
-                message = f"<&b{author.name}&f> {message}"
+                message = f"<&a{author.name}&f> {message}"
 
         # Add World Tag (If Requested)
         if worldTag:
