@@ -108,7 +108,7 @@ class World:
         # Check If Block Is Out Of Range
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
             raise BlockError("Block Placement Is Out Of Range")
-        self.mapArray[blockX + self.sizeX * (blockZ + self.sizeY * blockY)] = blockType.ID
+        self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = blockType.ID
 
     def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
         # If Gzip Compression Level Is -1, Use Default!

@@ -645,5 +645,5 @@ class CoreModule(AbstractModule):
             for x in range(sizeX):
                 for y in range(sizeY):
                     for z in range(sizeZ):
-                        mapData[x + sizeZ * (z + sizeX * y)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
+                        mapData[x + sizeX * (z + sizeZ * y)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
             return mapData

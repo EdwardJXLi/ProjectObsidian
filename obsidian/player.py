@@ -314,7 +314,7 @@ class Player:
             blockY,
             blockZ,
             blockType.ID,
-            ignoreList=[self]  # not sending to self as that may cause some de-sync issues
+            ignoreList=[]  # not sending to self as that may cause some de-sync issues
         )
 
     async def handlePlayerMovement(self, posX, posY, posZ, posYaw, posPitch):
