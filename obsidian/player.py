@@ -157,8 +157,8 @@ class WorldPlayerManager:
 
         # Sending Warning If World Is Non-Persistant
         if not self.world.persistant:
-            await self.sendWorldMessage("&cWARNING: This world is Non-Persistant!&f")
-            await self.sendWorldMessage("&cAny changes WILL NOT be saved!!&f")
+            await player.sendMessage("&cWARNING: This world is Non-Persistant!&f")
+            await player.sendMessage("&cAny changes WILL NOT be saved!!&f")
 
     async def spawnCurrentPlayers(self, playerSelf: Player):  # Update Joining Players of The Currently In-Game Players
         # Loop Through All Players
