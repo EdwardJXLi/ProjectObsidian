@@ -304,8 +304,30 @@ class Player:
         # Format, Process, and Handle incoming block update requests.
         Logger.debug(f"Handling Block Placement From Player {self.name}", module="player")
 
-        # Send Update Block On Player World
-        self.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, blockType, player=self)
+        # Checking If Player Is Joined To A World
+        if self.worldPlayerManager is None:
+            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined")
+            return None  # Skip Rest
+
+        # Trying To Update Block On Player World
+        try:
+            self.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, blockType, player=self)
+        except ClientError as e:
+            # Setting Player-Attempted Block Back To Original
+            originalBlock = self.worldPlayerManager.world.getBlock(blockX, blockY, blockZ)
+            await self.networkHandler.dispacher.sendPacket(
+                Packets.Response.SetBlock,
+                blockX,
+                blockY,
+                blockZ,
+                originalBlock.ID
+            )
+
+            # Send Error Message To
+            await self.sendMessage(f"&c{e}&f")
+
+            # Exit Function
+            return None
 
         # Sending Block Update Update Packet To All Players
         await self.worldPlayerManager.sendWorldPacket(
@@ -320,6 +342,11 @@ class Player:
     async def handlePlayerMovement(self, posX, posY, posZ, posYaw, posPitch):
         # Format, Process, and Handle incoming player movement requests.
         Logger.verbose(f"Handling Player Movement From Player {self.name}", module="player")
+
+        # Checking If Player Is Joined To A World
+        if self.worldPlayerManager is None:
+            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined")
+            return None  # Skip Rest
 
         # Updating Current Player Position
         self.posX = posX
@@ -343,6 +370,11 @@ class Player:
     async def handlePlayerMessage(self, message: str):
         # Format, Process, and Handle incoming player message requests.
         Logger.debug(f"Handling Player Message From Player {self.name}", module="player")
+
+        # Checking If Player Is Joined To A World
+        if self.worldPlayerManager is None:
+            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined")
+            return None  # Skip Rest
 
         # Check If Last Character Is '&' (Crashes All Clients)
         if message[-1:] == "&":

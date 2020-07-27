@@ -1,4 +1,5 @@
 from __future__ import annotations
+from obsidian.blocks import BlockManager
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
@@ -11,7 +12,7 @@ import struct
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
-from obsidian.constants import MapGenerationError, BlockError
+from obsidian.constants import ClientError, MapGenerationError, BlockError
 
 
 class WorldManager:
@@ -101,9 +102,24 @@ class World:
         Logger.info("Initializing World Player Manager", module="init-world")
         self.playerManager = WorldPlayerManager(self)
 
+    def getBlock(self, blockX, blockY, blockZ):
+        # Gets Block Obj Of Requested Block
+        Logger.verbose(f"Getting World Block {blockX}, {blockY}, {blockZ}")
+
+        # Check If Block Is Out Of Range
+        if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
+            raise BlockError("Requested Block Is Out Of Range")
+        return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
+
     def setBlock(self, blockX, blockY, blockZ, blockType, player: Optional[Player] = None):
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
         Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockType.ID}")
+
+        # Checking If User Can Set Blocks
+        if player is not None:  # Checking If User Was Passed
+            if not self.canEdit:  # Checking If World Is Read-Only
+                if not player.opStatus:  # Checking If Player Is Not OP
+                    raise ClientError("You Do Not Have Permission To Edit This Block")
 
         # Check If Block Is Out Of Range
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:

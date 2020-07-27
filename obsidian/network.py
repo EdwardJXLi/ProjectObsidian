@@ -227,7 +227,7 @@ class NetworkDispacher:
             rawData = await packet.serialize(*args, **kwargs)
 
             # Send Packet
-            Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.ip} | ID: {packet.ID} | SIZE: {packet.SIZE} | DATA: {rawData}", module="network")
+            Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.ip} | ID: {packet.ID} {packet.NAME} | SIZE: {packet.SIZE} | DATA: {rawData}", module="network")
             if self.handler.isConnected:
                 self.handler.writer.write(bytes(rawData))
                 await self.handler.writer.drain()
