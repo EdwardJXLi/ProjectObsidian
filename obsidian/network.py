@@ -115,8 +115,9 @@ class NetworkHandler:
         '''
 
         # Sending Test Global and World Messages
-        await self.server.playerManager.sendGlobalMessage("This is a global message test!")
-        await defaultWorld.playerManager.sendWorldMessage("This is a world message test!")
+        # await self.server.playerManager.sendGlobalMessage(["This is a multi-line", "global message test"])
+        # await defaultWorld.playerManager.sendWorldMessage(["This is a multi-line", "world message test"])
+        # await self.player.sendMessage(["This is a multi-line", "player message test"])
 
         # Setup And Begin Player Loop
         Logger.debug(f"{self.ip} | Starting Player Loop", module="network")

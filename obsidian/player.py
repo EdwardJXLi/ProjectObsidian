@@ -70,11 +70,18 @@ class PlayerManager:
 
     async def sendGlobalMessage(
         self,
-        message,
+        message: Union[str, list],
         author: Union[None, str, Player] = None,  # Information on the message author
         globalTag: bool = False,  # Flag dictating if the [world] header should be added
         ignoreList: List[Player] = []  # List of players to not send the message not
     ):
+        # If Message Is A List, Recursively Send All Messages Within
+        if type(message) is list:
+            Logger.debug("Sending List Of Messages!")
+            for msg in message:
+                await self.sendGlobalMessage(msg, author=author, globalTag=globalTag, ignoreList=ignoreList)
+            return None  # Break Out of Function
+
         # Format Message To Be Sent
         # Add Author Tag
         if isinstance(author, str):
@@ -243,11 +250,18 @@ class WorldPlayerManager:
 
     async def sendWorldMessage(
         self,
-        message,
+        message: Union[str, list],
         author: Union[None, str, Player] = None,  # Information on the message author
         worldTag: bool = False,  # Flag dictating if the [world] header should be added
         ignoreList: List[Player] = []  # List of players to not send the message not
     ):
+        # If Message Is A List, Recursively Send All Messages Within
+        if type(message) is list:
+            Logger.debug("Sending List Of Messages!")
+            for msg in message:
+                await self.sendWorldMessage(msg, author=author, worldTag=worldTag, ignoreList=ignoreList)
+            return None  # Break Out of Function
+
         # Hacky Way To Get isintance World
         # Format Message To Be Sent
         # Add Author Tag
@@ -296,8 +310,15 @@ class Player:
         # Attaching Player Onto World Player Manager
         await self.worldPlayerManager.joinPlayer(self)
 
-    async def sendMessage(self, message: str):
+    async def sendMessage(self, message: Union[str, list]):
         Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
+        # If Message Is A List, Recursively Send All Messages Within
+        if type(message) is list:
+            Logger.debug("Sending List Of Messages To Player!")
+            for msg in message:
+                await self.sendMessage(msg)
+            return None  # Break Out of Function
+
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
 
     async def handleBlockUpdate(self, blockX, blockY, blockZ, blockType):
