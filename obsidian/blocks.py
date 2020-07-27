@@ -30,9 +30,6 @@ class AbstractBlock:
     # Mandatory Values Defined During Module Initialization
     MODULE: Optional[AbstractModule] = None
 
-    def test(self):
-        return bytearray()
-
 
 # Internal Block Manager Singleton
 class _BlockManager:
