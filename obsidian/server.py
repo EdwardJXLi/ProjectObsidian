@@ -11,7 +11,7 @@ from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
 from obsidian.world import WorldManager
 from obsidian.mapgen import MapGeneratorManager
-from obsidian.blocks import BlockManager
+from obsidian.blocks import Block, BlockManager
 from obsidian.player import PlayerManager
 
 
@@ -74,7 +74,7 @@ class Server:
 
         ModuleManager.initModules(blacklist=self.config.moduleBlacklist)
 
-        Logger.info(f"{ModuleManager.numModules} Modules, {PacketManager.numPackets} Packets Initialized!", module="init")
+        Logger.info(f"{ModuleManager.numModules} Modules, {PacketManager.numPackets} Packets, {BlockManager.numBlocks} Blocks, and {MapGeneratorManager.numMapGenerators} Map Generators Initialized!", module="init")
         # Print Pretty List of All Modules
         Logger.info("Module List:", module="init")
         print(ModuleManager.generateTable())

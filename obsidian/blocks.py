@@ -69,7 +69,7 @@ class _BlockManager:
 
     # Property Method To Get Number Of Blocks
     @property
-    def numBlock(self):
+    def numBlocks(self):
         return len(self._block_list)
 
     # Handles _BlockManager["item"]
