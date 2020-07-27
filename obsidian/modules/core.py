@@ -140,7 +140,6 @@ class CoreModule(AbstractModule):
 
             return None  # Nothing should be returned
 
-
     @Packet(
         "PlayerMessage",
         PacketDirections.REQUEST,
