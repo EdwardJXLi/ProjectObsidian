@@ -41,6 +41,7 @@ class _ModuleManager:
         # Prevent Circular Looping :/
         from obsidian.packet import PacketManager
         from obsidian.mapgen import MapGeneratorManager
+        from obsidian.blocks import BlockManager
         moduleObj = module()  # Create Object
         # Checking If Module Is Already In Modules List
         if name in self._module_list.keys():
@@ -73,6 +74,16 @@ class _ModuleManager:
                     generator["description"],
                     generator["version"],
                     generator["map_generator"],
+                    moduleObj
+                )
+            elif hasattr(item, "obsidian_block"):  # Check If Item Has "obsidian_block" Flag
+                Logger.verbose(f"{item} Is A Block! Adding As Block.", module="init-" + name)
+                generator = item.obsidian_block
+                # Register Packet Using information Provided By "obsidian_block"
+                BlockManager.register(
+                    generator["name"],
+                    generator["blockId"],
+                    generator["block"],
                     moduleObj
                 )
         self._module_list[name] = moduleObj

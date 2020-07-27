@@ -2,6 +2,8 @@ from obsidian.module import Module, AbstractModule
 from obsidian.constants import ClientError, ServerError, PacketError, __version__
 from obsidian.log import Logger
 from obsidian.player import Player
+from obsidian.mapgen import AbstractMapGenerator, MapGenerator
+from obsidian.blocks import AbstractBlock, Block, Blocks
 from obsidian.packet import (
     Packet,
     AbstractRequestPacket,
@@ -11,12 +13,9 @@ from obsidian.packet import (
     packageString,
     StringStrictness
 )
-from obsidian.mapgen import (
-    AbstractMapGenerator,
-    MapGenerator
-)
 
 import struct
+import copy
 from typing import Optional
 
 
@@ -521,7 +520,82 @@ class CoreModule(AbstractModule):
             return None  # TODO
 
     #
-    # Map GENERATORS
+    # BLOCKS
+    #
+
+    # List Of Blocks To Be Registered
+    blockList = [
+        "Air",
+        "Stone",
+        "Grass",
+        "Dirt",
+        "Cobblestone",
+        "Planks",
+        "Sapling",
+        "Bedrock",
+        "FlowingWater",
+        "StationaryWater",
+        "FlowingLava",
+        "StationaryLava",
+        "Sand",
+        "Gravel",
+        "GoldOre",
+        "IronOre",
+        "CoalOre",
+        "Wood",
+        "Leaves",
+        "Sponge",
+        "Glass",
+        "RedCloth",
+        "OrangeCloth",
+        "YellowCloth",
+        "ChartreuseCloth",
+        "GreenCloth",
+        "Spring GreenCloth",
+        "CyanCloth",
+        "CapriCloth",
+        "UltramarineCloth",
+        "VioletCloth",
+        "PurpleCloth",
+        "MagentaCloth",
+        "RoseCloth",
+        "DarkGrayCloth",
+        "LightGrayCloth",
+        "WhiteCloth",
+        "Dandelion",
+        "Rose",
+        "BrownMushroom",
+        "RedMushroom",
+        "BlockGold",
+        "BlockIron",
+        "DoubleSlab",
+        "Slab",
+        "Bricks",
+        "TNT",
+        "Bookshelf",
+        "MossyCobblestone",
+        "Obsidian"
+    ]
+
+    # Loop Through All Blocks And Register Block
+    for blockId, block in enumerate(blockList):
+        # Add Block To Local Scope
+        # TODO: HACKY
+
+        # Dynamically Create Class
+        @Block(block, blockId)
+        class CoreBlock(AbstractBlock):
+            def __init__(self):
+                super().__init__()
+
+        # Deep Copy Object Into Local Scope With Custom Name
+        locals()["CoreBlock" + block] = copy.deepcopy(CoreBlock)
+
+        # Delete Existing CoreBlock To Prevent Redefinitions
+        del CoreBlock
+
+    #
+    # MAP GENERATORS
     #
 
     @MapGenerator(
@@ -539,5 +613,5 @@ class CoreModule(AbstractModule):
             for x in range(sizeX):
                 for y in range(sizeY):
                     for z in range(sizeZ):
-                        mapData[x + sizeZ * (z + sizeX * y)] = 0 if y > grassHeight else (2 if y == grassHeight else 3)
+                        mapData[x + sizeZ * (z + sizeX * y)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
             return mapData

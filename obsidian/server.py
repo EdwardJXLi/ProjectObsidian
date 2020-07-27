@@ -11,6 +11,7 @@ from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
 from obsidian.world import WorldManager
 from obsidian.mapgen import MapGeneratorManager
+from obsidian.blocks import BlockManager
 from obsidian.player import PlayerManager
 
 
@@ -83,6 +84,11 @@ class Server:
             print(PacketManager.generateTable())
             Logger.debug("Map Generators List:", module="init")
             print(MapGeneratorManager.generateTable())
+
+        # Only Print Block List If Verbose Enabled (Very Big)
+        if Logger.VERBOSE:
+            Logger.debug("BLocks List:", module="init")
+            print(BlockManager.generateTable())
 
         # Printing Error If Error Occurs During Init
         if len(ModuleManager._errorList) != 0:
