@@ -3,7 +3,7 @@ from obsidian.constants import ClientError, ServerError, PacketError, __version_
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator
-from obsidian.blocks import AbstractBlock, Block, Blocks
+from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.packet import (
     Packet,
     AbstractRequestPacket,
@@ -89,8 +89,26 @@ class CoreModule(AbstractModule):
             )
 
         async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
-            # print("update block")
-            return None  # TODO
+            # <Block Update Packet>
+            # (Byte) Packet ID
+            # (Short) X Position
+            # (Short) Y Position
+            # (Short) Z Position
+            # (Byte) Mode
+            # (Byte) Block Type
+            _, blockX, blockY, blockZ, updateMode, blockId = struct.unpack(self.FORMAT, bytearray(rawData))
+
+            # Get Block Types
+            if updateMode == 0:  # updateMode 0 is Block Breaking (set to air)
+                blockType = Blocks.Air
+            else:
+                # Get Block Object From Block ID
+                blockType = BlockManager.getBlockById(blockId)
+
+            # Handle Block Update
+            await ctx.handleBlockUpdate(blockX, blockY, blockZ, blockType)
+
+            return None  # Nothing should be returned
 
     @Packet(
         "MovementUpdate",
@@ -307,7 +325,21 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self, blockX: int, blockY: int, blockZ: int, blockType: int):
-            return None  # TODO
+            # <Set Block Packet>
+            # (Byte) Packet ID=
+            # (Short) Block X Coords
+            # (Short) Block Y Coords
+            # (Short) Block Z Coords
+            # (Byte) Block Id
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                int(blockX),
+                int(blockY),
+                int(blockZ),
+                int(blockType),
+            )
+            return msg
 
     @Packet(
         "SpawnPlayer",

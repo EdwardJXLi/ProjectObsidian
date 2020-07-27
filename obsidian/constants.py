@@ -46,6 +46,10 @@ class PacketError(Exception):
     pass
 
 
+class BlockError(Exception):
+    pass
+
+
 class MapGenerationError(Exception):
     pass
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from obsidian.module import AbstractModule
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, FatalError
+from obsidian.constants import InitRegisterError, BlockError, FatalError
 from obsidian.log import Logger
 
 
@@ -71,6 +71,16 @@ class _BlockManager:
     @property
     def numBlocks(self):
         return len(self._block_list)
+
+    def getAllBlockIds(self):
+        return [obj.ID for obj in self._block_list.values()]
+
+    def getBlockById(self, blockId):
+        # Search Block With Matching blockId
+        for block in self._block_list.values():
+            if block.ID == blockId:
+                return block
+        raise BlockError(f"Block {blockId} Was Not Found")
 
     # Handles _BlockManager["item"]
     def __getitem__(self, block: str):

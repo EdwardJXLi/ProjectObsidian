@@ -300,6 +300,23 @@ class Player:
         Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
 
+    async def handleBlockUpdate(self, blockX, blockY, blockZ, blockType):
+        # Format, Process, and Handle incoming block update requests.
+        Logger.debug(f"Handling Block Placement From Player {self.name}", module="player")
+
+        # Send Update Block On Player World
+        self.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, blockType, player=self)
+
+        # Sending Block Update Update Packet To All Players
+        await self.worldPlayerManager.sendWorldPacket(
+            Packets.Response.SetBlock,
+            blockX,
+            blockY,
+            blockZ,
+            blockType.ID,
+            ignoreList=[self]  # not sending to self as that may cause some de-sync issues
+        )
+
     async def handlePlayerMovement(self, posX, posY, posZ, posYaw, posPitch):
         # Format, Process, and Handle incoming player movement requests.
         Logger.verbose(f"Handling Player Movement From Player {self.name}", module="player")

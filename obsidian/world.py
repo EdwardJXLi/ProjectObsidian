@@ -3,15 +3,15 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
 
-from typing import List
+from typing import List, Optional
 import io
 import gzip
 import struct
 
 from obsidian.log import Logger
-from obsidian.player import WorldPlayerManager
+from obsidian.player import WorldPlayerManager, Player
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
-from obsidian.constants import MapGenerationError
+from obsidian.constants import MapGenerationError, BlockError
 
 
 class WorldManager:
@@ -72,6 +72,7 @@ class World:
         sizeZ: int,
         mapArray: bytearray,
         persistant: bool = True,
+        canEdit: bool = True,
         spawnX: int = 0,
         spawnY: int = 0,
         spawnZ: int = 0,
@@ -88,6 +89,7 @@ class World:
         self.sizeZ = sizeZ
         self.mapArray = mapArray
         self.persistant = persistant
+        self.canEdit = canEdit
         self.spawnX = spawnX
         self.spawnY = spawnY
         self.spawnZ = spawnZ
@@ -98,6 +100,15 @@ class World:
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
         self.playerManager = WorldPlayerManager(self)
+
+    def setBlock(self, blockX, blockY, blockZ, blockType, player: Optional[Player] = None):
+        # Handles Block Updates In Server + Checks If Block Placement Is Allowed
+        Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockType.ID}")
+
+        # Check If Block Is Out Of Range
+        if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
+            raise BlockError("Block Placement Is Out Of Range")
+        self.mapArray[blockX + self.sizeX * (blockZ + self.sizeY * blockY)] = blockType.ID
 
     def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
         # If Gzip Compression Level Is -1, Use Default!

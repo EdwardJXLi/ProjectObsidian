@@ -11,7 +11,7 @@ from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
 from obsidian.world import WorldManager
 from obsidian.mapgen import MapGeneratorManager
-from obsidian.blocks import Block, BlockManager
+from obsidian.blocks import BlockManager
 from obsidian.player import PlayerManager
 
 
