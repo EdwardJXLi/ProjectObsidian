@@ -94,11 +94,11 @@ class NetworkHandler:
         Logger.debug(f"{self.ip} | Joining Default World {defaultWorld.name}", module="network")
         await self.player.joinWorld(defaultWorld)
 
-        # TEMPORARY Player Spawn Packet
+        # Player Spawn Packet
         Logger.debug(f"{self.ip} | Preparing To Send Spawn Player Information", module="network")
         await self.dispacher.sendPacket(
             Packets.Response.SpawnPlayer,
-            255,  # Temporary Player Id TODO
+            255,
             username,
             defaultWorld.spawnX,
             defaultWorld.spawnY,
@@ -106,18 +106,6 @@ class NetworkHandler:
             defaultWorld.spawnYaw,
             defaultWorld.spawnPitch
         )
-
-        '''
-        # Setting Up Ping Loop To Check Connection
-        while True:
-            await self.dispacher.sendPacket(Packets.Response.Ping)
-            await asyncio.sleep(1)
-        '''
-
-        # Sending Test Global and World Messages
-        # await self.server.playerManager.sendGlobalMessage(["This is a multi-line", "global message test"])
-        # await defaultWorld.playerManager.sendWorldMessage(["This is a multi-line", "world message test"])
-        # await self.player.sendMessage(["This is a multi-line", "player message test"])
 
         # Setup And Begin Player Loop
         Logger.debug(f"{self.ip} | Starting Player Loop", module="network")
