@@ -12,7 +12,7 @@ import struct
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
-from obsidian.constants import ClientError, MapGenerationError, BlockError
+from obsidian.constants import ClientError, MapGenerationError, BlockError, WorldError
 
 
 class WorldManager:
@@ -27,6 +27,39 @@ class WorldManager:
         if self.server.config.worldSaveLocation is None:
             Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
             self.persistant = False
+
+    def createWorld(
+        self,
+        worldName,
+        sizeX,
+        sizeY,
+        sizeZ,
+        generator: AbstractMapGenerator,
+        *args,  # Arguments To Be Passed To World Generator
+        persistant=True,
+        spawnX=0,
+        spawnY=0,
+        spawnZ=0,
+        **kwargs  # Keyword Arguments To Be Passed To World Generator
+    ):
+        Logger.info(f"Creating New World {worldName}", "world")
+        # Check If World Already Exists
+        if worldName in self.worlds.keys():
+            raise WorldError(f"Trying To Generate World With Already Existing Name {worldName}!")
+
+        # Create World
+        self.worlds[worldName] = World(
+            self,  # Pass In World Manager
+            generator,  # Pass In World Generator
+            worldName,  # Pass In World Name
+            sizeX, sizeY, sizeZ,  # Passing World X, Y, Z
+            self.generateMap(sizeX, sizeY, sizeZ, generator, *args, **kwargs),  # Generating Map Data
+            persistant=persistant,  # Pass In Persistant Flag
+            # Spawn Information
+            spawnX=spawnX,
+            spawnY=spawnY,
+            spawnZ=spawnZ
+        )
 
     def generateMap(self, sizeX, sizeY, sizeZ, generator: AbstractMapGenerator, *args, **kwargs):
         Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
@@ -46,19 +79,18 @@ class WorldManager:
             # TODO: World File Loading
             raise NotImplementedError("Persistant World Loading Is Not Implemented")
         else:
-            defaultWorld = self.server.config.defaultWorld
-            Logger.debug(f"Creating Temporary World {defaultWorld}", module="init-world")
-            self.worlds[defaultWorld] = World(
-                self,  # Pass In World Manager
-                MapGenerators.Flat,  # Pass In World Generator
-                defaultWorld,  # Pass In World Name
-                32, 32, 32,  # Passing World X, Y, Z
-                self.generateMap(32, 32, 32, MapGenerators.Flat, grassHeight=16),  # Generating Map Data
-                persistant=self.persistant,  # Pass In Persistant Flag
-                # Spawn Information
+            defaultWorldName = self.server.config.defaultWorld
+            defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
+            Logger.debug(f"Creating Temporary World {defaultWorldName}", module="init-world")
+            self.createWorld(
+                defaultWorldName,
+                32, 32, 32,
+                defaultGenerator,
+                persistant=False,
                 spawnX=8 * 32 + 51,
                 spawnY=17 * 32 + 51,
-                spawnZ=8 * 32 + 51
+                spawnZ=8 * 32 + 51,
+                grassHeight=16
             )
 
 
@@ -125,6 +157,13 @@ class World:
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
             raise BlockError("Block Placement Is Out Of Range")
         self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = blockType.ID
+
+    def saveMap(self):
+        if self.persistant:
+            # TODO: World File Saving
+            raise NotImplementedError("Persistant World Loading Is Not Implemented")
+        else:
+            Logger.warn(f"World {self.name} Is Not Persistant! Not Saving.", module="init-world")
 
     def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
         # If Gzip Compression Level Is -1, Use Default!

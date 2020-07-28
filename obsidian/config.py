@@ -12,7 +12,9 @@ class ServerConfig:
     ipBlacklist: List[str] = field(default_factory=list)  # List Of Ips To Block Connection
     # World Configuration
     worldSaveLocation: Optional[str] = None  # Location of Save Folder
-    defaultWorld: str = "default"  # String Containing Name Of Default World
+    defaultWorld: str = "default"  # Name Of Default World
+    defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
+    defaultSaveFormat: str = "cw"  # Name Of Default World Save Format
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     worldBlacklist: List[str] = field(default_factory=list)  # World Init Blacklist
 
