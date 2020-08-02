@@ -72,6 +72,8 @@ class _ModuleManager:
                 # Register Packet Using information Provided By "obsidian_world_format"
                 WorldFormatManager.register(
                     generator["name"],
+                    generator["description"],
+                    generator["version"],
                     generator["format"],
                     moduleObj
                 )

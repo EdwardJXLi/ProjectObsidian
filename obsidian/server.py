@@ -59,9 +59,10 @@ class Server:
     async def init(self, *args, **kwargs):
         try:
             return await self._init(*args, **kwargs)
-        except FatalError:
+        except FatalError as e:
             # NOTE: e is already formatted with the type and stuff
             Logger.fatal("Fatal Error Detected. Stopping Server.", "main", printTb=False)
+            Logger.fatal(f"{type(e).__name__}: {e}", "main")
         except Exception as e:
             Logger.fatal(f"Error While Initializing Server - {type(e).__name__}: {e}", "server")
 

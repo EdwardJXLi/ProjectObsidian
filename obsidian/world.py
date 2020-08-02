@@ -11,8 +11,9 @@ import struct
 
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
+from obsidian.worldformat import WorldFormats
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
-from obsidian.constants import ClientError, MapGenerationError, BlockError, WorldError
+from obsidian.constants import ClientError, FatalError, MapGenerationError, BlockError, WorldError
 
 
 class WorldManager:
@@ -21,6 +22,20 @@ class WorldManager:
         self.worlds = dict()
         self.blacklist = blacklist
         self.persistant = True
+        self.worldFormat = None
+
+        # Get worldFormat Using Given World Format Key
+        # Loop Through All World Formats
+        for worldFormat in WorldFormats._format_list.values():
+            # Check If key Matches With Config Key List
+            if self.server.config.defaultSaveFormat.lower() in worldFormat.KEYS:
+                # Set World Format
+                self.worldFormat = worldFormat
+
+        # Check If World Format Was Set
+        if self.worldFormat is None:
+            raise FatalError(f"Unknown World Format Key {self.server.config.defaultSaveFormat} Given In Server Config!")
+        Logger.info(f"Using World Format {self.worldFormat.NAME}")
 
         # If World Location Was Not Given, Disable Persistance
         # (Don't Save / Load)

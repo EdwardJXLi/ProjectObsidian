@@ -14,7 +14,7 @@ class ServerConfig:
     worldSaveLocation: Optional[str] = None  # Location of Save Folder
     defaultWorld: str = "default"  # Name Of Default World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
-    defaultSaveFormat: str = "cw"  # Name Of Default World Save Format
+    defaultSaveFormat: str = "basic"  # Name Of Default World Save Format
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     worldBlacklist: List[str] = field(default_factory=list)  # World Init Blacklist
 

@@ -557,13 +557,27 @@ class CoreModule(AbstractModule):
     #
 
     @WorldFormat(
-        "ClassicWorld"
+        "Raw",
+        description="Raw Map Data File (WORLD HAS TO BE 256x256x256)",
+        version="v1.0.0"
     )
-    class ClassicWorldFormat(AbstractWorldFormat):
+    class RawWorldFormat(AbstractWorldFormat):
         def __init__(self):
             super().__init__(
-                KEYS=["cw", "classicworld"],
-                EXTENTIONS=["cw"]
+                KEYS=["raw"],
+                EXTENTIONS=["gz"]
+            )
+
+    @WorldFormat(
+        "Basic",
+        description="Basic World Format That Stores X, Y, Z, Size, and Map Data",
+        version="v1.0.0"
+    )
+    class BasicWorldFormat(AbstractWorldFormat):
+        def __init__(self):
+            super().__init__(
+                KEYS=["basic"],
+                EXTENTIONS=["bw"]
             )
 
     #
@@ -573,7 +587,7 @@ class CoreModule(AbstractModule):
     @MapGenerator(
         "Flat",
         description="Default Map Generator. Just Flat.",
-        version="V1.0.0"
+        version="v1.0.0"
     )
     class FlatMapGenerator(AbstractMapGenerator):
         def __init__(self):

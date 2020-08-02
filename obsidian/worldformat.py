@@ -11,10 +11,12 @@ from obsidian.log import Logger
 
 # World Format Decorator
 # Used In @WorldFormat
-def WorldFormat(name: str):
+def WorldFormat(name: str, description: str = None, version: str = None):
     def internal(cls):
         cls.obsidian_world_format = dict()
         cls.obsidian_world_format["name"] = name
+        cls.obsidian_world_format["description"] = description
+        cls.obsidian_world_format["version"] = version
         cls.obsidian_world_format["format"] = cls
         return cls
     return internal
@@ -26,10 +28,19 @@ class AbstractWorldFormat:
     # Mandatory Values Defined In Packet Init
     KEYS: List[str]        # List of "keys" that dictate this world format
     EXTENTIONS: List[str]  # List of file extentions
-    # Optional Values Defined In Module Decorator
+    # Mandatory Values Defined In Module Decorator
     NAME: str = ""
+    # Optional Values Defined In Module Decorator
+    DESCRIPTION: str = ""
+    VERSION: str = ""
     # Mandatory Values Defined During Module Initialization
     MODULE: Optional[AbstractModule] = None
+
+    def loadWorld(self, file):
+        return None
+
+    def saveWorld(self, world, file):
+        return None
 
 
 # Internal World Format Manager Singleton
@@ -39,7 +50,7 @@ class _WorldFormatManager:
         self._format_list = dict()
 
     # Registration. Called by World Format Decorator
-    def register(self, name: str, format: Type[AbstractWorldFormat], module):
+    def register(self, name: str, description: str, version: str, format: Type[AbstractWorldFormat], module):
         Logger.debug(f"Registering World Format {name} From Module {module.NAME}", module="init-" + module.NAME)
         obj = format()  # type: ignore    # Create Object
         # Checking If World Format Name Is Already In World Formats List
@@ -47,6 +58,8 @@ class _WorldFormatManager:
             raise InitRegisterError(f"World Format {name} Has Already Been Registered!")
         # Attach Name, Direction, and Module As Attribute
         obj.NAME = name
+        obj.DESCRIPTION = description
+        obj.VERSION = version
         obj.MODULE = module
         self._format_list[name] = obj
 
@@ -55,11 +68,11 @@ class _WorldFormatManager:
         try:
             table = PrettyTableLite()  # Create Pretty List Class
 
-            table.field_names = ["World Format", "Module"]
+            table.field_names = ["World Format", "Version", "Module"]
             # Loop Through All World Formats And Add Value
             for _, worldFormat in self._format_list.items():
                 # Add Row To Table
-                table.add_row([worldFormat.NAME, worldFormat.MODULE.NAME])
+                table.add_row([worldFormat.NAME, worldFormat.VERSION, worldFormat.MODULE.NAME])
             return table
         except FatalError as e:
             # Pass Down Fatal Error To Base Server
