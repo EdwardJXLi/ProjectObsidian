@@ -76,8 +76,7 @@ class WorldManager:
 
     def loadWorlds(self):
         if self.persistant:
-            # TODO: World File Loading
-            raise NotImplementedError("Persistant World Loading Is Not Implemented")
+            pass
         else:
             defaultWorldName = self.server.config.defaultWorld
             defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
@@ -111,7 +110,8 @@ class World:
         spawnZ: int = 0,
         spawnYaw: int = 0,
         spawnPitch: int = 0,
-        maxPlayers: int = 250
+        maxPlayers: int = 250,
+        uuid: str = None
     ):
         # Y is the height
         self.worldManager = worldManager
@@ -129,6 +129,7 @@ class World:
         self.spawnYaw = spawnYaw
         self.spawnPitch = spawnPitch
         self.maxPlayers = maxPlayers
+        self.uuid = uuid  # UUID for CW Capability
 
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")

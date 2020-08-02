@@ -1,7 +1,9 @@
+from obsidian.worldformat import WorldFormat
 from obsidian.module import Module, AbstractModule
 from obsidian.constants import ClientError, ServerError, PacketError, __version__
 from obsidian.log import Logger
 from obsidian.player import Player
+from obsidian.worldformat import AbstractWorldFormat, WorldFormat
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.packet import (
@@ -551,6 +553,42 @@ class CoreModule(AbstractModule):
             return None  # TODO
 
     #
+    # WORLD FORMATS
+    #
+
+    @WorldFormat(
+        "ClassicWorld"
+    )
+    class ClassicWorldFormat(AbstractWorldFormat):
+        def __init__(self):
+            super().__init__(
+                KEYS=["cw", "classicworld"],
+                EXTENTIONS=["cw"]
+            )
+
+    #
+    # MAP GENERATORS
+    #
+
+    @MapGenerator(
+        "Flat",
+        description="Default Map Generator. Just Flat.",
+        version="V1.0.0"
+    )
+    class FlatMapGenerator(AbstractMapGenerator):
+        def __init__(self):
+            super().__init__()
+
+        # Default Map Generator (Creates Flat Map Of Grass And Dirt)
+        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: int = 32):
+            mapData = bytearray(sizeX * sizeY * sizeZ)
+            for x in range(sizeX):
+                for y in range(sizeY):
+                    for z in range(sizeZ):
+                        mapData[x + sizeX * (z + sizeZ * y)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
+            return mapData
+
+    #
     # BLOCKS
     #
 
@@ -624,25 +662,3 @@ class CoreModule(AbstractModule):
 
         # Delete Existing CoreBlock To Prevent Redefinitions
         del CoreBlock
-
-    #
-    # MAP GENERATORS
-    #
-
-    @MapGenerator(
-        "Flat",
-        description="Default Map Generator. Just Flat.",
-        version="V1.0.0"
-    )
-    class FlatMapGenerator(AbstractMapGenerator):
-        def __init__(self):
-            super().__init__()
-
-        # Default Map Generator (Creates Flat Map Of Grass And Dirt)
-        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: int = 32):
-            mapData = bytearray(sizeX * sizeY * sizeZ)
-            for x in range(sizeX):
-                for y in range(sizeY):
-                    for z in range(sizeZ):
-                        mapData[x + sizeX * (z + sizeZ * y)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
-            return mapData

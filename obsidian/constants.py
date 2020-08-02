@@ -62,6 +62,14 @@ class WorldError(Exception):
     pass
 
 
+class WorldFormatError(Exception):
+    pass
+
+
+class WorldSaveError(Exception):
+    pass
+
+
 class NetworkError(Exception):
     pass
 

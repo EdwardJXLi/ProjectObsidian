@@ -39,7 +39,7 @@ class AbstractMapGenerator:
 # Internal Map Generator Manager Singleton
 class _MapGeneratorManager:
     def __init__(self):
-        # Creates List Of Map Generators That Has The Block Generator Name As Keys
+        # Creates List Of Map Generators That Has The Generator Name As Keys
         self._generator_list = dict()
 
     # Registration. Called by Map Generator Decorator

@@ -10,6 +10,7 @@ from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
 from obsidian.world import WorldManager
+from obsidian.worldformat import WorldFormatManager
 from obsidian.mapgen import MapGeneratorManager
 from obsidian.blocks import BlockManager
 from obsidian.player import PlayerManager
@@ -82,6 +83,8 @@ class Server:
         if Logger.DEBUG:
             Logger.debug("Packets List:", module="init")
             print(PacketManager.generateTable())
+            Logger.debug("World Formats List:", module="init")
+            print(WorldFormatManager.generateTable())
             Logger.debug("Map Generators List:", module="init")
             print(MapGeneratorManager.generateTable())
 

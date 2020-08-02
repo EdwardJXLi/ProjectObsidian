@@ -40,6 +40,7 @@ class _ModuleManager:
         Logger.debug(f"Registering Module {name}", module="init-" + name)
         # Prevent Circular Looping :/
         from obsidian.packet import PacketManager
+        from obsidian.worldformat import WorldFormatManager
         from obsidian.mapgen import MapGeneratorManager
         from obsidian.blocks import BlockManager
         moduleObj = module()  # Create Object
@@ -63,6 +64,15 @@ class _ModuleManager:
                     packet["name"],
                     packet["description"],
                     packet["packet"],
+                    moduleObj
+                )
+            elif hasattr(item, "obsidian_world_format"):  # Check If Item Has "obsidian_world_format" Flag
+                Logger.verbose(f"{item} Is A World Format! Adding As World Format.", module="init-" + name)
+                generator = item.obsidian_world_format
+                # Register Packet Using information Provided By "obsidian_world_format"
+                WorldFormatManager.register(
+                    generator["name"],
+                    generator["format"],
                     moduleObj
                 )
             elif hasattr(item, "obsidian_map_generator"):  # Check If Item Has "obsidian_map_generator" Flag
