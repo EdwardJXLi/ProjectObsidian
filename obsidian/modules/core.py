@@ -592,10 +592,6 @@ class CoreModule(AbstractModule):
                 256, 256, 256,  # Passing World X, Y, Z
                 bytearray(rawData),  # Generating Map Data
                 persistant=persistant,  # Pass In Persistant Flag
-                # Spawn Information
-                spawnX=100 * 32 + 51,
-                spawnY=100 * 32 + 51,
-                spawnZ=100 * 32 + 51
             )
 
         def saveWorld(

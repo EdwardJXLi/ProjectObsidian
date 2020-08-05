@@ -60,9 +60,11 @@ class WorldManager:
         generator: AbstractMapGenerator,
         *args,  # Arguments To Be Passed To World Generator
         persistant=True,
-        spawnX=0,
-        spawnY=0,
-        spawnZ=0,
+        spawnX: Optional[int] = None,
+        spawnY: Optional[int] = None,
+        spawnZ: Optional[int] = None,
+        spawnPitch: Optional[int] = None,
+        spawnYaw: Optional[int] = None,
         **kwargs  # Keyword Arguments To Be Passed To World Generator
     ):
         Logger.info(f"Creating New World {worldName}", module="world")
@@ -81,7 +83,9 @@ class WorldManager:
             # Spawn Information
             spawnX=spawnX,
             spawnY=spawnY,
-            spawnZ=spawnZ
+            spawnZ=spawnZ,
+            spawnPitch=spawnPitch,
+            spawnYaw=spawnYaw
         )
 
     def generateMap(self, sizeX, sizeY, sizeZ, generator: AbstractMapGenerator, *args, **kwargs):
@@ -141,9 +145,6 @@ class WorldManager:
                     self.server.config.defaultWorldSizeZ,
                     defaultGenerator,
                     persistant=self.persistant,
-                    spawnX=8 * 32 + 51,
-                    spawnY=17 * 32 + 51,
-                    spawnZ=8 * 32 + 51,
                     grassHeight=16
                 )
         else:
@@ -159,9 +160,6 @@ class WorldManager:
                 self.server.config.defaultWorldSizeZ,
                 defaultGenerator,
                 persistant=False,
-                spawnX=8 * 32 + 51,
-                spawnY=17 * 32 + 51,
-                spawnZ=8 * 32 + 51,
                 maxPlayers=self.server.config.worldMaxPlayers,
                 grassHeight=16
             )
@@ -179,11 +177,11 @@ class World:
         generator: AbstractMapGenerator = None,
         persistant: bool = True,
         canEdit: bool = True,
-        spawnX: int = 0,
-        spawnY: int = 0,
-        spawnZ: int = 0,
-        spawnYaw: int = 0,
-        spawnPitch: int = 0,
+        spawnX: Optional[int] = None,
+        spawnY: Optional[int] = None,
+        spawnZ: Optional[int] = None,
+        spawnYaw: Optional[int] = None,
+        spawnPitch: Optional[int] = None,
         maxPlayers: int = 250,
         uuid: str = None
     ):
@@ -197,13 +195,45 @@ class World:
         self.mapArray = mapArray
         self.persistant = persistant
         self.canEdit = canEdit
-        self.spawnX = spawnX
-        self.spawnY = spawnY
-        self.spawnZ = spawnZ
-        self.spawnYaw = spawnYaw
-        self.spawnPitch = spawnPitch
         self.maxPlayers = maxPlayers
         self.uuid = uuid  # UUID for CW Capability
+
+        # Generate/Set Spawn Coords
+        # Set spawnX
+        if spawnX is None:
+            # Generate SpawnX (Set to middle of map)
+            self.spawnX = (self.sizeX // 2) * 32 + 51
+            Logger.verbose(f"spawnX was not provided. Generated to {self.spawnX}")
+        else:
+            self.spawnX = spawnX
+        # Set spawnY
+        if spawnY is None:
+            # TODO
+            self.spawnY = (self.sizeY // 2) * 32 + 51
+            Logger.verbose(f"spawnY was not provided. Generated to {self.spawnY}")
+        else:
+            self.spawnY = spawnY
+        # Set spawnZ
+        if spawnZ is None:
+            # Generate SpawnZ (Set to middle of map)
+            self.spawnZ = (self.sizeZ // 2) * 32 + 51
+            Logger.verbose(f"spawnZ was not provided. Generated to {self.spawnZ}")
+        else:
+            self.spawnZ = spawnZ
+        # Set spawnYaw
+        if spawnYaw is None:
+            # Generate SpawnYaw (0)
+            self.spawnYaw = 0
+            Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}")
+        else:
+            self.spawnYaw = spawnYaw
+        # Set spawnPitch
+        if spawnPitch is None:
+            # Generate SpawnPitch (0)
+            self.spawnPitch = 0
+            Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}")
+        else:
+            self.spawnPitch = spawnPitch
 
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
