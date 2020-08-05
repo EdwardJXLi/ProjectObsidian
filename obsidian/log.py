@@ -31,6 +31,19 @@ class Logger:
         print(output)
 
     @classmethod
+    def askConfirmation(cls, message="Do you want to continue?"):
+        while True:
+            print()
+            # Give user Warning, and ask them for further input
+            cls.warn(f"{message} (y/n)", module="confirmation")
+            userInput = input()
+            if userInput.lower() == "y" or userInput.lower() == "yes":
+                break
+            elif userInput.lower() == "n" or userInput.lower() == "no":
+                cls.warn("Ok Exiting...", module="confirmation")
+                sys.exit()
+
+    @classmethod
     def info(cls, message, module="unknown"):
         cls.log(
             str(message),
@@ -40,27 +53,16 @@ class Logger:
         )
 
     @classmethod
-    def warn(cls, message, module="unknown", askConfirmation=False):
+    def warn(cls, message, module="unknown"):
         cls.log(
             str(message),
             tags=[cls._getTimestamp(), "warn", module],
             colour=Colour.YELLOW,
             textColour=Colour.WHITE
         )
-        if askConfirmation:
-            while True:
-                print()
-                # Give user Warning, and ask them for further input
-                cls.warn("Do you want to continue? y/n", module="warn")
-                userInput = input()
-                if userInput.lower() == "y" or userInput.lower() == "yes":
-                    break
-                elif userInput.lower() == "n" or userInput.lower() == "no":
-                    cls.warn("Ok Exiting...", module="warn")
-                    sys.exit()
 
     @classmethod
-    def error(cls, message, module="unknown", printTb=True, askConfirmation=False):
+    def error(cls, message, module="unknown", printTb=True):
         if cls.DEBUG and printTb:
             traceback.print_exc()
         cls.log(
@@ -69,17 +71,6 @@ class Logger:
             colour=Colour.RED,
             textColour=Colour.WHITE
         )
-        if askConfirmation:
-            while True:
-                print()
-                # Give user Warning, and ask them for further input
-                cls.warn("Do you want to continue? y/n", module="error")
-                userInput = input()
-                if userInput.lower() == "y" or userInput.lower() == "yes":
-                    break
-                elif userInput.lower() == "n" or userInput.lower() == "no":
-                    cls.warn("Ok Exiting...", module="error")
-                    sys.exit()
 
     @classmethod
     def fatal(cls, message, module="unknown", printTb=True):

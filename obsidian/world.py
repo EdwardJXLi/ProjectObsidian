@@ -109,7 +109,8 @@ class WorldManager:
                         Logger.info(f"Loading World {saveName}", module="world-load")
                         self.worlds[saveName] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
                     except Exception as e:
-                        Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load", askConfirmation=True)
+                        Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load")
+                        Logger.askConfirmation()
             # Check If Default World Is Loaded
             if self.server.config.defaultWorld not in self.worlds.keys():
                 # Check if other worlds were loaded as well
@@ -117,7 +118,8 @@ class WorldManager:
                     Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
                     Logger.warn("Consider Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
                     # Ask User If They Want To Continue With World Generation
-                    Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load", askConfirmation=True)
+                    Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load")
+                    Logger.askConfirmation(message="Generate New World?")
                 else:
                     Logger.warn("No Existing Worlds Were Detected. Generating New World!", module="world-load")
                 # Generate New World
@@ -238,7 +240,8 @@ class World:
             pass
         # Invalid Compression Level!
         else:
-            Logger.error(f"Invalid GZIP Compression Level Of {compressionLevel}!!!", module="world", askConfirmation=True)
+            Logger.error(f"Invalid GZIP Compression Level Of {compressionLevel}!!!", module="world")
+            Logger.askConfirmation()
             Logger.warn("Using Fallback Compression Level Of 0", module="world")
             compressionLevel = 0
 
