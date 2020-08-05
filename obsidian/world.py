@@ -1,5 +1,4 @@
 from __future__ import annotations
-from obsidian.blocks import BlockManager
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
@@ -11,6 +10,7 @@ import struct
 
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
+from obsidian.blocks import BlockManager
 from obsidian.worldformat import WorldFormats
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
 from obsidian.constants import ClientError, FatalError, MapGenerationError, BlockError, WorldError
@@ -65,10 +65,10 @@ class WorldManager:
         # Create World
         self.worlds[worldName] = World(
             self,  # Pass In World Manager
-            generator,  # Pass In World Generator
             worldName,  # Pass In World Name
             sizeX, sizeY, sizeZ,  # Passing World X, Y, Z
             self.generateMap(sizeX, sizeY, sizeZ, generator, *args, **kwargs),  # Generating Map Data
+            generator=generator,  # Pass In World Generator
             persistant=persistant,  # Pass In Persistant Flag
             # Spawn Information
             spawnX=spawnX,
@@ -91,7 +91,8 @@ class WorldManager:
 
     def loadWorlds(self):
         if self.persistant:
-            pass
+            f = open("worlds/raw.gz", "rb")
+            self.worlds["raw"] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
         else:
             defaultWorldName = self.server.config.defaultWorld
             defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
@@ -112,12 +113,12 @@ class World:
     def __init__(
         self,
         worldManager: WorldManager,
-        generator: AbstractMapGenerator,
         name: str,
         sizeX: int,
         sizeY: int,
         sizeZ: int,
         mapArray: bytearray,
+        generator: AbstractMapGenerator = None,
         persistant: bool = True,
         canEdit: bool = True,
         spawnX: int = 0,

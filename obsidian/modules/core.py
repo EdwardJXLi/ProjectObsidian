@@ -1,9 +1,9 @@
-from obsidian.worldformat import WorldFormat
 from obsidian.module import Module, AbstractModule
-from obsidian.constants import ClientError, ServerError, PacketError, __version__
+from obsidian.constants import ClientError, ServerError, PacketError, WorldFormatError, __version__
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
+from obsidian.world import World, WorldManager
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.packet import (
@@ -18,6 +18,8 @@ from obsidian.packet import (
 
 import struct
 import copy
+import gzip
+import io
 from typing import Optional
 
 
@@ -567,6 +569,42 @@ class CoreModule(AbstractModule):
                 KEYS=["raw"],
                 EXTENTIONS=["gz"]
             )
+
+        def loadWorld(
+            self,
+            reader: io.BufferedReader,
+            worldManager: WorldManager,
+            persistant: bool = True
+        ):
+            rawData = gzip.GzipFile(fileobj=reader).read()
+            # Expected Map Size (MAX SIZE)
+            fileSize = 256 * 256 * 256
+            # Check If Given Map Is Largest Size
+            if len(rawData) != fileSize:
+                raise WorldFormatError(f"RawWorldFormat - Invalid World Size {len(rawData)}! Expected: {fileSize} (256 x 256 x 256)")
+
+            # Create World Data
+            # TODO!!!!! SPAWN GENERATION
+            return World(
+                worldManager,  # Pass In World Manager
+                "TODO",  # Pass In World Name
+                256, 256, 256,  # Passing World X, Y, Z
+                bytearray(rawData),  # Generating Map Data
+                persistant=persistant,  # Pass In Persistant Flag
+                # Spawn Information
+                spawnX=100 * 32 + 51,
+                spawnY=100 * 32 + 51,
+                spawnZ=100 * 32 + 51
+            )
+
+        def saveWorld(
+            self,
+            world: World,
+            writer: io.BufferedWriter,
+            worldManager: WorldManager,
+            persistant: bool = True
+        ):
+            return None
 
     @WorldFormat(
         "Basic",

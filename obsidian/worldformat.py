@@ -1,4 +1,8 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from obsidian.world import World, WorldManager
+    import io
 
 from typing import Type, Optional, List
 from dataclasses import dataclass
@@ -36,10 +40,21 @@ class AbstractWorldFormat:
     # Mandatory Values Defined During Module Initialization
     MODULE: Optional[AbstractModule] = None
 
-    def loadWorld(self, file):
+    def loadWorld(
+        self,
+        reader: io.BufferedReader,
+        worldManager: WorldManager,
+        persistant: bool = True
+    ):
         return None
 
-    def saveWorld(self, world, file):
+    def saveWorld(
+        self,
+        world: World,
+        writer: io.BufferedWriter,
+        worldManager: WorldManager,
+        persistant: bool = True
+    ):
         return None
 
 
