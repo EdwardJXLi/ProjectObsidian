@@ -105,7 +105,7 @@ class WorldManager:
                         Logger.info(f"Loading World {saveName}")
                         self.worlds[saveName] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
                     except Exception as e:
-                        Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", "server")
+                        Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", "server", askConfirmation=True)
         else:
             # Create Non-Persistant Temporary World
             defaultWorldName = self.server.config.defaultWorld
@@ -211,7 +211,7 @@ class World:
             pass
         # Invalid Compression Level!
         else:
-            Logger.error(f"Invalid GZIP Compression Level Of {compressionLevel}!!!", module="world")
+            Logger.error(f"Invalid GZIP Compression Level Of {compressionLevel}!!!", module="world", askConfirmation=True)
             Logger.warn("Using Fallback Compression Level Of 0", module="world")
             compressionLevel = 0
 

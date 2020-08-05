@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import traceback
+import sys
 
 from obsidian.constants import Colour
 
@@ -39,7 +40,7 @@ class Logger:
         )
 
     @classmethod
-    def warn(cls, message, module="obsidian"):
+    def warn(cls, message, module="obsidian", askConfirmation=False):
         cls.log(
             str(message),
             tags=[cls._getTimestamp(), "warn", module],
@@ -48,7 +49,7 @@ class Logger:
         )
 
     @classmethod
-    def error(cls, message, module="obsidian", printTb=True):
+    def error(cls, message, module="obsidian", printTb=True, askConfirmation=False):
         if cls.DEBUG and printTb:
             traceback.print_exc()
         cls.log(
@@ -57,9 +58,20 @@ class Logger:
             colour=Colour.RED,
             textColour=Colour.WHITE
         )
+        if askConfirmation:
+            while True:
+                print()
+                # Give user Warning, and ask them for further input
+                cls.warn("Do you want to continue? y/n", module="error")
+                userInput = input()
+                if userInput.lower() == "y" or userInput.lower() == "yes":
+                    break
+                elif userInput.lower() == "n" or userInput.lower() == "no":
+                    cls.warn("Ok Exiting...", module="error")
+                    sys.exit()
 
     @classmethod
-    def fatal(cls, message, module="obsidian", printTb=True):
+    def fatal(cls, message, module="obsidian", printTb=True, askConfirmation=False):
         if cls.DEBUG and printTb:
             traceback.print_exc()
         cls.log(
