@@ -108,7 +108,7 @@ class WorldManager:
                     try:
                         Logger.info(f"Loading World {saveName}", module="world-load")
                         f = open(os.path.join(self.server.config.worldSaveLocation, filename), "rb")
-                        self.worlds[saveName] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
+                        self.worlds[saveName] = self.worldFormat.loadWorld(f, self, persistant=False)
                     except Exception as e:
                         Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load")
                         Logger.askConfirmation()
@@ -155,6 +155,7 @@ class WorldManager:
                 spawnX=8 * 32 + 51,
                 spawnY=17 * 32 + 51,
                 spawnZ=8 * 32 + 51,
+                maxPlayers=self.server.config.worldMaxPlayers,
                 grassHeight=16
             )
 

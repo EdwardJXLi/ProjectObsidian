@@ -114,7 +114,7 @@ class Server:
 
         # Initialize PlayerManager
         Logger.info("Initializing Player Manager", module="init")
-        self.playerManager = PlayerManager(self)
+        self.playerManager = PlayerManager(self, maxSize=self.config.serverMaxPlayers)
 
         # Create Asyncio Socket Server
         # When new connection occurs, run callback _getConnHandler
