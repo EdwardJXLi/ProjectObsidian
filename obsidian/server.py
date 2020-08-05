@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional, Any
+from typing import Optional, Any, List
+import os
 
 from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager
-from obsidian.constants import Colour, InitError, ServerError, FatalError
+from obsidian.constants import Colour, InitError, SERVERPATH, ServerError, FatalError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
@@ -38,6 +39,7 @@ class Server:
         self.worldManager: Optional[WorldManager] = None  # World Manager Class
         self.playerManager: Optional[PlayerManager] = None  # Player Manager CLass
         self.config: Optional[ServerConfig] = None  # Server Config Class; To Be Init Later
+        self.ensureFiles: List[str] = []  # List of folders to ensure they exist
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized = False  # Flag Set When Everything Is Fully Loaded
 
@@ -75,9 +77,14 @@ class Server:
         Logger.info("Use '-d' and/or '-v' To Enable Debug Mode Or Verbose Mode", module="init")
 
         Logger.info(f"Initializing Server {self.name}", module="init")
-
         # Load and Log Modules
         ModuleManager.initModules(blacklist=self.config.moduleBlacklist)
+
+        # Setting Up File Structure
+        Logger.info("Setting Up File Structure", module="init")
+        if self.config.worldSaveLocation is not None:
+            self.ensureFiles.append(self.config.worldSaveLocation)
+        self._ensureFileStructure(self.ensureFiles)
 
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
         Logger.info(f"{PacketManager.numPackets} Packets Initialized", module="init")
@@ -144,3 +151,11 @@ class Server:
             await c.initConnection()
 
         return handler
+
+    def _ensureFileStructure(self, folders: List[str]):
+        Logger.debug(f"Ensuring Folders {folders}", module="init")
+        for folder in folders:
+            folder = os.path.join(SERVERPATH, folder)
+            if not os.path.exists(folder):
+                Logger.debug(f"Creating Folder Structure {folder}", module="init")
+                os.makedirs(folder)

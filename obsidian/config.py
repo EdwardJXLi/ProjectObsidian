@@ -12,7 +12,7 @@ class ServerConfig:
     ipBlacklist: List[str] = field(default_factory=list)  # List Of Ips To Block Connection
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
-    defaultWorld: str = "default"  # Name Of Default World
+    defaultWorld: str = "rawfiletest"  # Name Of Default World
     serverMaxPlayers: int = 32  # Number Of Players Max Allowed On The Entire Server
     worldMaxPlayers: int = 250  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator

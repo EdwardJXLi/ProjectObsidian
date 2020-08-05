@@ -14,7 +14,14 @@ from obsidian.player import WorldPlayerManager, Player
 from obsidian.blocks import BlockManager
 from obsidian.worldformat import WorldFormats
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
-from obsidian.constants import ClientError, FatalError, MapGenerationError, BlockError, WorldError
+from obsidian.constants import (
+    ClientError,
+    FatalError,
+    MapGenerationError,
+    BlockError,
+    WorldError,
+    SERVERPATH
+)
 
 
 class WorldManager:
@@ -96,7 +103,7 @@ class WorldManager:
         if self.persistant and (self.server.config.worldSaveLocation is not None):
             Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
             # Loop Through All Files Given In World Folder
-            for filename in os.listdir(self.server.config.worldSaveLocation):
+            for filename in os.listdir(os.path.join(SERVERPATH, self.server.config.worldSaveLocation)):
                 # Get Pure File Name (No Extentions)
                 saveName = os.path.splitext(os.path.basename(filename))[0]
                 Logger.verbose(f"Checking Extention and Blacklist Status of World File {filename}", module="world-load")
@@ -107,7 +114,7 @@ class WorldManager:
                     # (Attempt) To Load Up World
                     try:
                         Logger.info(f"Loading World {saveName}", module="world-load")
-                        f = open(os.path.join(self.server.config.worldSaveLocation, filename), "rb")
+                        f = open(os.path.join(SERVERPATH, self.server.config.worldSaveLocation, filename), "rb")
                         self.worlds[saveName] = self.worldFormat.loadWorld(f, self, persistant=False)
                     except Exception as e:
                         Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load")
