@@ -110,6 +110,30 @@ class WorldManager:
                         self.worlds[saveName] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
                     except Exception as e:
                         Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load", askConfirmation=True)
+            # Check If Default World Is Loaded
+            if self.server.config.defaultWorld not in self.worlds.keys():
+                # Check if other worlds were loaded as well
+                if len(self.worlds.keys()) > 0:
+                    Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
+                    Logger.warn("Consider Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
+                    # Ask User If They Want To Continue With World Generation
+                    Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load", askConfirmation=True)
+                else:
+                    Logger.warn("No Existing Worlds Were Detected. Generating New World!", module="world-load")
+                # Generate New World
+                defaultWorldName = self.server.config.defaultWorld
+                defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
+                Logger.debug(f"Creating World {defaultWorldName}", module="world-load")
+                self.createWorld(
+                    defaultWorldName,
+                    32, 32, 32,
+                    defaultGenerator,
+                    persistant=self.persistant,
+                    spawnX=8 * 32 + 51,
+                    spawnY=17 * 32 + 51,
+                    spawnZ=8 * 32 + 51,
+                    grassHeight=16
+                )
         else:
             Logger.debug("World Manager Is Non Persistant!", module="world-load")
             # Create Non-Persistant Temporary World
@@ -126,10 +150,6 @@ class WorldManager:
                 spawnZ=8 * 32 + 51,
                 grassHeight=16
             )
-        # TODO: Better Handling
-        # Check If DefaultWorld Is Loaded
-        if self.server.config.defaultWorld not in self.worlds.keys():
-            raise WorldError(f"Default World {self.server.config.defaultWorld} Not Loaded. Consider Checking If World Exists And/Or Changing The Default World In Config.")
 
 
 class World:

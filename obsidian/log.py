@@ -40,13 +40,24 @@ class Logger:
         )
 
     @classmethod
-    def warn(cls, message, module="unknown"):
+    def warn(cls, message, module="unknown", askConfirmation=False):
         cls.log(
             str(message),
             tags=[cls._getTimestamp(), "warn", module],
             colour=Colour.YELLOW,
             textColour=Colour.WHITE
         )
+        if askConfirmation:
+            while True:
+                print()
+                # Give user Warning, and ask them for further input
+                cls.warn("Do you want to continue? y/n", module="warn")
+                userInput = input()
+                if userInput.lower() == "y" or userInput.lower() == "yes":
+                    break
+                elif userInput.lower() == "n" or userInput.lower() == "no":
+                    cls.warn("Ok Exiting...", module="warn")
+                    sys.exit()
 
     @classmethod
     def error(cls, message, module="unknown", printTb=True, askConfirmation=False):
