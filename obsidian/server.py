@@ -61,12 +61,12 @@ class Server:
             return await self._init(*args, **kwargs)
         except FatalError as e:
             # NOTE: e is already formatted with the type and stuff
-            Logger.fatal("Fatal Error Detected. Stopping Server.", "main", printTb=False)
-            Logger.fatal(f"{type(e).__name__}: {e}", "main")
+            Logger.fatal("Fatal Error Detected. Stopping Server.", module="obsidian", printTb=False)
+            Logger.fatal(f"{type(e).__name__}: {e}", module="main")
         except Exception as e:
-            Logger.fatal("==================== FATAL ERROR! ====================", "server", printTb=False)
-            Logger.fatal(f"Fatal Error While Initializing Server - {type(e).__name__}: {e}", "server")
-            Logger.fatal("======================================================", "server", printTb=False)
+            Logger.fatal("==================== FATAL ERROR! ====================", module="obsidian", printTb=False)
+            Logger.fatal(f"Fatal Error While Initializing Server - {type(e).__name__}: {e}", module="obsidian")
+            Logger.fatal("======================================================", module="obsidian", printTb=False)
 
     async def _init(self):
         # Testing If Debug Is Enabled
@@ -76,9 +76,14 @@ class Server:
 
         Logger.info(f"Initializing Server {self.name}", module="init")
 
+        # Load and Log Modules
         ModuleManager.initModules(blacklist=self.config.moduleBlacklist)
 
-        Logger.info(f"{ModuleManager.numModules} Modules, {PacketManager.numPackets} Packets, {BlockManager.numBlocks} Blocks, and {MapGeneratorManager.numMapGenerators} Map Generators Initialized!", module="init")
+        Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
+        Logger.info(f"{PacketManager.numPackets} Packets Initialized", module="init")
+        Logger.info(f"{BlockManager.numBlocks} Blocks Initialized", module="init")
+        Logger.info(f"{MapGeneratorManager.numMapGenerators} Map Generators Initialized", module="init")
+
         # Print Pretty List of All Modules
         Logger.info("Module List:", module="init")
         print(ModuleManager.generateTable())
@@ -122,15 +127,15 @@ class Server:
         try:
             if self.initialized:
                 # Start Server
-                Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}")
+                Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}", module="obsidian")
                 async with self.server as s:
                     await s.serve_forever()
             else:
                 raise ServerError("Server Did Not Initialize. This May Be Because server.init() Was Never Called Or An Error Occurred While Initializing")
         except ServerError as e:
-            Logger.fatal(f"Error While Starting Server - {type(e).__name__}: {e}", "server", printTb=False)
+            Logger.fatal(f"Error While Starting Server - {type(e).__name__}: {e}", module="server", printTb=False)
         except Exception as e:
-            Logger.fatal(f"Error While Starting Server - {type(e).__name__}: {e}", "server")
+            Logger.fatal(f"Error While Starting Server - {type(e).__name__}: {e}", module="server")
 
     def _getConnHandler(self):  # -> Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
         # Callback function on new connection

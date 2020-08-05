@@ -47,11 +47,11 @@ class NetworkHandler:
             Logger.warn(f"Ip {self.ip} Incomplete Read Error. Closing Connection.", module="network")
             await self.closeConnection(reason="Incomplete Read Error")
         except Exception as e:
-            Logger.error(f"Error While Handling Connection {self.ip} - {type(e).__name__}: {e}", "network")
+            Logger.error(f"Error While Handling Connection {self.ip} - {type(e).__name__}: {e}", module="network")
             try:
                 await self.closeConnection(reason="Internal Server Error", notifyPlayer=True)
             except Exception as e:
-                Logger.error(f"Close Connected Failed To Complete Successfully - {type(e).__name__}: {e}", "network")
+                Logger.error(f"Close Connected Failed To Complete Successfully - {type(e).__name__}: {e}", module="network")
 
     async def _initConnection(self):
         # Log Connection
@@ -130,9 +130,10 @@ class NetworkHandler:
         chunks = [worldGzip[i: i + 1024] for i in range(0, len(worldGzip), 1024)]
 
         # Looping Through All Chunks And Sending Data
+        Logger.debug(f"{self.ip} | Sending Chunk Data", module="network")
         for chunkCount, chunk in enumerate(chunks):
             # Sending Chunk Data
-            Logger.debug(f"{self.ip} | Sending Chunk Data {chunkCount + 1} of {len(chunks)}", module="network")
+            Logger.verbose(f"{self.ip} | Sending Chunk Data {chunkCount + 1} of {len(chunks)}", module="network")
             await self.dispacher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
 
         # Send Level Finalize Packet
@@ -221,7 +222,7 @@ class NetworkDispacher:
                 self.handler.writer.write(bytes(rawData))
                 await self.handler.writer.drain()
             else:
-                Logger.debug(f"Packet {packet.NAME} Skipped Due To Closed Connection!")
+                Logger.debug(f"Packet {packet.NAME} Skipped Due To Closed Connection!", module="network")
         except Exception as e:
             # Making Sure These Errors Always Gets Raised (Ignore onError)
             if packet.CRITICAL or type(e) in CRITICAL_RESPONSE_ERRORS:

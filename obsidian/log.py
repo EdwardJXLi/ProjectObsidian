@@ -31,7 +31,7 @@ class Logger:
         print(output)
 
     @classmethod
-    def info(cls, message, module="obsidian"):
+    def info(cls, message, module="unknown"):
         cls.log(
             str(message),
             tags=[cls._getTimestamp(), "log", module],
@@ -40,7 +40,7 @@ class Logger:
         )
 
     @classmethod
-    def warn(cls, message, module="obsidian", askConfirmation=False):
+    def warn(cls, message, module="unknown"):
         cls.log(
             str(message),
             tags=[cls._getTimestamp(), "warn", module],
@@ -49,7 +49,7 @@ class Logger:
         )
 
     @classmethod
-    def error(cls, message, module="obsidian", printTb=True, askConfirmation=False):
+    def error(cls, message, module="unknown", printTb=True, askConfirmation=False):
         if cls.DEBUG and printTb:
             traceback.print_exc()
         cls.log(
@@ -71,7 +71,7 @@ class Logger:
                     sys.exit()
 
     @classmethod
-    def fatal(cls, message, module="obsidian", printTb=True, askConfirmation=False):
+    def fatal(cls, message, module="unknown", printTb=True):
         if cls.DEBUG and printTb:
             traceback.print_exc()
         cls.log(
@@ -82,7 +82,7 @@ class Logger:
         )
 
     @classmethod
-    def debug(cls, message, module="obsidian"):
+    def debug(cls, message, module="unknown"):
         if cls.DEBUG:
             cls.log(
                 str(message),
@@ -92,11 +92,11 @@ class Logger:
             )
 
     @classmethod
-    def verbose(cls, message, module="obsidian"):
+    def verbose(cls, message, module="unknown"):
         if cls.DEBUG and cls.VERBOSE:
             cls.log(
                 str(message),
-                tags=[cls._getTimestamp(), "obsidian", module],
+                tags=[cls._getTimestamp(), "verbose", module],
                 colour=Colour.MAGENTA,
                 textColour=Colour.WHITE
             )

@@ -45,4 +45,4 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except Exception as e:
-        Logger.fatal(f"Unhandled Server Exception - {type(e).__name__}: {e}", "main", printTb=False)
+        Logger.fatal(f"Unhandled Server Exception - {type(e).__name__}: {e}", module="main", printTb=False)

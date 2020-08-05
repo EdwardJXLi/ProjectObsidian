@@ -26,7 +26,7 @@ class PlayerManager:
         self.maxSize = maxSize
 
     async def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
-        Logger.debug(f"Creating Player For Ip {network.ip}", module="player")
+        Logger.debug(f"Creating Player For Ip {network.ip}", module="player-manager")
         # Creating Player Class
         player = Player(self, network, username, verificationKey)
         # Checking if server is full
@@ -37,10 +37,10 @@ class PlayerManager:
         return player
 
     async def deletePlayer(self, player: Player):
-        Logger.debug(f"Removing Player {player.name}", module="player")
+        Logger.debug(f"Removing Player {player.name}", module="player-manager")
         # Remove Player From World If Necessary
         if player.worldPlayerManager is not None and player.playerId is not None:
-            Logger.debug("User Leaving World", module="player")
+            Logger.debug("User Leaving World", module="player-manager")
             await player.worldPlayerManager.removePlayer(player)
 
         # Remove Player From PlayerManager
@@ -48,11 +48,11 @@ class PlayerManager:
             if(playerObj.networkHandler.ip == player.networkHandler.ip):
                 del self.players[playerIndex]
 
-        Logger.debug(f"Successfully Removed Player {player.name}", module="player")
+        Logger.debug(f"Successfully Removed Player {player.name}", module="player-manager")
 
     async def sendGlobalPacket(self, packet: AbstractResponsePacket, *args, ignoreList: List[Player] = [], **kwargs):
         # Send packet to ALL members connected to server (all worlds)
-        Logger.verbose(f"Sending Packet {packet.NAME} To All Connected Players", module="player-network")
+        Logger.verbose(f"Sending Packet {packet.NAME} To All Connected Players", module="global-packet-dispatcher")
         # Loop Through All Players
         for player in self.players:
             # Checking if player is not in ignoreList
@@ -63,10 +63,10 @@ class PlayerManager:
                 except Exception as e:
                     if e not in CRITICAL_RESPONSE_ERRORS:
                         # Something Broke!
-                        Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
+                        Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}", module="global-packet-dispatcher")
                     else:
                         # Bad Timing with Connection Closure. Ignoring
-                        Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.ip}")
+                        Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.ip}", module="global-packet-dispatcher")
 
     async def sendGlobalMessage(
         self,
@@ -77,7 +77,7 @@ class PlayerManager:
     ):
         # If Message Is A List, Recursively Send All Messages Within
         if type(message) is list:
-            Logger.debug("Sending List Of Messages!")
+            Logger.debug("Sending List Of Messages!", module="global-message")
             for msg in message:
                 await self.sendGlobalMessage(msg, author=author, globalTag=globalTag, ignoreList=ignoreList)
             return None  # Break Out of Function
@@ -186,10 +186,10 @@ class WorldPlayerManager:
             except Exception as e:
                 if e not in CRITICAL_RESPONSE_ERRORS:
                     # Something Broke!
-                    Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
+                    Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
                 else:
                     # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.ip}")
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.ip}", module="world-packet-dispatcher")
 
     async def removePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
@@ -224,14 +224,14 @@ class WorldPlayerManager:
     def deallocateId(self, playerId: int):
         # Check If Id Is Already Deallocated
         if self.players[playerId] is None:
-            Logger.error(f"Trying To Deallocate Non Allocated Id {playerId}", "id-allocator", printTb=False)
+            Logger.error(f"Trying To Deallocate Non Allocated Id {playerId}", module="id-allocator", printTb=False)
         self.players[playerId] = None
 
-        Logger.debug(f"Deallocated Id {playerId}", "id-allocator")
+        Logger.debug(f"Deallocated Id {playerId}", module="id-allocator")
 
     async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
         # Send packet to all members in world
-        Logger.verbose(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="player-network")
+        Logger.verbose(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="world-packet-dispatcher")
         # Loop Through All Players
         for player in self.players:
             # Checking if Player Exists
@@ -248,10 +248,10 @@ class WorldPlayerManager:
             except Exception as e:
                 if e not in CRITICAL_RESPONSE_ERRORS:
                     # Something Broke!
-                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}")
+                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
                 else:
                     # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.ip}")
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.ip}", module="world-packet-dispatcher")
 
     async def sendWorldMessage(
         self,
@@ -262,7 +262,7 @@ class WorldPlayerManager:
     ):
         # If Message Is A List, Recursively Send All Messages Within
         if type(message) is list:
-            Logger.debug("Sending List Of Messages!")
+            Logger.debug("Sending List Of Messages!", module="world-message")
             for msg in message:
                 await self.sendWorldMessage(msg, author=author, worldTag=worldTag, ignoreList=ignoreList)
             return None  # Break Out of Function
@@ -332,7 +332,7 @@ class Player:
 
         # Checking If Player Is Joined To A World
         if self.worldPlayerManager is None:
-            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined")
+            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined", module="player")
             return None  # Skip Rest
 
         # Trying To Update Block On Player World
@@ -371,7 +371,7 @@ class Player:
 
         # Checking If Player Is Joined To A World
         if self.worldPlayerManager is None:
-            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined")
+            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined", module="player")
             return None  # Skip Rest
 
         # Updating Current Player Position
@@ -399,7 +399,7 @@ class Player:
 
         # Checking If Player Is Joined To A World
         if self.worldPlayerManager is None:
-            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined")
+            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined", module="player")
             return None  # Skip Rest
 
         # Check If Last Character Is '&' (Crashes All Clients)

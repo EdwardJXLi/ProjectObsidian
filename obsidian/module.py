@@ -111,7 +111,7 @@ class _ModuleManager:
                     blacklist.append("core")  # Adding core to whitelist to prevent re-importing
                     Logger.debug("Loaded (mandatory) Module core", module="init-module")
                 except ModuleNotFoundError:
-                    Logger.fatal("Core Module Not Found! (Failed ensureCore). Check if 'core.py' module is present in modules folder!")
+                    Logger.fatal("Core Module Not Found! (Failed ensureCore). Check if 'core.py' module is present in modules folder!", module="init-module")
                     raise InitError("Core Module Not Found!")
                 except FatalError as e:
                     # Pass Down Fatal Error To Base Server
@@ -137,7 +137,7 @@ class _ModuleManager:
                             printTb = False
                         else:
                             printTb = True
-                        Logger.error(f"Error While Loading Module {module_name} - {type(e).__name__}: {e}", "init-module", printTb=printTb, askConfirmation=True)
+                        Logger.error(f"Error While Loading Module {module_name} - {type(e).__name__}: {e}", module="init-module", printTb=printTb, askConfirmation=True)
                 Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="init-module")
             self._completed = True  # setting completed flag to prevent re-importation
         else:
@@ -164,7 +164,7 @@ class _ModuleManager:
             # Pass Down Fatal Error To Base Server
             raise e
         except Exception as e:
-            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", "server")
+            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
     # Property Method To Get Number Of Modules
     @property

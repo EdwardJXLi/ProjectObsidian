@@ -70,7 +70,7 @@ class AbstractPacket:
 
     # Error Handler. Called If Critical If False And An Error Occurs
     def onError(self, error):
-        Logger.error(f"Packet {self.NAME} Received Error {error}")
+        Logger.error(f"Packet {self.NAME} Received Error {error}", module="packet")
 
     @property
     def SIZE(self):
@@ -198,7 +198,7 @@ class _PacketManager:
             # Pass Down Fatal Error To Base Server
             raise e
         except Exception as e:
-            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", "server")
+            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
     # Property Method To Get Number Of Packets
     @property

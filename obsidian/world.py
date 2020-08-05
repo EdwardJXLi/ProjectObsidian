@@ -36,7 +36,7 @@ class WorldManager:
         # Check If World Format Was Set
         if self.worldFormat is None:
             raise FatalError(f"Unknown World Format Key {self.server.config.defaultSaveFormat} Given In Server Config!")
-        Logger.info(f"Using World Format {self.worldFormat.NAME}")
+        Logger.info(f"Using World Format {self.worldFormat.NAME}", module="init-world")
 
         # If World Location Was Not Given, Disable Persistance
         # (Don't Save / Load)
@@ -58,7 +58,7 @@ class WorldManager:
         spawnZ=0,
         **kwargs  # Keyword Arguments To Be Passed To World Generator
     ):
-        Logger.info(f"Creating New World {worldName}", "world")
+        Logger.info(f"Creating New World {worldName}", module="world")
         # Check If World Already Exists
         if worldName in self.worlds.keys():
             raise WorldError(f"Trying To Generate World With Already Existing Name {worldName}!")
@@ -87,30 +87,35 @@ class WorldManager:
         if len(generatedMap) != expectedSize:
             raise MapGenerationError(f"Expected Map Size {expectedSize} While Generating World. Got {len(generatedMap)}")
 
+        Logger.debug(f"Generated Map With Final Size Of {len(generatedMap)}", module="init-world")
         # Return Generated Map Bytesarray
         return generatedMap
 
     def loadWorlds(self):
+        Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
         if self.persistant and (self.server.config.worldSaveLocation is not None):
+            Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
             # Loop Through All Files Given In World Folder
             for filename in os.listdir(self.server.config.worldSaveLocation):
-                Logger.verbose(f"Checking Extention of World File {filename}")
+                Logger.verbose(f"Checking Extention of World File {filename}", module="world-load")
                 # Check If File Type Matches With The Extentions Provided By worldFormat
                 if any([filename.endswith(ext) for ext in self.worldFormat.EXTENTIONS]):
+                    Logger.debug(f"Detected World File {filename}. Attempting To Load World", module="world-load")
                     # (Attempt) To Load Up World
                     try:
                         f = open(os.path.join(self.server.config.worldSaveLocation, filename), "rb")
                         # Get Pure File Name (No Extentions)
                         saveName = os.path.splitext(os.path.basename(f.name))[0]
-                        Logger.info(f"Loading World {saveName}")
+                        Logger.info(f"Loading World {saveName}", module="world-load")
                         self.worlds[saveName] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
                     except Exception as e:
-                        Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", "server", askConfirmation=True)
+                        Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load", askConfirmation=True)
         else:
+            Logger.debug("World Manager Is Non Persistant!", module="world-load")
             # Create Non-Persistant Temporary World
             defaultWorldName = self.server.config.defaultWorld
             defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
-            Logger.debug(f"Creating Temporary World {defaultWorldName}", module="init-world")
+            Logger.debug(f"Creating Temporary World {defaultWorldName}", module="world-load")
             self.createWorld(
                 defaultWorldName,
                 32, 32, 32,
@@ -121,6 +126,7 @@ class WorldManager:
                 spawnZ=8 * 32 + 51,
                 grassHeight=16
             )
+        # TODO: Better Handling
         # Check If DefaultWorld Is Loaded
         if self.server.config.defaultWorld not in self.worlds.keys():
             raise WorldError(f"Default World {self.server.config.defaultWorld} Not Loaded. Consider Checking If World Exists And/Or Changing The Default World In Config.")
@@ -170,7 +176,7 @@ class World:
 
     def getBlock(self, blockX, blockY, blockZ):
         # Gets Block Obj Of Requested Block
-        Logger.verbose(f"Getting World Block {blockX}, {blockY}, {blockZ}")
+        Logger.verbose(f"Getting World Block {blockX}, {blockY}, {blockZ}", module="world")
 
         # Check If Block Is Out Of Range
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
@@ -179,7 +185,7 @@ class World:
 
     def setBlock(self, blockX, blockY, blockZ, blockType, player: Optional[Player] = None):
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
-        Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockType.ID}")
+        Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockType.ID}", module="world")
 
         # Checking If User Can Set Blocks
         if player is not None:  # Checking If User Was Passed
@@ -193,11 +199,12 @@ class World:
         self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = blockType.ID
 
     def saveMap(self):
+        # TODO
         if self.persistant:
             # TODO: World File Saving
             raise NotImplementedError("Persistant World Loading Is Not Implemented")
         else:
-            Logger.warn(f"World {self.name} Is Not Persistant! Not Saving.", module="init-world")
+            Logger.warn(f"World {self.name} Is Not Persistant! Not Saving.", module="world-save")
 
     def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
         # If Gzip Compression Level Is -1, Use Default!

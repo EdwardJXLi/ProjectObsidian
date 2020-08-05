@@ -65,7 +65,7 @@ class _BlockManager:
             # Pass Down Fatal Error To Base Server
             raise e
         except Exception as e:
-            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", "server")
+            Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
     # Property Method To Get Number Of Blocks
     @property
