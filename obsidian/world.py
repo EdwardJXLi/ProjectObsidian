@@ -97,16 +97,17 @@ class WorldManager:
             Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
             # Loop Through All Files Given In World Folder
             for filename in os.listdir(self.server.config.worldSaveLocation):
-                Logger.verbose(f"Checking Extention of World File {filename}", module="world-load")
+                # Get Pure File Name (No Extentions)
+                saveName = os.path.splitext(os.path.basename(filename))[0]
+                Logger.verbose(f"Checking Extention and Blacklist Status of World File {filename}", module="world-load")
                 # Check If File Type Matches With The Extentions Provided By worldFormat
-                if any([filename.endswith(ext) for ext in self.worldFormat.EXTENTIONS]):
+                # Also Check If World Is Blacklisted
+                if any([filename.endswith(ext) for ext in self.worldFormat.EXTENTIONS]) and (saveName not in self.server.config.worldBlacklist):
                     Logger.debug(f"Detected World File {filename}. Attempting To Load World", module="world-load")
                     # (Attempt) To Load Up World
                     try:
-                        f = open(os.path.join(self.server.config.worldSaveLocation, filename), "rb")
-                        # Get Pure File Name (No Extentions)
-                        saveName = os.path.splitext(os.path.basename(f.name))[0]
                         Logger.info(f"Loading World {saveName}", module="world-load")
+                        f = open(os.path.join(self.server.config.worldSaveLocation, filename), "rb")
                         self.worlds[saveName] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
                     except Exception as e:
                         Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load")
@@ -128,7 +129,9 @@ class WorldManager:
                 Logger.debug(f"Creating World {defaultWorldName}", module="world-load")
                 self.createWorld(
                     defaultWorldName,
-                    32, 32, 32,
+                    self.server.config.defaultWorldSizeX,
+                    self.server.config.defaultWorldSizeY,
+                    self.server.config.defaultWorldSizeZ,
                     defaultGenerator,
                     persistant=self.persistant,
                     spawnX=8 * 32 + 51,
@@ -144,7 +147,9 @@ class WorldManager:
             Logger.debug(f"Creating Temporary World {defaultWorldName}", module="world-load")
             self.createWorld(
                 defaultWorldName,
-                32, 32, 32,
+                self.server.config.defaultWorldSizeX,
+                self.server.config.defaultWorldSizeY,
+                self.server.config.defaultWorldSizeZ,
                 defaultGenerator,
                 persistant=False,
                 spawnX=8 * 32 + 51,
