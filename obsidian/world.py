@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 
 from typing import List, Optional
 import io
+import os
 import gzip
 import struct
 
@@ -90,10 +91,23 @@ class WorldManager:
         return generatedMap
 
     def loadWorlds(self):
-        if self.persistant:
-            f = open("worlds/raw.gz", "rb")
-            self.worlds["raw"] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
+        if self.persistant and (self.server.config.worldSaveLocation is not None):
+            # Loop Through All Files Given In World Folder
+            for filename in os.listdir(self.server.config.worldSaveLocation):
+                Logger.verbose(f"Checking Extention of World File {filename}")
+                # Check If File Type Matches With The Extentions Provided By worldFormat
+                if any([filename.endswith(ext) for ext in self.worldFormat.EXTENTIONS]):
+                    # (Attempt) To Load Up World
+                    try:
+                        f = open(os.path.join(self.server.config.worldSaveLocation, filename), "rb")
+                        # Get Pure File Name (No Extentions)
+                        saveName = os.path.splitext(os.path.basename(f.name))[0]
+                        Logger.info(f"Loading World {saveName}")
+                        self.worlds[saveName] = WorldFormats.Raw.loadWorld(f, self, persistant=False)
+                    except Exception as e:
+                        Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", "server")
         else:
+            # Create Non-Persistant Temporary World
             defaultWorldName = self.server.config.defaultWorld
             defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
             Logger.debug(f"Creating Temporary World {defaultWorldName}", module="init-world")

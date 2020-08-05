@@ -20,6 +20,7 @@ import struct
 import copy
 import gzip
 import io
+import os
 from typing import Optional
 
 
@@ -587,7 +588,7 @@ class CoreModule(AbstractModule):
             # TODO!!!!! SPAWN GENERATION
             return World(
                 worldManager,  # Pass In World Manager
-                "TODO",  # Pass In World Name
+                os.path.splitext(os.path.basename(reader.name))[0],  # Pass In World Name (Save File Name Without EXT)
                 256, 256, 256,  # Passing World X, Y, Z
                 bytearray(rawData),  # Generating Map Data
                 persistant=persistant,  # Pass In Persistant Flag
