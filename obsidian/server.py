@@ -64,7 +64,9 @@ class Server:
             Logger.fatal("Fatal Error Detected. Stopping Server.", "main", printTb=False)
             Logger.fatal(f"{type(e).__name__}: {e}", "main")
         except Exception as e:
-            Logger.fatal(f"Error While Initializing Server - {type(e).__name__}: {e}", "server")
+            Logger.fatal("==================== FATAL ERROR! ====================", "server", printTb=False)
+            Logger.fatal(f"Fatal Error While Initializing Server - {type(e).__name__}: {e}", "server")
+            Logger.fatal("======================================================", "server", printTb=False)
 
     async def _init(self):
         # Testing If Debug Is Enabled

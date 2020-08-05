@@ -107,6 +107,9 @@ class WorldManager:
                 spawnZ=8 * 32 + 51,
                 grassHeight=16
             )
+        # Check If DefaultWorld Is Loaded
+        if self.server.config.defaultWorld not in self.worlds.keys():
+            raise WorldError(f"Default World {self.server.config.defaultWorld} Not Loaded. Consider Checking If World Exists And/Or Changing The Default World In Config.")
 
 
 class World:
