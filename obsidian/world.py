@@ -11,7 +11,7 @@ import struct
 
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
-from obsidian.blocks import BlockManager
+from obsidian.blocks import BlockManager, Blocks
 from obsidian.worldformat import WorldFormats
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
 from obsidian.constants import (
@@ -192,6 +192,11 @@ class World:
         self.sizeX = sizeX
         self.sizeY = sizeY
         self.sizeZ = sizeZ
+        self.spawnX = spawnX
+        self.spawnZ = spawnZ
+        self.spawnY = spawnY
+        self.spawnYaw = spawnYaw
+        self.spawnPitch = spawnPitch
         self.mapArray = mapArray
         self.persistant = persistant
         self.canEdit = canEdit
@@ -200,40 +205,34 @@ class World:
 
         # Generate/Set Spawn Coords
         # Set spawnX
-        if spawnX is None:
+        if self.spawnX is None:
             # Generate SpawnX (Set to middle of map)
             self.spawnX = (self.sizeX // 2) * 32 + 51
             Logger.verbose(f"spawnX was not provided. Generated to {self.spawnX}")
-        else:
-            self.spawnX = spawnX
-        # Set spawnY
-        if spawnY is None:
-            # TODO
-            self.spawnY = (self.sizeY // 2) * 32 + 51
-            Logger.verbose(f"spawnY was not provided. Generated to {self.spawnY}")
-        else:
-            self.spawnY = spawnY
+
         # Set spawnZ
-        if spawnZ is None:
+        if self.spawnZ is None:
             # Generate SpawnZ (Set to middle of map)
             self.spawnZ = (self.sizeZ // 2) * 32 + 51
             Logger.verbose(f"spawnZ was not provided. Generated to {self.spawnZ}")
-        else:
-            self.spawnZ = spawnZ
+
+        # Set spawnY
+        if self.spawnY is None:
+            # Kinda hacky to get the block coords form the in-game coords
+            self.spawnY = (self.getHighestBlock(round((self.spawnX - 51) / 32), round((self.spawnZ - 51) / 32)) + 1) * 32 + 51
+            Logger.verbose(f"spawnY was not provided. Generated to {self.spawnY}")
+
         # Set spawnYaw
         if spawnYaw is None:
             # Generate SpawnYaw (0)
             self.spawnYaw = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}")
-        else:
-            self.spawnYaw = spawnYaw
+
         # Set spawnPitch
         if spawnPitch is None:
             # Generate SpawnPitch (0)
             self.spawnPitch = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}")
-        else:
-            self.spawnPitch = spawnPitch
 
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
@@ -245,7 +244,7 @@ class World:
 
         # Check If Block Is Out Of Range
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
-            raise BlockError("Requested Block Is Out Of Range")
+            raise BlockError(f"Requested Block Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
 
     def setBlock(self, blockX, blockY, blockZ, blockType, player: Optional[Player] = None):
@@ -260,8 +259,29 @@ class World:
 
         # Check If Block Is Out Of Range
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
-            raise BlockError("Block Placement Is Out Of Range")
+            raise BlockError(f"Block Placement Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = blockType.ID
+
+    def getHighestBlock(self, blockX, blockZ, start: int = None):
+        # Returns the highest block
+        # Set and Verify Scan Start Value
+        if start is None:
+            scanY = self.sizeY - 1
+        else:
+            if start > self.sizeY:
+                Logger.warn(f"Trying To Get Heighest Block From Location Greater Than Map Size (MapHeight: {self.sizeY}, Given: {start})")
+                scanY = self.sizeY - 1
+            else:
+                scanY = start
+
+        # Scan Downwards To Get Heighest Block
+        while self.getBlock(blockX, scanY, blockZ) is Blocks.Air:
+            if scanY == 0:
+                break
+            # Scan Downwards
+            scanY -= 1
+
+        return scanY
 
     def saveMap(self):
         # TODO
