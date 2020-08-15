@@ -42,7 +42,7 @@ class AbstractWorldFormat:
 
     def loadWorld(
         self,
-        reader: io.BufferedReader,
+        fileIO: io.BufferedRandom,
         worldManager: WorldManager,
         persistant: bool = True
     ):
@@ -51,9 +51,8 @@ class AbstractWorldFormat:
     def saveWorld(
         self,
         world: World,
-        writer: io.BufferedWriter,
-        worldManager: WorldManager,
-        persistant: bool = True
+        fileIO: io.BufferedRandom,
+        worldManager: WorldManager
     ):
         return None
 

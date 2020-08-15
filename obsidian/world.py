@@ -118,8 +118,8 @@ class WorldManager:
                     # (Attempt) To Load Up World
                     try:
                         Logger.info(f"Loading World {saveName}", module="world-load")
-                        f = open(os.path.join(SERVERPATH, self.server.config.worldSaveLocation, filename), "rb")
-                        self.worlds[saveName] = self.worldFormat.loadWorld(f, self, persistant=False)
+                        fileIO = open(os.path.join(SERVERPATH, self.server.config.worldSaveLocation, filename), "rb")
+                        self.worlds[saveName] = self.worldFormat.loadWorld(fileIO, self, persistant=self.persistant)
                     except Exception as e:
                         Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load")
                         Logger.askConfirmation()
@@ -175,7 +175,8 @@ class World:
         sizeZ: int,
         mapArray: bytearray,
         generator: AbstractMapGenerator = None,
-        persistant: bool = True,
+        persistant: bool = False,
+        fileIO: Optional[io.BufferedRandom] = None,
         canEdit: bool = True,
         spawnX: Optional[int] = None,
         spawnY: Optional[int] = None,
@@ -199,9 +200,20 @@ class World:
         self.spawnPitch = spawnPitch
         self.mapArray = mapArray
         self.persistant = persistant
+        self.fileIO = fileIO
         self.canEdit = canEdit
         self.maxPlayers = maxPlayers
         self.uuid = uuid  # UUID for CW Capability
+
+        # Check if file IO was given if persistant
+        if self.persistant:
+            if self.fileIO is None:
+                # Setting persistance to false because fileIO was not given
+                self.persistant = False
+                Logger.error(f"World Format {self.worldManager.worldFormat.NAME} Created Persistant World Without Providing FileIO! Please Report To Author! Setting World As Non-Persistant.", "world-load")
+                Logger.askConfirmation()
+            else:
+                Logger.debug(f"Persistant World Has FileIO {self.fileIO}")
 
         # Generate/Set Spawn Coords
         # Set spawnX
@@ -283,11 +295,13 @@ class World:
 
         return scanY
 
-    def saveMap(self):
-        # TODO
+    def saveMap(self, create=False):
         if self.persistant:
-            # TODO: World File Saving
-            raise NotImplementedError("Persistant World Loading Is Not Implemented")
+            if create is False:
+                Logger.info(f"Attempting To Save World {self.name}")
+                self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
+            else:
+                raise NotImplementedError("World File Creation is Not Implemented")
         else:
             Logger.warn(f"World {self.name} Is Not Persistant! Not Saving.", module="world-save")
 

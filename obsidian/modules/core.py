@@ -573,11 +573,11 @@ class CoreModule(AbstractModule):
 
         def loadWorld(
             self,
-            reader: io.BufferedReader,
+            fileIO: io.BufferedRandom,
             worldManager: WorldManager,
             persistant: bool = True
         ):
-            rawData = gzip.GzipFile(fileobj=reader).read()
+            rawData = gzip.GzipFile(fileobj=fileIO).read()
             # Expected Map Size (MAX SIZE)
             fileSize = 256 * 256 * 256
             # Check If Given Map Is Largest Size
@@ -588,19 +588,21 @@ class CoreModule(AbstractModule):
             # TODO!!!!! SPAWN GENERATION
             return World(
                 worldManager,  # Pass In World Manager
-                os.path.splitext(os.path.basename(reader.name))[0],  # Pass In World Name (Save File Name Without EXT)
+                os.path.splitext(os.path.basename(fileIO.name))[0],  # Pass In World Name (Save File Name Without EXT)
                 256, 256, 256,  # Passing World X, Y, Z
                 bytearray(rawData),  # Generating Map Data
                 persistant=persistant,  # Pass In Persistant Flag
+                fileIO=fileIO  # Pass In File Reader/Writer
             )
 
         def saveWorld(
             self,
             world: World,
-            writer: io.BufferedWriter,
-            worldManager: WorldManager,
-            persistant: bool = True
+            fileIO: io.BufferedRandom,
+            worldManager: WorldManager
         ):
+            # TODO FINISH
+            print("todo save world")
             return None
 
     @WorldFormat(
