@@ -161,7 +161,7 @@ class WorldManager:
                 defaultGenerator,
                 persistant=False,
                 maxPlayers=self.server.config.worldMaxPlayers,
-                grassHeight=16
+                grassHeight=self.server.config.defaultWorldSizeY // 2
             )
 
 
