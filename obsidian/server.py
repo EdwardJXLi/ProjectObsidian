@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+#from concurrent.futures import TimeoutError as AsyncioTimeoutError
 from typing import Optional, Any, List
 import os
+import sys
 
 from obsidian.config import ServerConfig
-from obsidian.packet import PacketManager
+from obsidian.packet import PacketManager, Packets
 from obsidian.constants import Colour, InitError, SERVERPATH, ServerError, FatalError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
@@ -42,6 +44,7 @@ class Server:
         self.ensureFiles: List[str] = []  # List of folders to ensure they exist
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized = False  # Flag Set When Everything Is Fully Loaded
+        self.eventLoop = asyncio.get_event_loop()
 
         # Initialize Config, Depending On What Type It Is
         if config is None:
@@ -135,8 +138,7 @@ class Server:
             if self.initialized:
                 # Start Server
                 Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}", module="obsidian")
-                async with self.server as s:
-                    await s.serve_forever()
+                await self.server.serve_forever()
             else:
                 raise ServerError("Server Did Not Initialize. This May Be Because server.init() Was Never Called Or An Error Occurred While Initializing")
         except ServerError as e:
@@ -147,8 +149,12 @@ class Server:
     def _getConnHandler(self):  # -> Callable[[asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]]
         # Callback function on new connection
         async def handler(reader, writer):
-            c = NetworkHandler(self, reader, writer)
-            await c.initConnection()
+            # Check if server is still initialized (Might be in shutdown procedure)
+            if self.initialized:
+                c = NetworkHandler(self, reader, writer)
+                await c.initConnection()
+            else:
+                pass
 
         return handler
 
@@ -159,3 +165,60 @@ class Server:
             if not os.path.exists(folder):
                 Logger.debug(f"Creating Folder Structure {folder}", module="init")
                 os.makedirs(folder)
+
+    # Quick hack to run function in async mode no matter what
+    def asyncstop(self, *args, **kwargs):
+        Logger.debug("Trying to launch stop procedure in async", "stop-helper")
+        try:
+            eventLoop = asyncio.get_running_loop()
+            Logger.debug("Existing Event Loop detected. Sending Stop Command!", "stop-helper")
+            asyncio.run_coroutine_threadsafe(
+                self.stop(),
+                eventLoop
+            )
+        except RuntimeError:
+            Logger.debug("No Running Event Loops Were Detected. Creating Stop Event Loop", "stop-helper")
+            eventLoop = asyncio.new_event_loop()
+            eventLoop.run_until_complete(self.stop())
+            eventLoop.stop()
+
+    async def stop(self):
+        try:
+            # Setting initialized to false to prevent multiple ctl-c
+            if not self.initialized:
+                Logger.verbose("Trying to shut down server that is not initialized", module="server-stop")
+                return None
+
+            # Preparing to stop server!
+            Logger.info("Stopping Server...", module="server-stop")
+            self.initialized = False
+
+            # Sending Disconnect Packet To All Server Members
+            Logger.info("Sending Disconnect Packet To All Members", module="server-stop")
+            await self.playerManager.sendGlobalPacket(
+                Packets.Response.DisconnectPlayer,
+                "(test) Disconnected: Server Shutting Down"
+            )
+
+            # Stopping Connection Handler
+            Logger.info("Stopping Connection Handler Loop", module="server-stop")
+            if self.server is not None:
+                self.server.close()
+
+            # Saving Worlds
+            Logger.info("Saving All Worlds", module="server-stop")
+            self.worldManager.saveWorlds()
+
+            # Closing Worlds
+            Logger.info("Closing All Worlds", module="server-stop")
+            self.worldManager.closeWorlds()
+
+            # Closing Server
+            Logger.info("Terminating Process", module="server-stop")
+            print("Goodbye!")
+            sys.exit(0)
+        except Exception as e:
+            # Server Stop Failed! Last Ditch Attempt To Clean Up
+            print(f"Error occurred while stopping server - {type(e).__name__}: {e}")
+            print("Force Terminating Server")
+            sys.exit(0)

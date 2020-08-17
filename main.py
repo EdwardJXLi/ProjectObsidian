@@ -5,6 +5,8 @@ Copyright (C) RadioactiveHydra (Edward) 2020
 # import sys
 import argparse
 import asyncio
+import signal
+import time
 # import time
 
 from obsidian.server import Server
@@ -34,6 +36,12 @@ async def main():
     # server.config.ipBlacklist = ["127.0.0.1"]  # Blacklist Testing
     await server.init()
     asyncio.create_task(server.run())
+
+    # Capture and Handle Crl-C
+    signal.signal(
+        signal.SIGINT,
+        server.asyncstop  # Use this function to run async stop from outside async
+    )
 
     # Busy Operation To Keep Main Thread Alive
     while True:

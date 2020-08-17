@@ -1,4 +1,5 @@
 from __future__ import annotations
+from os import close
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
@@ -164,6 +165,48 @@ class WorldManager:
                 grassHeight=self.server.config.defaultWorldSizeY // 2
             )
 
+    def saveWorlds(self):
+        Logger.debug("Starting Attempt to Save All Worlds", module="world-save")
+        if self.persistant and (self.server.config.worldSaveLocation is not None):
+            Logger.info("Saving All Worlds...", module="world-save")
+            # Loop through all worlds and attempt to save!
+            for worldName, world in self.worlds.items():
+                Logger.debug(f"Trying To Save World {worldName}", module="world-save")
+                # Check persistance
+                if world.persistant:
+                    try:
+                        # Saving World
+                        Logger.info(f"Saving World {worldName}", module="world-save")
+                        world.saveMap()
+                    except Exception as e:
+                        Logger.error(f"Error While Saving World {worldName} - {type(e).__name__}: {e}", module="world-save")
+                else:
+                    Logger.warn(f"World {worldName} Is Non Persistant! Skipping World Save!", module="world-save")
+        else:
+            Logger.warn("World Manager Is Non Persistant! Skipping World Save!", module="world-save")
+
+    def closeWorlds(self):
+        Logger.debug("Starting Attempt to Close All Worlds", module="world-close")
+        Logger.info("Closing All Worlds...", module="world-close")
+        # Loop through all worlds and attempt to close
+        for worldName in list(self.worlds.keys()):  # Setting as list so dict size can change mid execution
+            try:
+                Logger.info(f"Closing World {worldName}", module="world-close")
+                # Getting world obj
+                world = self.worlds[worldName]
+
+                # Removing world from dict
+                Logger.debug("Removed world from dict", module="world-close")
+                del self.worlds[worldName]
+
+                # Checking if World and Server is Persistant
+                if self.persistant and (self.server.config.worldSaveLocation is not None) and world.persistant:
+                    # Closing worlds fileIO
+                    Logger.debug("Closing World FileIO", module="world-close")
+                    world.fileIO.close()
+            except Exception as e:
+                Logger.error(f"Error While Closing World {worldName} - {type(e).__name__}: {e}", module="world-close")
+
 
 class World:
     def __init__(
@@ -213,7 +256,7 @@ class World:
                 Logger.error(f"World Format {self.worldManager.worldFormat.NAME} Created Persistant World Without Providing FileIO! Please Report To Author! Setting World As Non-Persistant.", "world-load")
                 Logger.askConfirmation()
             else:
-                Logger.debug(f"Persistant World Has FileIO {self.fileIO}")
+                Logger.debug(f"Persistant World Has FileIO {self.fileIO}", "world-load")
 
         # Generate/Set Spawn Coords
         # Set spawnX
@@ -295,13 +338,10 @@ class World:
 
         return scanY
 
-    def saveMap(self, create=False):
+    def saveMap(self):
         if self.persistant:
-            if create is False:
-                Logger.info(f"Attempting To Save World {self.name}")
-                self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
-            else:
-                raise NotImplementedError("World File Creation is Not Implemented")
+            Logger.info(f"Attempting To Save World {self.name}", module="world-save")
+            self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
         else:
             Logger.warn(f"World {self.name} Is Not Persistant! Not Saving.", module="world-save")
 
