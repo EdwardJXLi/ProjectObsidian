@@ -119,7 +119,7 @@ class WorldManager:
                     # (Attempt) To Load Up World
                     try:
                         Logger.info(f"Loading World {saveName}", module="world-load")
-                        fileIO = open(os.path.join(SERVERPATH, self.server.config.worldSaveLocation, filename), "rb")
+                        fileIO = open(os.path.join(SERVERPATH, self.server.config.worldSaveLocation, filename), "rb+")
                         self.worlds[saveName] = self.worldFormat.loadWorld(fileIO, self, persistant=self.persistant)
                     except Exception as e:
                         Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load")

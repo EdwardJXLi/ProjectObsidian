@@ -585,7 +585,6 @@ class CoreModule(AbstractModule):
                 raise WorldFormatError(f"RawWorldFormat - Invalid World Size {len(rawData)}! Expected: {fileSize} (256 x 256 x 256)")
 
             # Create World Data
-            # TODO!!!!! SPAWN GENERATION
             return World(
                 worldManager,  # Pass In World Manager
                 os.path.splitext(os.path.basename(fileIO.name))[0],  # Pass In World Name (Save File Name Without EXT)
@@ -601,9 +600,15 @@ class CoreModule(AbstractModule):
             fileIO: io.BufferedRandom,
             worldManager: WorldManager
         ):
-            # TODO FINISH
-            print("todo save world")
-            return None
+            # Checking if file size matches!
+            if not (world.sizeX == 256 and world.sizeY == 256 and world.sizeZ == 256):
+                raise WorldFormatError(f"RawWorldFormat - Trying to save world that has invalid world size! Expected: 256, 256, 256! Got: {world.sizeX}, {world.sizeY}, {world.sizeZ}!")
+
+            # Clearing Current Save File
+            fileIO.truncate(0)
+            fileIO.seek(0)
+            # Saving Map To File
+            fileIO.write(world.gzipMap())
 
     @WorldFormat(
         "Basic",
