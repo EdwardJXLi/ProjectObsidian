@@ -1,3 +1,5 @@
+__test__ = 1
+
 from obsidian.module import Module, AbstractModule
 
 

@@ -6,7 +6,6 @@ Copyright (C) RadioactiveHydra (Edward) 2020
 import argparse
 import asyncio
 import signal
-import time
 # import time
 
 from obsidian.server import Server
@@ -15,7 +14,7 @@ from obsidian.log import Logger
 
 async def main():
     # Initiate Argument Parser
-    parser = argparse.ArgumentParser(description="TODO")
+    parser = argparse.ArgumentParser(description="Project Obsidian - Open Source Minecraft Classic Server Reverse Engineer And Reimplementation Project")
     # parser.add_argument('--TEMPLATE', type=int, nargs='?', help='TEMPLATE', default=TEMPLATE)
     parser.add_argument('-a', "--address", type=str, nargs='?', help="The Address The Minecraft Server Would Bind To.", default="0.0.0.0")
     parser.add_argument('-p', "--port", type=int, nargs='?', help="The Port The Minecraft Server Would Bind To.", default=25565)
@@ -32,7 +31,7 @@ async def main():
     # Create and Init Main Server
     server = Server(args.address, args.port, args.name, args.motd, colour=True)
     # Add Test Modules To Blacklist
-    server.config.moduleBlacklist = ["errortest", "errortest2", "errortest3", "test1", "test2", "test3"]
+    server.config.moduleBlacklist = ["errortest", "errortest2", "errortest3", "test1", "test2"]
     # server.config.ipBlacklist = ["127.0.0.1"]  # Blacklist Testing
     await server.init()
     asyncio.create_task(server.run())

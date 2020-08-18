@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-#from concurrent.futures import TimeoutError as AsyncioTimeoutError
 from typing import Optional, Any, List
 import os
 import sys
@@ -115,6 +114,7 @@ class Server:
         if len(ModuleManager._errorList) != 0:
             Logger.warn("Some Module Files Failed To Load!", module="init")
             Logger.warn(f"Failed: {ModuleManager._errorList}", module="init")
+            Logger.askConfirmation()
 
         # Initialize WorldManager
         Logger.info("Initializing World Manager", module="init")

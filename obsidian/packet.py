@@ -1,4 +1,7 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from obsidian.player import Player
 
 import enum
 import struct
@@ -83,7 +86,7 @@ class AbstractRequestPacket(AbstractPacket):
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
-    async def deserialize(self, *args, **kwargs):
+    async def deserialize(self, ctx: Optional[Player], *args, **kwargs):
         return None
 
 

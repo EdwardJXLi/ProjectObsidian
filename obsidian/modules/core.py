@@ -429,6 +429,7 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self):
+            raise NotImplementedError(self)
             return None  # TODO
 
     @Packet(
@@ -445,6 +446,7 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self):
+            raise NotImplementedError(self)
             return None  # TODO
 
     @Packet(
@@ -461,6 +463,7 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self):
+            raise NotImplementedError(self)
             return None  # TODO
 
     @Packet(
