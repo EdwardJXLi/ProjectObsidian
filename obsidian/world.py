@@ -1,5 +1,4 @@
 from __future__ import annotations
-from os import close
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
@@ -13,7 +12,7 @@ import struct
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
 from obsidian.blocks import BlockManager, Blocks
-from obsidian.worldformat import WorldFormats
+from obsidian.worldformat import WorldFormats, AbstractWorldFormat
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
 from obsidian.constants import (
     ClientError,
@@ -21,7 +20,7 @@ from obsidian.constants import (
     MapGenerationError,
     BlockError,
     WorldError,
-    SERVERPATH
+    SERVERPATH, WorldSaveError
 )
 
 
@@ -68,10 +67,20 @@ class WorldManager:
         spawnYaw: Optional[int] = None,
         **kwargs  # Keyword Arguments To Be Passed To World Generator
     ):
-        Logger.info(f"Creating New World {worldName}", module="world")
+        Logger.info(f"Creating New World {worldName}...", module="world-create")
         # Check If World Already Exists
         if worldName in self.worlds.keys():
             raise WorldError(f"Trying To Generate World With Already Existing Name {worldName}!")
+
+        # Creating Save File If World Is Persistant
+        Logger.debug("Creating Save File If World Is Persistant", module="world-create")
+        if self.persistant:
+            fileIO = self.createWorldFile(self.server.config.worldSaveLocation, worldName)
+            Logger.debug(f"World Is Persistant! Created New FileIO {fileIO}", module="world-create")
+            pass
+        else:
+            Logger.debug("World Is Not Persistant! Creating FileIO", module="world-create")
+            fileIO = None
 
         # Create World
         self.worlds[worldName] = World(
@@ -81,6 +90,7 @@ class WorldManager:
             self.generateMap(sizeX, sizeY, sizeZ, generator, *args, **kwargs),  # Generating Map Data
             generator=generator,  # Pass In World Generator
             persistant=persistant,  # Pass In Persistant Flag
+            fileIO=fileIO,  # Pass In FileIO Object (if persistant set)
             # Spawn Information
             spawnX=spawnX,
             spawnY=spawnY,
@@ -88,6 +98,10 @@ class WorldManager:
             spawnPitch=spawnPitch,
             spawnYaw=spawnYaw
         )
+
+        # Saving World
+        Logger.info(f"Saving World {worldName}", module="world-create")
+        self.worlds[worldName].saveMap()
 
     def generateMap(self, sizeX, sizeY, sizeZ, generator: AbstractMapGenerator, *args, **kwargs):
         Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
@@ -146,7 +160,7 @@ class WorldManager:
                     self.server.config.defaultWorldSizeZ,
                     defaultGenerator,
                     persistant=self.persistant,
-                    grassHeight=16
+                    grassHeight=self.server.config.defaultWorldSizeY // 2
                 )
         else:
             Logger.debug("World Manager Is Non Persistant!", module="world-load")
@@ -187,7 +201,6 @@ class WorldManager:
 
     def closeWorlds(self):
         Logger.debug("Starting Attempt to Close All Worlds", module="world-close")
-        Logger.info("Closing All Worlds...", module="world-close")
         # Loop through all worlds and attempt to close
         for worldName in list(self.worlds.keys()):  # Setting as list so dict size can change mid execution
             try:
@@ -206,6 +219,30 @@ class WorldManager:
                     world.fileIO.close()
             except Exception as e:
                 Logger.error(f"Error While Closing World {worldName} - {type(e).__name__}: {e}", module="world-close")
+
+    def createWorldFile(self, savePath, worldName, worldFormat: AbstractWorldFormat = None):
+        Logger.debug(f"Attempting to create world file with name {worldName}")
+        # Checking if World is Persistant
+        if self.server.config.worldSaveLocation is None or not self.persistant:
+            raise WorldSaveError("Trying To Create World File When Server Is Not Persistant")
+
+        # Checking if World Format was Passed In (Setting as default if not)
+        if worldFormat is None:
+            worldFormat = self.worldFormat  # type: ignore
+
+        # Generating File Path
+        worldPath = os.path.join(
+            SERVERPATH,
+            savePath,
+            worldName + "." + worldFormat.EXTENTIONS[0]  # Gets the first value in the valid extentions list
+        )
+        Logger.debug(f"File world path is {worldPath}")
+
+        # Check if file already exists
+        if os.path.isfile(worldPath):
+            raise WorldSaveError(f"Trying To Create World File {worldPath} That Already Exists")
+
+        return open(worldPath, "wb+")
 
 
 class World:
@@ -227,6 +264,7 @@ class World:
         spawnYaw: Optional[int] = None,
         spawnPitch: Optional[int] = None,
         maxPlayers: int = 250,
+        displayName: str = None,
         uuid: str = None
     ):
         # Y is the height
@@ -246,6 +284,7 @@ class World:
         self.fileIO = fileIO
         self.canEdit = canEdit
         self.maxPlayers = maxPlayers
+        self.displayName = displayName  # Displayname for CW Capability
         self.uuid = uuid  # UUID for CW Capability
 
         # Check if file IO was given if persistant

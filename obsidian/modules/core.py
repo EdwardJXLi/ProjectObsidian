@@ -544,7 +544,7 @@ class CoreModule(AbstractModule):
         PacketDirections.RESPONSE,
         description="Sent to Update User OP Status. User type is 0x64 for op, 0x00 for normal user."
     )
-    class UpdateUserTypePacket(AbstractResponsePacket):
+    class UserTypeUpdatePacket(AbstractResponsePacket):
         def __init__(self):
             super().__init__(
                 ID=0x0f,

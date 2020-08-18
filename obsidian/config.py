@@ -16,9 +16,9 @@ class ServerConfig:
     serverMaxPlayers: int = 32  # Number Of Players Max Allowed On The Entire Server
     worldMaxPlayers: int = 250  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
-    defaultWorldSizeX: int = 32  # Default Size X
-    defaultWorldSizeY: int = 32  # Default Size Y
-    defaultWorldSizeZ: int = 32  # Default Size Z
+    defaultWorldSizeX: int = 256  # Default Size X
+    defaultWorldSizeY: int = 256  # Default Size Y
+    defaultWorldSizeZ: int = 256  # Default Size Z
     defaultSaveFormat: str = "raw"  # Name Of Default World Save Format
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     worldBlacklist: List[str] = field(default_factory=list)  # World Init Blacklist

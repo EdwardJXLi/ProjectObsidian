@@ -44,7 +44,7 @@ class Server:
         self.ensureFiles: List[str] = []  # List of folders to ensure they exist
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized = False  # Flag Set When Everything Is Fully Loaded
-        self.eventLoop = asyncio.get_event_loop()
+        self.stopping = False  # Flag To Prevent Crl-C Spamming
 
         # Initialize Config, Depending On What Type It Is
         if config is None:
@@ -185,13 +185,20 @@ class Server:
     async def stop(self):
         try:
             # Setting initialized to false to prevent multiple ctl-c
+            if self.stopping:
+                # Ignoring Repetitive Ctl-Cs
+                return None
+
             if not self.initialized:
-                Logger.verbose("Trying to shut down server that is not initialized", module="server-stop")
+                Logger.verbose("Trying to shut down server that is not initialized!", module="server-stop")
+                Logger.verbose("Skipping Shutdown Procedure", module="server-stop")
+                sys.exit(0)
                 return None
 
             # Preparing to stop server!
             Logger.info("Stopping Server...", module="server-stop")
             self.initialized = False
+            self.stopping = True
 
             # Sending Disconnect Packet To All Server Members
             Logger.info("Sending Disconnect Packet To All Members", module="server-stop")
