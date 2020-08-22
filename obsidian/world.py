@@ -125,10 +125,19 @@ class WorldManager:
             for filename in os.listdir(os.path.join(SERVERPATH, self.server.config.worldSaveLocation)):
                 # Get Pure File Name (No Extentions)
                 saveName = os.path.splitext(os.path.basename(filename))[0]
-                Logger.verbose(f"Checking Extention and Blacklist Status of World File {filename}", module="world-load")
+                Logger.verbose(f"Checking Extention and Status of World File {filename}", module="world-load")
                 # Check If File Type Matches With The Extentions Provided By worldFormat
+                if not any([filename.endswith(ext) for ext in self.worldFormat.EXTENTIONS]):
+                    Logger.debug(f"Ignoring World File {filename}. File Extention Not Known!", module="world-load")
                 # Also Check If World Is Blacklisted
-                if any([filename.endswith(ext) for ext in self.worldFormat.EXTENTIONS]) and (saveName not in self.server.config.worldBlacklist):
+                elif saveName in self.server.config.worldBlacklist:
+                    Logger.info(f"Ignoring World File {filename}. World Name Is Blacklisted!", module="world-load")
+                # Also Check If World Name Is Already Loaded (Same File Names with Different Extentions)
+                elif saveName in self.worlds.keys():
+                    Logger.warn(f"Ignoring World File {filename}. World With Similar Name Has Already Been Registered!", module="world-load")
+                    Logger.warn(f"World File {os.path.basename(self.worlds[saveName].fileIO.name)} Conflicts With World File {filename}!", module="world-load")
+                    Logger.askConfirmation()
+                else:
                     Logger.debug(f"Detected World File {filename}. Attempting To Load World", module="world-load")
                     # (Attempt) To Load Up World
                     try:
@@ -302,31 +311,31 @@ class World:
         if self.spawnX is None:
             # Generate SpawnX (Set to middle of map)
             self.spawnX = (self.sizeX // 2) * 32 + 51
-            Logger.verbose(f"spawnX was not provided. Generated to {self.spawnX}")
+            Logger.verbose(f"spawnX was not provided. Generated to {self.spawnX}", "world-load")
 
         # Set spawnZ
         if self.spawnZ is None:
             # Generate SpawnZ (Set to middle of map)
             self.spawnZ = (self.sizeZ // 2) * 32 + 51
-            Logger.verbose(f"spawnZ was not provided. Generated to {self.spawnZ}")
+            Logger.verbose(f"spawnZ was not provided. Generated to {self.spawnZ}", "world-load")
 
         # Set spawnY
         if self.spawnY is None:
             # Kinda hacky to get the block coords form the in-game coords
             self.spawnY = (self.getHighestBlock(round((self.spawnX - 51) / 32), round((self.spawnZ - 51) / 32)) + 1) * 32 + 51
-            Logger.verbose(f"spawnY was not provided. Generated to {self.spawnY}")
+            Logger.verbose(f"spawnY was not provided. Generated to {self.spawnY}", "world-load")
 
         # Set spawnYaw
         if spawnYaw is None:
             # Generate SpawnYaw (0)
             self.spawnYaw = 0
-            Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}")
+            Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
 
         # Set spawnPitch
         if spawnPitch is None:
             # Generate SpawnPitch (0)
             self.spawnPitch = 0
-            Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}")
+            Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
 
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
