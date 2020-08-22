@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import Optional, Any, List
+import traceback
 import os
 import sys
 
@@ -48,6 +49,7 @@ class Server:
         # Initialize Config, Depending On What Type It Is
         if config is None:
             self.config = ServerConfig()
+            #self.config.init()
         elif type(config) == str:
             self.config = ServerConfig(configPath=config)
             self.config.init()
@@ -69,8 +71,10 @@ class Server:
             Logger.fatal(f"{type(e).__name__}: {e}", module="main")
         except Exception as e:
             Logger.fatal("==================== FATAL ERROR! ====================", module="obsidian", printTb=False)
-            Logger.fatal(f"Fatal Error While Initializing Server - {type(e).__name__}: {e}", module="obsidian")
-            Logger.fatal("======================================================", module="obsidian", printTb=False)
+            Logger.fatal(f"Fatal Error While Initializing Server - {type(e).__name__}: {e}", module="obsidian", printTb=False)
+            Logger.fatal("===================== Traceback ======================", module="obsidian", printTb=False)
+            traceback.print_exc()
+            Logger.fatal("==================== FATAL ERROR! ====================", module="obsidian", printTb=False)
 
     async def _init(self):
         # Testing If Debug Is Enabled
@@ -190,8 +194,8 @@ class Server:
                 return None
 
             if not self.initialized:
-                Logger.verbose("Trying to shut down server that is not initialized!", module="server-stop")
-                Logger.verbose("Skipping Shutdown Procedure", module="server-stop")
+                Logger.info("Trying to shut down server that is not initialized!", module="server-stop")
+                Logger.info("Skipping Shutdown Procedure", module="server-stop")
                 sys.exit(0)
                 return None
 

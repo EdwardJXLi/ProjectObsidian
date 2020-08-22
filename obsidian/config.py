@@ -6,6 +6,7 @@ from typing import List, Optional
 class ServerConfig:
     # Meta Tags
     configPath: Optional[str] = None  # Path Location Of Config File (Used for reloads)
+    configOverrides: List[str] = field(default_factory=lambda: ["configPath", "configOverrides"])  # List of configs to NOT override
     # Module Configuration
     moduleBlacklist: List[str] = field(default_factory=list)  # Module Init Blacklist
     # Network Configuration
@@ -23,7 +24,7 @@ class ServerConfig:
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     worldBlacklist: List[str] = field(default_factory=list)  # World Init Blacklist
 
-    # Provide Alias For First Time Reload (Init)
+    # Server-Boot Init of Config
     def init(self):
         self.reload()
 
