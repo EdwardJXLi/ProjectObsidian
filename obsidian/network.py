@@ -60,7 +60,7 @@ class NetworkHandler:
         # Check if user is IP banned
         if self.ip[0] in self.server.config.ipBlacklist:
             Logger.info(f"IP {self.ip} Is Blacklisted. Kicking!", module="network")
-            raise ClientError("This IP Has Been Blacklisted From The Server!")
+            raise ClientError("Your IP Has Been Blacklisted From The Server!")
 
         # Start the server <-> client login protocol
         Logger.debug(f"{self.ip} | Starting Client <-> Server Handshake", module="network")

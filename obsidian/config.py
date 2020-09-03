@@ -18,13 +18,15 @@ class ServerConfig:
     configOverrides: List[str] = field(default_factory=lambda: ["configPath", "configOverrides"])  # List of configs to ignore while loading and writing configs
     # Module Configuration
     moduleBlacklist: List[str] = field(default_factory=list)  # Module Init Blacklist
+    # Config Configuration
+    saveAfterConfigLoad: bool = True  # Override Flag To Enable/Disable Config Saving After Load
     # Network Configuration
     ipBlacklist: List[str] = field(default_factory=list)  # List Of Ips To Block Connection
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     defaultWorld: str = "default"  # Name Of Default World
-    serverMaxPlayers: int = 32  # Number Of Players Max Allowed On The Entire Server
-    worldMaxPlayers: int = 250  # Number Of Players Max Allowed In One World
+    serverMaxPlayers: int = 1000  # Number Of Players Max Allowed On The Entire Server
+    worldMaxPlayers: int = 200  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
     defaultWorldSizeX: int = 256  # Default Size X
     defaultWorldSizeY: int = 256  # Default Size Y
@@ -48,6 +50,12 @@ class ServerConfig:
             try:
                 with open(configPath, "r") as configFile:
                     self._load(configFile)
+                # Save Config After Load (To Update And Fix Any Issues)
+                if self.saveAfterConfigLoad:
+                    with open(configPath, "w") as configFile:
+                        self._save(configFile)
+                else:
+                    Logger.warn("Skipping Save After Config Load", "config")
             except json.decoder.JSONDecodeError as e:
                 Logger.error(f"Failed To Load Json File! - {type(e).__name__}: {e}", "config")
                 Logger.askConfirmation(message="Override Old Config With Default Values?")
