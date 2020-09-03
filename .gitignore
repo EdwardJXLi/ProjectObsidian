@@ -8,8 +8,9 @@ config.json
 # Ignore Vanilla Minecraft
 vanilla
 
-# Testing Folder
+# Testing Folders
 testing
+test-modules
 
 # Pycache
 __pycache__

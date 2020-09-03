@@ -30,9 +30,6 @@ async def main():
 
     # Create and Init Main Server
     server = Server(args.address, args.port, args.name, args.motd, colour=True)
-    # Add Test Modules To Blacklist
-    server.config.moduleBlacklist = ["errortest", "errortest2", "errortest3", "test1", "test2"]
-    # server.config.ipBlacklist = ["127.0.0.1"]  # Blacklist Testing
     await server.init()
     asyncio.create_task(server.run())
 
