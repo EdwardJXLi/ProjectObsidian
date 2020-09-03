@@ -8,7 +8,7 @@ import sys
 
 from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager, Packets
-from obsidian.constants import Colour, InitError, SERVERPATH, ServerError, FatalError
+from obsidian.constants import Colour, InitError, MODULESFOLDER, SERVERPATH, ServerError, FatalError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
@@ -80,6 +80,14 @@ class Server:
         Logger.verbose("Verbose Is Enabled", module="init")
         Logger.info("Use '-d' and/or '-v' To Enable Debug Mode Or Verbose Mode", module="init")
 
+        # Setting Up File Structure
+        Logger.info("Setting Up File Structure", module="init")
+        if self.config.worldSaveLocation is not None:
+            self.ensureFiles.append(MODULESFOLDER)
+            self.ensureFiles.append(os.path.dirname(self.config.configPath))
+            self.ensureFiles.append(self.config.worldSaveLocation)
+        self._ensureFileStructure(self.ensureFiles)
+
         # Initializing Config
         Logger.info("Initializing Server Config", module="init")
         self.config.init()
@@ -87,12 +95,6 @@ class Server:
         Logger.info(f"Initializing Server {self.name}", module="init")
         # Load and Log Modules
         ModuleManager.initModules(blacklist=self.config.moduleBlacklist)
-
-        # Setting Up File Structure
-        Logger.info("Setting Up File Structure", module="init")
-        if self.config.worldSaveLocation is not None:
-            self.ensureFiles.append(self.config.worldSaveLocation)
-        self._ensureFileStructure(self.ensureFiles)
 
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
         Logger.info(f"{PacketManager.numPackets} Packets Initialized", module="init")

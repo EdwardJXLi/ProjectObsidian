@@ -25,7 +25,7 @@ CRITICAL_RESPONSE_ERRORS = [
 CSI = "\u001b["  # ANSI Colour Header
 
 # Module Constants
-MODULESFOLDER = os.path.join(SERVERPATH, "modules")
+MODULESFOLDER = "modules"
 MODULESIMPORT = "obsidian.modules."
 
 

@@ -14,7 +14,7 @@ from obsidian.log import Logger
 @dataclass
 class ServerConfig:
     # Meta Tags
-    configPath: str = "config.json"  # Path Location Of Config File (Used for reloads)
+    configPath: str = "configs/server.json"  # Path Location Of Config File (Used for reloads)
     configOverrides: List[str] = field(default_factory=lambda: ["configPath", "configOverrides"])  # List of configs to ignore while loading and writing configs
     # Module Configuration
     moduleBlacklist: List[str] = field(default_factory=list)  # Module Init Blacklist

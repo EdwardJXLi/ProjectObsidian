@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Type
 import importlib
 import pkgutil
+import os
 
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
@@ -12,7 +13,8 @@ from obsidian.constants import (
     InitRegisterError,
     FatalError,
     MODULESIMPORT,
-    MODULESFOLDER
+    MODULESFOLDER,
+    SERVERPATH
 )
 
 
@@ -121,7 +123,7 @@ class _ModuleManager:
                     Logger.fatal(f"Error While Loading Module core - {type(e).__name__}: {e}", "init-module")
                     raise FatalError()
             Logger.verbose(f"Scanning all potential modules in {MODULESFOLDER}", module="init-module")
-            for loader, module_name, _ in pkgutil.walk_packages([MODULESFOLDER]):
+            for loader, module_name, _ in pkgutil.walk_packages([os.path.join(SERVERPATH, MODULESFOLDER)]):
                 Logger.verbose(f"Detected Module {module_name}", module="init-module")
                 if module_name not in blacklist:
                     try:
