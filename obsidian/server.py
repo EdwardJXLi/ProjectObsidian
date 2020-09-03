@@ -49,10 +49,8 @@ class Server:
         # Initialize Config, Depending On What Type It Is
         if config is None:
             self.config = ServerConfig()
-            #self.config.init()
         elif type(config) == str:
             self.config = ServerConfig(configPath=config)
-            self.config.init()
         elif type(config) == ServerConfig:
             self.config = config
         else:
@@ -81,6 +79,10 @@ class Server:
         Logger.debug("Debug Is Enabled", module="init")
         Logger.verbose("Verbose Is Enabled", module="init")
         Logger.info("Use '-d' and/or '-v' To Enable Debug Mode Or Verbose Mode", module="init")
+
+        # Initializing Config
+        Logger.info("Initializing Server Config", module="init")
+        self.config.init()
 
         Logger.info(f"Initializing Server {self.name}", module="init")
         # Load and Log Modules

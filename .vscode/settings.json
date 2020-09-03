@@ -23,6 +23,7 @@
         "Deserialization",
         "Hacky",
         "Reimplementation",
+        "asdict",
         "asynced",
         "asyncio",
         "gzipped",

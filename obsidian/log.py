@@ -31,7 +31,7 @@ class Logger:
         print(output)
 
     @classmethod
-    def askConfirmation(cls, message="Do you want to continue?"):
+    def askConfirmation(cls, message: str = "Do you want to continue?"):
         while True:
             print()
             # Give user Warning, and ask them for further input

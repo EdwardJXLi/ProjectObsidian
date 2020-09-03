@@ -20,7 +20,8 @@ from obsidian.constants import (
     MapGenerationError,
     BlockError,
     WorldError,
-    SERVERPATH, WorldSaveError
+    SERVERPATH,
+    WorldSaveError
 )
 
 
