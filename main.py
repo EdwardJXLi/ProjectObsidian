@@ -6,7 +6,8 @@ Copyright (C) RadioactiveHydra (Edward) 2020
 import argparse
 import asyncio
 import signal
-# import time
+import os
+import datetime
 
 from obsidian.server import Server
 from obsidian.log import Logger
@@ -22,11 +23,16 @@ async def main():
     parser.add_argument('-m', "--motd", type=str, nargs='?', help="The MOTD Of The Minecraft Server", default="Python Server Implementation")
     parser.add_argument('-d', "--debug", help="Enable Debug Logging", action="store_true")
     parser.add_argument('-v', "--verbose", help="Increase Debug Output Verbosity", action="store_true")
+    parser.add_argument('-q', "--quiet", help="Disabled Logging To File", action="store_true")
     args = parser.parse_args()
 
     # Set Logging Levels
     Logger.DEBUG = args.debug
     Logger.VERBOSE = args.verbose
+
+    # Set Up Logging File
+    if not args.quiet:
+        Logger.setupLogFile()
 
     # Create and Init Main Server
     server = Server(args.address, args.port, args.name, args.motd, colour=True)

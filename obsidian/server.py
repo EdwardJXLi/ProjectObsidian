@@ -166,8 +166,9 @@ class Server:
     def _ensureFileStructure(self, folders: Union[str, List[str]]):
         Logger.debug(f"Ensuring Folders {folders}", module="init")
         # Check Type, If Str Put In List
-        if type(folders) == str:
+        if type(folders) is not list:
             folders = [folders]
+        # Ensure All Folders
         for folder in folders:
             folder = os.path.join(SERVERPATH, folder)
             if not os.path.exists(folder):

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import time
 import traceback
+import datetime
 import sys
+import os
 
 from obsidian.constants import Colour
 
@@ -10,10 +12,27 @@ from obsidian.constants import Colour
 class Logger:
     DEBUG = False
     VERBOSE = False
+    LOGFILE = None
 
     @staticmethod
     def _getTimestamp():
         return time.strftime("%H:%M:%S", time.localtime())
+
+    @classmethod
+    def setupLogFile(cls, logPath=None):
+        # Setup LogPath If Not Defined
+        if logPath is None:
+            logPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+        # Ensure File Exists
+        if not os.path.exists(logPath):
+            os.makedirs(logPath)
+        # Open File
+        cls.LOGFILE = open(
+            os.path.join(
+                logPath,
+                f"{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log"
+            ), "a"
+        )
 
     @classmethod
     def log(cls, message, tags=[], colour=Colour.NONE, textColour=Colour.NONE):
@@ -21,12 +40,24 @@ class Logger:
         output = ""
         # Adding Tags
         for tag in tags:
-            output = f"{output}[{colour}{tag.upper()}{Colour.RESET}{Colour.BACK_RESET}]"
+            output += f"[{colour}{tag.upper()}{Colour.RESET}{Colour.BACK_RESET}]"
         # Add Message
         if len(tags) != 0:
-            output = f"{output}: {textColour}{message}{Colour.BACK_RESET}"
+            output += f": {textColour}{message}{Colour.BACK_RESET}"
         else:
-            output = f"{textColour}{message}{Colour.BACK_RESET}]{message}"
+            output += f"{textColour}{message}{Colour.BACK_RESET}]"
+        # Log String Into LogFile (If Fail Skip)
+        if cls.LOGFILE is not None:
+            try:
+                # Write Tags
+                for tag in tags:
+                    cls.LOGFILE.write(f"[{tag.upper()}]")
+                # Write Message
+                cls.LOGFILE.write(f": {message}\n")
+                # Save File
+                cls.LOGFILE.flush()
+            except Exception as e:
+                print(f"Error While Handing Log Message - {type(e).__name__}: {e}")
         # Print Final String
         print(output)
 
