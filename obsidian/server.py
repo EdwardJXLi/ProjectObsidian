@@ -71,7 +71,7 @@ class Server:
             Logger.fatal("==================== FATAL ERROR! ====================", module="obsidian", printTb=False)
             Logger.fatal(f"Fatal Error While Initializing Server - {type(e).__name__}: {e}", module="obsidian", printTb=False)
             Logger.fatal("===================== Traceback ======================", module="obsidian", printTb=False)
-            traceback.print_exc()
+            Logger.log(f"{traceback.format_exc()}")
             Logger.fatal("==================== FATAL ERROR! ====================", module="obsidian", printTb=False)
 
     async def _init(self):
@@ -231,10 +231,11 @@ class Server:
 
             # Closing Server
             Logger.info("Terminating Process", module="server-stop")
-            print("Goodbye!")
+            Logger.log("Goodbye!")
             sys.exit(0)
         except Exception as e:
             # Server Stop Failed! Last Ditch Attempt To Clean Up
+            # Not Using Logger Incase Thats What Breaks It
             print(f"Error occurred while stopping server - {type(e).__name__}: {e}")
             print("Force Terminating Server")
             sys.exit(0)

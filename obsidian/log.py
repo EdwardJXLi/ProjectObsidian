@@ -45,7 +45,7 @@ class Logger:
         if len(tags) != 0:
             output += f": {textColour}{message}{Colour.BACK_RESET}"
         else:
-            output += f"{textColour}{message}{Colour.BACK_RESET}]"
+            output += f"{textColour}{message}{Colour.BACK_RESET}"
         # Log String Into LogFile (If Fail Skip)
         if cls.LOGFILE is not None:
             try:
@@ -53,7 +53,10 @@ class Logger:
                 for tag in tags:
                     cls.LOGFILE.write(f"[{tag.upper()}]")
                 # Write Message
-                cls.LOGFILE.write(f": {message}\n")
+                if len(tags) != 0:
+                    cls.LOGFILE.write(f": {message}\n")
+                else:
+                    cls.LOGFILE.write(f"{message}\n")
                 # Save File
                 cls.LOGFILE.flush()
             except Exception as e:
@@ -64,11 +67,12 @@ class Logger:
     @classmethod
     def askConfirmation(cls, message: str = "Do you want to continue?"):
         while True:
-            print()
+            cls.log("")
             # Give user Warning, and ask them for further input
             cls.warn(f"{message} (y/n)", module="confirmation")
             userInput = input()
             if userInput.lower() == "y" or userInput.lower() == "yes":
+                cls.log("")
                 break
             elif userInput.lower() == "n" or userInput.lower() == "no":
                 cls.warn("Ok Exiting...", module="confirmation")
@@ -95,7 +99,7 @@ class Logger:
     @classmethod
     def error(cls, message, module="unknown", printTb=True):
         if cls.DEBUG and printTb:
-            traceback.print_exc()
+            cls.log(f"{traceback.format_exc()}")
         cls.log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
             tags=[cls._getTimestamp(), "error", module],
@@ -106,7 +110,7 @@ class Logger:
     @classmethod
     def fatal(cls, message, module="unknown", printTb=True):
         if cls.DEBUG and printTb:
-            traceback.print_exc()
+            cls.log(f"{traceback.format_exc()}")
         cls.log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
             tags=[cls._getTimestamp(), "fatal", module],
