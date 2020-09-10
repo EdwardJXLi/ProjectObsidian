@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Union
 import traceback
 import os
 import sys
@@ -80,17 +80,19 @@ class Server:
         Logger.verbose("Verbose Is Enabled", module="init")
         Logger.info("Use '-d' and/or '-v' To Enable Debug Mode Or Verbose Mode", module="init")
 
+        # Initializing Config
+        Logger.info("Initializing Server Config", module="init")
+        # Ensuring Config Path
+        self._ensureFileStructure(os.path.dirname(self.config.configPath))
+        # Initing Config
+        self.config.init()
+
         # Setting Up File Structure
         Logger.info("Setting Up File Structure", module="init")
         if self.config.worldSaveLocation is not None:
             self.ensureFiles.append(MODULESFOLDER)
-            self.ensureFiles.append(os.path.dirname(self.config.configPath))
             self.ensureFiles.append(self.config.worldSaveLocation)
         self._ensureFileStructure(self.ensureFiles)
-
-        # Initializing Config
-        Logger.info("Initializing Server Config", module="init")
-        self.config.init()
 
         Logger.info(f"Initializing Server {self.name}", module="init")
         # Load and Log Modules
@@ -102,21 +104,16 @@ class Server:
         Logger.info(f"{MapGeneratorManager.numMapGenerators} Map Generators Initialized", module="init")
 
         # Print Pretty List of All Modules
-        Logger.info("Module List:", module="init")
-        print(ModuleManager.generateTable())
+        Logger.info(f"Module List:\n{ModuleManager.generateTable()}", module="init")
         # Only Print Packet And World Generators List If Debug Enabled
         if Logger.DEBUG:
-            Logger.debug("Packets List:", module="init")
-            print(PacketManager.generateTable())
-            Logger.debug("World Formats List:", module="init")
-            print(WorldFormatManager.generateTable())
-            Logger.debug("Map Generators List:", module="init")
-            print(MapGeneratorManager.generateTable())
+            Logger.debug(f"Packets List:\n{PacketManager.generateTable()}", module="init")
+            Logger.debug(f"World Formats List:\n{WorldFormatManager.generateTable()}", module="init")
+            Logger.debug(f"Map Generators List:\n{MapGeneratorManager.generateTable()}", module="init")
 
         # Only Print Block List If Verbose Enabled (Very Big)
         if Logger.VERBOSE:
-            Logger.debug("BLocks List:", module="init")
-            print(BlockManager.generateTable())
+            Logger.debug(f"BLocks List:\n{BlockManager.generateTable()}", module="init")
 
         # Printing Error If Error Occurs During Init
         if len(ModuleManager._errorList) != 0:
@@ -166,8 +163,11 @@ class Server:
 
         return handler
 
-    def _ensureFileStructure(self, folders: List[str]):
+    def _ensureFileStructure(self, folders: Union[str, List[str]]):
         Logger.debug(f"Ensuring Folders {folders}", module="init")
+        # Check Type, If Str Put In List
+        if type(folders) == str:
+            folders = [folders]
         for folder in folders:
             folder = os.path.join(SERVERPATH, folder)
             if not os.path.exists(folder):
