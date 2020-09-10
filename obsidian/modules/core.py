@@ -1,5 +1,5 @@
 from obsidian.module import Module, AbstractModule
-from obsidian.constants import ClientError, ServerError, PacketError, WorldFormatError, __version__
+from obsidian.constants import ClientError, ServerError, WorldFormatError, __version__
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
@@ -12,8 +12,7 @@ from obsidian.packet import (
     AbstractResponsePacket,
     PacketDirections,
     unpackageString,
-    packageString,
-    StringStrictness
+    packageString
 )
 
 import struct
@@ -63,14 +62,12 @@ class CoreModule(AbstractModule):
 
             # Unpackage String
             # Username
-            try:
-                username = unpackageString(username, strictness=StringStrictness.ALPHANUM)
-            except PacketError:
+            username = unpackageString(username)
+            if not username.isalnum():
                 raise ClientError("Invalid Character In Username")
             # Verification String
-            try:
-                verificationKey = unpackageString(verificationKey, strictness=StringStrictness.PRINTABLE)
-            except PacketError:
+            verificationKey = unpackageString(verificationKey)
+            if not username.isprintable():
                 raise ClientError("Invalid Character In Verification Key")
 
             # Check Username Length (Hard Capped At 16 To Prevent Length Bugs)
@@ -166,15 +163,14 @@ class CoreModule(AbstractModule):
             # (64String) Message
             _, _, message = struct.unpack(self.FORMAT, bytearray(rawData))
 
-            # Check if player was passes
+            # Check if player was passed
             if ctx is None:
                 raise ServerError("Player Context Was Not Passed!")
 
             # Unpackage String
             # Message
-            try:
-                message = unpackageString(message, strictness=StringStrictness.PRINTABLE)
-            except PacketError:
+            message = unpackageString(message)
+            if not message.isprintable():
                 await ctx.sendMessage("&4ERROR: Message Failed To Send - Invalid Character In Message&f")
                 return None  # Don't Complete Message Sending
 

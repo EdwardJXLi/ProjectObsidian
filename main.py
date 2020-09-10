@@ -6,8 +6,6 @@ Copyright (C) RadioactiveHydra (Edward) 2020
 import argparse
 import asyncio
 import signal
-import os
-import datetime
 
 from obsidian.server import Server
 from obsidian.log import Logger

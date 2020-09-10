@@ -27,25 +27,12 @@ class PacketDirections(enum.Enum):
     NONE = -1
 
 
-class StringStrictness(enum.Enum):
-    NONE = 0
-    ALPHANUM = 1
-    PRINTABLE = 2
-
-
 # Packet Utils
-def unpackageString(data, encoding="ascii", strictness: StringStrictness = StringStrictness.NONE):
+def unpackageString(data, encoding="ascii"):
     Logger.verbose(f"Unpacking String {data}", module="packet")
     # Decode Data From Bytes To String
     # Remove Excess Zeros
-    decoded = data.decode(encoding).strip()
-    # Check if decoded string is alphanumerical
-    if(not decoded.isalnum()) and strictness is StringStrictness.ALPHANUM:
-        raise PacketError("Non-Ascii Character In Unpackaging Data")
-    # Check if decoded string is printable
-    if(not decoded.isprintable()) and strictness is StringStrictness.PRINTABLE:
-        raise PacketError("Non-Printable Character In Unpackaging Data")
-    return decoded
+    return data.decode(encoding).strip()
 
 
 def packageString(data, maxSize=64, encoding="ascii"):
