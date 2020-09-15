@@ -5,6 +5,7 @@ from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
 from obsidian.world import World, WorldManager
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator
+from obsidian.commands import AbstractCommand, Command
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.packet import (
     Packet,
@@ -642,6 +643,30 @@ class CoreModule(AbstractModule):
                     for z in range(sizeZ):
                         mapData[x + sizeX * (z + sizeZ * y)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
             return mapData
+
+    #
+    # COMMANDS
+    #
+
+    @Command(
+        "Test",
+        activators=["test"],
+        description="Test Command",
+        version="v1.0.0"
+    )
+    class TestCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__()
+
+        async def execute(self, ctx: Optional[Player]):
+            # Check if player was passed
+            if ctx is None:
+                raise ServerError("Player Context Was Not Passed!")
+
+            # Handle Player Message
+            await ctx.sendMessage("Test Command Received")
+
+            return None  # Nothing should be returned
 
     #
     # BLOCKS

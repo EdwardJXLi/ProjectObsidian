@@ -44,6 +44,7 @@ class _ModuleManager:
         from obsidian.packet import PacketManager
         from obsidian.worldformat import WorldFormatManager
         from obsidian.mapgen import MapGeneratorManager
+        from obsidian.commands import CommandManager
         from obsidian.blocks import BlockManager
         moduleObj = module()  # Create Object
         # Checking If Module Is Already In Modules List
@@ -88,6 +89,18 @@ class _ModuleManager:
                     generator["description"],
                     generator["version"],
                     generator["map_generator"],
+                    moduleObj
+                )
+            elif hasattr(item, "obsidian_command"):  # Check If Item Has "obsidian_command" Flag
+                Logger.verbose(f"{item} Is A Command! Adding As Command.", module="init-" + name)
+                generator = item.obsidian_command
+                # Register Packet Using information Provided By "obsidian_block"
+                CommandManager.register(
+                    generator["name"],
+                    generator["activators"],
+                    generator["description"],
+                    generator["version"],
+                    generator["command"],
                     moduleObj
                 )
             elif hasattr(item, "obsidian_block"):  # Check If Item Has "obsidian_block" Flag

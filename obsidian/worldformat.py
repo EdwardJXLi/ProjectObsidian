@@ -99,9 +99,6 @@ class _WorldFormatManager:
     def numWorldFormats(self):
         return len(self._format_list)
 
-    def getAllWorldFormatIds(self):
-        return [obj.ID for obj in self._format_list.values()]
-
     # Handles _WorldFormatManager["item"]
     def __getitem__(self, format: str):
         return self._format_list[format]

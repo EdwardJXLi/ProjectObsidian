@@ -15,6 +15,7 @@ from obsidian.module import ModuleManager
 from obsidian.world import WorldManager
 from obsidian.worldformat import WorldFormatManager
 from obsidian.mapgen import MapGeneratorManager
+from obsidian.commands import CommandManager
 from obsidian.blocks import BlockManager
 from obsidian.player import PlayerManager
 
@@ -101,6 +102,7 @@ class Server:
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
         Logger.info(f"{PacketManager.numPackets} Packets Initialized", module="init")
         Logger.info(f"{BlockManager.numBlocks} Blocks Initialized", module="init")
+        Logger.info(f"{CommandManager.numCommands} Commands Initialized", module="init")
         Logger.info(f"{MapGeneratorManager.numMapGenerators} Map Generators Initialized", module="init")
 
         # Print Pretty List of All Modules
@@ -110,10 +112,11 @@ class Server:
             Logger.debug(f"Packets List:\n{PacketManager.generateTable()}", module="init")
             Logger.debug(f"World Formats List:\n{WorldFormatManager.generateTable()}", module="init")
             Logger.debug(f"Map Generators List:\n{MapGeneratorManager.generateTable()}", module="init")
+            Logger.debug(f"Commands List:\n{CommandManager.generateTable()}", module="init")
 
         # Only Print Block List If Verbose Enabled (Very Big)
         if Logger.VERBOSE:
-            Logger.debug(f"BLocks List:\n{BlockManager.generateTable()}", module="init")
+            Logger.debug(f"Blocks List:\n{BlockManager.generateTable()}", module="init")
 
         # Printing Error If Error Occurs During Init
         if len(ModuleManager._errorList) != 0:
