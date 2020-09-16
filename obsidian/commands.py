@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from obsidian.module import AbstractModule
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, FatalError
+from obsidian.constants import InitRegisterError, CommandError, FatalError
 from obsidian.log import Logger
 
 
@@ -92,9 +92,12 @@ class _CommandManager:
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
-    # Command To Get Command Object From Command Name
+    # FUnction To Get Command Object From Command Name
     def getCommandFromName(self, name):
-        return self._activators[name]
+        if name in self._activators.keys():
+            return self._activators[name]
+        else:
+            raise CommandError(f"Command {name} Not Found.")
 
     # Property Method To Get Number Of Commands
     @property

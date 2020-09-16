@@ -437,10 +437,7 @@ class Player:
         # TODO HANDLE ARGUMENTS
 
         # Get Command Object
-        try:
-            command = Commands.getCommandFromName(cmdName)
-        except KeyError:
-            raise CommandError(f"Command {cmdName} Not Found.")
+        command = Commands.getCommandFromName(cmdName)
 
         # Run Command
         await command.execute(self)
