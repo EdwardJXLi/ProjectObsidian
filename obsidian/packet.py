@@ -60,7 +60,7 @@ class AbstractPacket:
 
     # Error Handler. Called If Critical If False And An Error Occurs
     def onError(self, error):
-        Logger.error(f"Packet {self.NAME} Received Error {error}", module="packet")
+        Logger.error(f"Packet {self.NAME} Raised Error {error}", module="packet")
 
     @property
     def SIZE(self):

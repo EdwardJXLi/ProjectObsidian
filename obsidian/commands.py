@@ -97,7 +97,7 @@ class _CommandManager:
         if name in self._activators.keys():
             return self._activators[name]
         else:
-            raise CommandError(f"Command {name} Not Found.")
+            raise CommandError(f"Unknown Command {name}")
 
     # Property Method To Get Number Of Commands
     @property

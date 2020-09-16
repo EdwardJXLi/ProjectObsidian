@@ -440,4 +440,8 @@ class Player:
         command = Commands.getCommandFromName(cmdName)
 
         # Run Command
-        await command.execute(self)
+        try:
+            await command.execute(self)
+        except Exception as e:
+            Logger.error(f"Command {command.NAME} Raised Error {str(e)}", module="command")
+            await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")

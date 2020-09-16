@@ -506,7 +506,7 @@ class CoreModule(AbstractModule):
             # (Byte) Player ID (Seems to be unused?)
             # (64String) Message
             if len(message) > 64:
-                Logger.warn(f"Trying to send message {message} over 64 character limit!", module="packet-serializer")
+                Logger.warn(f"Trying to send message '{message}' over the 64 character limit!", module="packet-serializer")
             msg = struct.pack(
                 self.FORMAT,
                 self.ID,
@@ -667,6 +667,39 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage("Test Command Received")
 
             return None  # Nothing should be returned
+
+    @Command(
+        "Say",
+        activators=["say"],
+        description="Test Repeat Command",
+        version="v1.0.0"
+    )
+    class SayCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__()
+
+        async def execute(self, ctx: Optional[Player]):
+            # Check if player was passed
+            if ctx is None:
+                raise ServerError("Player Context Was Not Passed!")
+
+            # Handle Player Message
+            await ctx.sendMessage("TODO")
+
+            return None  # Nothing should be returned
+
+    @Command(
+        "ErrorTest",
+        activators=["error"],
+        description="Error Test Command",
+        version="v1.0.0"
+    )
+    class ErrorCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__()
+
+        async def execute(self, ctx: Optional[Player]):
+            raise Exception("Test Error")
 
     #
     # BLOCKS
