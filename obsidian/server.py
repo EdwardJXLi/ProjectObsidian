@@ -120,8 +120,9 @@ class Server:
 
         # Printing Error If Error Occurs During Init
         if len(ModuleManager._errorList) != 0:
-            Logger.warn("Some Module Files Failed To Load!", module="init")
-            Logger.warn(f"Failed: {ModuleManager._errorList}", module="init")
+            Logger.warn("Some Modules Files Failed To Load!\n", module="init")
+            Logger.warn("!!! Failed Modules May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
+            Logger.warn(f"Failed: {ModuleManager._errorList}\n", module="init")
             Logger.askConfirmation()
 
         # Initialize WorldManager

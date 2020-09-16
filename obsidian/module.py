@@ -152,7 +152,8 @@ class _ModuleManager:
                             printTb = False
                         else:
                             printTb = True
-                        Logger.error(f"Error While Loading Module {module_name} - {type(e).__name__}: {e}", module="init-module", printTb=printTb)
+                        Logger.error(f"Error While Loading Module {module_name} - {type(e).__name__}: {e}\n", module="init-module", printTb=printTb)
+                        Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
                         Logger.askConfirmation()
                 Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="init-module")
             self._completed = True  # setting completed flag to prevent re-importation
