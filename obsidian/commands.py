@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Type, Optional
-from dataclasses import dataclass
+from typing import Type, Optional, List
+from dataclasses import dataclass, field
 
 from obsidian.module import AbstractModule
 from obsidian.utils.ptl import PrettyTableLite
@@ -29,7 +29,7 @@ class AbstractCommand:
     # Mandatory Values Defined In Packet Init
     # Mandatory Values Defined In Module Decorator
     NAME: str = ""
-    ACTIVATORS: str = ""
+    ACTIVATORS: List[str] = field(default_factory=list)
     # Optional Values Defined In Module Decorator
     DESCRIPTION: str = ""
     VERSION: str = ""
@@ -42,6 +42,8 @@ class _CommandManager:
     def __init__(self):
         # Creates List Of Commands That Has The Command Name As Keys
         self._command_list = dict()
+        # Create Cache Of Activator to Obj
+        self._activators = dict()
 
     # Registration. Called by Command Decorator
     def register(self, name: str, activators: Optional[list], description: str, version: str, command: Type[AbstractCommand], module):
@@ -50,9 +52,21 @@ class _CommandManager:
         # Checking If Command Name Is Already In Commands List
         if name in self._command_list.keys():
             raise InitRegisterError(f"Command {name} Has Already Been Registered!")
+
         # Setting Activators To Default If None
         if activators is None:
+            Logger.warn(f"Command {name} Was Registered Without Any Activators. Using Name As Command Activator.", module="init-" + module.NAME)
             activators = [name.lower()]
+        # Add Activators To Command Cache
+        Logger.debug(f"Adding Activators {activators} To Activator Cache", module="init-" + module.NAME)
+        for activator in activators:
+            Logger.verbose(f"Adding Activator {activator}", module="init-" + module.NAME)
+            # If Activator Already Exists, Error
+            if activator not in self._activators:
+                self._activators[activator] = obj
+            else:
+                raise InitRegisterError(f"Another Command Has Already Registered Command Activator {activator}")
+
         # Attach Name, Direction, and Module As Attribute
         obj.NAME = name
         obj.ACTIVATORS = activators
@@ -77,6 +91,10 @@ class _CommandManager:
             raise e
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
+
+    # Command To Get Command Object From Command Name
+    def getCommandFromName(self, name):
+        return self._activators[name]
 
     # Property Method To Get Number Of Commands
     @property

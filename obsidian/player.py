@@ -9,12 +9,14 @@ from typing import List, Optional, Type, Union
 
 from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
+from obsidian.commands import Commands
 from obsidian.constants import (
     Colour,
     CRITICAL_RESPONSE_ERRORS,
     ServerError,
     WorldError,
-    ClientError
+    ClientError,
+    CommandError
 )
 
 
@@ -399,7 +401,16 @@ class Player:
 
         # Checking If Player Is Joined To A World
         if self.worldPlayerManager is None:
-            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined", module="player")
+            Logger.debug(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined", module="player")
+            return None  # Skip Rest
+
+        # Checking If Message Is A Command
+        if message[0] == "/":
+            try:
+                await self.handlePlayerCommand(message[1:])
+            except CommandError as e:
+                Logger.info(f"Command From Player {self.name} Failed With {str(e)}", module="command")
+                await self.sendMessage(f"&c{str(e)}")
             return None  # Skip Rest
 
         # Check If Last Character Is '&' (Crashes All Clients)
@@ -413,3 +424,23 @@ class Player:
             await self.sendMessage("&eWARN: Message Was Cut To Fit On Screen&f")
         else:
             await self.worldPlayerManager.sendWorldMessage(message, author=self)
+
+    async def handlePlayerCommand(self, cmdMessage: str):
+        # Format, Process, and Handle incoming player commands.
+        Logger.debug(f"Handling Command From Player {self.name}", module="command")
+
+        # Splitting Command Data
+        cmdName, *cmdArgs = cmdMessage.split(" ")
+        Logger.info(f"Command {cmdName} Received From Player {self.name}", module="command")
+        Logger.debug(f"Handling Command {cmdName} With Arguments {cmdArgs}", module="command")
+
+        # TODO HANDLE ARGUMENTS
+
+        # Get Command Object
+        try:
+            command = Commands.getCommandFromName(cmdName)
+        except KeyError:
+            raise CommandError(f"Command {cmdName} Not Found.")
+
+        # Run Command
+        await command.execute(self)
