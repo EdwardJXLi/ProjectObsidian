@@ -48,9 +48,11 @@ class AbstractCommand:
 def _convertArgs(name, param, arg):
     Logger.verbose(f"Transforming Argument Data For Argument {name}", module="command")
 
+    # If There Is No Type To Convert, Ignore
     if param.annotation == inspect._empty:  # type: ignore
         return arg
 
+    # Try to parse, if error, cancel
     try:
         return param.annotation(arg)
     except ValueError:
@@ -80,6 +82,7 @@ def _parseArgs(command, data: list):
 
     # Loop Through Rest Of Iterators To Parse Data
     for name, param in paramsIter:
+        Logger.verbose(f"Parsing Parameter {name}", module="command")
         # Check Parameter Type To Determing Parsing Method
         # -> Positional Methods (AKA POSITIONAL_OR_KEYWORD)
         # -> Keyword Only Methods (AKA KEYWORD_ONLY)
@@ -126,7 +129,7 @@ def _parseArgs(command, data: list):
     # At the end, if there were extra values, give error
     try:
         next(dataIter)
-        raise CommandError(f"Too Many Arguments Passed Into Command {command.NAME}")
+        raise CommandError(f"Too Many Arguments Passed Into Command '{command.NAME}'")
     except StopIteration:
         return args, kwargs
 
@@ -191,7 +194,7 @@ class _CommandManager:
         if name in self._activators.keys():
             return self._activators[name]
         else:
-            raise CommandError(f"Unknown Command {name}")
+            raise CommandError(f"Unknown Command '{name}'")
 
     # Property Method To Get Number Of Commands
     @property
