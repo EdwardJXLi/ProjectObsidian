@@ -649,57 +649,17 @@ class CoreModule(AbstractModule):
     #
 
     @Command(
-        "Test",
-        activators=["test"],
-        description="Test Command",
+        "TEMP",
+        activators=[],
+        description="PLACEHOLDER",
         version="v1.0.0"
     )
-    class TestCommand(AbstractCommand):
+    class TempCommand(AbstractCommand):
         def __init__(self):
             super().__init__()
 
-        async def execute(self, ctx: Optional[Player]):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
-            # Handle Player Message
-            await ctx.sendMessage("Test Command Received")
-
+        async def execute(self):
             return None  # Nothing should be returned
-
-    @Command(
-        "Say",
-        activators=["say"],
-        description="Test Repeat Command",
-        version="v1.0.0"
-    )
-    class SayCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__()
-
-        async def execute(self, ctx: Optional[Player]):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
-            # Handle Player Message
-            await ctx.sendMessage("TODO")
-
-            return None  # Nothing should be returned
-
-    @Command(
-        "ErrorTest",
-        activators=["error"],
-        description="Error Test Command",
-        version="v1.0.0"
-    )
-    class ErrorCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__()
-
-        async def execute(self, ctx: Optional[Player]):
-            raise Exception("Test Error")
 
     #
     # BLOCKS

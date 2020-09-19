@@ -2,11 +2,16 @@ from __future__ import annotations
 
 from typing import Type, Optional, List
 from dataclasses import dataclass, field
+import inspect
 
 from obsidian.module import AbstractModule
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, CommandError, FatalError
 from obsidian.log import Logger
+from obsidian.constants import (
+    InitRegisterError,
+    CommandError,
+    FatalError
+)
 
 
 # Commands Decorator
@@ -35,6 +40,95 @@ class AbstractCommand:
     VERSION: str = ""
     # Mandatory Values Defined During Module Initialization
     MODULE: Optional[AbstractModule] = None
+
+
+# Command Utils
+
+# Take Parameter Info + Argument Info To Automatically Convert Types
+def _convertArgs(name, param, arg):
+    Logger.verbose(f"Transforming Argument Data For Argument {name}", module="command")
+
+    if param.annotation == inspect._empty:  # type: ignore
+        return arg
+
+    try:
+        return param.annotation(arg)
+    except ValueError:
+        raise CommandError(f"Argument '{name}' Expected {param.annotation.__name__} But Got '{type(arg).__name__}'")
+
+
+# Parse Command Argument Into Args and KWArgs In Accordance To Command Information
+def _parseArgs(command, data: list):
+    # This entire section is inspired by Discord.py 's Aprroach To Message Parsing and Handing
+    # TODO: IGNORE_EXTRA, REST_IS_RAW, REQUIRE_VAR_POSITIONAL
+    Logger.debug(f"Parsing Command Arguments {data} For Command {command.NAME}", module="command")
+    # Define Important Vars
+    args = []
+    kwargs = {}
+    # Extract Parameters From Execute Function
+    params = inspect.signature(command.execute).parameters
+    # Create Iterators To Parse Through Params and Data
+    paramsIter = iter(params.items())
+    dataIter = iter(data)
+
+    # Parse Out The 'ctx' parameter
+    try:
+        next(paramsIter)
+    except StopIteration:
+        # InitRegisterError Because Command Was Improperly Formed + We WAnt To Skip The Player Error
+        raise InitRegisterError(f"Command {command.NAME} Is Missing Parameter 'ctx'")
+
+    # Loop Through Rest Of Iterators To Parse Data
+    for name, param in paramsIter:
+        # Check Parameter Type To Determing Parsing Method
+        # -> Positional Methods (AKA POSITIONAL_OR_KEYWORD)
+        # -> Keyword Only Methods (AKA KEYWORD_ONLY)
+        # -> Positional "Rest" Methods (AKA VAR_POSITIONAL)
+
+        if param.kind == param.POSITIONAL_OR_KEYWORD:
+            # Parse as Normal Keyword
+            try:
+                # Convert Type
+                transformed = _convertArgs(name, param, next(dataIter))
+                args.append(transformed)
+            except StopIteration:
+                # Not Enough Data, Check If Error Or Use Default Value
+                if param.default == inspect._empty:  # type: ignore
+                    raise CommandError(f"Command {command.NAME} Expected Field '{name}' But Got Nothing")
+                else:
+                    args.append(param.default)
+
+        elif param.kind == param.KEYWORD_ONLY:
+            # KWarg Only Params Mean "Consume Rest"
+            rest = []
+            for value in dataIter:
+                rest.append(value)
+
+            # If Empty, Check If Default Value Was Requested
+            if rest == []:
+                if param.default == inspect._empty:  # type: ignore
+                    raise CommandError(f"Command {command.NAME} Expected Field '{name}' But Got Nothing")
+                else:
+                    kwargs[name] = param.default
+            else:
+                # Join and Convert
+                joinedRest = " ".join(rest)
+                kwargs[name] = _convertArgs(name, param, joinedRest)
+            # End of loop. Ignore rest
+            break
+
+        elif param.kind == param.VAR_POSITIONAL:
+            # Var Positional means to just append all extra values to the end of the function
+            for value in dataIter:
+                transformed = _convertArgs(name, param, value)
+                args.append(transformed)
+
+    # At the end, if there were extra values, give error
+    try:
+        next(dataIter)
+        raise CommandError(f"Too Many Arguments Passed Into Command {command.NAME}")
+    except StopIteration:
+        return args, kwargs
 
 
 # Internal Command Manager Singleton

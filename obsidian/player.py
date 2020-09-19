@@ -9,7 +9,7 @@ from typing import List, Optional, Type, Union
 
 from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
-from obsidian.commands import Commands
+from obsidian.commands import Commands, _parseArgs
 from obsidian.constants import (
     Colour,
     CRITICAL_RESPONSE_ERRORS,
@@ -434,14 +434,15 @@ class Player:
         Logger.info(f"Command {cmdName} Received From Player {self.name}", module="command")
         Logger.debug(f"Handling Command {cmdName} With Arguments {cmdArgs}", module="command")
 
-        # TODO HANDLE ARGUMENTS
-
         # Get Command Object
         command = Commands.getCommandFromName(cmdName)
 
+        # Parse Command Arguments
+        parsedArguments, parsedKwArgs = _parseArgs(command, cmdArgs)
+
         # Run Command
         try:
-            await command.execute(self)
+            await command.execute(self, *parsedArguments, **parsedKwArgs)
         except Exception as e:
             Logger.error(f"Command {command.NAME} Raised Error {str(e)}", module="command")
             await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
