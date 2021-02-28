@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Type
+from typing import Type, Optional
 import importlib
 import pkgutil
 import os
@@ -11,6 +11,7 @@ from obsidian.log import Logger
 from obsidian.constants import (
     InitError,
     InitRegisterError,
+    DependencyError,
     FatalError,
     MODULESIMPORT,
     MODULESFOLDER,
@@ -26,6 +27,7 @@ class AbstractModule:
     DESCRIPTION: str = ""
     AUTHOR: str = ""
     VERSION: str = ""
+    DEPENDENCIES: Optional[dict] = None
 
 
 # Internal Module Manager Singleton
@@ -33,9 +35,81 @@ class _ModuleManager:
     def __init__(self):
         # Creates List Of Modules That Has The Module Name As Keys
         self._module_list = dict()
+        self._module_files = []
         self._completed = False
-        self._errorList = []  # Logging Which Modules Encountered Errors While Loading Up
+        self._error_list = []  # Logging Which Modules Encountered Errors While Loading Up
 
+    # Function to libimport all modules
+    # EnsureCore ensures core module is present
+    def initModules(self, blacklist=[], ensureCore=True):
+        Logger.info("PreInitializing Modules...", module="init-module")
+
+        # Initialization Step One => Scanning and Loading Modules using PkgUtils
+        Logger.debug(f"Scanning modules in {MODULESFOLDER}", module="init-module")
+        # Walk Through All Packages And Import Library
+        for _, module_name, _ in pkgutil.walk_packages([os.path.join(SERVERPATH, MODULESFOLDER)]):
+            Logger.verbose(f"Detected Module {module_name}", module="init-module")
+            if module_name not in blacklist:
+                try:
+                    Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="init-module")
+                    _module = importlib.import_module(MODULESIMPORT + module_name)
+                    self._module_files.append(module_name)
+                    globals()[module_name] = _module
+                except FatalError as e:
+                    # Pass Down Fatal Error To Base Server
+                    raise e
+                except Exception as e:
+                    self._error_list.append((module_name, "PreInit-Import"))  # Module Loaded WITH Errors
+                    if type(e) is InitRegisterError:
+                        printTb = False
+                    else:
+                        printTb = True
+                    Logger.error(f"Error While Pre-Initializing Module {module_name} - {type(e).__name__}: {e}\n", module="preinit-module", printTb=printTb)
+                    Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="preinit-module")
+                    Logger.askConfirmation()
+            else:
+                Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="init-module")
+        Logger.verbose(f"Detected and Imported Module Files {self._module_files}", module="init-module")
+        print(self._module_list)
+        # Check If Core Was Loaded
+        if ensureCore:
+            if "core" not in self._module_list.keys():
+                self._error_list.append(("core", "PreInit-EnsureCore"))  # Module Loaded WITH Errors
+                raise FatalError("Error While Loading Module core - Critical Module Not Found")
+
+        # Initialization Part Two => Building Dependency Tree
+
+        # TODO: Temporarily Stop Program
+        Logger.debug(self._module_files)
+        input()
+        raise NotImplementedError("TODO")
+
+        # Initialization Part Three => Initializing Modules and SubModules
+        Logger.debug(f"Initializing {len(self._module_list)} Modules", module="init-module")
+        for module_name, module in self._module_list:
+            Logger.verbose(f"Initializing Module {module_name} {module}", module="init-module")
+
+        # Initialization Part Four =>
+
+
+    # Registration. Called by Module Decorator
+    def register(self, name: str, description: str, author: str, version: str, dependencies: Optional[dict], module: Type[AbstractModule]):
+        Logger.info(f"Discovered Module {name}.", module="init-" + name)
+        Logger.debug(f"Registering Module {name}", module="init-" + name)
+        # Lowercase Name
+        name = name.lower()
+        # Checking If Module Is Already In Modules List
+        if name in self._module_list.keys():
+            raise InitRegisterError(f"Module {name} Has Already Been Registered!")
+        # Attach Values As Attribute
+        module.NAME = name
+        module.DESCRIPTION = description
+        module.AUTHOR = author
+        module.VERSION = version
+        module.DEPENDENCIES = dependencies
+        self._module_list[name] = module
+
+    '''
     # Registration. Called by Module Decorator
     def register(self, name: str, description: str, author: str, version: str, module: Type[AbstractModule]):
         Logger.info(f"Discovered Module {name}.", module="init-" + name)
@@ -160,6 +234,8 @@ class _ModuleManager:
         else:
             Logger.info("Modules Already Initialized; Skipping.", module="init-module")
 
+    '''
+
     # Generate a Pretty List of Modules
     def generateTable(self):
         try:
@@ -199,9 +275,10 @@ class _ModuleManager:
 
 # Module Registration Decorator
 # Used In @Module
-def Module(name: str, description: str = None, author: str = None, version: str = None):
+def Module(name: str, description: str = None, author: str = None, version: str = None, dependencies: Optional[dict] = None):
     def internal(cls):
-        ModuleManager.register(name, description, author, version, cls)
+        ModuleManager.register(name, description, author, version, dependencies, cls)
+        pass
     return internal
 
 

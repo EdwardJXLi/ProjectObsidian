@@ -42,6 +42,10 @@ class ModuleError(Exception):
     pass
 
 
+class DependencyError(Exception):
+    pass
+
+
 class PacketError(Exception):
     pass
 

@@ -95,9 +95,9 @@ class Server:
             self.ensureFiles.append(self.config.worldSaveLocation)
         self._ensureFileStructure(self.ensureFiles)
 
-        Logger.info(f"Initializing Server {self.name}", module="init")
         # Load and Log Modules
-        ModuleManager.initModules(blacklist=self.config.moduleBlacklist)
+        Logger.info(f"Initializing Server {self.name}", module="init")
+        ModuleManager.initModules(blacklist=self.config.moduleBlacklist, ensureCore=False)
 
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
         Logger.info(f"{PacketManager.numPackets} Packets Initialized", module="init")
