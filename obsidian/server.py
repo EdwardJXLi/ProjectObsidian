@@ -76,6 +76,8 @@ class Server:
             Logger.fatal("==================== FATAL ERROR! ====================", module="obsidian", printTb=False)
 
     async def _init(self):
+        Logger.info(f"=== Initializing Server '{self.name}' ===", module="init")
+
         # Testing If Debug Is Enabled
         Logger.debug("Debug Is Enabled", module="init")
         Logger.verbose("Verbose Is Enabled", module="init")
@@ -96,7 +98,7 @@ class Server:
         self._ensureFileStructure(self.ensureFiles)
 
         # Load and Log Modules
-        Logger.info(f"Initializing Server {self.name}", module="init")
+        Logger.info("Starting Module Initialization", module="init")
         ModuleManager.initModules(blacklist=self.config.moduleBlacklist, ensureCore=False)
 
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
@@ -204,7 +206,7 @@ class Server:
 
             if not self.initialized:
                 Logger.info("Trying to shut down server that is not initialized!", module="server-stop")
-                Logger.info("Skipping Shutdown Procedure", module="server-stop")
+                Logger.info("Skipping Shutdown and Cleanup Procedure", module="server-stop")
                 sys.exit(0)
                 return None
 

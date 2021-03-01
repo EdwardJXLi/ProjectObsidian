@@ -50,32 +50,41 @@ class _ModuleManager:
         self._module_blacklist = blacklist
 
         # --- PreInitialization ---
-        Logger.info("* PreInitializing Modules...", module="init-module")
+        Logger.info("=== (1/X) PreInitializing Modules ===", module="init-modules")
 
         # Initialization Step One => Scanning and Loading Modules using PkgUtils
-        Logger.info(f"Scanning modules in {MODULESFOLDER}", module="init-module")
+        Logger.info(f"Scanning modules in {MODULESFOLDER}", module="module-import")
         self._importModules()
 
-        # --- Dependency Solving ---
-        Logger.info("Solving Dependencies", module="init-module")
+        # --- Dependency Resolving ---
+        Logger.info("=== (2/X) Resolving Dependencies ===", module="init-modules")
 
-        # Initialization Part Two => Checking and Initialing Dependencies
-        Logger.info("Checking and Initialing Dependencies", module="init-module")
+        # Initialization Part Two => Checking and Initializing Dependencies
+        Logger.info("Checking and Initializing Dependencies...", module="module-resolve")
         self._initDependencies()
+        Logger.info("Dependencies Initialized!", module="module-resolve")
 
-        # Initialization Part Three => Solving Dependency Cycles
-        Logger.info("Solving Dependency Cycles", module="init-module")
-        self._solveDependencyCycles()
+        # Initialization Part Two and a Half => Resolving Dependency Cycles
+        Logger.info("Resolving Dependency Cycles...", module="module-verify")
+        self._resolveDependencyCycles()
+        Logger.info("Cycles Resolved!", module="module-verify")
 
-        # Initialization Part Four => Building Dependency Graph
-        Logger.info("Building Dependency Graph", module="init-module")
+        # --- Initialization Preparation ---
+        Logger.info("=== (3/X) Preparing Initialization ===", module="init-modules")
+
+        # Initialization Part Three => Building Dependency Graph
+        Logger.info("Building Dependency Graph...", module="module-prep")
         self._buildDependencyGraph()
+        Logger.info("Dependency Graph Generated!", module="module-prep")
+
+        Logger.info("Dependencies Resolved!", module="module-resolve")
+        Logger.info("PreInitializing Done!", module="module-preinit")
 
         # --- Initialization ---
-        Logger.info("* Initializing Modules...", module="init-module")
+        Logger.info("=== (4/X) Initializing Modules ===", module="init-modules")
 
-        # Initialization Part Five => Start Initializing Modules
-        Logger.info("Starting to Initializing Modules", module="init-module")
+        # Initialization Part Four => Start Initialize Modules
+        Logger.info("Starting to Initialize Modules...", module="module-init")
         self._initModules()
 
         # TODO: Temporarily Stop Program
@@ -85,17 +94,6 @@ class _ModuleManager:
         Logger.askConfirmation()
         raise NotImplementedError("TODO")
 
-        Logger.debug("Dependencies Initialized!", module="init-module")
-        Logger.info("PreInitializing Done!", module="init-module")
-        Logger.info("Initialization Modules...", module="init-module")
-
-        # Initialization Part Three => Initializing Modules and SubModules
-        Logger.debug(f"Initializing {len(self._module_list)} Modules", module="init-module")
-        for module_name, module in self._module_list:
-            Logger.verbose(f"Initializing Module {module_name} {module}", module="init-module")
-
-        # Initialization Part Four =>
-
     # Intermediate Function To Import All Modules
     def _importModules(self):
         # Walk Through All Packages And Import Library
@@ -103,10 +101,10 @@ class _ModuleManager:
             # Lowercase Name
             module_name = module_name.lower()
             # Load Modules
-            Logger.debug(f"Detected Module {module_name}", module="init-module")
+            Logger.debug(f"Detected Module {module_name}", module="module-import")
             if module_name not in self._module_blacklist:
                 try:
-                    Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="init-module")
+                    Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="module-import")
                     _module = importlib.import_module(MODULESIMPORT + module_name)
                     self._module_files.append(module_name)
                     globals()[module_name] = _module
@@ -119,12 +117,12 @@ class _ModuleManager:
                         printTb = False
                     else:
                         printTb = True
-                    Logger.error(f"Error While Pre-Initializing Module {module_name} - {type(e).__name__}: {e}\n", module="init-module", printTb=printTb)
-                    Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
+                    Logger.error(f"Error While Importing Module {module_name} - {type(e).__name__}: {e}\n", module="module-import", printTb=printTb)
+                    Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-import")
                     Logger.askConfirmation()
             else:
-                Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="init-module")
-        Logger.verbose(f"Detected and Imported Module Files {self._module_files}", module="init-module")
+                Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="module-import")
+        Logger.verbose(f"Detected and Imported Module Files {self._module_files}", module="module-import")
         # Check If Core Was Loaded
         if self._ensure_core:
             if "core" not in self._module_list.keys():
@@ -135,20 +133,20 @@ class _ModuleManager:
     def _initDependencies(self):
         for module_name, module_obj in list(self._module_list.items()):
             try:
-                Logger.debug(f"Checking Dependencies for Module {module_name}", module="init-module")
+                Logger.debug(f"Checking Dependencies for Module {module_name}", module="module-resolve")
                 # Loop through all dependencies, check type, then check if exists
                 for dependency in module_obj.DEPENDENCIES:
                     dep_name = dependency.NAME
                     dep_ver = dependency.VERSION
-                    Logger.verbose(f"Checking if Dependency {dep_name} Exists", module="init-module")
+                    Logger.verbose(f"Checking if Dependency {dep_name} Exists", module="module-resolve")
                     # Check if Dependency is "Loaded"
                     if dep_name in self._module_list.keys():
                         # Check if Version should be checked
                         if dep_ver is None:
-                            Logger.verbose(f"Skipping Version Check For Dependency {dependency}", module="init-module")
+                            Logger.verbose(f"Skipping Version Check For Dependency {dependency}", module="module-resolve")
                             pass  # No Version Check Needed
                         elif dep_ver == self._module_list[dependency.NAME].VERSION:
-                            Logger.verbose(f"Dependencies {dependency} Statisfied!", module="init-module")
+                            Logger.verbose(f"Dependencies {dependency} Statisfied!", module="module-resolve")
                             pass
                         else:
                             raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {dep_ver} | Has: {self._module_list[dependency.NAME].VERSION})")
@@ -165,30 +163,30 @@ class _ModuleManager:
                     printTb = False
                 else:
                     printTb = True
-                Logger.error(f"Error While Initializing Dependencies For {module_name} - {type(e).__name__}: {e}\n", module="init-module", printTb=printTb)
-                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
-                Logger.warn(f"Skipping Module {module_name}?", module="init-module")
+                Logger.error(f"Error While Initializing Dependencies For {module_name} - {type(e).__name__}: {e}\n", module="module-resolve", printTb=printTb)
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-resolve")
+                Logger.warn(f"Skipping Module {module_name}?", module="module-resolve")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module_name} From Loader!", module="init-module")
+                Logger.warn(f"Removing Module {module_name} From Loader!", module="module-resolve")
                 del self._module_list[module_name]
 
-    # Intermediate Function to Solve Circular Dependencies
-    def _solveDependencyCycles(self):
+    # Intermediate Function to Resolve Circular Dependencies
+    def _resolveDependencyCycles(self):
         # Helper Function To Run Down Module Dependency Tree To Check For Cycles
         def _ensureNoCycles(current: Type[AbstractModule], previous: List[str]):
-            Logger.verbose(f"Travelling Down Dependency Tree. CUR: {current} PREV: {previous}", module="init-module")
+            Logger.verbose(f"Travelling Down Dependency Tree. CUR: {current} PREV: {previous}", module="cycle-check")
             # If Current Name Appears In Any Previous Dependency, There Is An Infinite Cycle
             if current.NAME in previous:
                 raise DependencyError(f"Circular dependency Detected: {' -> '.join([*previous, current.NAME])}")
 
-            Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES}", module="init-module")
+            Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES}", module="cycle-check")
             for dependency in current.DEPENDENCIES:
                 _ensureNoCycles(dependency.MODULE, [*previous, current.NAME])
 
         for module_name, module_obj in list(self._module_list.items()):
             try:
-                Logger.debug(f"Ensuring No Circular Dependencies For Module {module_name}", module="init-module")
+                Logger.debug(f"Ensuring No Circular Dependencies For Module {module_name}", module="module-verify")
                 # Run DFS Through All Decencies To Check If Cycle Exists
                 _ensureNoCycles(module_obj, [])
             except FatalError as e:
@@ -200,17 +198,17 @@ class _ModuleManager:
                     printTb = False
                 else:
                     printTb = True
-                Logger.error(f"Error While Solving Dependency Cycles For {module_name} - {type(e).__name__}: {e}\n", module="init-module", printTb=printTb)
-                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
-                Logger.warn(f"Skipping Module {module_name}?", module="init-module")
+                Logger.error(f"Error While Resolving Dependency Cycles For {module_name} - {type(e).__name__}: {e}\n", module="module-verify", printTb=printTb)
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-verify")
+                Logger.warn(f"Skipping Module {module_name}?", module="module-verify")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module_name} From Loader!", module="init-module")
+                Logger.warn(f"Removing Module {module_name} From Loader!", module="module-verify")
                 del self._module_list[module_name]
 
     # Intermediate Function to Build Dependency Graph
     def _buildDependencyGraph(self):
-        Logger.verbose("Setting Up Dependency Graph", module="init-module")
+        Logger.debug("Generating Dependency Graph", module="module-prep")
         # Define Visited Set
         visited = set()
         # Reset and Clear Current Module Graph
@@ -218,28 +216,28 @@ class _ModuleManager:
 
         # Helper Function to Run Topological Sort DFS
         def _topologicalSort(module):
-            Logger.verbose(f"Running Topological Sort on {module.NAME}", module="init-module")
+            Logger.verbose(f"Running Topological Sort on {module.NAME}", module="topological-sort")
             # Adding Module to Visited Set to Prevent Looping
             visited.add(module.NAME)
 
             # Going Bottom First
-            Logger.verbose(f"Attempting Topological Sort on {module.NAME}'s Dependencies {module.DEPENDENCIES}", module="init-module")
+            Logger.verbose(f"Attempting Topological Sort on {module.NAME}'s Dependencies {module.DEPENDENCIES}", module="topological-sort")
             for dependency in module.DEPENDENCIES:
                 if dependency.NAME not in visited:
                     _topologicalSort(dependency.MODULE)
 
             # Current Module has No Further Dependencies. Adding To Graph!
             self._sorted_module_graph.append(module)
-            Logger.verbose(f"Added {module.NAME} To Dependency Graph. DG Is Now {self._sorted_module_graph}", module="init-module")
+            Logger.verbose(f"Added {module.NAME} To Dependency Graph. DG Is Now {self._sorted_module_graph}", module="topological-sort")
 
         # Run Topological Sort on All Non-Visited Modules
         for module_name in list(self._module_list.keys()):
-            Logger.verbose(f"Attempting Topological Sort on {module_name}", module="init-module")
+            Logger.verbose(f"Attempting Topological Sort on {module_name}", module="module-prep")
             if module_name not in visited:
                 _topologicalSort(self._module_list[module_name])
 
         # Print Out Status
-        Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sorted_module_graph}", module="init-module")
+        Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sorted_module_graph}", module="module-prep")
 
     # Intermediate Function to Initialize Modules
     def _initModules(self):
@@ -255,8 +253,8 @@ class _ModuleManager:
         dependencies: Optional[list],
         module: Type[AbstractModule]
     ):
-        Logger.info(f"Discovered Module {name}.", module="init-" + name)
-        Logger.debug(f"Registering Module {name}", module="init-" + name)
+        Logger.info(f"Discovered Module {name}.", module=f"module-import")
+        Logger.debug(f"Registering Module {name}", module=f"module-import")
 
         # Lowercase Name
         name = name.lower()
@@ -463,7 +461,7 @@ class Dependency:
 
     # Format String
     def __str__(self):
-        return f"<Dependency {self.NAME}, {self.MODULE}, {self.VERSION}>"
+        return f"<Name: {self.NAME}, Version: {self.VERSION}>"
 
     # Actions when Printing Class
     def __repr__(self):
