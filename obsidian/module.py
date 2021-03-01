@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Type, Optional, List
 import importlib
 import pkgutil
@@ -27,7 +27,7 @@ class AbstractModule:
     DESCRIPTION: str = ""
     AUTHOR: str = ""
     VERSION: str = ""
-    DEPENDENCIES: Optional[list] = None
+    DEPENDENCIES: Optional[list] = field(default_factory=list)
 
 
 # Internal Module Manager Singleton
@@ -50,14 +50,14 @@ class _ModuleManager:
         self._module_blacklist = blacklist
 
         # --- PreInitialization ---
-        Logger.info("PreInitializing Modules...", module="init-module")
+        Logger.info("* PreInitializing Modules...", module="init-module")
 
         # Initialization Step One => Scanning and Loading Modules using PkgUtils
         Logger.info(f"Scanning modules in {MODULESFOLDER}", module="init-module")
         self._importModules()
 
         # --- Dependency Solving ---
-        Logger.info("Solving Dependencies...", module="init-module")
+        Logger.info("Solving Dependencies", module="init-module")
 
         # Initialization Part Two => Checking and Initialing Dependencies
         Logger.info("Checking and Initialing Dependencies", module="init-module")
@@ -72,7 +72,7 @@ class _ModuleManager:
         self._buildDependencyGraph()
 
         # --- Initialization ---
-        Logger.info("Initializing Modules...", module="init-module")
+        Logger.info("* Initializing Modules...", module="init-module")
 
         # Initialization Part Five => Start Initializing Modules
         Logger.info("Starting to Initializing Modules", module="init-module")
@@ -81,6 +81,7 @@ class _ModuleManager:
         # TODO: Temporarily Stop Program
         Logger.log(self._module_files)
         Logger.log(self._module_list)
+        Logger.log(self._sorted_module_graph)
         Logger.askConfirmation()
         raise NotImplementedError("TODO")
 
@@ -136,9 +137,6 @@ class _ModuleManager:
             try:
                 Logger.debug(f"Checking Dependencies for Module {module_name}", module="init-module")
                 # Loop through all dependencies, check type, then check if exists
-                if module_obj.DEPENDENCIES is None:
-                    Logger.verbose("No Dependencies Needed. Skipping!", module="init-module")
-                    continue  # No Dependencies Needed
                 for dependency in module_obj.DEPENDENCIES:
                     dep_name = dependency.NAME
                     dep_ver = dependency.VERSION
@@ -178,26 +176,21 @@ class _ModuleManager:
     # Intermediate Function to Solve Circular Dependencies
     def _solveDependencyCycles(self):
         # Helper Function To Run Down Module Dependency Tree To Check For Cycles
-        def _ensure_no_cycles(current: Type[AbstractModule], previous: List[str]):
+        def _ensureNoCycles(current: Type[AbstractModule], previous: List[str]):
             Logger.verbose(f"Travelling Down Dependency Tree. CUR: {current} PREV: {previous}", module="init-module")
             # If Current Name Appears In Any Previous Dependency, There Is An Infinite Cycle
             if current.NAME in previous:
                 raise DependencyError(f"Circular dependency Detected: {' -> '.join([*previous, current.NAME])}")
 
-            # If Said Module Has Any Dependencies, Loop Through Them
-            if current.DEPENDENCIES:
-                Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES}", module="init-module")
-                for dependency in current.DEPENDENCIES:
-                    _ensure_no_cycles(dependency.MODULE, [*previous, current.NAME])
-            else:
-                Logger.verbose("Current Modules Has No Dependencies. Returning!", module="init-module")
-                return  # No Dependencies Needed
+            Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES}", module="init-module")
+            for dependency in current.DEPENDENCIES:
+                _ensureNoCycles(dependency.MODULE, [*previous, current.NAME])
 
         for module_name, module_obj in list(self._module_list.items()):
             try:
                 Logger.debug(f"Ensuring No Circular Dependencies For Module {module_name}", module="init-module")
                 # Run DFS Through All Decencies To Check If Cycle Exists
-                _ensure_no_cycles(module_obj, [])
+                _ensureNoCycles(module_obj, [])
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
@@ -217,7 +210,36 @@ class _ModuleManager:
 
     # Intermediate Function to Build Dependency Graph
     def _buildDependencyGraph(self):
-        pass
+        Logger.verbose("Setting Up Dependency Graph", module="init-module")
+        # Define Visited Set
+        visited = set()
+        # Reset and Clear Current Module Graph
+        self._sorted_module_graph = []
+
+        # Helper Function to Run Topological Sort DFS
+        def _topologicalSort(module):
+            Logger.verbose(f"Running Topological Sort on {module.NAME}", module="init-module")
+            # Adding Module to Visited Set to Prevent Looping
+            visited.add(module.NAME)
+
+            # Going Bottom First
+            Logger.verbose(f"Attempting Topological Sort on {module.NAME}'s Dependencies {module.DEPENDENCIES}", module="init-module")
+            for dependency in module.DEPENDENCIES:
+                if dependency.NAME not in visited:
+                    _topologicalSort(dependency.MODULE)
+
+            # Current Module has No Further Dependencies. Adding To Graph!
+            self._sorted_module_graph.append(module)
+            Logger.verbose(f"Added {module.NAME} To Dependency Graph. DG Is Now {self._sorted_module_graph}", module="init-module")
+
+        # Run Topological Sort on All Non-Visited Modules
+        for module_name in list(self._module_list.keys()):
+            Logger.verbose(f"Attempting Topological Sort on {module_name}", module="init-module")
+            if module_name not in visited:
+                _topologicalSort(self._module_list[module_name])
+
+        # Print Out Status
+        Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sorted_module_graph}", module="init-module")
 
     # Intermediate Function to Initialize Modules
     def _initModules(self):
@@ -244,6 +266,9 @@ class _ModuleManager:
         # Check If Module Is Blacklisted
         if name in self._module_blacklist:
             return  # Skip
+        # Format Empty Dependencies
+        if dependencies is None:
+            dependencies = []
         # Checking If Core Is Required
         if self._ensure_core:
             if "core" not in [m.NAME for m in dependencies]:
