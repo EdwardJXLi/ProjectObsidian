@@ -22,12 +22,11 @@ from obsidian.constants import (
 # Module Skeleton
 @dataclass
 class AbstractModule:
-    # Optional Values Defined In Module Decorator
     NAME: str = ""
     DESCRIPTION: str = ""
     AUTHOR: str = ""
     VERSION: str = ""
-    DEPENDENCIES: Optional[list] = field(default_factory=list)
+    DEPENDENCIES: list = field(default_factory=list)
 
 
 # Internal Module Manager Singleton
@@ -91,6 +90,8 @@ class _ModuleManager:
         Logger.log(self._module_files)
         Logger.log(self._module_list)
         Logger.log(self._sorted_module_graph)
+        Logger.log(Modules.test1.AUTHOR)
+        Logger.log(type(Modules.test1.AUTHOR))
         Logger.askConfirmation()
         raise NotImplementedError("TODO")
 
@@ -158,7 +159,7 @@ class _ModuleManager:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
-                self._error_list.append((module_name, "Init-Dependency"))  # Module Loaded WITH Errors
+                self._error_list.append((module_name, "PreInit-Dependency"))  # Module Loaded WITH Errors
                 if type(e) is DependencyError:
                     printTb = False
                 else:
@@ -193,7 +194,7 @@ class _ModuleManager:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
-                self._error_list.append((module_name, "Init-Dependency"))  # Module Loaded WITH Errors
+                self._error_list.append((module_name, "PreInit-Dependency"))  # Module Loaded WITH Errors
                 if type(e) is DependencyError:
                     printTb = False
                 else:
@@ -241,7 +242,9 @@ class _ModuleManager:
 
     # Intermediate Function to Initialize Modules
     def _initModules(self):
-        pass
+        for modules in self._sorted_module_graph:
+            Logger.verbose(f"TEMP {modules}")
+            pass
 
     # Registration. Called by Module Decorator
     def register(
@@ -253,8 +256,8 @@ class _ModuleManager:
         dependencies: Optional[list],
         module: Type[AbstractModule]
     ):
-        Logger.info(f"Discovered Module {name}.", module=f"module-import")
-        Logger.debug(f"Registering Module {name}", module=f"module-import")
+        Logger.info(f"Discovered Module {name}.", module="module-import")
+        Logger.debug(f"Registering Module {name}", module="module-import")
 
         # Lowercase Name
         name = name.lower()
