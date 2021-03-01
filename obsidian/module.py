@@ -37,6 +37,7 @@ class _ModuleManager:
         self._module_list = dict()
         self._module_files = []
         self._module_blacklist = []
+        self._sorted_module_graph = []
         self._completed = False
         self._ensure_core = True
         self._error_list = []  # Logging Which Modules Encountered Errors While Loading Up
@@ -52,24 +53,35 @@ class _ModuleManager:
         Logger.info("PreInitializing Modules...", module="init-module")
 
         # Initialization Step One => Scanning and Loading Modules using PkgUtils
-        Logger.debug(f"Scanning modules in {MODULESFOLDER}", module="init-module")
+        Logger.info(f"Scanning modules in {MODULESFOLDER}", module="init-module")
         self._importModules()
 
         # --- Dependency Solving ---
         Logger.info("Solving Dependencies...", module="init-module")
 
         # Initialization Part Two => Checking and Initialing Dependencies
-        Logger.debug("Checking and Initialing Dependencies", module="init-module")
+        Logger.info("Checking and Initialing Dependencies", module="init-module")
         self._initDependencies()
 
-        # Initialization Part Three => Building Dependency Tree
-        Logger.debug("Solving Dependency Cycles", module="init-module")
+        # Initialization Part Three => Solving Dependency Cycles
+        Logger.info("Solving Dependency Cycles", module="init-module")
         self._solveDependencyCycles()
 
+        # Initialization Part Four => Building Dependency Graph
+        Logger.info("Building Dependency Graph", module="init-module")
+        self._buildDependencyGraph()
+
+        # --- Initialization ---
+        Logger.info("Initializing Modules...", module="init-module")
+
+        # Initialization Part Five => Start Initializing Modules
+        Logger.info("Starting to Initializing Modules", module="init-module")
+        self._initModules()
+
         # TODO: Temporarily Stop Program
-        Logger.debug(self._module_files)
-        Logger.debug(self._module_list)
-        input()
+        Logger.log(self._module_files)
+        Logger.log(self._module_list)
+        Logger.askConfirmation()
         raise NotImplementedError("TODO")
 
         Logger.debug("Dependencies Initialized!", module="init-module")
@@ -87,7 +99,10 @@ class _ModuleManager:
     def _importModules(self):
         # Walk Through All Packages And Import Library
         for _, module_name, _ in pkgutil.walk_packages([os.path.join(SERVERPATH, MODULESFOLDER)]):
-            Logger.verbose(f"Detected Module {module_name}", module="init-module")
+            # Lowercase Name
+            module_name = module_name.lower()
+            # Load Modules
+            Logger.debug(f"Detected Module {module_name}", module="init-module")
             if module_name not in self._module_blacklist:
                 try:
                     Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="init-module")
@@ -157,7 +172,7 @@ class _ModuleManager:
                 Logger.warn(f"Skipping Module {module_name}?", module="init-module")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module_name} From Loader!")
+                Logger.warn(f"Removing Module {module_name} From Loader!", module="init-module")
                 del self._module_list[module_name]
 
     # Intermediate Function to Solve Circular Dependencies
@@ -197,8 +212,16 @@ class _ModuleManager:
                 Logger.warn(f"Skipping Module {module_name}?", module="init-module")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module_name} From Loader!")
+                Logger.warn(f"Removing Module {module_name} From Loader!", module="init-module")
                 del self._module_list[module_name]
+
+    # Intermediate Function to Build Dependency Graph
+    def _buildDependencyGraph(self):
+        pass
+
+    # Intermediate Function to Initialize Modules
+    def _initModules(self):
+        pass
 
     # Registration. Called by Module Decorator
     def register(
@@ -218,6 +241,9 @@ class _ModuleManager:
         # Checking If Module Is Already In Modules List
         if name in self._module_list.keys():
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
+        # Check If Module Is Blacklisted
+        if name in self._module_blacklist:
+            return  # Skip
         # Checking If Core Is Required
         if self._ensure_core:
             if "core" not in [m.NAME for m in dependencies]:
