@@ -162,7 +162,43 @@ class _ModuleManager:
 
     # Intermediate Function to Solve Circular Dependencies
     def _solveDependencyCycles(self):
-        pass
+        # Helper Function To Run Down Module Dependency Tree To Check For Cycles
+        def _ensure_no_cycles(current: Type[AbstractModule], previous: List[str]):
+            Logger.verbose(f"Travelling Down Dependency Tree. CUR: {current} PREV: {previous}", module="init-module")
+            # If Current Name Appears In Any Previous Dependency, There Is An Infinite Cycle
+            if current.NAME in previous:
+                raise DependencyError(f"Circular dependency Detected: {' -> '.join([*previous, current.NAME])}")
+
+            # If Said Module Has Any Dependencies, Loop Through Them
+            if current.DEPENDENCIES:
+                Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES}", module="init-module")
+                for dependency in current.DEPENDENCIES:
+                    _ensure_no_cycles(dependency.MODULE, [*previous, current.NAME])
+            else:
+                Logger.verbose("Current Modules Has No Dependencies. Returning!", module="init-module")
+                return  # No Dependencies Needed
+
+        for module_name, module_obj in list(self._module_list.items()):
+            try:
+                Logger.debug(f"Ensuring No Circular Dependencies For Module {module_name}", module="init-module")
+                # Run DFS Through All Decencies To Check If Cycle Exists
+                _ensure_no_cycles(module_obj, [])
+            except FatalError as e:
+                # Pass Down Fatal Error To Base Server
+                raise e
+            except Exception as e:
+                self._error_list.append((module_name, "Init-Dependency"))  # Module Loaded WITH Errors
+                if type(e) is DependencyError:
+                    printTb = False
+                else:
+                    printTb = True
+                Logger.error(f"Error While Solving Dependency Cycles For {module_name} - {type(e).__name__}: {e}\n", module="init-module", printTb=printTb)
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
+                Logger.warn(f"Skipping Module {module_name}?", module="init-module")
+                Logger.askConfirmation()
+                # Remove Module
+                Logger.warn(f"Removing Module {module_name} From Loader!")
+                del self._module_list[module_name]
 
     # Registration. Called by Module Decorator
     def register(
