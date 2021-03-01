@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Type, Optional
+from typing import Type, Optional, List
 import importlib
 import pkgutil
 import os
@@ -27,7 +27,7 @@ class AbstractModule:
     DESCRIPTION: str = ""
     AUTHOR: str = ""
     VERSION: str = ""
-    DEPENDENCIES: Optional[dict] = None
+    DEPENDENCIES: Optional[list] = None
 
 
 # Internal Module Manager Singleton
@@ -36,20 +36,59 @@ class _ModuleManager:
         # Creates List Of Modules That Has The Module Name As Keys
         self._module_list = dict()
         self._module_files = []
+        self._module_blacklist = []
         self._completed = False
+        self._ensure_core = True
         self._error_list = []  # Logging Which Modules Encountered Errors While Loading Up
 
     # Function to libimport all modules
     # EnsureCore ensures core module is present
     def initModules(self, blacklist=[], ensureCore=True):
+        # Setting Vars
+        self._ensure_core = ensureCore
+        self._module_blacklist = blacklist
+
+        # --- PreInitialization ---
         Logger.info("PreInitializing Modules...", module="init-module")
 
         # Initialization Step One => Scanning and Loading Modules using PkgUtils
         Logger.debug(f"Scanning modules in {MODULESFOLDER}", module="init-module")
+        self._importModules()
+
+        # --- Dependency Solving ---
+        Logger.info("Solving Dependencies...", module="init-module")
+
+        # Initialization Part Two => Checking and Initialing Dependencies
+        Logger.debug("Checking and Initialing Dependencies", module="init-module")
+        self._initDependencies()
+
+        # Initialization Part Three => Building Dependency Tree
+        Logger.debug("Solving Dependency Cycles", module="init-module")
+        self._solveDependencyCycles()
+
+        # TODO: Temporarily Stop Program
+        Logger.debug(self._module_files)
+        Logger.debug(self._module_list)
+        input()
+        raise NotImplementedError("TODO")
+
+        Logger.debug("Dependencies Initialized!", module="init-module")
+        Logger.info("PreInitializing Done!", module="init-module")
+        Logger.info("Initialization Modules...", module="init-module")
+
+        # Initialization Part Three => Initializing Modules and SubModules
+        Logger.debug(f"Initializing {len(self._module_list)} Modules", module="init-module")
+        for module_name, module in self._module_list:
+            Logger.verbose(f"Initializing Module {module_name} {module}", module="init-module")
+
+        # Initialization Part Four =>
+
+    # Intermediate Function To Import All Modules
+    def _importModules(self):
         # Walk Through All Packages And Import Library
         for _, module_name, _ in pkgutil.walk_packages([os.path.join(SERVERPATH, MODULESFOLDER)]):
             Logger.verbose(f"Detected Module {module_name}", module="init-module")
-            if module_name not in blacklist:
+            if module_name not in self._module_blacklist:
                 try:
                     Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="init-module")
                     _module = importlib.import_module(MODULESIMPORT + module_name)
@@ -64,43 +103,90 @@ class _ModuleManager:
                         printTb = False
                     else:
                         printTb = True
-                    Logger.error(f"Error While Pre-Initializing Module {module_name} - {type(e).__name__}: {e}\n", module="preinit-module", printTb=printTb)
-                    Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="preinit-module")
+                    Logger.error(f"Error While Pre-Initializing Module {module_name} - {type(e).__name__}: {e}\n", module="init-module", printTb=printTb)
+                    Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
                     Logger.askConfirmation()
             else:
                 Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="init-module")
         Logger.verbose(f"Detected and Imported Module Files {self._module_files}", module="init-module")
-        print(self._module_list)
         # Check If Core Was Loaded
-        if ensureCore:
+        if self._ensure_core:
             if "core" not in self._module_list.keys():
                 self._error_list.append(("core", "PreInit-EnsureCore"))  # Module Loaded WITH Errors
                 raise FatalError("Error While Loading Module core - Critical Module Not Found")
 
-        # Initialization Part Two => Building Dependency Tree
+    # Intermediate Function to Check and Initialize Dependencies
+    def _initDependencies(self):
+        for module_name, module_obj in list(self._module_list.items()):
+            try:
+                Logger.debug(f"Checking Dependencies for Module {module_name}", module="init-module")
+                # Loop through all dependencies, check type, then check if exists
+                if module_obj.DEPENDENCIES is None:
+                    Logger.verbose("No Dependencies Needed. Skipping!", module="init-module")
+                    continue  # No Dependencies Needed
+                for dependency in module_obj.DEPENDENCIES:
+                    dep_name = dependency.NAME
+                    dep_ver = dependency.VERSION
+                    Logger.verbose(f"Checking if Dependency {dep_name} Exists", module="init-module")
+                    # Check if Dependency is "Loaded"
+                    if dep_name in self._module_list.keys():
+                        # Check if Version should be checked
+                        if dep_ver is None:
+                            Logger.verbose(f"Skipping Version Check For Dependency {dependency}", module="init-module")
+                            pass  # No Version Check Needed
+                        elif dep_ver == self._module_list[dependency.NAME].VERSION:
+                            Logger.verbose(f"Dependencies {dependency} Statisfied!", module="init-module")
+                            pass
+                        else:
+                            raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {dep_ver} | Has: {self._module_list[dependency.NAME].VERSION})")
+                        # If All Passes, Link Module Class
+                        dependency.MODULE = self._module_list[dependency.NAME]
+                    else:
+                        raise DependencyError(f"Dependency '{dependency}' Not Found!")
+            except FatalError as e:
+                # Pass Down Fatal Error To Base Server
+                raise e
+            except Exception as e:
+                self._error_list.append((module_name, "Init-Dependency"))  # Module Loaded WITH Errors
+                if type(e) is DependencyError:
+                    printTb = False
+                else:
+                    printTb = True
+                Logger.error(f"Error While Initializing Dependencies For {module_name} - {type(e).__name__}: {e}\n", module="init-module", printTb=printTb)
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
+                Logger.warn(f"Skipping Module {module_name}?", module="init-module")
+                Logger.askConfirmation()
+                # Remove Module
+                Logger.warn(f"Removing Module {module_name} From Loader!")
+                del self._module_list[module_name]
 
-        # TODO: Temporarily Stop Program
-        Logger.debug(self._module_files)
-        input()
-        raise NotImplementedError("TODO")
-
-        # Initialization Part Three => Initializing Modules and SubModules
-        Logger.debug(f"Initializing {len(self._module_list)} Modules", module="init-module")
-        for module_name, module in self._module_list:
-            Logger.verbose(f"Initializing Module {module_name} {module}", module="init-module")
-
-        # Initialization Part Four =>
-
+    # Intermediate Function to Solve Circular Dependencies
+    def _solveDependencyCycles(self):
+        pass
 
     # Registration. Called by Module Decorator
-    def register(self, name: str, description: str, author: str, version: str, dependencies: Optional[dict], module: Type[AbstractModule]):
+    def register(
+        self,
+        name: str,
+        description: str,
+        author: str,
+        version: str,
+        dependencies: Optional[list],
+        module: Type[AbstractModule]
+    ):
         Logger.info(f"Discovered Module {name}.", module="init-" + name)
         Logger.debug(f"Registering Module {name}", module="init-" + name)
+
         # Lowercase Name
         name = name.lower()
         # Checking If Module Is Already In Modules List
         if name in self._module_list.keys():
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
+        # Checking If Core Is Required
+        if self._ensure_core:
+            if "core" not in [m.NAME for m in dependencies]:
+                dependencies.append(Dependency("core"))
+
         # Attach Values As Attribute
         module.NAME = name
         module.DESCRIPTION = description
@@ -273,9 +359,39 @@ class _ModuleManager:
         return self.__getitem__(*args, **kwargs)
 
 
+# Dependency Object
+@dataclass
+class Dependency:
+    # Base Init - Main Data
+    def __init__(self, name, version=None):
+        # User Defined Values
+        self.NAME = name.lower()
+        self.VERSION = version
+        # Reference To The Module Class - Handeled By Init Dependencies
+        self.MODULE = None
+
+    # Implement Iter to Support Unpacking
+    def __iter__(self):
+        return iter((self.NAME, self.VERSION))
+
+    # Format String
+    def __str__(self):
+        return f"<Dependency {self.NAME}, {self.MODULE}, {self.VERSION}>"
+
+    # Actions when Printing Class
+    def __repr__(self):
+        return self.__str__()
+
+
 # Module Registration Decorator
 # Used In @Module
-def Module(name: str, description: str = None, author: str = None, version: str = None, dependencies: Optional[dict] = None):
+def Module(
+    name: str,
+    description: str = None,
+    author: str = None,
+    version: str = None,
+    dependencies: Optional[list] = None
+):
     def internal(cls):
         ModuleManager.register(name, description, author, version, dependencies, cls)
         pass
