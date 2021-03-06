@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from typing import Type, Optional
+import typing
 from dataclasses import dataclass
 
-from obsidian.module import AbstractModule
+from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.constants import InitRegisterError, BlockError, FatalError
 from obsidian.log import Logger
@@ -11,55 +12,72 @@ from obsidian.log import Logger
 
 # Block Decorator
 # Used In @Block
-def Block(name: str, blockId: int):
+def Block(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
     def internal(cls):
-        cls.obsidian_block = dict()
-        cls.obsidian_block["name"] = name
-        cls.obsidian_block["blockId"] = blockId
-        cls.obsidian_block["block"] = cls
+        Logger.verbose(f"Registered Block {name} version {version}", module="submodule-import")
+
+        # Set Class Variables
+        cls.NAME = name
+        cls.DESCRIPTION = description
+        cls.VERSION = version
+        cls.OVERRIDE = override
+        cls.MANAGER = BlockManager
+
+        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
+        cls.obsidian_submodule = True
+
+        # Return cls Obj for Decorator
         return cls
     return internal
 
 
 # Block Skeleton
 @dataclass
-class AbstractBlock:
-    # Optional Values Defined In Module Decorator
-    NAME: str = ""
-    ID: int = 0  # Block Id
-    # Mandatory Values Defined During Module Initialization
-    MODULE: Optional[AbstractModule] = None
+class AbstractBlock(AbstractSubmodule):
+    ID: int = 5
 
 
 # Internal Block Manager Singleton
-class _BlockManager:
+class _BlockManager(AbstractManager):
     def __init__(self):
+        # Initialize Overarching Manager Class
+        super().__init__("Block")
+
+        # TODO Rename these!
         # Creates List Of Blocks That Has The Block Name As Keys
         self._block_list = dict()
         # Create Cache Of Block Ids to Obj
         self._blocks = dict()
 
     # Registration. Called by Block Decorator
-    def register(self, name: str, blockId: int, block: Type[AbstractBlock], module):
-        Logger.debug(f"Registering Block {name} From Module {module.NAME}", module="init-" + module.NAME)
-        obj = block()  # type: ignore    # Create Object
+    def register(self, blockClass: Type[AbstractBlock], module: AbstractModule):
+        block: AbstractBlock = super()._initSubmodule(blockClass, module)
+
+        # Handling Special Cases if OVERRIDE is Set
+        if block.OVERRIDE:
+            # Check If Override Is Going To Do Anything
+            # If Not, Warn
+            if (block.ID not in self._blocks) and (block.NAME not in self._block_list.keys()):
+                Logger.warn(f"Block {block.NAME} (ID: {block.ID}) From Module {block.MODULE.NAME} Is Trying To Override A Block That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            else:
+                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._blocks[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
+
         # Checking If Block Name Is Already In Blocks List
-        if name in self._block_list.keys():
-            raise InitRegisterError(f"Block {name} Has Already Been Registered!")
+        # Ignoring if OVERRIDE is set
+        if block.NAME in self._block_list.keys() and not block.OVERRIDE:
+            raise InitRegisterError(f"Block {block.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Add Block To Cache
-        Logger.debug(f"Adding BlockId {blockId} To Block Cache", module="init-" + module.NAME)
+        Logger.verbose(f"Adding BlockId {block.ID} To Block Cache", module=f"{module.NAME}-submodule-init")
         # If Block Id Already Registered, Error
-        if blockId not in self._blocks:
-            self._blocks[blockId] = obj
+        # Ignoring if OVERRIDE is set
+        if block.ID not in self._blocks or block.OVERRIDE:
+            self._blocks[block.ID] = block
         else:
-            raise InitRegisterError(f"Block Id {blockId} Has Been Already Registered. Conflicting Blocks Are '{self._blocks[blockId].NAME} ({self._blocks[blockId].MODULE.NAME})' and '{name} ({module.NAME})'")
+            raise InitRegisterError(f"Block Id {block.ID} Has Been Already Registered. Conflicting Blocks Are '{self._blocks[block.ID].NAME} ({self._blocks[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
 
         # Attach Name, Direction, and Module As Attribute
-        obj.NAME = name
-        obj.ID = blockId
-        obj.MODULE = module
-        self._block_list[name] = obj
+        self._block_list[block.NAME] = block
 
     # Generate a Pretty List of Blocks
     def generateTable(self):
@@ -83,8 +101,9 @@ class _BlockManager:
     def numBlocks(self):
         return len(self._block_list)
 
+    # Generate a List of All Block Ids
     def getAllBlockIds(self):
-        return [obj.ID for obj in self._block_list.values()]
+        return list(self._blocks.keys())
 
     # Function To Get Block Object From BlockId
     def getBlockById(self, blockId):

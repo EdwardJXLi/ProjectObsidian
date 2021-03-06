@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Type, Optional, List
+from typing import Type, Optional, List, Any
+from typing import TypeVar
 import importlib
 import pkgutil
 import os
@@ -29,9 +30,43 @@ class AbstractModule:
     DEPENDENCIES: list = field(default_factory=list)
 
 
+# Submodule Manager Skeleton
+@dataclass
+class AbstractManager:
+    NAME: str
+
+    def _initSubmodule(self, submodule: Any, module: AbstractModule):
+        Logger.debug(f"Registering Block {submodule.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
+        # Create Object
+        obj = submodule()
+        # Initialize Object Variables
+        obj.NAME = submodule.NAME
+        obj.DESCRIPTION = submodule.DESCRIPTION
+        obj.VERSION = submodule.VERSION
+        obj.OVERRIDE = submodule.OVERRIDE
+        obj.MANAGER = submodule.MANAGER
+        obj.MODULE = module
+
+        return obj
+
+
+# Submodule Skeleton
+@dataclass
+class AbstractSubmodule:
+    NAME: str = ""
+    DESCRIPTION: str = ""
+    VERSION: str = ""
+    OVERRIDE: bool = False
+    MANAGER: Optional[AbstractManager] = None
+    MODULE: Optional[AbstractModule] = None
+
+
 # Internal Module Manager Singleton
-class _ModuleManager:
+class _ModuleManager(AbstractManager):
     def __init__(self):
+        # Initialize Overarching Manager Class
+        super().__init__("Module")
+
         # Creates List Of Modules That Has The Module Name As Keys
         self._module_list = dict()
         self._module_files = []
@@ -82,16 +117,17 @@ class _ModuleManager:
         # --- Initialization ---
         Logger.info("=== (4/X) Initializing Modules ===", module="init-modules")
 
-        # Initialization Part Four => Start Initialize Modules
-        Logger.info("Starting to Initialize Modules...", module="module-init")
-        self._initModules()
+        # Initialization Part Four => Initialize Submodules
+        Logger.info("Initializing Submodules...", module="submodule-init")
+        self._initSubmodules()
 
         # TODO: Temporarily Stop Program
         Logger.log(self._module_files)
         Logger.log(self._module_list)
         Logger.log(self._sorted_module_graph)
-        Logger.log(Modules.test1.AUTHOR)
-        Logger.log(type(Modules.test1.AUTHOR))
+        # TEMPORARY IMPORT FOR PRINTING BLOCKS
+        from obsidian.blocks import BlockManager
+        Logger.log(BlockManager._block_list)
         Logger.askConfirmation()
         raise NotImplementedError("TODO")
 
@@ -239,6 +275,30 @@ class _ModuleManager:
 
         # Print Out Status
         Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sorted_module_graph}", module="module-prep")
+
+    # Intermediate Function to Initialize Submodules
+    def _initSubmodules(self):
+        # Loop through all the submodules in the order of the sorted graph
+        for module in self._sorted_module_graph:
+            try:
+                Logger.debug(f"Checking All Items in {module.NAME}", module=f"{module.NAME}-submodule-init")
+                for _, item in module.__dict__.items():  # Loop Through All Items In Class
+                    if hasattr(item, "obsidian_submodule"):  # Check If Item Has "obsidian_submodule" Flag
+                        Logger.verbose(f"{item} Is A Submodule! Adding As {module.NAME} Submodule.", module=f"{module.NAME}-submodule-init")
+                        # Register Submodule Using information Provided by Submodule Class
+                        item.MANAGER.register(item, module)
+            except FatalError as e:
+                # Pass Down Fatal Error To Base Server
+                raise e
+            except Exception as e:
+                self._error_list.append((module.NAME, "Init-Submodule"))  # Module Loaded WITH Errors
+                Logger.error(f"Error While Initializing Dependencies For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init")
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="submodule-init")
+                Logger.warn(f"Skipping Module {module.NAME}?", module="submodule-init")
+                Logger.askConfirmation()
+                # Remove Module
+                Logger.warn(f"Removing Module {module.NAME} From Loader!", module="submodule-init")
+                del self._module_list[module.NAME]
 
     # Intermediate Function to Initialize Modules
     def _initModules(self):
@@ -482,7 +542,7 @@ def Module(
 ):
     def internal(cls):
         ModuleManager.register(name, description, author, version, dependencies, cls)
-        pass
+        return cls
     return internal
 
 
