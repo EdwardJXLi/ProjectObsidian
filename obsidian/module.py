@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Type, Optional, List, Any
-from typing import TypeVar
 import importlib
 import pkgutil
 import os
@@ -28,6 +27,9 @@ class AbstractModule:
     AUTHOR: str = ""
     VERSION: str = ""
     DEPENDENCIES: list = field(default_factory=list)
+
+    def postInit(*args, **kwargs):
+        pass
 
 
 # Submodule Manager Skeleton
@@ -114,12 +116,26 @@ class _ModuleManager(AbstractManager):
         Logger.info("Dependencies Resolved!", module="module-resolve")
         Logger.info("PreInitializing Done!", module="module-preinit")
 
-        # --- Initialization ---
-        Logger.info("=== (4/X) Initializing Modules ===", module="init-modules")
+        # --- Initialization (Submodules) ---
+        Logger.info("=== (4/X) Initializing Submodules ===", module="init-modules")
 
         # Initialization Part Four => Initialize Submodules
         Logger.info("Initializing Submodules...", module="submodule-init")
         self._initSubmodules()
+
+        # --- Initialization (Modules) ---
+        Logger.info("=== (5/X) Initializing Submodules ===", module="init-modules")
+
+        # Initialization Part Five => Initialize Modules
+        Logger.info("Initializing Modules...", module="module-init")
+        self._initModules()
+
+        # --- Finalizing Initialization ---
+        Logger.info("=== (6/X) Finalizing Initialization ===", module="init-modules")
+
+        # Initialization Part Six => Running Post-Initialization
+        Logger.info("Post-Initializing...", module="post-init")
+        self._postInit()
 
         # TODO: Temporarily Stop Program
         Logger.log(self._module_files)
@@ -292,7 +308,7 @@ class _ModuleManager(AbstractManager):
                 raise e
             except Exception as e:
                 self._error_list.append((module.NAME, "Init-Submodule"))  # Module Loaded WITH Errors
-                Logger.error(f"Error While Initializing Dependencies For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init")
+                Logger.error(f"Error While Initializing Submodules For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init")
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="submodule-init")
                 Logger.warn(f"Skipping Module {module.NAME}?", module="submodule-init")
                 Logger.askConfirmation()
@@ -302,9 +318,43 @@ class _ModuleManager(AbstractManager):
 
     # Intermediate Function to Initialize Modules
     def _initModules(self):
-        for modules in self._sorted_module_graph:
-            Logger.verbose(f"TEMP {modules}")
-            pass
+        for module in self._sorted_module_graph:
+            try:
+                Logger.debug(f"Initializing Module {module.NAME}", module=f"{module.NAME}-init")
+                # Replacing Item in _module_list with the Initialized Version!
+                self._module_list[module.NAME] = module()
+            except FatalError as e:
+                # Pass Down Fatal Error To Base Server
+                raise e
+            except Exception as e:
+                self._error_list.append((module.NAME, "Init-Module"))  # Module Loaded WITH Errors
+                Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init")
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-init")
+                Logger.warn(f"Skipping Module {module.NAME}?", module="module-init")
+                Logger.askConfirmation()
+                # Remove Module
+                Logger.warn(f"Removing Module {module.NAME} From Loader!", module="module-init")
+                del self._module_list[module.NAME]
+
+    # Intermediate Function to run Post-Initialization Scripts
+    def _postInit(self):
+        for module_name, module_obj in list(self._module_list.items()):
+            try:
+                Logger.debug(f"Running Post-Initialization for Module {module_name}", module=f"{module_name}-postinit")
+                # Calling the Final Init function
+                module_obj.postInit()
+            except FatalError as e:
+                # Pass Down Fatal Error To Base Server
+                raise e
+            except Exception as e:
+                self._error_list.append((module_name, "Init-Final"))  # Module Loaded WITH Errors
+                Logger.error(f"Error While Running Post-Initialization For {module_name} - {type(e).__name__}: {e}\n", module="postinit")
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="postinit")
+                Logger.warn(f"Skipping Module {module_name}?", module="postinit")
+                Logger.askConfirmation()
+                # Remove Module
+                Logger.warn(f"Removing Module {module_name} From Loader!", module="postinit")
+                del self._module_list[module_name]
 
     # Registration. Called by Module Decorator
     def register(

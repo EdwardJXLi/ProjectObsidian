@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Type, Optional
-import typing
 from dataclasses import dataclass
 
 from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
