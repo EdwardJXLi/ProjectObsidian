@@ -9,9 +9,10 @@ import os
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.constants import (
-    InitError,
     InitRegisterError,
     DependencyError,
+    InitError,
+    PostInitError,
     FatalError,
     MODULESIMPORT,
     MODULESFOLDER,
@@ -32,7 +33,7 @@ class AbstractModule:
         pass
 
 
-# Submodule Manager Skeleton
+# Manager Skeleton
 @dataclass
 class AbstractManager:
     NAME: str
@@ -41,7 +42,7 @@ class AbstractManager:
         Logger.debug(f"Registering Block {submodule.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         # Create Object
         obj = submodule()
-        # Initialize Object Variables
+        # Initialize and Transfer Object Variables
         obj.NAME = submodule.NAME
         obj.DESCRIPTION = submodule.DESCRIPTION
         obj.VERSION = submodule.VERSION
@@ -71,7 +72,6 @@ class _ModuleManager(AbstractManager):
 
         # Creates List Of Modules That Has The Module Name As Keys
         self._module_list = dict()
-        self._module_files = []
         self._module_blacklist = []
         self._sorted_module_graph = []
         self._completed = False
@@ -86,14 +86,14 @@ class _ModuleManager(AbstractManager):
         self._module_blacklist = blacklist
 
         # --- PreInitialization ---
-        Logger.info("=== (1/X) PreInitializing Modules ===", module="init-modules")
+        Logger.info("=== (1/6) PreInitializing Modules ===", module="init-modules")
 
         # Initialization Step One => Scanning and Loading Modules using PkgUtils
         Logger.info(f"Scanning modules in {MODULESFOLDER}", module="module-import")
         self._importModules()
 
         # --- Dependency Resolving ---
-        Logger.info("=== (2/X) Resolving Dependencies ===", module="init-modules")
+        Logger.info("=== (2/6) Resolving Dependencies ===", module="init-modules")
 
         # Initialization Part Two => Checking and Initializing Dependencies
         Logger.info("Checking and Initializing Dependencies...", module="module-resolve")
@@ -106,7 +106,7 @@ class _ModuleManager(AbstractManager):
         Logger.info("Cycles Resolved!", module="module-verify")
 
         # --- Initialization Preparation ---
-        Logger.info("=== (3/X) Preparing Initialization ===", module="init-modules")
+        Logger.info("=== (3/6) Preparing Initialization ===", module="init-modules")
 
         # Initialization Part Three => Building Dependency Graph
         Logger.info("Building Dependency Graph...", module="module-prep")
@@ -117,38 +117,44 @@ class _ModuleManager(AbstractManager):
         Logger.info("PreInitializing Done!", module="module-preinit")
 
         # --- Initialization (Submodules) ---
-        Logger.info("=== (4/X) Initializing Submodules ===", module="init-modules")
+        Logger.info("=== (4/6) Initializing Submodules ===", module="init-modules")
 
         # Initialization Part Four => Initialize Submodules
         Logger.info("Initializing Submodules...", module="submodule-init")
         self._initSubmodules()
+        Logger.info("Submodules Initialized!", module="submodule-init")
 
         # --- Initialization (Modules) ---
-        Logger.info("=== (5/X) Initializing Submodules ===", module="init-modules")
+        Logger.info("=== (5/6) Initializing Submodules ===", module="init-modules")
 
         # Initialization Part Five => Initialize Modules
         Logger.info("Initializing Modules...", module="module-init")
         self._initModules()
+        Logger.info("Modules Initialized!", module="module-init")
+
+        Logger.info("Initializing Done!", module="module-init")
 
         # --- Finalizing Initialization ---
-        Logger.info("=== (6/X) Finalizing Initialization ===", module="init-modules")
+        Logger.info("=== (6/6) Finalizing Initialization ===", module="init-modules")
 
         # Initialization Part Six => Running Post-Initialization
-        Logger.info("Post-Initializing...", module="post-init")
+        Logger.info("Running Post-Initializing...", module="post-init")
         self._postInit()
+        Logger.info("Post-Initializing Done!...", module="post-init")
+
+        Logger.info("Module Done Finalizing!", module="module-init")
+
+        # Initialization Procedure Done!
 
         # TODO: Temporarily Stop Program
-        Logger.log(self._module_files)
-        Logger.log(self._module_list)
-        Logger.log(self._sorted_module_graph)
-        # TEMPORARY IMPORT FOR PRINTING BLOCKS
-        from obsidian.blocks import BlockManager
-        Logger.log(BlockManager._block_list)
-        Logger.askConfirmation()
+        Logger.debug(self._module_list)
+        Logger.askConfirmation("Not Implemented After This Point. Do You Want To Continue?")
         raise NotImplementedError("TODO")
 
     # Intermediate Function To Import All Modules
     def _importModules(self):
+        # Initialize Temporary List of Files Imported
+        _module_files = []
         # Walk Through All Packages And Import Library
         for _, module_name, _ in pkgutil.walk_packages([os.path.join(SERVERPATH, MODULESFOLDER)]):
             # Lowercase Name
@@ -158,14 +164,19 @@ class _ModuleManager(AbstractManager):
             if module_name not in self._module_blacklist:
                 try:
                     Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="module-import")
+                    # Import Module
                     _module = importlib.import_module(MODULESIMPORT + module_name)
-                    self._module_files.append(module_name)
+                    # Appending To A List of Module Files to be Used Later
+                    _module_files.append(module_name)
+                    # Set the Imported Module into the Global Scope
                     globals()[module_name] = _module
                 except FatalError as e:
                     # Pass Down Fatal Error To Base Server
                     raise e
                 except Exception as e:
+                    # Handle Exception if Error Occurs
                     self._error_list.append((module_name, "PreInit-Import"))  # Module Loaded WITH Errors
+                    # If the Error is a Register Error (raised on purpose), Don't print out TB
                     if type(e) is InitRegisterError:
                         printTb = False
                     else:
@@ -175,7 +186,7 @@ class _ModuleManager(AbstractManager):
                     Logger.askConfirmation()
             else:
                 Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="module-import")
-        Logger.verbose(f"Detected and Imported Module Files {self._module_files}", module="module-import")
+        Logger.verbose(f"Detected and Imported Module Files {_module_files}", module="module-import")
         # Check If Core Was Loaded
         if self._ensure_core:
             if "core" not in self._module_list.keys():
@@ -189,6 +200,7 @@ class _ModuleManager(AbstractManager):
                 Logger.debug(f"Checking Dependencies for Module {module_name}", module="module-resolve")
                 # Loop through all dependencies, check type, then check if exists
                 for dependency in module_obj.DEPENDENCIES:
+                    # Get Variables
                     dep_name = dependency.NAME
                     dep_ver = dependency.VERSION
                     Logger.verbose(f"Checking if Dependency {dep_name} Exists", module="module-resolve")
@@ -211,7 +223,9 @@ class _ModuleManager(AbstractManager):
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
+                # Handle Exception if Error Occurs
                 self._error_list.append((module_name, "PreInit-Dependency"))  # Module Loaded WITH Errors
+                # If the Error is a Dependency Error (raised on purpose), Don't print out TB
                 if type(e) is DependencyError:
                     printTb = False
                 else:
@@ -234,6 +248,7 @@ class _ModuleManager(AbstractManager):
                 raise DependencyError(f"Circular dependency Detected: {' -> '.join([*previous, current.NAME])}")
 
             Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES}", module="cycle-check")
+            # Run DFS through All Dependencies
             for dependency in current.DEPENDENCIES:
                 _ensureNoCycles(dependency.MODULE, [*previous, current.NAME])
 
@@ -246,7 +261,9 @@ class _ModuleManager(AbstractManager):
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
+                # Handle Exception if Error Occurs
                 self._error_list.append((module_name, "PreInit-Dependency"))  # Module Loaded WITH Errors
+                # If the Error is a Dependency Error (raised on purpose), Don't print out TB
                 if type(e) is DependencyError:
                     printTb = False
                 else:
@@ -273,7 +290,7 @@ class _ModuleManager(AbstractManager):
             # Adding Module to Visited Set to Prevent Looping
             visited.add(module.NAME)
 
-            # Going Bottom First
+            # DFS Going Bottom First
             Logger.verbose(f"Attempting Topological Sort on {module.NAME}'s Dependencies {module.DEPENDENCIES}", module="topological-sort")
             for dependency in module.DEPENDENCIES:
                 if dependency.NAME not in visited:
@@ -297,9 +314,12 @@ class _ModuleManager(AbstractManager):
         # Loop through all the submodules in the order of the sorted graph
         for module in self._sorted_module_graph:
             try:
+                # Loop Through All Items within Module
                 Logger.debug(f"Checking All Items in {module.NAME}", module=f"{module.NAME}-submodule-init")
-                for _, item in module.__dict__.items():  # Loop Through All Items In Class
-                    if hasattr(item, "obsidian_submodule"):  # Check If Item Has "obsidian_submodule" Flag
+                # Loop Through All Items In Class
+                for _, item in module.__dict__.items():
+                    # Check If Item Has "obsidian_submodule" Flag
+                    if hasattr(item, "obsidian_submodule"):
                         Logger.verbose(f"{item} Is A Submodule! Adding As {module.NAME} Submodule.", module=f"{module.NAME}-submodule-init")
                         # Register Submodule Using information Provided by Submodule Class
                         item.MANAGER.register(item, module)
@@ -307,8 +327,14 @@ class _ModuleManager(AbstractManager):
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
+                # Handle Exception if Error Occurs
                 self._error_list.append((module.NAME, "Init-Submodule"))  # Module Loaded WITH Errors
-                Logger.error(f"Error While Initializing Submodules For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init")
+                # If the Error is an Init Error (raised on purpose), Don't print out TB
+                if type(e) is InitError:
+                    printTb = False
+                else:
+                    printTb = True
+                Logger.error(f"Error While Initializing Submodules For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init", printTb=printTb)
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="submodule-init")
                 Logger.warn(f"Skipping Module {module.NAME}?", module="submodule-init")
                 Logger.askConfirmation()
@@ -321,14 +347,28 @@ class _ModuleManager(AbstractManager):
         for module in self._sorted_module_graph:
             try:
                 Logger.debug(f"Initializing Module {module.NAME}", module=f"{module.NAME}-init")
+                # Initialize Module
+                initializedModule = module()
+                # Initialize and Transfer Module Variables
+                initializedModule.NAME = module.NAME
+                initializedModule.DESCRIPTION = module.DESCRIPTION
+                initializedModule.AUTHOR = module.AUTHOR
+                initializedModule.VERSION = module.VERSION
+                initializedModule.DEPENDENCIES = module.DEPENDENCIES
                 # Replacing Item in _module_list with the Initialized Version!
-                self._module_list[module.NAME] = module()
+                self._module_list[module.NAME] = initializedModule
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
+                # Handle Exception if Error Occurs
                 self._error_list.append((module.NAME, "Init-Module"))  # Module Loaded WITH Errors
-                Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init")
+                # If the Error is an Init Error (raised on purpose), Don't print out TB
+                if type(e) is InitError:
+                    printTb = False
+                else:
+                    printTb = True
+                Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init", printTb=printTb)
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-init")
                 Logger.warn(f"Skipping Module {module.NAME}?", module="module-init")
                 Logger.askConfirmation()
@@ -347,8 +387,14 @@ class _ModuleManager(AbstractManager):
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
+                # Handle Exception if Error Occurs
                 self._error_list.append((module_name, "Init-Final"))  # Module Loaded WITH Errors
-                Logger.error(f"Error While Running Post-Initialization For {module_name} - {type(e).__name__}: {e}\n", module="postinit")
+                # If the Error is an Postinit Error (raised on purpose), Don't print out TB
+                if type(e) is PostInitError:
+                    printTb = False
+                else:
+                    printTb = True
+                Logger.error(f"Error While Running Post-Initialization For {module_name} - {type(e).__name__}: {e}\n", module="postinit", printTb=printTb)
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="postinit")
                 Logger.warn(f"Skipping Module {module_name}?", module="postinit")
                 Logger.askConfirmation()
@@ -392,133 +438,6 @@ class _ModuleManager(AbstractManager):
         module.VERSION = version
         module.DEPENDENCIES = dependencies
         self._module_list[name] = module
-
-    '''
-    # Registration. Called by Module Decorator
-    def register(self, name: str, description: str, author: str, version: str, module: Type[AbstractModule]):
-        Logger.info(f"Discovered Module {name}.", module="init-" + name)
-        Logger.debug(f"Registering Module {name}", module="init-" + name)
-        # Prevent Circular Looping :/
-        from obsidian.packet import PacketManager
-        from obsidian.worldformat import WorldFormatManager
-        from obsidian.mapgen import MapGeneratorManager
-        from obsidian.commands import CommandManager
-        from obsidian.blocks import BlockManager
-        moduleObj = module()  # Create Object
-        # Checking If Module Is Already In Modules List
-        if name in self._module_list.keys():
-            raise InitRegisterError(f"Module {name} Has Already Been Registered!")
-        # Attach Values As Attribute
-        moduleObj.NAME = name
-        moduleObj.DESCRIPTION = description
-        moduleObj.AUTHOR = author
-        moduleObj.VERSION = version
-        Logger.verbose(f"Looping Through All Items In {name}", module="init-" + name)
-        for _, item in module.__dict__.items():  # Loop Through All Items In Class
-            Logger.verbose(f"Checking {item}", module="init-" + name)
-            if hasattr(item, "obsidian_packet"):  # Check If Item Has "obsidian_packet" Flag
-                Logger.verbose(f"{item} Is A Packet! Adding As Packet.", module="init-" + name)
-                packet = item.obsidian_packet
-                # Register Packet Using information Provided By "obsidian_packet"
-                PacketManager.register(
-                    packet["direction"],
-                    packet["name"],
-                    packet["description"],
-                    packet["packet"],
-                    moduleObj
-                )
-            elif hasattr(item, "obsidian_world_format"):  # Check If Item Has "obsidian_world_format" Flag
-                Logger.verbose(f"{item} Is A World Format! Adding As World Format.", module="init-" + name)
-                generator = item.obsidian_world_format
-                # Register Packet Using information Provided By "obsidian_world_format"
-                WorldFormatManager.register(
-                    generator["name"],
-                    generator["description"],
-                    generator["version"],
-                    generator["format"],
-                    moduleObj
-                )
-            elif hasattr(item, "obsidian_map_generator"):  # Check If Item Has "obsidian_map_generator" Flag
-                Logger.verbose(f"{item} Is A Map Generator! Adding As Map Generator.", module="init-" + name)
-                generator = item.obsidian_map_generator
-                # Register Packet Using information Provided By "obsidian_map_generator"
-                MapGeneratorManager.register(
-                    generator["name"],
-                    generator["description"],
-                    generator["version"],
-                    generator["map_generator"],
-                    moduleObj
-                )
-            elif hasattr(item, "obsidian_command"):  # Check If Item Has "obsidian_command" Flag
-                Logger.verbose(f"{item} Is A Command! Adding As Command.", module="init-" + name)
-                generator = item.obsidian_command
-                # Register Packet Using information Provided By "obsidian_block"
-                CommandManager.register(
-                    generator["name"],
-                    generator["activators"],
-                    generator["description"],
-                    generator["version"],
-                    generator["command"],
-                    moduleObj
-                )
-            elif hasattr(item, "obsidian_block"):  # Check If Item Has "obsidian_block" Flag
-                Logger.verbose(f"{item} Is A Block! Adding As Block.", module="init-" + name)
-                generator = item.obsidian_block
-                # Register Packet Using information Provided By "obsidian_block"
-                BlockManager.register(
-                    generator["name"],
-                    generator["blockId"],
-                    generator["block"],
-                    moduleObj
-                )
-        self._module_list[name] = moduleObj
-
-    # Function to libimport and register all modules
-    # EnsureCore ensures core module is present
-    def initModules(self, blacklist=[], ensureCore=True):
-        if not self._completed:
-            Logger.info("Initializing Modules", module="init-module")
-            if ensureCore:
-                try:
-                    importlib.import_module(MODULESIMPORT + "core")
-                    blacklist.append("core")  # Adding core to whitelist to prevent re-importing
-                    Logger.debug("Loaded (mandatory) Module core", module="init-module")
-                except ModuleNotFoundError:
-                    Logger.fatal("Core Module Not Found! (Failed ensureCore). Check if 'core.py' module is present in modules folder!", module="init-module")
-                    raise InitError("Core Module Not Found!")
-                except FatalError as e:
-                    # Pass Down Fatal Error To Base Server
-                    raise e
-                except Exception as e:
-                    self._errorList.append("core")  # Module Loaded WITH Errors
-                    Logger.fatal(f"Error While Loading Module core - {type(e).__name__}: {e}", "init-module")
-                    raise FatalError()
-            Logger.verbose(f"Scanning all potential modules in {MODULESFOLDER}", module="init-module")
-            for loader, module_name, _ in pkgutil.walk_packages([os.path.join(SERVERPATH, MODULESFOLDER)]):
-                Logger.verbose(f"Detected Module {module_name}", module="init-module")
-                if module_name not in blacklist:
-                    try:
-                        Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="init-module")
-                        _module = loader.find_module(module_name).load_module(module_name)
-                        globals()[module_name] = _module
-                    except FatalError as e:
-                        # Pass Down Fatal Error To Base Server
-                        raise e
-                    except Exception as e:
-                        self._errorList.append(module_name)  # Module Loaded WITH Errors
-                        if type(e) is InitRegisterError:
-                            printTb = False
-                        else:
-                            printTb = True
-                        Logger.error(f"Error While Loading Module {module_name} - {type(e).__name__}: {e}\n", module="init-module", printTb=printTb)
-                        Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
-                        Logger.askConfirmation()
-                Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="init-module")
-            self._completed = True  # setting completed flag to prevent re-importation
-        else:
-            Logger.info("Modules Already Initialized; Skipping.", module="init-module")
-
-    '''
 
     # Generate a Pretty List of Modules
     def generateTable(self):

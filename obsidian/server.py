@@ -100,6 +100,7 @@ class Server:
         # Load and Log Modules
         Logger.info("Starting Module Initialization", module="init")
         ModuleManager.initModules(blacklist=self.config.moduleBlacklist, ensureCore=False)
+        Logger.info("All Modules Initialized!!!", module="init")
 
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
         Logger.info(f"{PacketManager.numPackets} Packets Initialized", module="init")

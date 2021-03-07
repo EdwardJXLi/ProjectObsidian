@@ -30,10 +30,6 @@ MODULESIMPORT = "obsidian.modules."
 
 
 # Custom Errors
-class InitError(Exception):
-    pass
-
-
 class InitRegisterError(Exception):
     pass
 
@@ -43,6 +39,14 @@ class ModuleError(Exception):
 
 
 class DependencyError(Exception):
+    pass
+
+
+class InitError(Exception):
+    pass
+
+
+class PostInitError(Exception):
     pass
 
 
