@@ -1,4 +1,7 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from obsidian.player import Player
 
 from typing import Type, Optional, List
 from dataclasses import dataclass, field
@@ -6,7 +9,6 @@ import inspect
 
 from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.player import Player
 from obsidian.log import Logger
 from obsidian.constants import (
     InitRegisterError,
