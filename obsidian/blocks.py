@@ -50,6 +50,7 @@ class _BlockManager(AbstractManager):
 
     # Registration. Called by Block Decorator
     def register(self, blockClass: Type[AbstractBlock], module: AbstractModule):
+        Logger.debug(f"Registering Block {blockClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         block: AbstractBlock = super()._initSubmodule(blockClass, module)
 
         # Handling Special Cases if OVERRIDE is Set
@@ -59,7 +60,7 @@ class _BlockManager(AbstractManager):
             if (block.ID not in self._blocks) and (block.NAME not in self._block_list.keys()):
                 Logger.warn(f"Block {block.NAME} (ID: {block.ID}) From Module {block.MODULE.NAME} Is Trying To Override A Block That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
-                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._blocks[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._block_list[block.NAME].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
 
         # Checking If Block Name Is Already In Blocks List
         # Ignoring if OVERRIDE is set
@@ -75,7 +76,7 @@ class _BlockManager(AbstractManager):
         else:
             raise InitRegisterError(f"Block Id {block.ID} Has Been Already Registered. Conflicting Blocks Are '{self._blocks[block.ID].NAME} ({self._blocks[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
 
-        # Attach Name, Direction, and Module As Attribute
+        # Add Block to Blocks List
         self._block_list[block.NAME] = block
 
     # Generate a Pretty List of Blocks

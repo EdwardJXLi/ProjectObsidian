@@ -99,7 +99,7 @@ class Server:
 
         # Load and Log Modules
         Logger.info("Starting Module Initialization", module="init")
-        ModuleManager.initModules(blacklist=self.config.moduleBlacklist, ensureCore=False)
+        ModuleManager.initModules(blacklist=self.config.moduleBlacklist, ensureCore=True)
         Logger.info("All Modules Initialized!!!", module="init")
 
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
@@ -122,10 +122,10 @@ class Server:
             Logger.debug(f"Blocks List:\n{BlockManager.generateTable()}", module="init")
 
         # Printing Error If Error Occurs During Init
-        if len(ModuleManager._errorList) != 0:
+        if len(ModuleManager._error_list) != 0:
             Logger.warn("Some Modules Files Failed To Load!\n", module="init")
             Logger.warn("!!! Failed Modules May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
-            Logger.warn(f"Failed: {ModuleManager._errorList}\n", module="init")
+            Logger.warn(f"Failed: {ModuleManager._error_list}\n", module="init")
             Logger.askConfirmation()
 
         # Initialize WorldManager
@@ -171,10 +171,10 @@ class Server:
         return handler
 
     def _ensureFileStructure(self, folders: Union[str, List[str]]):
-        Logger.debug(f"Ensuring Folders {folders}", module="init")
         # Check Type, If Str Put In List
-        if type(folders) is not list:
+        if type(folders) is str:
             folders = [folders]
+        Logger.debug(f"Ensuring Folders {folders}", module="init")
         # Ensure All Folders
         for folder in folders:
             folder = os.path.join(SERVERPATH, folder)
@@ -220,7 +220,7 @@ class Server:
             Logger.info("Sending Disconnect Packet To All Members", module="server-stop")
             await self.playerManager.sendGlobalPacket(
                 Packets.Response.DisconnectPlayer,
-                "(test) Disconnected: Server Shutting Down"
+                "Disconnected: Server Shutting Down"
             )
 
             # Stopping Connection Handler

@@ -7,11 +7,10 @@ import enum
 import struct
 from typing import Type, Optional
 from dataclasses import dataclass
-from obsidian.module import AbstractModule
+from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
 
 # from obsidian.network import *
 from obsidian.constants import (
-    InitError,
     InitRegisterError,
     PacketError,
     FatalError
@@ -45,26 +44,18 @@ def packageString(data, maxSize=64, encoding="ascii"):
 
 # Packet Skeleton
 @dataclass
-class AbstractPacket:
-    # Mandatory Values Defined In Packet Init
-    ID: int         # Packet Id
-    FORMAT: str     # Packet Structure Format
-    CRITICAL: bool  # Packet Criticality. Dictates What Event Should Occur When Error
-    # Mandatory Values Defined In Packet Decorator
-    DIRECTION: PacketDirections = PacketDirections.NONE
-    NAME: str = ""
-    # Optional Values Defined In Packet Decorator
-    DESCRIPTION: str = ""
-    # Mandatory Values Defined During Module Initialization
-    MODULE: Optional[AbstractModule] = None
+class AbstractPacket(AbstractSubmodule):
+    ID: int = 0             # Packet Id
+    FORMAT: str = ""        # Packet Structure Format
+    CRITICAL: bool = False  # Packet Criticality. Dictates What Event Should Occur When Error
 
     # Error Handler. Called If Critical If False And An Error Occurs
     def onError(self, error):
         Logger.error(f"Packet {self.NAME} Raised Error {error}", module="packet")
 
     @property
-    def SIZE(self):
-        return struct.calcsize(self.FORMAT)
+    def SIZE(self) -> int:
+        return int(struct.calcsize(self.FORMAT))
 
 
 @dataclass
@@ -86,22 +77,54 @@ class AbstractResponsePacket(AbstractPacket):
         return bytearray()
 
 
-# Packet Decorator
-# Used In @Packet
-def Packet(name: str, direction: PacketDirections, description: str = None):
+# Request Packet Decorator
+# Used In @RequestPacket
+def RequestPacket(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
     def internal(cls):
-        cls.obsidian_packet = dict()
-        cls.obsidian_packet["name"] = name
-        cls.obsidian_packet["direction"] = direction
-        cls.obsidian_packet["description"] = description
-        cls.obsidian_packet["packet"] = cls
+        Logger.verbose(f"Registered Request Packet {name} version {version}", module="submodule-import")
+
+        # Set Class Variables
+        cls.NAME = name
+        cls.DESCRIPTION = description
+        cls.VERSION = version
+        cls.OVERRIDE = override
+        cls.MANAGER = PacketManager.RequestManager
+
+        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
+        cls.obsidian_submodule = True
+
+        # Return cls Obj for Decorator
+        return cls
+    return internal
+
+
+# Response Packet Decorator
+# Used In @ResponsePacket
+def ResponsePacket(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
+    def internal(cls):
+        Logger.verbose(f"Registered Response Packet {name} version {version}", module="submodule-import")
+
+        # Set Class Variables
+        cls.NAME = name
+        cls.DESCRIPTION = description
+        cls.VERSION = version
+        cls.OVERRIDE = override
+        cls.MANAGER = PacketManager.ResponseManager
+
+        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
+        cls.obsidian_submodule = True
+
+        # Return cls Obj for Decorator
         return cls
     return internal
 
 
 # Internal Directional Packet Manager
-class _DirectionalPacketManager:
+class _DirectionalPacketManager(AbstractManager):
     def __init__(self, direction: PacketDirections):
+        # Initialize Overarching Manager Class
+        super().__init__(f"{direction.name.title()} Packet")
+
         # Creates List Of Packets That Has The Packet Name As Keys
         self._packet_list = dict()
         self.direction = direction
@@ -109,27 +132,38 @@ class _DirectionalPacketManager:
         if self.direction is PacketDirections.REQUEST:
             self.loopPackets = {}  # Fast Cache Of Packet Ids to Packet Objects That Are Used During PlayerLoop
 
-    # Registration. Called by Packet Decorator
-    def register(self, name: str, description: str, packet: Type[AbstractRequestPacket], module):
-        Logger.debug(f"Registering Packet {name} From Module {module.NAME}", module="init-" + module.NAME)
-        obj = packet()  # type: ignore    # Create Object
+    # Registration. Called by (Directional) Packet Decorator
+    def register(self, packetClass: Type[AbstractPacket], module: AbstractModule):
+        Logger.debug(f"Registering Packet {packetClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
+        packet: AbstractPacket = super()._initSubmodule(packetClass, module)
+
+        # Handling Special Cases if OVERRIDE is Set
+        if packet.OVERRIDE:
+            # Check If Override Is Going To Do Anything
+            # If Not, Warn
+            if (packet.ID not in self._packet_list.keys()) and (packet.NAME not in self.getAllPacketIds()):
+                Logger.warn(f"Packet {packet.NAME} (ID: {packet.ID}) From Module {packet.MODULE.NAME} Is Trying To Override A Packet That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            else:
+                Logger.debug(f"Packet {packet.NAME} Is Overriding Packet {self._packet_list[packet.NAME].NAME} (ID: {packet.ID})", module=f"{module.NAME}-submodule-init")
+
         # Checking If Packet And PacketId Is Already In Packets List
-        if name in self._packet_list.keys():
-            raise InitRegisterError(f"Packet {name} Has Already Been Registered!")
-        if obj.ID in self.getAllPacketIds():
-            raise InitRegisterError(f"Packet Id {obj.ID} Has Already Been Registered!")
-        # Attach Name, Direction, and Module As Attribute
-        obj.DIRECTION = self.direction
-        obj.NAME = name
-        obj.DESCRIPTION = description
-        obj.MODULE = module
-        self._packet_list[name] = obj
+        # Ignoring if OVERRIDE is set
+        if packet.NAME in self._packet_list.keys() and not packet.OVERRIDE:
+            raise InitRegisterError(f"Packet {packet.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
+        if packet.ID in self.getAllPacketIds() and not packet.OVERRIDE:
+            raise InitRegisterError(f"Packet Id {packet.ID} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
+
         # Only Used If Request
         if self.direction is PacketDirections.REQUEST:
+            # Cast Packet into Request Packet Type
+            requestPacket: AbstractRequestPacket = packet  # type: ignore
             # Add To Packet Cache If Packet Is Used In Main Player Loop
-            if obj.PLAYERLOOP:
-                Logger.verbose(f"Adding Packet {obj.ID} To Main Player Loop Request Packet Cache", module="init-" + module.NAME)
-                self.loopPackets[obj.ID] = obj
+            if requestPacket.PLAYERLOOP:
+                Logger.verbose(f"Adding Packet {requestPacket.ID} To Main Player Loop Request Packet Cache", module=f"{module.NAME}-submodule-init")
+                self.loopPackets[requestPacket.ID] = requestPacket
+
+        # Add Packet to Packets List
+        self._packet_list[packet.NAME] = packet
 
     def getAllPacketIds(self):
         return [obj.ID for obj in self._packet_list.values()]
@@ -158,16 +192,6 @@ class _PacketManager:
         self.ResponseManager = _DirectionalPacketManager(PacketDirections.RESPONSE)
         self.Request = self.RequestManager  # Alias for RequestManager
         self.Response = self.ResponseManager  # Alias for ResponseManager
-
-    # Registration. Called by Packet Decorator
-    def register(self, direction: PacketDirections, *args, **kwargs):
-        # Check Direction
-        if direction is PacketDirections.REQUEST:
-            self.RequestManager.register(*args, **kwargs)
-        elif direction is PacketDirections.RESPONSE:
-            self.ResponseManager.register(*args, **kwargs)
-        else:
-            raise InitError(f"Unknown Direction {direction} While Registering Packet")
 
     # Generate a Pretty List of Packets
     def generateTable(self):

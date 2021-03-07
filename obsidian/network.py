@@ -182,7 +182,7 @@ class NetworkDispacher:
             Logger.verbose(f"Expected Packet {packet.ID} Size {packet.SIZE} from {self.handler.ip}", module="network")
             rawData = await asyncio.wait_for(
                 self.handler.reader.readexactly(
-                    packet.SIZE
+                    packet.SIZE  # type: ignore
                 ), timeout
             )
             Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}", module="network")

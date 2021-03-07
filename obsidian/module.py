@@ -39,7 +39,7 @@ class AbstractManager:
     NAME: str
 
     def _initSubmodule(self, submodule: Any, module: AbstractModule):
-        Logger.debug(f"Registering Block {submodule.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
+        Logger.debug(f"Initializing {submodule.MANAGER.NAME} {submodule.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         # Create Object
         obj = submodule()
         # Initialize and Transfer Object Variables
@@ -145,11 +145,6 @@ class _ModuleManager(AbstractManager):
         Logger.info("Module Done Finalizing!", module="module-init")
 
         # Initialization Procedure Done!
-
-        # TODO: Temporarily Stop Program
-        Logger.debug(self._module_list)
-        Logger.askConfirmation("Not Implemented After This Point. Do You Want To Continue?")
-        raise NotImplementedError("TODO")
 
     # Intermediate Function To Import All Modules
     def _importModules(self):
@@ -428,7 +423,7 @@ class _ModuleManager(AbstractManager):
             dependencies = []
         # Checking If Core Is Required
         if self._ensure_core:
-            if "core" not in [m.NAME for m in dependencies]:
+            if "core" not in [m.NAME for m in dependencies] and name != "core":
                 dependencies.append(Dependency("core"))
 
         # Attach Values As Attribute

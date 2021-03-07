@@ -5,9 +5,9 @@ if TYPE_CHECKING:
     import io
 
 from typing import Type, Optional, List
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from obsidian.module import AbstractModule
+from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.constants import InitRegisterError, FatalError
 from obsidian.log import Logger
@@ -15,30 +15,31 @@ from obsidian.log import Logger
 
 # World Format Decorator
 # Used In @WorldFormat
-def WorldFormat(name: str, description: str = None, version: str = None):
+def WorldFormat(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
     def internal(cls):
-        cls.obsidian_world_format = dict()
-        cls.obsidian_world_format["name"] = name
-        cls.obsidian_world_format["description"] = description
-        cls.obsidian_world_format["version"] = version
-        cls.obsidian_world_format["format"] = cls
+        Logger.verbose(f"Registered World Format {name} version {version}", module="submodule-import")
+
+        # Set Class Variables
+        cls.NAME = name
+        cls.DESCRIPTION = description
+        cls.VERSION = version
+        cls.OVERRIDE = override
+        cls.MANAGER = WorldFormatManager
+
+        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
+        cls.obsidian_submodule = True
+
+        # Return cls Obj for Decorator
         return cls
     return internal
 
 
 # World Format Skeleton
 @dataclass
-class AbstractWorldFormat:
+class AbstractWorldFormat(AbstractSubmodule):
     # Mandatory Values Defined In Packet Init
-    KEYS: List[str]        # List of "keys" that dictate this world format
-    EXTENTIONS: List[str]  # List of file extentions
-    # Mandatory Values Defined In Module Decorator
-    NAME: str = ""
-    # Optional Values Defined In Module Decorator
-    DESCRIPTION: str = ""
-    VERSION: str = ""
-    # Mandatory Values Defined During Module Initialization
-    MODULE: Optional[AbstractModule] = None
+    KEYS: List[str] = field(default_factory=list)        # List of "keys" that dictate this world format
+    EXTENTIONS: List[str] = field(default_factory=list)  # List of file extentions
 
     def loadWorld(
         self,
@@ -58,24 +59,35 @@ class AbstractWorldFormat:
 
 
 # Internal World Format Manager Singleton
-class _WorldFormatManager:
+class _WorldFormatManager(AbstractManager):
     def __init__(self):
+        # Initialize Overarching Manager Class
+        super().__init__("World Format")
+
         # Creates List Of World Formats That Has The World Format Name As Keys
         self._format_list = dict()
 
     # Registration. Called by World Format Decorator
-    def register(self, name: str, description: str, version: str, format: Type[AbstractWorldFormat], module):
-        Logger.debug(f"Registering World Format {name} From Module {module.NAME}", module="init-" + module.NAME)
-        obj = format()  # type: ignore    # Create Object
-        # Checking If World Format Name Is Already In World Formats List
-        if name in self._format_list.keys():
-            raise InitRegisterError(f"World Format {name} Has Already Been Registered!")
-        # Attach Name, Direction, and Module As Attribute
-        obj.NAME = name
-        obj.DESCRIPTION = description
-        obj.VERSION = version
-        obj.MODULE = module
-        self._format_list[name] = obj
+    def register(self, worldFormatClass: Type[AbstractWorldFormat], module: AbstractModule):
+        Logger.debug(f"Registering World Format {worldFormatClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
+        worldFormat: AbstractWorldFormat = super()._initSubmodule(worldFormatClass, module)
+
+        # Handling Special Cases if OVERRIDE is Set
+        if worldFormat.OVERRIDE:
+            # Check If Override Is Going To Do Anything
+            # If Not, Warn
+            if worldFormat.NAME not in self._format_list.keys():
+                Logger.warn(f"World Format {worldFormat.NAME} From Module {worldFormat.MODULE.NAME} Is Trying To Override A World Format That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            else:
+                Logger.debug(f"World Format {worldFormat.NAME} Is Overriding World Format {self._format_list[worldFormat.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+
+        # Checking If World Format Name Is Already In Formats List
+        # Ignoring if OVERRIDE is set
+        if worldFormat.NAME in self._format_list.keys() and not worldFormat.OVERRIDE:
+            raise InitRegisterError(f"World Format {worldFormat.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
+
+        # Add World Format to World Formats List
+        self._format_list[worldFormat.NAME] = worldFormat
 
     # Generate a Pretty List of World Formats
     def generateTable(self):

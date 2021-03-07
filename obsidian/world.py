@@ -231,7 +231,7 @@ class WorldManager:
                 Logger.error(f"Error While Closing World {worldName} - {type(e).__name__}: {e}", module="world-close")
 
     def createWorldFile(self, savePath, worldName, worldFormat: AbstractWorldFormat = None):
-        Logger.debug(f"Attempting to create world file with name {worldName}")
+        Logger.debug(f"Attempting to create world file with name {worldName}", module="world-gen")
         # Checking if World is Persistant
         if self.server.config.worldSaveLocation is None or not self.persistant:
             raise WorldSaveError("Trying To Create World File When Server Is Not Persistant")
@@ -246,7 +246,7 @@ class WorldManager:
             savePath,
             worldName + "." + worldFormat.EXTENTIONS[0]  # Gets the first value in the valid extentions list
         )
-        Logger.debug(f"File world path is {worldPath}")
+        Logger.debug(f"File world path is {worldPath}", module="world-gen")
 
         # Check if file already exists
         if os.path.isfile(worldPath):

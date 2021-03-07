@@ -4,8 +4,9 @@ from typing import Type, Optional, List
 from dataclasses import dataclass, field
 import inspect
 
-from obsidian.module import AbstractModule
+from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
+from obsidian.player import Player
 from obsidian.log import Logger
 from obsidian.constants import (
     InitRegisterError,
@@ -14,35 +15,37 @@ from obsidian.constants import (
 )
 
 
-# Commands Decorator
+# Command Decorator
 # Used In @Command
-def Command(name: str, activators: Optional[list] = None, description: str = None, version: str = None):
+def Command(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
     def internal(cls):
-        cls.obsidian_command = dict()
-        cls.obsidian_command["name"] = name
-        cls.obsidian_command["activators"] = activators
-        cls.obsidian_command["description"] = description
-        cls.obsidian_command["version"] = version
-        cls.obsidian_command["command"] = cls
+        Logger.verbose(f"Registered Command {name} version {version}", module="submodule-import")
+
+        # Set Class Variables
+        cls.NAME = name
+        cls.DESCRIPTION = description
+        cls.VERSION = version
+        cls.OVERRIDE = override
+        cls.MANAGER = CommandManager
+
+        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
+        cls.obsidian_submodule = True
+
+        # Return cls Obj for Decorator
         return cls
     return internal
 
 
 # Command Skeleton
 @dataclass
-class AbstractCommand:
-    # Mandatory Values Defined In Packet Init
-    # Mandatory Values Defined In Module Decorator
-    NAME: str = ""
+class AbstractCommand(AbstractSubmodule):
     ACTIVATORS: List[str] = field(default_factory=list)
-    # Optional Values Defined In Module Decorator
-    DESCRIPTION: str = ""
-    VERSION: str = ""
-    # Mandatory Values Defined During Module Initialization
-    MODULE: Optional[AbstractModule] = None
+
+    async def execute(self, ctx: Player):
+        raise NotImplementedError("Command Hander Not Found!")
 
 
-# Command Utils
+# == Command Utils ==
 
 # Take Parameter Info + Argument Info To Automatically Convert Types
 def _convertArgs(name, param, arg):
@@ -77,7 +80,7 @@ def _parseArgs(command, data: list):
     try:
         next(paramsIter)
     except StopIteration:
-        # InitRegisterError Because Command Was Improperly Formed + We WAnt To Skip The Player Error
+        # InitRegisterError Because Command Was Improperly Formed + We Want To Skip The Player Error
         raise InitRegisterError(f"Command {command.NAME} Is Missing Parameter 'ctx'")
 
     # Loop Through Rest Of Iterators To Parse Data
@@ -135,42 +138,58 @@ def _parseArgs(command, data: list):
 
 
 # Internal Command Manager Singleton
-class _CommandManager:
+class _CommandManager(AbstractManager):
     def __init__(self):
+        # Initialize Overarching Manager Class
+        super().__init__("Command")
+
         # Creates List Of Commands That Has The Command Name As Keys
         self._command_list = dict()
         # Create Cache Of Activator to Obj
         self._activators = dict()
 
     # Registration. Called by Command Decorator
-    def register(self, name: str, activators: Optional[list], description: str, version: str, command: Type[AbstractCommand], module):
-        Logger.debug(f"Registering Command {name} From Module {module.NAME}", module="init-" + module.NAME)
-        obj = command()  # type: ignore    # Create Object
+    def register(self, commandClass: Type[AbstractCommand], module: AbstractModule):
+        Logger.debug(f"Registering Command {commandClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
+        command: AbstractCommand = super()._initSubmodule(commandClass, module)
+
+        # Handling Special Cases if OVERRIDE is Set
+        if command.OVERRIDE:
+            # Check If Override Is Going To Do Anything
+            # If Not, Warn
+            if command.NAME not in self._command_list.keys():
+                Logger.warn(f"Command {command.NAME}  From Module {command.MODULE.NAME} Is Trying To Override A Command That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            else:
+                Logger.debug(f"Command {command.NAME} Is Overriding Command {self._command_list[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                # Un-registering All Activators for the Command Being Overwritten. Prevents Issues!
+                Logger.debug(f"Un-registering Activators for Command {self._command_list[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                for activator in list(self._command_list[command.NAME].ACTIVATORS.keys()):
+                    # Deleting from Cache
+                    del self._activators[activator]
+
         # Checking If Command Name Is Already In Commands List
-        if name in self._command_list.keys():
-            raise InitRegisterError(f"Command {name} Has Already Been Registered!")
+        # Ignoring if OVERRIDE is set
+        if command.NAME in self._command_list.keys() and not command.OVERRIDE:
+            raise InitRegisterError(f"Command {command.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Setting Activators To Default If None
-        if activators is None:
-            Logger.warn(f"Command {name} Was Registered Without Any Activators. Using Name As Command Activator.", module="init-" + module.NAME)
-            activators = [name.lower()]
+        if command.ACTIVATORS is None:
+            command.ACTIVATORS = []
+        if len(command.ACTIVATORS) == 0:
+            Logger.warn(f"Command {command.NAME} Was Registered Without Any Activators. Using Name As Command Activator.", module=f"{module.NAME}-submodule-init")
+            command.ACTIVATORS = [command.NAME.lower()]
         # Add Activators To Command Cache
-        Logger.debug(f"Adding Activators {activators} To Activator Cache", module="init-" + module.NAME)
-        for activator in activators:
-            Logger.verbose(f"Adding Activator {activator}", module="init-" + module.NAME)
+        Logger.debug(f"Adding Activators {command.ACTIVATORS} To Activator Cache", module=f"{module.NAME}-submodule-init")
+        for activator in command.ACTIVATORS:
+            Logger.verbose(f"Adding Activator {activator}", module=f"{module.NAME}-submodule-init")
             # If Activator Already Exists, Error
             if activator not in self._activators:
-                self._activators[activator] = obj
+                self._activators[activator] = command
             else:
                 raise InitRegisterError(f"Another Command Has Already Registered Command Activator {activator}")
 
-        # Attach Name, Direction, and Module As Attribute
-        obj.NAME = name
-        obj.ACTIVATORS = activators
-        obj.DESCRIPTION = description
-        obj.VERSION = version
-        obj.MODULE = module
-        self._command_list[name] = obj
+        # Add Command to Commands List
+        self._command_list[command.NAME] = command
 
     # Generate a Pretty List of Commands
     def generateTable(self):
