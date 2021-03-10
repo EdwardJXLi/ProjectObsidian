@@ -152,8 +152,6 @@ class _ModuleManager(AbstractManager):
         _module_files = []
         # Walk Through All Packages And Import Library
         for _, module_name, _ in pkgutil.walk_packages([os.path.join(SERVERPATH, MODULESFOLDER)]):
-            # Lowercase Name
-            module_name = module_name.lower()
             # Load Modules
             Logger.debug(f"Detected Module {module_name}", module="module-import")
             if module_name not in self._module_blacklist:

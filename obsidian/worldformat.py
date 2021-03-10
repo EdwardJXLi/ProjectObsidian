@@ -47,7 +47,7 @@ class AbstractWorldFormat(AbstractSubmodule):
         worldManager: WorldManager,
         persistant: bool = True
     ):
-        return None
+        raise NotImplementedError("World Loading Not Implemented")
 
     def saveWorld(
         self,
@@ -55,7 +55,7 @@ class AbstractWorldFormat(AbstractSubmodule):
         fileIO: io.BufferedRandom,
         worldManager: WorldManager
     ):
-        return None
+        raise NotImplementedError("World Saving Not Implemented")
 
 
 # Internal World Format Manager Singleton

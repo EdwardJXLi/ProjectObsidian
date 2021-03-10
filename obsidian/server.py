@@ -119,7 +119,7 @@ class Server:
 
         # Only Print Block List If Verbose Enabled (Very Big)
         if Logger.VERBOSE:
-            Logger.debug(f"Blocks List:\n{BlockManager.generateTable()}", module="init")
+            Logger.verbose(f"Blocks List:\n{BlockManager.generateTable()}", module="init")
 
         # Printing Error If Error Occurs During Init
         if len(ModuleManager._error_list) != 0:

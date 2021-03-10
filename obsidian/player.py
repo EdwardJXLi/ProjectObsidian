@@ -339,7 +339,7 @@ class Player:
 
         # Trying To Update Block On Player World
         try:
-            self.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, blockType, player=self)
+            await blockType.placeBlock(self, blockX, blockY, blockZ)
         except ClientError as e:
             # Setting Player-Attempted Block Back To Original
             originalBlock = self.worldPlayerManager.world.getBlock(blockX, blockY, blockZ)
@@ -353,19 +353,6 @@ class Player:
 
             # Send Error Message To
             await self.sendMessage(f"&c{e}&f")
-
-            # Exit Function
-            return None
-
-        # Sending Block Update Update Packet To All Players
-        await self.worldPlayerManager.sendWorldPacket(
-            Packets.Response.SetBlock,
-            blockX,
-            blockY,
-            blockZ,
-            blockType.ID,
-            ignoreList=[]  # not sending to self as that may cause some de-sync issues
-        )
 
     async def handlePlayerMovement(self, posX, posY, posZ, posYaw, posPitch):
         # Format, Process, and Handle incoming player movement requests.

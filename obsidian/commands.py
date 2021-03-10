@@ -43,8 +43,8 @@ def Command(name: str, description: Optional[str] = None, version: Optional[str]
 class AbstractCommand(AbstractSubmodule):
     ACTIVATORS: List[str] = field(default_factory=list)
 
-    async def execute(self, ctx: Player):
-        raise NotImplementedError("Command Hander Not Found!")
+    async def execute(self, ctx: Optional[Player]):
+        raise NotImplementedError("Command Hander Not Implemented")
 
 
 # == Command Utils ==

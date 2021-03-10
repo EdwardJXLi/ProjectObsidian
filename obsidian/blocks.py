@@ -1,11 +1,14 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from obsidian.player import Player
 
 from typing import Type, Optional
 from dataclasses import dataclass
 
 from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, BlockError, FatalError
+from obsidian.constants import InitRegisterError, BlockError, FatalError, ClientError
 from obsidian.log import Logger
 
 
@@ -33,7 +36,24 @@ def Block(name: str, description: Optional[str] = None, version: Optional[str] =
 # Block Skeleton
 @dataclass
 class AbstractBlock(AbstractSubmodule):
-    ID: int = 5
+    ID: int = 0
+
+    async def placeBlock(self, ctx: Optional[Player], blockX, blockY, blockZ):
+        # Checking If User Can Set Blocks
+        if ctx is not None:  # Checking If User Was Passed
+            if not ctx.worldPlayerManager.world.canEdit:  # Checking If World Is Read-Only
+                if not ctx.opStatus:  # Checking If Player Is Not OP
+                    # Check If Air Exists (Prevents Crash if Stuff Wacky)
+                    if "Air" in Blocks._block_list:
+                        if self.ID == Blocks.Air.ID:
+                            raise ClientError("You Do Not Have Permission To Break This Block")
+                        else:
+                            raise ClientError("You Do Not Have Permission To Place This Block")
+                    else:
+                        raise ClientError("You Do Not Have Permission To Modify This Block")
+
+        # Setting Block in World
+        await ctx.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, self.ID, player=ctx)
 
 
 # Internal Block Manager Singleton
@@ -60,7 +80,7 @@ class _BlockManager(AbstractManager):
             if (block.ID not in self._blocks) and (block.NAME not in self._block_list.keys()):
                 Logger.warn(f"Block {block.NAME} (ID: {block.ID}) From Module {block.MODULE.NAME} Is Trying To Override A Block That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
-                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._block_list[block.NAME].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._blocks[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
 
         # Checking If Block Name Is Already In Blocks List
         # Ignoring if OVERRIDE is set

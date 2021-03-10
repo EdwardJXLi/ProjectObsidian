@@ -707,11 +707,15 @@ class CoreModule(AbstractModule):
         # Dynamically Create Class
         @Block(block)
         class CoreBlock(AbstractBlock):
-            def __init__(self):
-                super().__init__(ID=CoreModule.blockList.index(self.NAME))
+            def __init__(self, ID=None):
+                super().__init__(ID=ID if ID else CoreModule.blockList.index(self.NAME))
 
         # Deep Copy Object Into Local Scope With Custom Name
         locals()["CoreBlock" + block] = copy.deepcopy(CoreBlock)
 
         # Delete Existing CoreBlock To Prevent Redefinitions
         del CoreBlock
+
+    # Fixed Typing issues When Referencing To Blocks
+    def __getattr__(self, key: str):
+        return locals()["CoreBlock" + key]

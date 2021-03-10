@@ -14,8 +14,8 @@ from obsidian.player import WorldPlayerManager, Player
 from obsidian.blocks import BlockManager, Blocks
 from obsidian.worldformat import WorldFormats, AbstractWorldFormat
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
+from obsidian.packet import Packets
 from obsidian.constants import (
-    ClientError,
     FatalError,
     MapGenerationError,
     BlockError,
@@ -351,20 +351,28 @@ class World:
             raise BlockError(f"Requested Block Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
 
-    def setBlock(self, blockX, blockY, blockZ, blockType, player: Optional[Player] = None):
+    async def setBlock(self, blockX, blockY, blockZ, blockId, player: Optional[Player] = None, sendPacket: bool = True):
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
-        Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockType.ID}", module="world")
-
-        # Checking If User Can Set Blocks
-        if player is not None:  # Checking If User Was Passed
-            if not self.canEdit:  # Checking If World Is Read-Only
-                if not player.opStatus:  # Checking If Player Is Not OP
-                    raise ClientError("You Do Not Have Permission To Edit This Block")
+        Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockId}", module="world")
 
         # Check If Block Is Out Of Range
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
             raise BlockError(f"Block Placement Is Out Of Range ({blockX}, {blockY}, {blockZ})")
-        self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = blockType.ID
+
+        # Setting Block in MapArray
+        self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = blockId
+
+        if sendPacket:
+            # Sending Block Update Update Packet To All Players
+            await self.playerManager.sendWorldPacket(
+                Packets.Response.SetBlock,
+                blockX,
+                blockY,
+                blockZ,
+                blockId,
+                # not sending to self as that may cause some de-sync issues
+                ignoreList=[player] if player is not None else []
+            )
 
     def getHighestBlock(self, blockX, blockZ, start: int = None):
         # Returns the highest block

@@ -34,7 +34,7 @@ def MapGenerator(name: str, description: Optional[str] = None, version: Optional
 @dataclass
 class AbstractMapGenerator(AbstractSubmodule):
     def generateMap(self, sizeX, sizeY, sizeZ, *args, **kwargs):
-        return bytearray()
+        raise NotImplementedError("Map Generation Not Implemented")
 
 
 # Internal Map Generator Manager Singleton
