@@ -645,77 +645,252 @@ class CoreModule(AbstractModule):
     # BLOCKS
     #
 
-    # List Of Blocks To Be Registered
-    blockList = [
-        "Air",
-        "Stone",
-        "Grass",
-        "Dirt",
-        "Cobblestone",
-        "Planks",
-        "Sapling",
-        "Bedrock",
-        "FlowingWater",
-        "StationaryWater",
-        "FlowingLava",
-        "StationaryLava",
-        "Sand",
-        "Gravel",
-        "GoldOre",
-        "IronOre",
-        "CoalOre",
-        "Wood",
-        "Leaves",
-        "Sponge",
-        "Glass",
-        "RedCloth",
-        "OrangeCloth",
-        "YellowCloth",
-        "ChartreuseCloth",
-        "GreenCloth",
-        "Spring GreenCloth",
-        "CyanCloth",
-        "CapriCloth",
-        "UltramarineCloth",
-        "VioletCloth",
-        "PurpleCloth",
-        "MagentaCloth",
-        "RoseCloth",
-        "DarkGrayCloth",
-        "LightGrayCloth",
-        "WhiteCloth",
-        "Dandelion",
-        "Rose",
-        "BrownMushroom",
-        "RedMushroom",
-        "BlockGold",
-        "BlockIron",
-        "DoubleSlab",
-        "Slab",
-        "Bricks",
-        "TNT",
-        "Bookshelf",
-        "MossyCobblestone",
-        "Obsidian"
-    ]
+    @Block("Air")
+    class Air(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=0)
 
-    # Loop Through All Blocks And Register Block
-    for block in blockList:
-        # Add Block To Local Scope
-        # TODO: HACKY
+    @Block("Stone")
+    class Stone(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=1)
 
-        # Dynamically Create Class
-        @Block(block)
-        class CoreBlock(AbstractBlock):
-            def __init__(self, ID=None):
-                super().__init__(ID=ID if ID else CoreModule.blockList.index(self.NAME))
+    @Block("Grass")
+    class Grass(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=2)
 
-        # Deep Copy Object Into Local Scope With Custom Name
-        locals()["CoreBlock" + block] = copy.deepcopy(CoreBlock)
+    @Block("Dirt")
+    class Dirt(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=3)
 
-        # Delete Existing CoreBlock To Prevent Redefinitions
-        del CoreBlock
+    @Block("Cobblestone")
+    class Cobblestone(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=4)
 
-    # Fixed Typing issues When Referencing To Blocks
-    def __getattr__(self, key: str):
-        return locals()["CoreBlock" + key]
+    @Block("Planks")
+    class Planks(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=5)
+
+    @Block("Sapling")
+    class Sapling(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=6)
+
+    @Block("Bedrock")
+    class Bedrock(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=7)
+
+    @Block("FlowingWater")
+    class FlowingWater(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=8)
+
+    @Block("StationaryWater")
+    class StationaryWater(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=9)
+
+    @Block("FlowingLava")
+    class FlowingLava(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=10)
+
+    @Block("StationaryLava")
+    class StationaryLava(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=11)
+
+    @Block("Sand")
+    class Sand(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=12)
+
+    @Block("Gravel")
+    class Gravel(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=13)
+
+    @Block("GoldOre")
+    class GoldOre(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=14)
+
+    @Block("IronOre")
+    class IronOre(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=15)
+
+    @Block("CoalOre")
+    class CoalOre(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=16)
+
+    @Block("Wood")
+    class Wood(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=17)
+
+    @Block("Leaves")
+    class Leaves(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=18)
+
+    @Block("Sponge")
+    class Sponge(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=19)
+
+    @Block("Glass")
+    class Glass(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=20)
+
+    @Block("RedCloth")
+    class RedCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=21)
+
+    @Block("OrangeCloth")
+    class OrangeCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=22)
+
+    @Block("YellowCloth")
+    class YellowCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=23)
+
+    @Block("ChartreuseCloth")
+    class ChartreuseCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=24)
+
+    @Block("GreenCloth")
+    class GreenCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=25)
+
+    @Block("SpringGreenCloth")
+    class SpringGreenCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=26)
+
+    @Block("CyanCloth")
+    class CyanCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=27)
+
+    @Block("CapriCloth")
+    class CapriCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=28)
+
+    @Block("UltramarineCloth")
+    class UltramarineCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=29)
+
+    @Block("VioletCloth")
+    class VioletCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=30)
+
+    @Block("PurpleCloth")
+    class PurpleCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=31)
+
+    @Block("MagentaCloth")
+    class MagentaCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=32)
+
+    @Block("RoseCloth")
+    class RoseCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=33)
+
+    @Block("DarkGrayCloth")
+    class DarkGrayCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=34)
+
+    @Block("LightGrayCloth")
+    class LightGrayCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=35)
+
+    @Block("WhiteCloth")
+    class WhiteCloth(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=36)
+
+    @Block("Dandelion")
+    class Dandelion(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=37)
+
+    @Block("Rose")
+    class Rose(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=38)
+
+    @Block("BrownMushroom")
+    class BrownMushroom(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=39)
+
+    @Block("RedMushroom")
+    class RedMushroom(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=40)
+
+    @Block("BlockGold")
+    class BlockGold(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=41)
+
+    @Block("BlockIron")
+    class BlockIron(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=42)
+
+    @Block("DoubleSlab")
+    class DoubleSlab(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=43)
+
+    @Block("Slab")
+    class Slab(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=44)
+
+    @Block("Bricks")
+    class Bricks(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=45)
+
+    @Block("TNT")
+    class TNT(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=46)
+
+    @Block("Bookshelf")
+    class Bookshelf(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=47)
+
+    @Block("MossyCobblestone")
+    class MossyCobblestone(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=48)
+
+    @Block("Obsidian")
+    class Obsidian(AbstractBlock):
+        def __init__(self):
+            super().__init__(ID=49)

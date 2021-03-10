@@ -17,10 +17,10 @@ class CoreModule(AbstractModule):
     def __init__(self):
         super().__init__()
 
-    @Block("SpecialStone", override=True)
-    class SpecialStone(CoreModule.CoreBlockStone):
+    @Block("Stone", override=True)
+    class SpecialStone(CoreModule.Stone):
         def __init__(self):
-            super().__init__(ID=1)
+            super().__init__()
 
         async def placeBlock(self, ctx: Optional[Player], blockX, blockY, blockZ):
             await super().placeBlock(ctx, blockX, blockY, blockZ)
