@@ -17,11 +17,9 @@ from obsidian.packet import (
 )
 
 import struct
-import copy
 import gzip
 import io
 import os
-from typing import Optional
 
 
 @Module(
@@ -51,7 +49,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=False
             )
 
-        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+        async def deserialize(self, ctx: Player, rawData: bytearray):
             # <Player Identification Packet>
             # (Byte) Packet ID
             # (Byte) Protocol Version
@@ -89,7 +87,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+        async def deserialize(self, ctx: Player, rawData: bytearray):
             # <Block Update Packet>
             # (Byte) Packet ID
             # (Short) X Position
@@ -124,7 +122,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+        async def deserialize(self, ctx: Player, rawData: bytearray):
             # <Player Movement Packet>
             # (Byte) Packet ID
             # (Byte) Player ID  <- Should Always Be 255
@@ -153,7 +151,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+        async def deserialize(self, ctx: Player, rawData: bytearray):
             # <Player Message Packet>
             # (Byte) Packet ID
             # (Byte) Unused (Should Always Be 0xFF)
