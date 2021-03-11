@@ -33,7 +33,7 @@ def MapGenerator(name: str, description: Optional[str] = None, version: Optional
 # Map Generator Skeleton
 @dataclass
 class AbstractMapGenerator(AbstractSubmodule):
-    def generateMap(self, sizeX, sizeY, sizeZ, *args, **kwargs):
+    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, *args, **kwargs):
         raise NotImplementedError("Map Generation Not Implemented")
 
 

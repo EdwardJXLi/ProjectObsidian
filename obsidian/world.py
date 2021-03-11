@@ -89,15 +89,16 @@ class WorldManager:
             worldName,  # Pass In World Name
             sizeX, sizeY, sizeZ,  # Passing World X, Y, Z
             self.generateMap(sizeX, sizeY, sizeZ, generator, *args, **kwargs),  # Generating Map Data
-            generator=generator,  # Pass In World Generator
-            persistant=persistant,  # Pass In Persistant Flag
-            fileIO=fileIO,  # Pass In FileIO Object (if persistant set)
             # Spawn Information
             spawnX=spawnX,
             spawnY=spawnY,
             spawnZ=spawnZ,
             spawnPitch=spawnPitch,
-            spawnYaw=spawnYaw
+            spawnYaw=spawnYaw,
+            # World Config Info
+            generator=generator,  # Pass In World Generator
+            persistant=persistant,  # Pass In Persistant Flag
+            fileIO=fileIO  # Pass In FileIO Object (if persistant set)
         )
 
         # Saving World
@@ -264,15 +265,15 @@ class World:
         sizeY: int,
         sizeZ: int,
         mapArray: bytearray,
-        generator: AbstractMapGenerator = None,
-        persistant: bool = False,
-        fileIO: Optional[io.BufferedRandom] = None,
-        canEdit: bool = True,
         spawnX: Optional[int] = None,
         spawnY: Optional[int] = None,
         spawnZ: Optional[int] = None,
         spawnYaw: Optional[int] = None,
         spawnPitch: Optional[int] = None,
+        generator: AbstractMapGenerator = None,
+        persistant: bool = False,
+        fileIO: Optional[io.BufferedRandom] = None,
+        canEdit: bool = True,
         maxPlayers: int = 250,
         displayName: str = None,
         uuid: str = None
@@ -342,7 +343,7 @@ class World:
         Logger.info("Initializing World Player Manager", module="init-world")
         self.playerManager = WorldPlayerManager(self)
 
-    def getBlock(self, blockX, blockY, blockZ):
+    def getBlock(self, blockX: int, blockY: int, blockZ: int):
         # Gets Block Obj Of Requested Block
         Logger.verbose(f"Getting World Block {blockX}, {blockY}, {blockZ}", module="world")
 
@@ -351,7 +352,7 @@ class World:
             raise BlockError(f"Requested Block Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
 
-    async def setBlock(self, blockX, blockY, blockZ, blockId, player: Optional[Player] = None, sendPacket: bool = True):
+    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Optional[Player] = None, sendPacket: bool = True):
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
         Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockId}", module="world")
 
@@ -374,7 +375,7 @@ class World:
                 ignoreList=[player] if player is not None else []
             )
 
-    def getHighestBlock(self, blockX, blockZ, start: int = None):
+    def getHighestBlock(self, blockX: int, blockZ: int, start: Optional[int] = None):
         # Returns the highest block
         # Set and Verify Scan Start Value
         if start is None:
@@ -402,7 +403,7 @@ class World:
         else:
             Logger.warn(f"World {self.name} Is Not Persistant! Not Saving.", module="world-save")
 
-    def gzipMap(self, compressionLevel=-1, includeSizeHeader=False):
+    def gzipMap(self, compressionLevel: int = -1, includeSizeHeader: bool = False):
         # If Gzip Compression Level Is -1, Use Default!
         # includeSizeHeader Dictates If Output Should Include Map Size Header Used For Level Init
 

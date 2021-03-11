@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from obsidian.server import Server
 
 import asyncio
-from typing import Type
+from typing import Type, Optional
 
 from obsidian.log import Logger
 from obsidian.world import World
@@ -145,7 +145,7 @@ class NetworkHandler:
             world.sizeZ
         )
 
-    async def closeConnection(self, reason=None, notifyPlayer=False):
+    async def closeConnection(self, reason: Optional[str] = None, notifyPlayer: bool = False):
         # Setting Up Reason If None
         if reason is None:
             reason = "No Reason Provided"
@@ -174,7 +174,7 @@ class NetworkDispacher:
     async def readPacket(
         self,
         packet: Type[AbstractRequestPacket],
-        timeout=NET_TIMEOUT,
+        timeout: int = NET_TIMEOUT,
         checkId=True
     ):
         try:
@@ -209,7 +209,7 @@ class NetworkDispacher:
         self,
         packet: Type[AbstractResponsePacket],
         *args,
-        timeout=NET_TIMEOUT,
+        timeout: int = NET_TIMEOUT,
         **kwargs
     ):
         try:
@@ -234,10 +234,10 @@ class NetworkDispacher:
     # Used in main listen loop; expect multiple types of packets!
     async def listenForPackets(
         self,
-        packetDict={},
-        headerSize=1,
-        ignoreUnknownPackets=False,
-        timeout=NET_TIMEOUT
+        packetDict: dict = {},
+        headerSize: int = 1,
+        ignoreUnknownPackets: bool = False,
+        timeout: int = NET_TIMEOUT
     ):
         try:
             # Reading First Byte For Packet Header

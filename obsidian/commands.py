@@ -50,7 +50,7 @@ class AbstractCommand(AbstractSubmodule):
 # == Command Utils ==
 
 # Take Parameter Info + Argument Info To Automatically Convert Types
-def _convertArgs(name, param, arg):
+def _convertArgs(name: str, param: inspect.Parameter, arg: str):
     Logger.verbose(f"Transforming Argument Data For Argument {name}", module="command")
 
     # If There Is No Type To Convert, Ignore
@@ -65,7 +65,7 @@ def _convertArgs(name, param, arg):
 
 
 # Parse Command Argument Into Args and KWArgs In Accordance To Command Information
-def _parseArgs(command, data: list):
+def _parseArgs(command: Type[AbstractCommand], data: list):
     # This entire section is inspired by Discord.py 's Aprroach To Message Parsing and Handing
     # TODO: IGNORE_EXTRA, REST_IS_RAW, REQUIRE_VAR_POSITIONAL
     Logger.debug(f"Parsing Command Arguments {data} For Command {command.NAME}", module="command")
@@ -211,7 +211,7 @@ class _CommandManager(AbstractManager):
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
     # FUnction To Get Command Object From Command Name
-    def getCommandFromName(self, name):
+    def getCommandFromName(self, name: str):
         if name in self._activators.keys():
             return self._activators[name]
         else:

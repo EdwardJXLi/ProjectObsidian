@@ -80,7 +80,7 @@ class _ModuleManager(AbstractManager):
 
     # Function to libimport all modules
     # EnsureCore ensures core module is present
-    def initModules(self, blacklist=[], ensureCore=True):
+    def initModules(self, blacklist: List[str] = [], ensureCore: bool = True):
         # Setting Vars
         self._ensure_core = ensureCore
         self._module_blacklist = blacklist
@@ -473,7 +473,7 @@ class _ModuleManager(AbstractManager):
 @dataclass
 class Dependency:
     # Base Init - Main Data
-    def __init__(self, name, version=None):
+    def __init__(self, name: str, version: Optional[str] = None):
         # User Defined Values
         self.NAME = name.lower()
         self.VERSION = version

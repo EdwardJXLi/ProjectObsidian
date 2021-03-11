@@ -6,6 +6,7 @@ import datetime
 import sys
 import os
 
+from typing import Optional, List
 from obsidian.constants import Colour
 
 
@@ -19,7 +20,7 @@ class Logger:
         return time.strftime("%H:%M:%S", time.localtime())
 
     @classmethod
-    def setupLogFile(cls, logPath=None):
+    def setupLogFile(cls, logPath: Optional[str] = None):
         # Setup LogPath If Not Defined
         if logPath is None:
             logPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -35,7 +36,7 @@ class Logger:
         )
 
     @classmethod
-    def log(cls, message, tags=[], colour=Colour.NONE, textColour=Colour.NONE):
+    def log(cls, message: str, tags: List[str] = [], colour: str = Colour.NONE, textColour: str = Colour.NONE):
         # Generating Message (Add Tags, Message, Format, Etc)
         output = ""
         # Adding Tags
@@ -79,7 +80,7 @@ class Logger:
                 sys.exit()
 
     @classmethod
-    def info(cls, message, module="unknown"):
+    def info(cls, message: str, module: str = "unknown"):
         cls.log(
             str(message),
             tags=[cls._getTimestamp(), "log", module],
@@ -88,7 +89,7 @@ class Logger:
         )
 
     @classmethod
-    def warn(cls, message, module="unknown"):
+    def warn(cls, message: str, module: str = "unknown"):
         cls.log(
             str(message),
             tags=[cls._getTimestamp(), "warn", module],
@@ -97,7 +98,7 @@ class Logger:
         )
 
     @classmethod
-    def error(cls, message, module="unknown", printTb=True):
+    def error(cls, message: str, module: str = "unknown", printTb: bool = True):
         if cls.DEBUG and printTb:
             cls.log(f"{traceback.format_exc()}")
         cls.log(
@@ -108,7 +109,7 @@ class Logger:
         )
 
     @classmethod
-    def fatal(cls, message, module="unknown", printTb=True):
+    def fatal(cls, message: str, module: str = "unknown", printTb: bool = True):
         if cls.DEBUG and printTb:
             cls.log(f"{traceback.format_exc()}")
         cls.log(
@@ -119,7 +120,7 @@ class Logger:
         )
 
     @classmethod
-    def debug(cls, message, module="unknown"):
+    def debug(cls, message: str, module: str = "unknown"):
         if cls.DEBUG:
             cls.log(
                 str(message),
@@ -129,7 +130,7 @@ class Logger:
             )
 
     @classmethod
-    def verbose(cls, message, module="unknown"):
+    def verbose(cls, message: str, module: str = "unknown"):
         if cls.DEBUG and cls.VERBOSE:
             cls.log(
                 str(message),

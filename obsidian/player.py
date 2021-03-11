@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from obsidian.server import Server
     from obsidian.world import World
     from obsidian.network import NetworkHandler
+    from obsidian.blocks import AbstractBlock
 
 from typing import List, Optional, Type, Union
 
@@ -101,7 +102,7 @@ class PlayerManager:
 
         # Finally, send formatted message
         Logger.log(
-            message,
+            str(message),
             tags=[Logger._getTimestamp(), "chat", "global"],
             colour=Colour.GREEN,
             textColour=Colour.WHITE
@@ -128,13 +129,20 @@ class WorldPlayerManager:
         player.playerId = playerId
         self.players[playerId] = player
 
-        # Set Player Location
-        # TODO saving player location
-        player.posX = self.world.spawnX
-        player.posY = self.world.spawnY
-        player.posZ = self.world.spawnZ
-        player.posYaw = self.world.spawnYaw
-        player.posPitch = self.world.spawnPitch
+        # Solve rare edge case where Spawn coords may not be set!
+        if (self.world.spawnX and self.world.spawnY and self.world.spawnZ and self.world.spawnYaw and self.world.spawnPitch):
+            # Set Player Location
+            # TODO saving player location
+            await player.setLocation(
+                self.world.spawnX,
+                self.world.spawnY,
+                self.world.spawnZ,
+                self.world.spawnYaw,
+                self.world.spawnPitch,
+                notifyPlayers=False
+            )
+        else:
+            raise ServerError("Attempted To Spawn Player to a Location That Is Not Set!")
 
         # Send Player Join Packet To All Players (Except Joining User)
         await self.sendWorldPacket(
@@ -287,7 +295,7 @@ class WorldPlayerManager:
 
         # Finally, send formatted message
         Logger.log(
-            message,
+            str(message),
             tags=[Logger._getTimestamp(), "chat", "world", self.world.name],
             colour=Colour.GREEN,
             textColour=Colour.WHITE
@@ -317,6 +325,30 @@ class Player:
         # Attaching Player Onto World Player Manager
         await self.worldPlayerManager.joinPlayer(self)
 
+    async def setLocation(self, posX: int, posY: int, posZ: int, posYaw: int = 0, posPitch: int = 0, notifyPlayers: bool = True):
+        Logger.debug(f"Setting New Player Location for Player {self.name} (X: {posX}, Y: {posY}, Z: {posZ}, Yaw: {posYaw}, Pitch: {posPitch})", module="player")
+
+        # Set the Player Location
+        self.posX = posX
+        self.posY = posY
+        self.posZ = posZ
+        self.posYaw = posYaw
+        self.posPitch = posPitch
+
+        # Send Location Update
+        if notifyPlayers:
+            # Sending Player Position Update Packet To All Players
+            await self.worldPlayerManager.sendWorldPacket(
+                Packets.Response.PlayerPositionUpdate,
+                self.playerId,
+                posX,
+                posY,
+                posZ,
+                posYaw,
+                posPitch
+                # Not ignoring self as we WANT to update player
+            )
+
     async def sendMessage(self, message: Union[str, list]):
         Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
         # If Message Is A List, Recursively Send All Messages Within
@@ -328,7 +360,7 @@ class Player:
 
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
 
-    async def handleBlockUpdate(self, blockX, blockY, blockZ, blockType):
+    async def handleBlockUpdate(self, blockX: int, blockY: int, blockZ: int, blockType: AbstractBlock):
         # Format, Process, and Handle incoming block update requests.
         Logger.debug(f"Handling Block Placement From Player {self.name}", module="player")
 
@@ -354,7 +386,7 @@ class Player:
             # Send Error Message To
             await self.sendMessage(f"&c{e}&f")
 
-    async def handlePlayerMovement(self, posX, posY, posZ, posYaw, posPitch):
+    async def handlePlayerMovement(self, posX: int, posY: int, posZ: int, posYaw: int, posPitch: int):
         # Format, Process, and Handle incoming player movement requests.
         Logger.verbose(f"Handling Player Movement From Player {self.name}", module="player")
 

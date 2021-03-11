@@ -38,7 +38,7 @@ def Block(name: str, description: Optional[str] = None, version: Optional[str] =
 class AbstractBlock(AbstractSubmodule):
     ID: int = 0
 
-    async def placeBlock(self, ctx: Optional[Player], blockX, blockY, blockZ):
+    async def placeBlock(self, ctx: Optional[Player], blockX: int, blockY: int, blockZ: int):
         # Checking If User Can Set Blocks
         if ctx is not None:  # Checking If User Was Passed
             if not ctx.worldPlayerManager.world.canEdit:  # Checking If World Is Read-Only
@@ -126,7 +126,7 @@ class _BlockManager(AbstractManager):
         return list(self._blocks.keys())
 
     # Function To Get Block Object From BlockId
-    def getBlockById(self, blockId):
+    def getBlockById(self, blockId: int):
         if blockId in self._blocks.keys():
             return self._blocks[blockId]
         else:

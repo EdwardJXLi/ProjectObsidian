@@ -27,19 +27,19 @@ class PacketDirections(enum.Enum):
 
 
 # Packet Utils
-def unpackageString(data, encoding="ascii"):
+def unpackageString(data, encoding: str = "ascii"):
     Logger.verbose(f"Unpacking String {data}", module="packet")
     # Decode Data From Bytes To String
     # Remove Excess Zeros
     return data.decode(encoding).strip()
 
 
-def packageString(data, maxSize=64, encoding="ascii"):
+def packageString(data: str, maxSize: int = 64, encoding: str = "ascii"):
     Logger.verbose(f"Packing String {data}", module="packet")
     # Trim Text Down To maxSize
     # Fill Blank Space With Spaces Using ljust
     # Encode String Into Bytes Using Encoding
-    return bytearray(str(data)[:maxSize].ljust(maxSize), encoding)
+    return bytearray(data[:maxSize].ljust(maxSize), encoding)
 
 
 # Packet Skeleton
@@ -50,7 +50,7 @@ class AbstractPacket(AbstractSubmodule):
     CRITICAL: bool = False  # Packet Criticality. Dictates What Event Should Occur When Error
 
     # Error Handler. Called If Critical If False And An Error Occurs
-    def onError(self, error):
+    def onError(self, error: str):
         Logger.error(f"Packet {self.NAME} Raised Error {error}", module="packet")
 
     @property
@@ -168,7 +168,7 @@ class _DirectionalPacketManager(AbstractManager):
     def getAllPacketIds(self):
         return [obj.ID for obj in self._packet_list.values()]
 
-    def getPacketById(self, packetId):
+    def getPacketById(self, packetId: int):
         # Search Packet With Matching packetId
         for packet in self._packet_list.values():
             if packet.ID == packetId:
