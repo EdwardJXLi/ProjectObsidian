@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Type, Optional
+from typing import Type
 from dataclasses import dataclass
 
-from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
+from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.constants import InitRegisterError, FatalError
 from obsidian.log import Logger
@@ -11,23 +11,8 @@ from obsidian.log import Logger
 
 # Map Generator Decorator
 # Used In @MapGenerator
-def MapGenerator(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
-    def internal(cls):
-        Logger.verbose(f"Registered Map Generator {name} version {version}", module="submodule-import")
-
-        # Set Class Variables
-        cls.NAME = name
-        cls.DESCRIPTION = description
-        cls.VERSION = version
-        cls.OVERRIDE = override
-        cls.MANAGER = MapGeneratorManager
-
-        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
-        cls.obsidian_submodule = True
-
-        # Return cls Obj for Decorator
-        return cls
-    return internal
+def MapGenerator(*args, **kwargs):
+    return Submodule(MapGeneratorManager, *args, **kwargs)
 
 
 # Map Generator Skeleton

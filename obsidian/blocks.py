@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 from typing import Type, Optional
 from dataclasses import dataclass
 
-from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
+from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.constants import InitRegisterError, BlockError, FatalError, ClientError
 from obsidian.log import Logger
@@ -14,23 +14,8 @@ from obsidian.log import Logger
 
 # Block Decorator
 # Used In @Block
-def Block(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
-    def internal(cls):
-        Logger.verbose(f"Registered Block {name} version {version}", module="submodule-import")
-
-        # Set Class Variables
-        cls.NAME = name
-        cls.DESCRIPTION = description
-        cls.VERSION = version
-        cls.OVERRIDE = override
-        cls.MANAGER = BlockManager
-
-        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
-        cls.obsidian_submodule = True
-
-        # Return cls Obj for Decorator
-        return cls
-    return internal
+def Block(*args, **kwargs):
+    return Submodule(BlockManager, *args, **kwargs)
 
 
 # Block Skeleton

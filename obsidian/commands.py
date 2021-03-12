@@ -7,7 +7,7 @@ from typing import Type, Optional, List
 from dataclasses import dataclass, field
 import inspect
 
-from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
+from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.constants import (
@@ -19,23 +19,8 @@ from obsidian.constants import (
 
 # Command Decorator
 # Used In @Command
-def Command(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
-    def internal(cls):
-        Logger.verbose(f"Registered Command {name} version {version}", module="submodule-import")
-
-        # Set Class Variables
-        cls.NAME = name
-        cls.DESCRIPTION = description
-        cls.VERSION = version
-        cls.OVERRIDE = override
-        cls.MANAGER = CommandManager
-
-        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
-        cls.obsidian_submodule = True
-
-        # Return cls Obj for Decorator
-        return cls
-    return internal
+def Command(*args, **kwargs):
+    return Submodule(CommandManager, *args, **kwargs)
 
 
 # Command Skeleton

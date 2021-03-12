@@ -20,23 +20,10 @@ from obsidian.constants import (
 )
 
 
-# Module Skeleton
-@dataclass
-class AbstractModule:
-    NAME: str = ""
-    DESCRIPTION: str = ""
-    AUTHOR: str = ""
-    VERSION: str = ""
-    DEPENDENCIES: list = field(default_factory=list)
-
-    def postInit(*args, **kwargs):
-        pass
-
-
 # Manager Skeleton
-@dataclass
 class AbstractManager:
-    NAME: str
+    def __init__(self, name: str):
+        self.NAME = name
 
     def _initSubmodule(self, submodule: Any, module: AbstractModule):
         Logger.debug(f"Initializing {submodule.MANAGER.NAME} {submodule.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
@@ -51,6 +38,19 @@ class AbstractManager:
         obj.MODULE = module
 
         return obj
+
+
+# Module Skeleton
+@dataclass
+class AbstractModule:
+    NAME: str = ""
+    DESCRIPTION: str = ""
+    AUTHOR: str = ""
+    VERSION: str = ""
+    DEPENDENCIES: list = field(default_factory=list)
+
+    def postInit(*args, **kwargs):
+        pass
 
 
 # Submodule Skeleton
@@ -504,6 +504,28 @@ def Module(
 ):
     def internal(cls):
         ModuleManager.register(name, description, author, version, dependencies, cls)
+        return cls
+    return internal
+
+
+# Global Function to Register Submodules
+# Called by @ Decorators Handlers
+# Returns function as per Python Spec
+def Submodule(submodule: AbstractManager, name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
+    def internal(cls):
+        Logger.verbose(f"Registered {submodule.NAME} {name} version {version}", module="submodule-import")
+
+        # Set Class Variables
+        cls.NAME = name
+        cls.DESCRIPTION = description
+        cls.VERSION = version
+        cls.OVERRIDE = override
+        cls.MANAGER = submodule
+
+        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
+        cls.obsidian_submodule = True
+
+        # Return cls Obj for Decorator
         return cls
     return internal
 

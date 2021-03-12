@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 from typing import Type, Optional, List
 from dataclasses import dataclass, field
 
-from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
+from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.constants import InitRegisterError, FatalError
 from obsidian.log import Logger
@@ -15,23 +15,8 @@ from obsidian.log import Logger
 
 # World Format Decorator
 # Used In @WorldFormat
-def WorldFormat(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
-    def internal(cls):
-        Logger.verbose(f"Registered World Format {name} version {version}", module="submodule-import")
-
-        # Set Class Variables
-        cls.NAME = name
-        cls.DESCRIPTION = description
-        cls.VERSION = version
-        cls.OVERRIDE = override
-        cls.MANAGER = WorldFormatManager
-
-        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
-        cls.obsidian_submodule = True
-
-        # Return cls Obj for Decorator
-        return cls
-    return internal
+def WorldFormat(*args, **kwargs):
+    return Submodule(WorldFormatManager, *args, **kwargs)
 
 
 # World Format Skeleton

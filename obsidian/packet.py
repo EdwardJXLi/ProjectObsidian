@@ -7,7 +7,7 @@ import enum
 import struct
 from typing import Type, Optional
 from dataclasses import dataclass
-from obsidian.module import AbstractModule, AbstractSubmodule, AbstractManager
+from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
 # from obsidian.network import *
 from obsidian.constants import (
@@ -79,44 +79,14 @@ class AbstractResponsePacket(AbstractPacket):
 
 # Request Packet Decorator
 # Used In @RequestPacket
-def RequestPacket(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
-    def internal(cls):
-        Logger.verbose(f"Registered Request Packet {name} version {version}", module="submodule-import")
-
-        # Set Class Variables
-        cls.NAME = name
-        cls.DESCRIPTION = description
-        cls.VERSION = version
-        cls.OVERRIDE = override
-        cls.MANAGER = PacketManager.RequestManager
-
-        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
-        cls.obsidian_submodule = True
-
-        # Return cls Obj for Decorator
-        return cls
-    return internal
+def RequestPacket(*args, **kwargs):
+    return Submodule(PacketManager.RequestManager, *args, **kwargs)
 
 
 # Response Packet Decorator
 # Used In @ResponsePacket
-def ResponsePacket(name: str, description: Optional[str] = None, version: Optional[str] = None, override: bool = False):
-    def internal(cls):
-        Logger.verbose(f"Registered Response Packet {name} version {version}", module="submodule-import")
-
-        # Set Class Variables
-        cls.NAME = name
-        cls.DESCRIPTION = description
-        cls.VERSION = version
-        cls.OVERRIDE = override
-        cls.MANAGER = PacketManager.ResponseManager
-
-        # Set Obsidian Submodule to True -> Notifies Init that This Class IS a Submodule
-        cls.obsidian_submodule = True
-
-        # Return cls Obj for Decorator
-        return cls
-    return internal
+def ResponsePacket(*args, **kwargs):
+    return Submodule(PacketManager.ResponseManager, *args, **kwargs)
 
 
 # Internal Directional Packet Manager
