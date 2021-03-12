@@ -130,7 +130,13 @@ class WorldPlayerManager:
         self.players[playerId] = player
 
         # Solve rare edge case where Spawn coords may not be set!
-        if (self.world.spawnX and self.world.spawnY and self.world.spawnZ and self.world.spawnYaw and self.world.spawnPitch):
+        if (
+            self.world.spawnX is not None and
+            self.world.spawnY is not None and
+            self.world.spawnZ is not None and
+            self.world.spawnYaw is not None and
+            self.world.spawnPitch is not None
+        ):
             # Set Player Location
             # TODO saving player location
             await player.setLocation(
