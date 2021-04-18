@@ -12,6 +12,7 @@ vanilla
 # Testing Folders
 testing
 test-modules
+protocol-test
 
 # Pycache
 __pycache__
