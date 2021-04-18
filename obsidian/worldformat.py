@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from obsidian.world import World, WorldManager
     import io
 
-from typing import Type, Optional, List
+from typing import Type, List
 from dataclasses import dataclass, field
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager

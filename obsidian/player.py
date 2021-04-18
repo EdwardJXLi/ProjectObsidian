@@ -283,7 +283,7 @@ class WorldPlayerManager:
                 await self.sendWorldMessage(msg, author=author, worldTag=worldTag, ignoreList=ignoreList)
             return None  # Break Out of Function
 
-        # Hacky Way To Get isintance World
+        # Hacky Way To Get World Type
         # Format Message To Be Sent
         # Add Author Tag
         if isinstance(author, str):

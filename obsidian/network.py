@@ -188,9 +188,10 @@ class NetworkDispacher:
             Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}", module="network")
 
             # Check If Packet ID is Valid
-            if checkId and rawData[0] != packet.ID:
+            header = rawData[0]  # type: ignore
+            if checkId and header != packet.ID:
                 Logger.verbose(f"{self.handler.ip} | Packet Invalid!", module="network")
-                raise ClientError(f"Invalid Packet {rawData[0]}")
+                raise ClientError(f"Invalid Packet {header}")
 
             # Deserialize Packet
             # TODO: Fix type complaint!

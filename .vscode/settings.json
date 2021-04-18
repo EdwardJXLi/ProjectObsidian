@@ -46,7 +46,5 @@
         ".vscode",
         "**/testing/**",
         "**/protocol-test/*"
-    ],
-    "python.pythonPath": "C:\\Users\\EDWARD-LAPTOP\\AppData\\Local\\Programs\\Python\\Python38-32\\python.exe",
-    "jupyter.jupyterServerType": "remote"
+    ]
 }

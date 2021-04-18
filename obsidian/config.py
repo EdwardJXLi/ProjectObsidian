@@ -25,8 +25,8 @@ class ServerConfig:
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     defaultWorld: str = "default"  # Name Of Default World
-    serverMaxPlayers: int = 1000  # Number Of Players Max Allowed On The Entire Server
-    worldMaxPlayers: int = 200  # Number Of Players Max Allowed In One World
+    serverMaxPlayers: int = 128  # Number Of Players Max Allowed On The Entire Server
+    worldMaxPlayers: int = 128  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
     defaultWorldSizeX: int = 256  # Default Size X
     defaultWorldSizeY: int = 256  # Default Size Y

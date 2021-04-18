@@ -532,6 +532,7 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self):
+            raise NotImplementedError()
             return None  # TODO
 
     #
