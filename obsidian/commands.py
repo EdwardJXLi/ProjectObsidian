@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Type, Optional, List
+from typing import Dict, Type, Optional, List
 from dataclasses import dataclass, field
 import inspect
 
@@ -50,7 +50,7 @@ def _convertArgs(name: str, param: inspect.Parameter, arg: str):
 
 
 # Parse Command Argument Into Args and KWArgs In Accordance To Command Information
-def _parseArgs(command: Type[AbstractCommand], data: list):
+def _parseArgs(command: AbstractCommand, data: list):
     # This entire section is inspired by Discord.py 's Aprroach To Message Parsing and Handing
     # TODO: IGNORE_EXTRA, REST_IS_RAW, REQUIRE_VAR_POSITIONAL
     Logger.debug(f"Parsing Command Arguments {data} For Command {command.NAME}", module="command")
@@ -131,9 +131,9 @@ class _CommandManager(AbstractManager):
         super().__init__("Command")
 
         # Creates List Of Commands That Has The Command Name As Keys
-        self._command_list = dict()
+        self._command_list: Dict[str, AbstractCommand] = dict()
         # Create Cache Of Activator to Obj
-        self._activators = dict()
+        self._activators: Dict[str, AbstractCommand] = dict()
 
     # Registration. Called by Command Decorator
     def register(self, commandClass: Type[AbstractCommand], module: AbstractModule):
@@ -150,7 +150,7 @@ class _CommandManager(AbstractManager):
                 Logger.debug(f"Command {command.NAME} Is Overriding Command {self._command_list[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
                 # Un-registering All Activators for the Command Being Overwritten. Prevents Issues!
                 Logger.debug(f"Un-registering Activators for Command {self._command_list[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
-                for activator in list(self._command_list[command.NAME].ACTIVATORS.keys()):
+                for activator in list(self._command_list[command.NAME].ACTIVATORS):
                     # Deleting from Cache
                     del self._activators[activator]
 

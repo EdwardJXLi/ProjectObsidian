@@ -24,9 +24,9 @@ from obsidian.constants import (
 # The Overall Server Player Manager
 class PlayerManager:
     def __init__(self, server: Server, maxSize: int = 1024):
-        self.server = server
-        self.players = []  # List of players (no order)
-        self.maxSize = maxSize
+        self.server: Server = server
+        self.players: List[Player] = []  # List of players (no order)
+        self.maxSize: int = maxSize
 
     async def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
         Logger.debug(f"Creating Player For Ip {network.ip}", module="player-manager")
@@ -53,7 +53,7 @@ class PlayerManager:
 
         Logger.debug(f"Successfully Removed Player {player.name}", module="player-manager")
 
-    async def sendGlobalPacket(self, packet: AbstractResponsePacket, *args, ignoreList: List[Player] = [], **kwargs):
+    async def sendGlobalPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
         # Send packet to ALL members connected to server (all worlds)
         Logger.verbose(f"Sending Packet {packet.NAME} To All Connected Players", module="global-packet-dispatcher")
         # Loop Through All Players
@@ -113,8 +113,8 @@ class PlayerManager:
 # The Specific Player Manager Per World
 class WorldPlayerManager:
     def __init__(self, world: World):
-        self.world = world
-        self.players: List[Optional[Player]] = [None] * world.maxPlayers  # type: ignore
+        self.world: World = world
+        self.player_slots: List[Optional[Player]] = [None] * world.maxPlayers
 
     async def joinPlayer(self, player: Player):
         # Trying To Allocate Id
@@ -127,7 +127,7 @@ class WorldPlayerManager:
         # Adding Player To Players List Using Id
         Logger.debug(f"Player {player.networkHandler.ip} Username {player.name} Id {playerId} Is Joining World {self.world.name}", module="world-player")
         player.playerId = playerId
-        self.players[playerId] = player
+        self.player_slots[playerId] = player
 
         # Solve rare edge case where Spawn coords may not be set!
         if (
@@ -178,7 +178,7 @@ class WorldPlayerManager:
 
     async def spawnCurrentPlayers(self, playerSelf: Player):  # Update Joining Players of The Currently In-Game Players
         # Loop Through All Players
-        for player in self.players:
+        for player in self.player_slots:
             # Checking if Player Exists
             if player is None:
                 continue
@@ -230,7 +230,7 @@ class WorldPlayerManager:
     def allocateId(self):
         # Loop Through All Ids, Return Id That Is Not Free
         Logger.debug("Trying To Allocate Id", module="id-allocator")
-        for idIndex, playerObj in enumerate(self.players):
+        for idIndex, playerObj in enumerate(self.player_slots):
             if playerObj is None:
                 # Return Free ID
                 return idIndex
@@ -239,9 +239,9 @@ class WorldPlayerManager:
 
     def deallocateId(self, playerId: int):
         # Check If Id Is Already Deallocated
-        if self.players[playerId] is None:
+        if self.player_slots[playerId] is None:
             Logger.error(f"Trying To Deallocate Non Allocated Id {playerId}", module="id-allocator", printTb=False)
-        self.players[playerId] = None
+        self.player_slots[playerId] = None
 
         Logger.debug(f"Deallocated Id {playerId}", module="id-allocator")
 
@@ -249,7 +249,7 @@ class WorldPlayerManager:
         # Send packet to all members in world
         Logger.verbose(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="world-packet-dispatcher")
         # Loop Through All Players
-        for player in self.players:
+        for player in self.player_slots:
             # Checking if Player Exists
             if player is None:
                 continue
@@ -310,18 +310,18 @@ class WorldPlayerManager:
 
 
 class Player:
-    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, name, key, opStatus=False):
-        self.name = name
-        self.posX = 0,
-        self.posY = 0,
-        self.posZ = 0,
-        self.posYaw = 0,
-        self.posPitch = 0,
-        self.verificationKey = key
-        self.opStatus = opStatus
-        self.playerManager = playerManager
-        self.networkHandler = networkHandler
-        self.worldPlayerManager = None
+    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, name: str, key: str, opStatus: bool = False):
+        self.name: str = name
+        self.posX: int = 0
+        self.posY: int = 0
+        self.posZ: int = 0
+        self.posYaw: int = 0
+        self.posPitch: int = 0
+        self.verificationKey: str = key
+        self.opStatus: bool = opStatus
+        self.playerManager: PlayerManager = playerManager
+        self.networkHandler: NetworkHandler = networkHandler
+        self.worldPlayerManager: Optional[WorldPlayerManager] = None
         self.playerId: Optional[int] = None
 
     async def joinWorld(self, world: World):
@@ -333,6 +333,11 @@ class Player:
 
     async def setLocation(self, posX: int, posY: int, posZ: int, posYaw: int = 0, posPitch: int = 0, notifyPlayers: bool = True):
         Logger.debug(f"Setting New Player Location for Player {self.name} (X: {posX}, Y: {posY}, Z: {posZ}, Yaw: {posYaw}, Pitch: {posPitch})", module="player")
+
+        # Checking If Player Is Joined To A World
+        if self.worldPlayerManager is None:
+            Logger.error(f"Player {self.name} Trying To setLocation When No World Is Joined", module="player")
+            return None  # Skip Rest
 
         # Set the Player Location
         self.posX = posX
@@ -398,7 +403,7 @@ class Player:
 
         # Checking If Player Is Joined To A World
         if self.worldPlayerManager is None:
-            Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined", module="player")
+            Logger.error(f"Player {self.name} Trying To handlePlayerMovement When No World Is Joined", module="player")
             return None  # Skip Rest
 
         # Updating Current Player Position
@@ -426,7 +431,7 @@ class Player:
 
         # Checking If Player Is Joined To A World
         if self.worldPlayerManager is None:
-            Logger.debug(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined", module="player")
+            Logger.debug(f"Player {self.name} Trying To handlePlayerMessage When No World Is Joined", module="player")
             return None  # Skip Rest
 
         # Checking If Message Is A Command

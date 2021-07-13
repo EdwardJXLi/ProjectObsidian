@@ -38,10 +38,10 @@ class Server:
         self.port: int = port  # Port Number Of Server
         self.name: str = name  # Name Of Server
         self.motd: str = motd  # Message Of The Day
-        self.server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object
-        self.worldManager: Optional[WorldManager] = None  # World Manager Class
-        self.playerManager: Optional[PlayerManager] = None  # Player Manager CLass
-        self.config: Optional[ServerConfig] = None  # Server Config Class; To Be Init Later
+        self.server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object (initialized later)
+        self.worldManager: Optional[WorldManager] = None  # World Manager Class (initialized later)
+        self.playerManager: Optional[PlayerManager] = None  # Player Manager Class (initialized later)
+        self.config: ServerConfig = ServerConfig()  # Server Config Class; Default to blank config incase not set
         self.ensureFiles: List[str] = []  # List of folders to ensure they exist
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized = False  # Flag Set When Everything Is Fully Loaded
@@ -147,7 +147,8 @@ class Server:
 
     async def run(self):
         try:
-            if self.initialized:
+            # Check if server is initialized and async server has started
+            if self.initialized and self.server:
                 # Start Server
                 Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}", module="obsidian")
                 await self.server.serve_forever()
@@ -166,7 +167,8 @@ class Server:
                 c = NetworkHandler(self, reader, writer)
                 await c.initConnection()
             else:
-                pass
+                Logger.warn("Player tried to connect when server is not initialized. Dropping connection.", module="connection-handler")
+                writer.close()
 
         return handler
 
@@ -217,24 +219,31 @@ class Server:
             self.stopping = True
 
             # Sending Disconnect Packet To All Server Members
-            Logger.info("Sending Disconnect Packet To All Members", module="server-stop")
-            await self.playerManager.sendGlobalPacket(
-                Packets.Response.DisconnectPlayer,
-                "Disconnected: Server Shutting Down"
-            )
+            if self.playerManager:
+                Logger.info("Sending Disconnect Packet To All Members", module="server-stop")
+                await self.playerManager.sendGlobalPacket(
+                    Packets.Response.DisconnectPlayer,
+                    "Disconnected: Server Shutting Down"
+                )
+            else:
+                Logger.warn("Player Manager was not initialized properly. Skipping disconnect packet.")
 
             # Stopping Connection Handler
             Logger.info("Stopping Connection Handler Loop", module="server-stop")
             if self.server is not None:
                 self.server.close()
 
-            # Saving Worlds
-            Logger.info("Saving All Worlds", module="server-stop")
-            self.worldManager.saveWorlds()
+            # Managing worlds
+            if self.worldManager:
+                # Saving Worlds
+                Logger.info("Saving All Worlds", module="server-stop")
+                self.worldManager.saveWorlds()
 
-            # Closing Worlds
-            Logger.info("Closing All Worlds", module="server-stop")
-            self.worldManager.closeWorlds()
+                # Closing Worlds
+                Logger.info("Closing All Worlds", module="server-stop")
+                self.worldManager.closeWorlds()
+            else:
+                Logger.warn("Server Manager was not initialized properly. Skipping world save.")
 
             # Closing Server
             Logger.info("Terminating Process", module="server-stop")

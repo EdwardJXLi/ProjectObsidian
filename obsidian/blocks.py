@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Type, Optional
+from typing import Dict, Type, Optional
 from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
@@ -24,18 +25,26 @@ class AbstractBlock(AbstractSubmodule):
     ID: int = 0
 
     async def placeBlock(self, ctx: Optional[Player], blockX: int, blockY: int, blockZ: int):
+        # Checking If User Was Passed
+        if ctx is None:
+            raise BlockError("Undefined Player (value 'None') can not place blocks. Please use WorldPlayerManager.world.setBlock instead!")
+
+        # Check edgecase in which player is not connected to any world.
+        if ctx.worldPlayerManager is None:
+            Logger.warn("Player is trying to place blocks while not being connected to any world. Skipping block placement", module="abstract-block")
+            return
+
         # Checking If User Can Set Blocks
-        if ctx is not None:  # Checking If User Was Passed
-            if not ctx.worldPlayerManager.world.canEdit:  # Checking If World Is Read-Only
-                if not ctx.opStatus:  # Checking If Player Is Not OP
-                    # Check If Air Exists (Prevents Crash if Stuff Wacky)
-                    if "Air" in Blocks._block_list:
-                        if self.ID == Blocks.Air.ID:
-                            raise ClientError("You Do Not Have Permission To Break This Block")
-                        else:
-                            raise ClientError("You Do Not Have Permission To Place This Block")
+        if not ctx.worldPlayerManager.world.canEdit:  # Checking If World Is Read-Only
+            if not ctx.opStatus:  # Checking If Player Is Not OP
+                # Check If Air Exists (Prevents Crash if Stuff Wacky)
+                if "Air" in Blocks._block_list:
+                    if self.ID == Blocks.Air.ID:
+                        raise ClientError("You Do Not Have Permission To Break This Block")
                     else:
-                        raise ClientError("You Do Not Have Permission To Modify This Block")
+                        raise ClientError("You Do Not Have Permission To Place This Block")
+                else:
+                    raise ClientError("You Do Not Have Permission To Modify This Block")
 
         # Setting Block in World
         await ctx.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, self.ID, player=ctx)
@@ -49,9 +58,9 @@ class _BlockManager(AbstractManager):
 
         # TODO Rename these!
         # Creates List Of Blocks That Has The Block Name As Keys
-        self._block_list = dict()
+        self._block_list: Dict[str, AbstractBlock] = dict()
         # Create Cache Of Block Ids to Obj
-        self._blocks = dict()
+        self._block_ids: Dict[int, AbstractBlock] = dict()
 
     # Registration. Called by Block Decorator
     def register(self, blockClass: Type[AbstractBlock], module: AbstractModule):
@@ -62,10 +71,10 @@ class _BlockManager(AbstractManager):
         if block.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if (block.ID not in self._blocks) and (block.NAME not in self._block_list.keys()):
+            if (block.ID not in self._block_ids) and (block.NAME not in self._block_list.keys()):
                 Logger.warn(f"Block {block.NAME} (ID: {block.ID}) From Module {block.MODULE.NAME} Is Trying To Override A Block That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
-                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._blocks[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._block_ids[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
 
         # Checking If Block Name Is Already In Blocks List
         # Ignoring if OVERRIDE is set
@@ -76,10 +85,10 @@ class _BlockManager(AbstractManager):
         Logger.verbose(f"Adding BlockId {block.ID} To Block Cache", module=f"{module.NAME}-submodule-init")
         # If Block Id Already Registered, Error
         # Ignoring if OVERRIDE is set
-        if block.ID not in self._blocks or block.OVERRIDE:
-            self._blocks[block.ID] = block
+        if block.ID not in self._block_ids or block.OVERRIDE:
+            self._block_ids[block.ID] = block
         else:
-            raise InitRegisterError(f"Block Id {block.ID} Has Been Already Registered. Conflicting Blocks Are '{self._blocks[block.ID].NAME} ({self._blocks[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
+            raise InitRegisterError(f"Block Id {block.ID} Has Been Already Registered. Conflicting Blocks Are '{self._block_ids[block.ID].NAME} ({self._block_ids[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
 
         # Add Block to Blocks List
         self._block_list[block.NAME] = block
@@ -108,12 +117,12 @@ class _BlockManager(AbstractManager):
 
     # Generate a List of All Block Ids
     def getAllBlockIds(self):
-        return list(self._blocks.keys())
+        return list(self._block_ids.keys())
 
     # Function To Get Block Object From BlockId
     def getBlockById(self, blockId: int):
-        if blockId in self._blocks.keys():
-            return self._blocks[blockId]
+        if blockId in self._block_ids.keys():
+            return self._block_ids[blockId]
         else:
             raise BlockError(f"Block with BlockID {blockId} Not Found.")
 

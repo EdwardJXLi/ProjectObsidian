@@ -96,8 +96,8 @@ class _DirectionalPacketManager(AbstractManager):
         super().__init__(f"{direction.name.title()} Packet")
 
         # Creates List Of Packets That Has The Packet Name As Keys
-        self._packet_list = dict()
-        self.direction = direction
+        self._packet_list = dict()  # Not putting a type here as it breaks more things than it fixes
+        self.direction: PacketDirections = direction
         # Only Used If Request
         if self.direction is PacketDirections.REQUEST:
             self.loopPackets = {}  # Fast Cache Of Packet Ids to Packet Objects That Are Used During PlayerLoop
@@ -158,10 +158,10 @@ class _DirectionalPacketManager(AbstractManager):
 class _PacketManager:
     def __init__(self):
         # Creates List Of Packets That Has The Packet Name As Keys
-        self.RequestManager = _DirectionalPacketManager(PacketDirections.REQUEST)
-        self.ResponseManager = _DirectionalPacketManager(PacketDirections.RESPONSE)
-        self.Request = self.RequestManager  # Alias for RequestManager
-        self.Response = self.ResponseManager  # Alias for ResponseManager
+        self.RequestManager: _DirectionalPacketManager = _DirectionalPacketManager(PacketDirections.REQUEST)
+        self.ResponseManager: _DirectionalPacketManager = _DirectionalPacketManager(PacketDirections.RESPONSE)
+        self.Request: _DirectionalPacketManager = self.RequestManager  # Alias for RequestManager
+        self.Response: _DirectionalPacketManager = self.ResponseManager  # Alias for ResponseManager
 
     # Generate a Pretty List of Packets
     def generateTable(self):
@@ -171,11 +171,14 @@ class _PacketManager:
             table.field_names = ["Direction", "Packet", "Id", "Player Loop", "Module"]
             # Loop Through All Request Modules And Add Value
             for _, packet in self.RequestManager._packet_list.items():
+                requestPacket: AbstractRequestPacket = packet
                 # Adding Row To Table
-                table.add_row(["Request", packet.NAME, packet.ID, packet.PLAYERLOOP, packet.MODULE.NAME])
+                table.add_row(["Request", requestPacket.NAME, requestPacket.ID, requestPacket.PLAYERLOOP, requestPacket.MODULE.NAME])
             # Loop Through All Response Modules And Add Value
             for _, packet in self.ResponseManager._packet_list.items():
-                table.add_row(["Response", packet.NAME, packet.ID, "N/A", packet.MODULE.NAME])
+                responsePacket: AbstractResponsePacket = packet
+                # Adding Row To Table
+                table.add_row(["Response", responsePacket.NAME, responsePacket.ID, "N/A", responsePacket.MODULE.NAME])
 
             return table
         except FatalError as e:

@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from obsidian.world import World, WorldManager
     import io
 
-from typing import Type, List
+from typing import Dict, Type, List
 from dataclasses import dataclass, field
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
@@ -50,7 +50,7 @@ class _WorldFormatManager(AbstractManager):
         super().__init__("World Format")
 
         # Creates List Of World Formats That Has The World Format Name As Keys
-        self._format_list = dict()
+        self._format_list: Dict[str, AbstractWorldFormat] = dict()
 
     # Registration. Called by World Format Decorator
     def register(self, worldFormatClass: Type[AbstractWorldFormat], module: AbstractModule):

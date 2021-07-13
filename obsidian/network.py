@@ -4,10 +4,11 @@ if TYPE_CHECKING:
     from obsidian.server import Server
 
 import asyncio
-from typing import Type, Optional
+from typing import Tuple, Type, Optional
 
 from obsidian.log import Logger
 from obsidian.world import World
+from obsidian.player import Player
 from obsidian.packet import (
     PacketManager, Packets,
     AbstractRequestPacket,
@@ -17,19 +18,20 @@ from obsidian.constants import (
     NET_TIMEOUT,
     CRITICAL_REQUEST_ERRORS,
     CRITICAL_RESPONSE_ERRORS,
+    ServerError,
     ClientError
 )
 
 
 class NetworkHandler:
     def __init__(self, server: Server, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        self.server = server
-        self.reader = reader
-        self.writer = writer
-        self.ip: tuple = self.reader._transport.get_extra_info("peername")  # type: ignore
-        self.dispacher = NetworkDispacher(self)
-        self.isConnected = True  # Connected Flag So Outbound Queue Buffer Can Stop
-        self.player = None
+        self.server: Server = server
+        self.reader: asyncio.StreamReader = reader
+        self.writer: asyncio.StreamWriter = writer
+        self.ip: Tuple[str, int] = self.reader._transport.get_extra_info("peername")  # type: ignore
+        self.dispacher: NetworkDispacher = NetworkDispacher(self)
+        self.isConnected: bool = True  # Connected Flag So Outbound Queue Buffer Can Stop
+        self.player: Optional[Player] = None  #
 
     async def initConnection(self, *args, **kwargs):
         try:
@@ -67,6 +69,10 @@ class NetworkHandler:
         await self._handleInitialHandshake()
 
     async def _handleInitialHandshake(self):
+        # Double Check Server is Initialized
+        if not self.server.initialized or not self.server.worldManager or not self.server.playerManager:
+            raise ServerError("Cannot Initialize Handshake Protocol When Server is not Initialized!")
+
         # Wait For Player Identification Packet
         Logger.debug(f"{self.ip} | Waiting For Initial Player Information Packet", module="network")
         protocolVersion, username, verificationKey = await self.dispacher.readPacket(Packets.Request.PlayerIdentification)
@@ -89,6 +95,7 @@ class NetworkHandler:
         # Create Player
         Logger.debug(f"{self.ip} | Creating Player {username}", module="network")
         self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
+        print(type(self.player))
 
         # Join Default World
         Logger.debug(f"{self.ip} | Joining Default World {defaultWorld.name}", module="network")
@@ -167,7 +174,7 @@ class NetworkHandler:
 
 class NetworkDispacher:
     def __init__(self, handler: NetworkHandler):
-        self.handler = handler
+        self.handler: NetworkHandler = handler
 
     # NOTE: or call receivePacket
     # Used when exact packet is expected
@@ -281,7 +288,7 @@ class NetworkDispacher:
                     raise e  # Pass Down Exception To Lower Layer
                 else:
                     # TODO: Remove Hacky Type Ignore
-                    return packetHeader, packet.onError(e)  # type: ignore
+                    return packetHeader, packet.onError(e)
 
         except asyncio.TimeoutError:
             raise ClientError("Did Not Receive Packet In Time!")

@@ -60,8 +60,9 @@ class AbstractSubmodule:
     DESCRIPTION: str = ""
     VERSION: str = ""
     OVERRIDE: bool = False
-    MANAGER: Optional[AbstractManager] = None
-    MODULE: Optional[AbstractModule] = None
+    # These should be initialized as soon as the module loads, so ignoring the type for now.
+    MANAGER: AbstractManager = None  # type: ignore
+    MODULE: AbstractModule = None  # type: ignore
 
 
 # Internal Module Manager Singleton

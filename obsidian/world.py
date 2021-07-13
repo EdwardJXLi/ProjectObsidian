@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 import io
 import os
 import gzip
@@ -27,11 +27,12 @@ from obsidian.constants import (
 
 class WorldManager:
     def __init__(self, server: Server, blacklist: List[str] = []):
-        self.server = server
-        self.worlds = dict()
-        self.blacklist = blacklist
-        self.persistant = True
-        self.worldFormat = None
+        self.server: Server = server
+        self.worlds: Dict[str, World] = dict()
+        self.blacklist: List[str] = blacklist
+        self.persistant: bool = True
+        # Defined Later In Init
+        # self.worldFormat: AbstractWorldFormat
 
         # Get worldFormat Using Given World Format Key
         # Loop Through All World Formats
@@ -39,10 +40,10 @@ class WorldManager:
             # Check If key Matches With Config Key List
             if self.server.config.defaultSaveFormat.lower() in worldFormat.KEYS:
                 # Set World Format
-                self.worldFormat = worldFormat
-
-        # Check If World Format Was Set
-        if self.worldFormat is None:
+                self.worldFormat: AbstractWorldFormat = worldFormat
+                break
+        # Check If World Format Was Found
+        else:
             raise FatalError(f"Unknown World Format Key {self.server.config.defaultSaveFormat} Given In Server Config!")
         Logger.info(f"Using World Format {self.worldFormat.NAME}", module="init-world")
 
@@ -137,7 +138,7 @@ class WorldManager:
                 # Also Check If World Name Is Already Loaded (Same File Names with Different Extentions)
                 elif saveName in self.worlds.keys():
                     Logger.warn(f"Ignoring World File {filename}. World With Similar Name Has Already Been Registered!", module="world-load")
-                    Logger.warn(f"World File {os.path.basename(self.worlds[saveName].fileIO.name)} Conflicts With World File {filename}!", module="world-load")
+                    Logger.warn(f"World File {os.path.basename(self.worlds[saveName].name)} Conflicts With World File {filename}!", module="world-load")
                     Logger.askConfirmation()
                 else:
                     Logger.debug(f"Detected World File {filename}. Attempting To Load World", module="world-load")
@@ -224,7 +225,7 @@ class WorldManager:
                 del self.worlds[worldName]
 
                 # Checking if World and Server is Persistant
-                if self.persistant and (self.server.config.worldSaveLocation is not None) and world.persistant:
+                if self.persistant and (self.server.config.worldSaveLocation is not None) and world.persistant and world.fileIO:
                     # Closing worlds fileIO
                     Logger.debug("Closing World FileIO", module="world-close")
                     world.fileIO.close()
@@ -239,7 +240,7 @@ class WorldManager:
 
         # Checking if World Format was Passed In (Setting as default if not)
         if worldFormat is None:
-            worldFormat = self.worldFormat  # type: ignore
+            worldFormat = self.worldFormat
 
         # Generating File Path
         worldPath = os.path.join(
@@ -397,7 +398,7 @@ class World:
         return scanY
 
     def saveMap(self):
-        if self.persistant:
+        if self.persistant and self.fileIO:
             Logger.info(f"Attempting To Save World {self.name}", module="world-save")
             self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
         else:
