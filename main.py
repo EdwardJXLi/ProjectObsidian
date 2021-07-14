@@ -1,8 +1,12 @@
 """
-Copyright (C) RadioactiveHydra (Edward) 2020
+Copyright (C) RadioactiveHydra (Edward) 2021
 """
 
-# import sys
+# Check python version to see if compatible
+import sys
+if sys.version_info.major < 3 or sys.version_info.minor < 8:
+    raise Exception("Python Version Out Of Date! Minimum Required: 3.8.0")
+
 import argparse
 import asyncio
 import signal
@@ -44,6 +48,7 @@ async def main():
     )
 
     # Busy Operation To Keep Main Thread Alive
+    # In the future, this would be dominated by a console thread
     while True:
         await asyncio.sleep(1)
 
