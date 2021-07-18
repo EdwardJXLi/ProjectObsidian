@@ -353,7 +353,7 @@ class World:
             raise BlockError(f"Requested Block Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
 
-    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Optional[Player] = None, sendPacket: bool = True):
+    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Optional[Player] = None, sendPacket: bool = True, updateSelf: bool = False):
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
         Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockId}", module="world")
 
@@ -373,7 +373,7 @@ class World:
                 blockZ,
                 blockId,
                 # not sending to self as that may cause some de-sync issues
-                ignoreList=[player] if player is not None else []
+                ignoreList=[player] if player is not None and not updateSelf else []
             )
 
     def getHighestBlock(self, blockX: int, blockZ: int, start: Optional[int] = None):

@@ -1,5 +1,5 @@
 from obsidian.module import Dependency, Module, AbstractModule
-from obsidian.blocks import Block
+from obsidian.blocks import Block, Blocks
 from obsidian.player import Player
 from obsidian.modules.core import CoreModule
 
@@ -7,22 +7,23 @@ from typing import Optional
 
 
 @Module(
-    "StonePlaceTest1",
-    description="WASD Prints A Message In Chat When a Stone is Placed",
+    "LavaPlace",
+    description="Quick hack to place down lava blocks",
     author="Obsidian",
     version="1.0.0",
     dependencies=[Dependency("core")]
 )
-class StonePlaceTest(AbstractModule):
+class LavaPlace(AbstractModule):
     def __init__(self):
         super().__init__()
 
-    @Block("Stone", override=True)
-    class SpecialStoneX(CoreModule.Stone):
+    @Block("OrangeCloth", override=True)
+    class LavaFlagBlock(CoreModule.OrangeCloth):
         def __init__(self):
             super().__init__()
 
         async def placeBlock(self, ctx: Optional[Player], blockX, blockY, blockZ):
             await super().placeBlock(ctx, blockX, blockY, blockZ)
             if ctx:
-                await ctx.sendMessage("STONE PLACED???")
+                if ctx.worldPlayerManager:
+                    await ctx.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, Blocks.StationaryLava.ID, player=ctx, updateSelf=True)
