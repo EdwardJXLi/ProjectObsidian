@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Dict, Type, Optional, List
+from typing import Dict, Type, List
 from dataclasses import dataclass, field
 import inspect
 
@@ -28,7 +28,7 @@ def Command(*args, **kwargs):
 class AbstractCommand(AbstractSubmodule):
     ACTIVATORS: List[str] = field(default_factory=list)
 
-    async def execute(self, ctx: Optional[Player]):
+    async def execute(self, ctx: Player):
         raise NotImplementedError("Command Hander Not Implemented")
 
 

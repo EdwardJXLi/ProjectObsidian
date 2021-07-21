@@ -31,7 +31,7 @@ class NetworkHandler:
         self.ip: Tuple[str, int] = self.reader._transport.get_extra_info("peername")  # type: ignore
         self.dispacher: NetworkDispacher = NetworkDispacher(self)
         self.isConnected: bool = True  # Connected Flag So Outbound Queue Buffer Can Stop
-        self.player: Optional[Player] = None  #
+        self.player: Optional[Player] = None
 
     async def initConnection(self, *args, **kwargs):
         try:

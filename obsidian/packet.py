@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 import enum
 import struct
-from typing import Type, Optional
+from typing import Type
 from dataclasses import dataclass
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
@@ -64,7 +64,7 @@ class AbstractRequestPacket(AbstractPacket):
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
-    async def deserialize(self, ctx: Optional[Player], *args, **kwargs):
+    async def deserialize(self, ctx: Player, *args, **kwargs):
         return None
 
 

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Dict, Type, Optional
+from typing import Dict, Type
 from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
@@ -24,11 +24,7 @@ def Block(*args, **kwargs):
 class AbstractBlock(AbstractSubmodule):
     ID: int = 0
 
-    async def placeBlock(self, ctx: Optional[Player], blockX: int, blockY: int, blockZ: int):
-        # Checking If User Was Passed
-        if ctx is None:
-            raise BlockError("Undefined Player (value 'None') can not place blocks. Please use WorldPlayerManager.world.setBlock instead!")
-
+    async def placeBlock(self, ctx: Player, blockX: int, blockY: int, blockZ: int):
         # Check edgecase in which player is not connected to any world.
         if ctx.worldPlayerManager is None:
             Logger.warn("Player is trying to place blocks while not being connected to any world. Skipping block placement", module="abstract-block")

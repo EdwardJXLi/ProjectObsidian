@@ -16,13 +16,13 @@ A fully featured Minecraft Classic Server fully reimplemented in Python!
 # Instructions
 > Obsidian Server requires **no 3rd party libraries**, meaning that you can run this server with a stock python installation!
 
-> (!) Minimum of **python 3.8** is required! (!)
-
 On linux, install `python3.8` and clone the repository.
 ```
 apt-get install python3.8
 git clone https://github.com/RadioactiveHydra/ProjectObsidian.git
 ```
+
+> (!) Minimum of **python 3.8** is required! (!)
 
 Then, just navigate into the directory and run `main.py`!
 ```
@@ -30,7 +30,7 @@ cd ProjectObsidian
 python3.8 main.py
 ```
 
-Once you have the server up, you can run `main.py -h` to see the available flags
+Once you have the server up, you can run `main.py -h` to see the available flags you can set
 
 # Plugins
 Plugins page coming soon...

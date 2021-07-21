@@ -353,7 +353,7 @@ class World:
             raise BlockError(f"Requested Block Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
 
-    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Optional[Player] = None, sendPacket: bool = True, updateSelf: bool = False):
+    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Player = None, sendPacket: bool = True, updateSelf: bool = False):
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
         Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockId}", module="world")
 

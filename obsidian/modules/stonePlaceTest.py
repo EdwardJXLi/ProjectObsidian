@@ -3,8 +3,6 @@ from obsidian.blocks import Block
 from obsidian.player import Player
 from obsidian.modules.core import CoreModule
 
-from typing import Optional
-
 
 @Module(
     "StonePlaceTest1",
@@ -22,7 +20,7 @@ class StonePlaceTest(AbstractModule):
         def __init__(self):
             super().__init__()
 
-        async def placeBlock(self, ctx: Optional[Player], blockX, blockY, blockZ):
+        async def placeBlock(self, ctx: Player, blockX, blockY, blockZ):
             await super().placeBlock(ctx, blockX, blockY, blockZ)
             if ctx:
                 await ctx.sendMessage("STONE PLACED???")

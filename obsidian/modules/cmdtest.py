@@ -1,9 +1,6 @@
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.commands import AbstractCommand, Command
 from obsidian.player import Player
-from obsidian.constants import ServerError
-
-from typing import Optional
 
 
 @Module(
@@ -27,11 +24,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testcmd"]
             )
 
-        async def execute(self, ctx: Optional[Player]):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player):
             # Handle Player Message
             await ctx.sendMessage("Test Command Received")
 
@@ -47,11 +40,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testarg", "ta"]
             )
 
-        async def execute(self, ctx: Optional[Player], arg):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, arg):
             # Handle Player Message
             await ctx.sendMessage(f"Test Command Received With Argument {arg}")
 
@@ -65,11 +54,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testargtyped", "tat"]
             )
 
-        async def execute(self, ctx: Optional[Player], arg: int):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, arg: int):
             # Handle Player Message
             await ctx.sendMessage(f"Test Command Received With Number {arg}")
 
@@ -83,11 +68,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testargoptional", "tao"]
             )
 
-        async def execute(self, ctx: Optional[Player], arg1="optional1", arg2="optional2"):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, arg1="optional1", arg2="optional2"):
             # Handle Player Message
             await ctx.sendMessage(f"Test Command Received With Optional Argument {arg1}, {arg2}")
 
@@ -101,11 +82,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testargtypedoptional", "tato"]
             )
 
-        async def execute(self, ctx: Optional[Player], arg: int = 256):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, arg: int = 256):
             # Handle Player Message
             await ctx.sendMessage(f"Test Command Received With Optional Number {arg}")
 
@@ -119,11 +96,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testlistargs", "tla"]
             )
 
-        async def execute(self, ctx: Optional[Player], *args):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, *args):
             # Handle Player Message
             await ctx.sendMessage(f"Test Command Args {args}")
 
@@ -137,11 +110,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testfirst", "tf"]
             )
 
-        async def execute(self, ctx: Optional[Player], first, *rest):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, first, *rest):
             # Handle Player Message
             await ctx.sendMessage(f"Test Command Arg First Word {first} Rest {rest}")
 
@@ -155,11 +124,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testoptionalfirst", "tof"]
             )
 
-        async def execute(self, ctx: Optional[Player], first="oPtIoNaL", *rest):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, first="oPtIoNaL", *rest):
             # Handle Player Message
             await ctx.sendMessage(f"Test Command Arg First Word {first} Rest {rest}")
 
@@ -173,11 +138,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testsay", "ts", "say"]
             )
 
-        async def execute(self, ctx: Optional[Player], *, arg):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, *, arg):
             # Handle Player Message
             await ctx.sendMessage(f"Say: {arg}")
 
@@ -191,11 +152,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testoptionalsay", "tos"]
             )
 
-        async def execute(self, ctx: Optional[Player], *, arg=None):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, *, arg=None):
             # Handle Player Message
             if arg is not None:
                 await ctx.sendMessage(f"Say: {arg}")
@@ -212,11 +169,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testsayfirst", "tsf"]
             )
 
-        async def execute(self, ctx: Optional[Player], first, *, arg):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, first, *, arg):
             # Handle Player Message
             await ctx.sendMessage(f"First: {first}, Rest: {arg}")
 
@@ -230,11 +183,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testoptionalsayfirst", "tosf"]
             )
 
-        async def execute(self, ctx: Optional[Player], first="yolo", *, arg=None):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, first="yolo", *, arg=None):
             # Handle Player Message
             if arg is not None:
                 await ctx.sendMessage(f"First: {first}, Say: {arg}")
@@ -253,7 +202,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["error"]
             )
 
-        async def execute(self, ctx: Optional[Player]):
+        async def execute(self, ctx: Player):
             raise Exception("Test Error")
 
     @Command(
@@ -266,11 +215,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["errordoublekw", "edkw"]
             )
 
-        async def execute(self, ctx: Optional[Player], *, arg1, arg2):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, *, arg1, arg2):
             # Handle Player Message
             await ctx.sendMessage(f"First: {arg1}, Second: {arg2}")
 
@@ -284,11 +229,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["errortyperest", "etr"]
             )
 
-        async def execute(self, ctx: Optional[Player], *, arg: int):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, *, arg: int):
             # Handle Player Message
             await ctx.sendMessage(f"Say: {arg}")
 
@@ -302,11 +243,7 @@ class CommandTestModule(AbstractModule):
                 ACTIVATORS=["testoptionalfirstkwrest", "tfkwr"]
             )
 
-        async def execute(self, ctx: Optional[Player], first="yolo", *, arg):
-            # Check if player was passed
-            if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
-
+        async def execute(self, ctx: Player, first="yolo", *, arg):
             # Handle Player Message
             if arg is not None:
                 await ctx.sendMessage(f"First: {first}, Say: {arg}")
