@@ -44,6 +44,7 @@ For information regarding plugin development, refer to the Plugin Development Gu
 - Server Map Format (.dat) Support
 - Improved Function Overriding for Modules
 - Command Line Console
+- Better Module Log and Config Handling
 
 # Updates
 Coming Soon...
