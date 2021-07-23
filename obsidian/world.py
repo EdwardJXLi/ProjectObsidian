@@ -20,6 +20,7 @@ from obsidian.constants import (
     MapGenerationError,
     BlockError,
     WorldError,
+    ClientError,
     SERVERPATH,
     WorldSaveError
 )
@@ -343,6 +344,21 @@ class World:
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
         self.playerManager = WorldPlayerManager(self)
+
+    def canEditBlock(self, player, block):
+        # Checking If User Can Set Blocks
+        if not self.canEdit:  # Checking If World Is Read-Only
+            if not player.opStatus:  # Checking If Player Is Not OP
+                # Check If Air Exists (Prevents Crash if Stuff Wacky)
+                if "Air" in Blocks._block_list:
+                    if block.ID == Blocks.Air.ID:
+                        raise ClientError("You Do Not Have Permission To Break This Block")
+                    else:
+                        raise ClientError("You Do Not Have Permission To Place This Block")
+                else:
+                    raise ClientError("You Do Not Have Permission To Modify This Block")
+        # else, everything is ay okay
+        return True
 
     def getBlock(self, blockX: int, blockY: int, blockZ: int):
         # Gets Block Obj Of Requested Block

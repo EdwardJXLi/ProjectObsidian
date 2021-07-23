@@ -31,16 +31,8 @@ class AbstractBlock(AbstractSubmodule):
             return
 
         # Checking If User Can Set Blocks
-        if not ctx.worldPlayerManager.world.canEdit:  # Checking If World Is Read-Only
-            if not ctx.opStatus:  # Checking If Player Is Not OP
-                # Check If Air Exists (Prevents Crash if Stuff Wacky)
-                if "Air" in Blocks._block_list:
-                    if self.ID == Blocks.Air.ID:
-                        raise ClientError("You Do Not Have Permission To Break This Block")
-                    else:
-                        raise ClientError("You Do Not Have Permission To Place This Block")
-                else:
-                    raise ClientError("You Do Not Have Permission To Modify This Block")
+        if not ctx.worldPlayerManager.world.canEditBlock(ctx, self):
+            raise ClientError("You Don't Have Permission To Edit This Block!")
 
         # Setting Block in World
         await ctx.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, self.ID, player=ctx)

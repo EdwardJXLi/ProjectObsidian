@@ -4,6 +4,7 @@ from obsidian.blocks import Block, Blocks
 from obsidian.player import Player
 from obsidian.modules.core import CoreModule
 from obsidian.log import Logger
+from obsidian.constants import ClientError
 
 
 @Module(
@@ -28,9 +29,12 @@ class LiquidPlace(AbstractModule):
             super().__init__()
 
         async def placeBlock(self, ctx: Player, blockX, blockY, blockZ):
-            await super().placeBlock(ctx, blockX, blockY, blockZ)
             if ctx.place_liquid:  # type: ignore
                 if ctx.worldPlayerManager:
+                    # Check if user has permission to set blocks
+                    if not ctx.worldPlayerManager.world.canEditBlock(ctx, self):
+                        raise ClientError("You Don't Have Permission To Edit This Block!")
+                    # Set the block to stationary lava
                     await ctx.worldPlayerManager.world.setBlock(
                         blockX,
                         blockY,
@@ -39,6 +43,8 @@ class LiquidPlace(AbstractModule):
                         player=ctx,
                         updateSelf=True
                     )
+            else:
+                await super().placeBlock(ctx, blockX, blockY, blockZ)
 
     @Block("OrangeCloth", override=True)
     class OrangeClothLiquidPlace(CoreModule.OrangeCloth):
@@ -46,9 +52,12 @@ class LiquidPlace(AbstractModule):
             super().__init__()
 
         async def placeBlock(self, ctx: Player, blockX, blockY, blockZ):
-            await super().placeBlock(ctx, blockX, blockY, blockZ)
             if ctx.place_liquid:  # type: ignore
                 if ctx.worldPlayerManager:
+                    # Check if user has permission to set blocks
+                    if not ctx.worldPlayerManager.world.canEditBlock(ctx, self):
+                        raise ClientError("You Don't Have Permission To Edit This Block!")
+                    # Set the block to flowing lava
                     await ctx.worldPlayerManager.world.setBlock(
                         blockX,
                         blockY,
@@ -57,6 +66,8 @@ class LiquidPlace(AbstractModule):
                         player=ctx,
                         updateSelf=True
                     )
+            else:
+                await super().placeBlock(ctx, blockX, blockY, blockZ)
 
     @Block("UltramarineCloth", override=True)
     class UltramarineClothLiquidPlace(CoreModule.UltramarineCloth):
@@ -64,9 +75,12 @@ class LiquidPlace(AbstractModule):
             super().__init__()
 
         async def placeBlock(self, ctx: Player, blockX, blockY, blockZ):
-            await super().placeBlock(ctx, blockX, blockY, blockZ)
             if ctx.place_liquid:  # type: ignore
                 if ctx.worldPlayerManager:
+                    # Check if user has permission to set blocks
+                    if not ctx.worldPlayerManager.world.canEditBlock(ctx, self):
+                        raise ClientError("You Don't Have Permission To Edit This Block!")
+                    # Set the block to stationary water
                     await ctx.worldPlayerManager.world.setBlock(
                         blockX,
                         blockY,
@@ -75,6 +89,8 @@ class LiquidPlace(AbstractModule):
                         player=ctx,
                         updateSelf=True
                     )
+            else:
+                await super().placeBlock(ctx, blockX, blockY, blockZ)
 
     @Block("CapriCloth", override=True)
     class CapriClothLiquidPlace(CoreModule.CapriCloth):
@@ -82,9 +98,12 @@ class LiquidPlace(AbstractModule):
             super().__init__()
 
         async def placeBlock(self, ctx: Player, blockX, blockY, blockZ):
-            await super().placeBlock(ctx, blockX, blockY, blockZ)
             if ctx.place_liquid:  # type: ignore
                 if ctx.worldPlayerManager:
+                    # Check if user has permission to set blocks
+                    if not ctx.worldPlayerManager.world.canEditBlock(ctx, self):
+                        raise ClientError("You Don't Have Permission To Edit This Block!")
+                    # Set the block to flowing water
                     await ctx.worldPlayerManager.world.setBlock(
                         blockX,
                         blockY,
@@ -93,6 +112,8 @@ class LiquidPlace(AbstractModule):
                         player=ctx,
                         updateSelf=True
                     )
+            else:
+                await super().placeBlock(ctx, blockX, blockY, blockZ)
 
     @Command(
         "LiquidPlace",
