@@ -26,7 +26,7 @@ class AbstractMapGenerator(AbstractSubmodule):
 class _MapGeneratorManager(AbstractManager):
     def __init__(self):
         # Initialize Overarching Manager Class
-        super().__init__("Map Generator")
+        super().__init__("Map Generator", AbstractMapGenerator)
 
         # Creates List Of Map Generators That Has The Generator Name As Keys
         self._generator_list: Dict[str, AbstractMapGenerator] = dict()

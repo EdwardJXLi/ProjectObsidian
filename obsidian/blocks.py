@@ -42,7 +42,7 @@ class AbstractBlock(AbstractSubmodule):
 class _BlockManager(AbstractManager):
     def __init__(self):
         # Initialize Overarching Manager Class
-        super().__init__("Block")
+        super().__init__("Block", AbstractBlock)
 
         # TODO Rename these!
         # Creates List Of Blocks That Has The Block Name As Keys

@@ -28,6 +28,10 @@ CSI = "\u001b["  # ANSI Colour Header
 MODULESFOLDER = "modules"
 MODULESIMPORT = "obsidian.modules."
 
+# Managers
+# Dynamically generated list of registered managers.
+managers_list = []
+
 
 # Custom Errors
 class InitRegisterError(Exception):

@@ -95,7 +95,6 @@ class NetworkHandler:
         # Create Player
         Logger.debug(f"{self.ip} | Creating Player {username}", module="network")
         self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
-        print(type(self.player))
 
         # Join Default World
         Logger.debug(f"{self.ip} | Joining Default World {defaultWorld.name}", module="network")

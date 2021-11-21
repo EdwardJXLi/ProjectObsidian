@@ -74,6 +74,9 @@ class CoreModule(AbstractModule):
 
             return protocolVersion, username, verificationKey
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @RequestPacket(
         "UpdateBlock",
         description="Packet Received When Block Placed/Broken"
@@ -109,6 +112,9 @@ class CoreModule(AbstractModule):
 
             return None  # Nothing should be returned
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @RequestPacket(
         "MovementUpdate",
         description="Received When Player Position And Orentation Is Sent"
@@ -137,6 +143,9 @@ class CoreModule(AbstractModule):
             await ctx.handlePlayerMovement(posX, posY, posZ, posYaw, posPitch)
 
             return None  # Nothing should be returned
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
 
     @RequestPacket(
         "PlayerMessage",
@@ -174,6 +183,9 @@ class CoreModule(AbstractModule):
 
             return None  # Nothing should be returned
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     #
     # RESPONSE PACKETS
     #
@@ -207,6 +219,9 @@ class CoreModule(AbstractModule):
             )
             return msg
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @ResponsePacket(
         "Ping",
         description="General Ping Packet To Test Network Connection"
@@ -225,6 +240,9 @@ class CoreModule(AbstractModule):
             msg = struct.pack(self.FORMAT, self.ID)
             return msg
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @ResponsePacket(
         "LevelInitialize",
         description="Packet To Begin World Data Transfer"
@@ -242,6 +260,9 @@ class CoreModule(AbstractModule):
             # (Byte) Packet ID
             msg = struct.pack(self.FORMAT, self.ID)
             return msg
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
 
     @ResponsePacket(
         "LevelDataChunk",
@@ -274,6 +295,9 @@ class CoreModule(AbstractModule):
             )
             return msg
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @ResponsePacket(
         "LevelFinalize",
         description="Packet To Finish World Data Transfer"
@@ -300,6 +324,9 @@ class CoreModule(AbstractModule):
                 int(sizeZ)
             )
             return msg
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
 
     @ResponsePacket(
         "SetBlock",
@@ -329,6 +356,9 @@ class CoreModule(AbstractModule):
                 int(blockType),
             )
             return msg
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
 
     @ResponsePacket(
         "SpawnPlayer",
@@ -365,6 +395,9 @@ class CoreModule(AbstractModule):
             )
             return msg
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @ResponsePacket(
         "PlayerPositionUpdate",
         description="Sent To Update Player Position and Rotation"
@@ -398,6 +431,9 @@ class CoreModule(AbstractModule):
             )
             return msg
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @ResponsePacket(
         "PositionOrientationUpdate",
         description="Sent to Update Changes in Position and Orientation"
@@ -413,6 +449,9 @@ class CoreModule(AbstractModule):
         async def serialize(self):
             raise NotImplementedError(self)
             return None  # TODO
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
 
     @ResponsePacket(
         "PositionUpdate",
@@ -430,6 +469,9 @@ class CoreModule(AbstractModule):
             raise NotImplementedError(self)
             return None  # TODO
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @ResponsePacket(
         "OrientationUpdate",
         description="Sent to Update Changes in Orientation"
@@ -445,6 +487,9 @@ class CoreModule(AbstractModule):
         async def serialize(self):
             raise NotImplementedError(self)
             return None  # TODO
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
 
     @ResponsePacket(
         "DespawnPlayer",
@@ -468,6 +513,9 @@ class CoreModule(AbstractModule):
                 int(playerId)
             )
             return msg
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
 
     @ResponsePacket(
         "SendMessage",
@@ -496,6 +544,9 @@ class CoreModule(AbstractModule):
             )
             return msg
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @ResponsePacket(
         "DisconnectPlayer",
         description="Packet Sent To Client To Force Disconnect"
@@ -519,6 +570,9 @@ class CoreModule(AbstractModule):
             )
             return msg
 
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
     @ResponsePacket(
         "UpdateUserType",
         description="Sent to Update User OP Status. User type is 0x64 for op, 0x00 for normal user."
@@ -534,6 +588,9 @@ class CoreModule(AbstractModule):
         async def serialize(self):
             raise NotImplementedError()
             return None  # TODO
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
 
     #
     # WORLD FORMATS
@@ -590,18 +647,6 @@ class CoreModule(AbstractModule):
             # Saving Map To File
             fileIO.write(world.gzipMap())
 
-    @WorldFormat(
-        "Basic",
-        description="Basic World Format That Stores X, Y, Z, Size, and Map Data",
-        version="v1.0.0"
-    )
-    class BasicWorldFormat(AbstractWorldFormat):
-        def __init__(self):
-            super().__init__(
-                KEYS=["basic"],
-                EXTENTIONS=["bw"]
-            )
-
     #
     # MAP GENERATORS
     #
@@ -649,247 +694,397 @@ class CoreModule(AbstractModule):
         def __init__(self):
             super().__init__(ID=0)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Stone")
     class Stone(AbstractBlock):
         def __init__(self):
             super().__init__(ID=1)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("Grass")
     class Grass(AbstractBlock):
         def __init__(self):
             super().__init__(ID=2)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Dirt")
     class Dirt(AbstractBlock):
         def __init__(self):
             super().__init__(ID=3)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("Cobblestone")
     class Cobblestone(AbstractBlock):
         def __init__(self):
             super().__init__(ID=4)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Planks")
     class Planks(AbstractBlock):
         def __init__(self):
             super().__init__(ID=5)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("Sapling")
     class Sapling(AbstractBlock):
         def __init__(self):
             super().__init__(ID=6)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Bedrock")
     class Bedrock(AbstractBlock):
         def __init__(self):
             super().__init__(ID=7)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("FlowingWater")
     class FlowingWater(AbstractBlock):
         def __init__(self):
             super().__init__(ID=8)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("StationaryWater")
     class StationaryWater(AbstractBlock):
         def __init__(self):
             super().__init__(ID=9)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("FlowingLava")
     class FlowingLava(AbstractBlock):
         def __init__(self):
             super().__init__(ID=10)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("StationaryLava")
     class StationaryLava(AbstractBlock):
         def __init__(self):
             super().__init__(ID=11)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("Sand")
     class Sand(AbstractBlock):
         def __init__(self):
             super().__init__(ID=12)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Gravel")
     class Gravel(AbstractBlock):
         def __init__(self):
             super().__init__(ID=13)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("GoldOre")
     class GoldOre(AbstractBlock):
         def __init__(self):
             super().__init__(ID=14)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("IronOre")
     class IronOre(AbstractBlock):
         def __init__(self):
             super().__init__(ID=15)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("CoalOre")
     class CoalOre(AbstractBlock):
         def __init__(self):
             super().__init__(ID=16)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Wood")
     class Wood(AbstractBlock):
         def __init__(self):
             super().__init__(ID=17)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("Leaves")
     class Leaves(AbstractBlock):
         def __init__(self):
             super().__init__(ID=18)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Sponge")
     class Sponge(AbstractBlock):
         def __init__(self):
             super().__init__(ID=19)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("Glass")
     class Glass(AbstractBlock):
         def __init__(self):
             super().__init__(ID=20)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("RedCloth")
     class RedCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=21)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("OrangeCloth")
     class OrangeCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=22)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("YellowCloth")
     class YellowCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=23)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("ChartreuseCloth")
     class ChartreuseCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=24)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("GreenCloth")
     class GreenCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=25)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("SpringGreenCloth")
     class SpringGreenCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=26)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("CyanCloth")
     class CyanCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=27)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("CapriCloth")
     class CapriCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=28)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("UltramarineCloth")
     class UltramarineCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=29)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("VioletCloth")
     class VioletCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=30)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("PurpleCloth")
     class PurpleCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=31)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("MagentaCloth")
     class MagentaCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=32)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("RoseCloth")
     class RoseCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=33)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("DarkGrayCloth")
     class DarkGrayCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=34)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("LightGrayCloth")
     class LightGrayCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=35)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("WhiteCloth")
     class WhiteCloth(AbstractBlock):
         def __init__(self):
             super().__init__(ID=36)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Dandelion")
     class Dandelion(AbstractBlock):
         def __init__(self):
             super().__init__(ID=37)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("Rose")
     class Rose(AbstractBlock):
         def __init__(self):
             super().__init__(ID=38)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("BrownMushroom")
     class BrownMushroom(AbstractBlock):
         def __init__(self):
             super().__init__(ID=39)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("RedMushroom")
     class RedMushroom(AbstractBlock):
         def __init__(self):
             super().__init__(ID=40)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("BlockGold")
     class BlockGold(AbstractBlock):
         def __init__(self):
             super().__init__(ID=41)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("BlockIron")
     class BlockIron(AbstractBlock):
         def __init__(self):
             super().__init__(ID=42)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("DoubleSlab")
     class DoubleSlab(AbstractBlock):
         def __init__(self):
             super().__init__(ID=43)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("Slab")
     class Slab(AbstractBlock):
         def __init__(self):
             super().__init__(ID=44)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Bricks")
     class Bricks(AbstractBlock):
         def __init__(self):
             super().__init__(ID=45)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("TNT")
     class TNT(AbstractBlock):
         def __init__(self):
             super().__init__(ID=46)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Bookshelf")
     class Bookshelf(AbstractBlock):
         def __init__(self):
             super().__init__(ID=47)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
 
     @Block("MossyCobblestone")
     class MossyCobblestone(AbstractBlock):
         def __init__(self):
             super().__init__(ID=48)
 
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)
+
     @Block("Obsidian")
     class Obsidian(AbstractBlock):
         def __init__(self):
             super().__init__(ID=49)
+
+        async def placeBlock(self, *args, **kwargs):
+            return await super().placeBlock(*args, **kwargs)

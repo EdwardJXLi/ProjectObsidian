@@ -128,7 +128,7 @@ def _parseArgs(command: AbstractCommand, data: list):
 class _CommandManager(AbstractManager):
     def __init__(self):
         # Initialize Overarching Manager Class
-        super().__init__("Command")
+        super().__init__("Command", AbstractCommand)
 
         # Creates List Of Commands That Has The Command Name As Keys
         self._command_list: Dict[str, AbstractCommand] = dict()

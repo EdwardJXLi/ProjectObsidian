@@ -47,7 +47,7 @@ class AbstractWorldFormat(AbstractSubmodule):
 class _WorldFormatManager(AbstractManager):
     def __init__(self):
         # Initialize Overarching Manager Class
-        super().__init__("World Format")
+        super().__init__("World Format", AbstractWorldFormat)
 
         # Creates List Of World Formats That Has The World Format Name As Keys
         self._format_list: Dict[str, AbstractWorldFormat] = dict()

@@ -93,7 +93,7 @@ def ResponsePacket(*args, **kwargs):
 class _DirectionalPacketManager(AbstractManager):
     def __init__(self, direction: PacketDirections):
         # Initialize Overarching Manager Class
-        super().__init__(f"{direction.name.title()} Packet")
+        super().__init__(f"{direction.name.title()} Packet", AbstractPacket)
 
         # Creates List Of Packets That Has The Packet Name As Keys
         self._packet_list = dict()  # Not putting a type here as it breaks more things than it fixes

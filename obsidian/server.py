@@ -8,7 +8,15 @@ import sys
 
 from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager, Packets
-from obsidian.constants import Colour, InitError, MODULESFOLDER, SERVERPATH, ServerError, FatalError
+from obsidian.constants import (
+    managers_list,
+    Colour,
+    InitError,
+    MODULESFOLDER,
+    SERVERPATH,
+    ServerError,
+    FatalError
+)
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
@@ -96,6 +104,10 @@ class Server:
             self.ensureFiles.append(MODULESFOLDER)
             self.ensureFiles.append(self.config.worldSaveLocation)
         self._ensureFileStructure(self.ensureFiles)
+
+        # Print out SubModule Managers
+        Logger.info("SubModule Managers Initiated!", module="init")
+        Logger.info(f"[{', '.join([m.NAME for m in managers_list])}]")
 
         # Load and Log Modules
         Logger.info("Starting Module Initialization", module="init")

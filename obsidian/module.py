@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Type, Optional, List, Any
+from typing import Union, Type, Optional, List, Any, Callable
 import importlib
 import pkgutil
 import os
+import inspect
 
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.constants import (
+    managers_list,
     InitRegisterError,
     DependencyError,
     InitError,
@@ -22,8 +24,10 @@ from obsidian.constants import (
 
 # Manager Skeleton
 class AbstractManager:
-    def __init__(self, name: str):
+    def __init__(self, name: str, submodule: Union[Type[AbstractSubmodule], Type[AbstractModule]]):
         self.NAME = name
+        self.SUBMODULE = submodule
+        managers_list.append(self)
 
     def _initSubmodule(self, submodule: Any, module: AbstractModule):
         Logger.debug(f"Initializing {submodule.MANAGER.NAME} {submodule.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
@@ -69,7 +73,7 @@ class AbstractSubmodule:
 class _ModuleManager(AbstractManager):
     def __init__(self):
         # Initialize Overarching Manager Class
-        super().__init__("Module")
+        super().__init__("Module", AbstractModule)
 
         # Creates List Of Modules That Has The Module Name As Keys
         self._module_list = dict()
@@ -126,7 +130,7 @@ class _ModuleManager(AbstractManager):
         Logger.info("Submodules Initialized!", module="submodule-init")
 
         # --- Initialization (Modules) ---
-        Logger.info("=== (5/6) Initializing Submodules ===", module="init-modules")
+        Logger.info("=== (5/6) Initializing Modules ===", module="init-modules")
 
         # Initialization Part Five => Initialize Modules
         Logger.info("Initializing Modules...", module="module-init")
@@ -311,12 +315,29 @@ class _ModuleManager(AbstractManager):
                 # Loop Through All Items within Module
                 Logger.debug(f"Checking All Items in {module.NAME}", module=f"{module.NAME}-submodule-init")
                 # Loop Through All Items In Class
-                for _, item in module.__dict__.items():
+                for item in module.__dict__.values():
                     # Check If Item Has "obsidian_submodule" Flag
                     if hasattr(item, "obsidian_submodule"):
                         Logger.verbose(f"{item} Is A Submodule! Adding As {module.NAME} Submodule.", module=f"{module.NAME}-submodule-init")
                         # Register Submodule Using information Provided by Submodule Class
                         item.MANAGER.register(item, module)
+
+                        # Check if all methods are registered
+                        Logger.verbose(f"Checking if {item.MANAGER.NAME} {item.NAME} have all methods registered", module=f"{module.NAME}-submodule-init")
+
+                        # Get list of base class methods
+                        base_methods = [name for name, val in item.MANAGER.SUBMODULE.__dict__.items() if callable(val) and not name.startswith("__")]
+                        Logger.verbose(f"{item.MANAGER.NAME} Base Class has methods: {base_methods}", module=f"{module.NAME}-submodule-init")
+                        # Get list of currently registered methods
+                        submodule_methods = [name for name, val in item.__dict__.items() if callable(val) and not name.startswith("__")]
+                        Logger.verbose(f"{item.MANAGER.NAME} {item.NAME} has methods: {submodule_methods}", module=f"{module.NAME}-submodule-init")
+
+                        # Loop through all methods and check if they are registered
+                        for method_name in base_methods:
+                            if method_name not in submodule_methods:
+                                Logger.warn(f"{item.MANAGER.NAME} {item.NAME} Does Not Have Method {method_name} Registered!", module=f"{module.NAME}-submodule-init")
+                                Logger.warn("This could cause issues when overriding methods!", module=f"{module.NAME}-submodule-init")
+
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
@@ -351,6 +372,7 @@ class _ModuleManager(AbstractManager):
                 initializedModule.DEPENDENCIES = module.DEPENDENCIES
                 # Replacing Item in _module_list with the Initialized Version!
                 self._module_list[module.NAME] = initializedModule
+                Logger.info(f"Initialized Module {module.NAME}", module="init-module")
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
@@ -372,29 +394,29 @@ class _ModuleManager(AbstractManager):
 
     # Intermediate Function to run Post-Initialization Scripts
     def _postInit(self):
-        for module_name, module_obj in list(self._module_list.items()):
+        for module in self._sorted_module_graph:
             try:
-                Logger.debug(f"Running Post-Initialization for Module {module_name}", module=f"{module_name}-postinit")
+                Logger.debug(f"Running Post-Initialization for Module {module.NAME}", module=f"{module.NAME}-postinit")
                 # Calling the Final Init function
-                module_obj.postInit()
+                module.postInit(module)
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._error_list.append((module_name, "Init-Final"))  # Module Loaded WITH Errors
+                self._error_list.append((module.NAME, "Init-Final"))  # Module Loaded WITH Errors
                 # If the Error is an Postinit Error (raised on purpose), Don't print out TB
                 if type(e) is PostInitError:
                     printTb = False
                 else:
                     printTb = True
-                Logger.error(f"Error While Running Post-Initialization For {module_name} - {type(e).__name__}: {e}\n", module="postinit", printTb=printTb)
+                Logger.error(f"Error While Running Post-Initialization For {module.NAME} - {type(e).__name__}: {e}\n", module="postinit", printTb=printTb)
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="postinit")
-                Logger.warn(f"Skipping Module {module_name}?", module="postinit")
+                Logger.warn(f"Skipping Module {module.NAME}?", module="postinit")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module_name} From Loader!", module="postinit")
-                del self._module_list[module_name]
+                Logger.warn(f"Removing Module {module.NAME} From Loader!", module="postinit")
+                del self._module_list[module.NAME]
 
     # Registration. Called by Module Decorator
     def register(
@@ -498,9 +520,9 @@ class Dependency:
 # Used In @Module
 def Module(
     name: str,
-    description: str = None,
-    author: str = None,
-    version: str = None,
+    description: str,
+    author: str,
+    version: str,
     dependencies: Optional[list] = None
 ):
     def internal(cls):
@@ -529,6 +551,77 @@ def Submodule(submodule: AbstractManager, name: str, description: Optional[str] 
         # Return cls Obj for Decorator
         return cls
     return internal
+
+
+# Method Override Decorator - Provides dynamic run-time method overriding
+# Used In @Override
+def Override(
+    target: Callable,
+    abstract: bool = False  # Allows for modifying abstract methods (Removed Warning)
+):
+    def internal(destination: Callable):
+        # Because when someone overrides a method multiple times,
+        # the parent class and (original) class name gets destroyed and lost.
+        # _OBSIDIAN_OVERRIDE_CACHE saves those two values the first time it gets overridden.
+        # And every subsequent time, it just returns the cached values.
+        Logger.debug(f"Overriding Method {target} with {destination}", module="dynamic-method-override")
+
+        # Check if the attribute is set
+        if not hasattr(target, "_OBSIDIAN_OVERRIDE_CACHE"):
+            Logger.debug("First time overriding method. Getting name and parent", module="dynamic-method-override")
+            # Get the name and parent class of the function to override
+            func_name = target.__name__
+            parent_class = get_method_parent_class(target)
+            Logger.debug(f"Method {func_name} has Parent Class: {parent_class}", module="dynamic-method-override")
+
+            # If no parent class is found, return error
+            if not parent_class:
+                # Key Note: Overriding functions that are not in class
+                # are not supported because imports are absolute not relative,
+                # meaning any changes are not propagated to the original function.
+                raise InitError(f"Method {func_name} is not overridable. (No Parent Class Found!)")
+
+            # Check if parent class is an abstract class (Ignore if abstract flag is set)
+            if parent_class in [m.SUBMODULE for m in managers_list] and not abstract:
+                Logger.warn(f"Caution! {destination.__name__} is trying to override an abstract module {parent_class}!", module="dynamic-method-override")
+                Logger.warn("This could cause unintended side effects!", module="dynamic-method-override")
+                Logger.askConfirmation()
+        else:
+            Logger.debug("Override Cache Found! Using Cached Information", module="dynamic-method-override")
+            # Grab information out of cache
+            func_name, parent_class = target._OBSIDIAN_OVERRIDE_CACHE
+            Logger.debug(f"Method {func_name} has Parent Class: {parent_class}", module="dynamic-method-override")
+
+        # Define method to override
+        # A lambda is created so that the old (target) method can be passed in
+        overridden_method: Callable[[Any, Any], Any] = lambda *args, **kwargs: destination(target, *args, **kwargs)
+
+        # Save the new function name and parent class to Override Cache
+        overridden_method._OBSIDIAN_OVERRIDE_CACHE = (func_name, parent_class)
+
+        # Override method in parent class to the new method
+        setattr(parent_class, func_name, overridden_method)
+        Logger.debug(f"Saved {overridden_method} to {parent_class}")
+
+        return destination
+    return internal
+
+
+# Helper method to get parent class of method
+# Hybrid code by @Yoel http://stackoverflow.com/a/25959545 and @Stewori https://github.com/Stewori/pytypes
+# This code is heavily shaky, so expect some bugs! But it should work for most common use cases.
+def get_method_parent_class(function: Callable):
+    Logger.verbose(f"Getting parent class for method {function}", module="get-method-parent-class")
+    # After this point, I have little idea what it does...
+    cls = getattr(inspect.getmodule(function), function.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0], None)
+    if cls is None:
+        cls_names = function.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0].split('.')
+        cls = inspect.getmodule(function)
+        for cls_name in cls_names:
+            cls = getattr(cls, cls_name)
+    if isinstance(cls, type):
+        return cls
+    return getattr(function, '__objclass__', None)  # handle special descriptor objects
 
 
 # Creates Global ModuleManager As Singleton
