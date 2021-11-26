@@ -557,7 +557,7 @@ def Submodule(submodule: AbstractManager, name: str, description: Optional[str] 
 # Used In @Override
 def Override(
     target: Callable,
-    abstract: bool = False  # Allows for modifying abstract methods (Removed Warning)
+    abstract: bool = False  # Allows for modifying abstract methods (Removes Warning)
 ):
     def internal(destination: Callable):
         # Because when someone overrides a method multiple times,
@@ -601,9 +601,36 @@ def Override(
 
         # Override method in parent class to the new method
         setattr(parent_class, func_name, overridden_method)
-        Logger.debug(f"Saved {overridden_method} to {parent_class}")
+        Logger.debug(f"Saved {overridden_method} to {parent_class}", module="dynamic-method-override")
 
         return destination
+    return internal
+
+
+# Inject Method Decorator. Used to dynamically add new methods to classes at runtime
+# Used In @InjectMethod
+def InjectMethod(
+    target: Type[object]
+):
+    def internal(destination: Callable):
+        # Save name of target class and destination function
+        target_name = target.__name__
+        dest_name = destination.__name__
+        Logger.debug(f"Injecting Method {dest_name} into class {target_name} ({target})", module="dynamic-method-inject")
+
+        # Check if if function of name target already exists
+        if hasattr(target, dest_name):
+            # Method registered under the same name
+            conflict = getattr(target, dest_name)
+            # Return error to user
+            Logger.error(f"Class {target_name} already contains method of name {dest_name} ({conflict})", module="dynamic-method-inject")
+            Logger.error("This could be because two modules are injecting a function of the same name or that the author meant to use @Override", module="dynamic-method-inject")
+            raise InitError(f"Method {dest_name} already exists in class {target_name}")
+
+        # Adding method to destination class
+        setattr(target, dest_name, destination)
+        Logger.debug(f"Added {dest_name} to {target_name}", module="dynamic-method-inject")
+
     return internal
 
 

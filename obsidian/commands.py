@@ -26,6 +26,7 @@ def Command(*args, **kwargs):
 # Command Skeleton
 @dataclass
 class AbstractCommand(AbstractSubmodule):
+    # TODO: Maybe enforce this as a tuple?
     ACTIVATORS: List[str] = field(default_factory=list)
 
     async def execute(self, ctx: Player):

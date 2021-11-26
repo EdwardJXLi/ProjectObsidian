@@ -680,7 +680,7 @@ class CoreModule(AbstractModule):
     )
     class TestCommand(AbstractCommand):
         def __init__(self):
-            super().__init__()
+            super().__init__(ACTIVATORS=["test"])
 
         async def execute(self, ctx: Player):
             await ctx.sendMessage("Hello!")
