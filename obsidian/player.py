@@ -30,8 +30,13 @@ class PlayerManager:
 
     async def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
         Logger.debug(f"Creating Player For Ip {network.ip}", module="player-manager")
+        # Check if user is an operator
+        opStatus = False
+        if username.lower() in self.server.config.operatorsList:
+            opStatus = True
+            await network.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
         # Creating Player Class
-        player = Player(self, network, username, verificationKey)
+        player = Player(self, network, username, verificationKey, opStatus=opStatus)
         # Checking if server is full
         if len(self.players) >= self.maxSize:
             raise ClientError("Server Is Full!")
@@ -108,6 +113,26 @@ class PlayerManager:
             textColour=Colour.WHITE
         )
         await self.sendGlobalPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
+
+    async def propagateOperatorStatus(self):
+        Logger.debug("Propagating Operator Status", module="player-manager")
+        # Loop Through All Players
+        for player in self.players:
+            # Check if player is an operator
+            if (not player.opStatus) and (player.name.lower() in self.server.config.operatorsList):
+                # Send Packet To Player
+                await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
+                # Set Player Operator Status
+                player.opStatus = True
+                # Send Message to Player
+                await player.sendMessage("You Are Now An Operator")
+            elif (player.opStatus) and (player.name.lower() not in self.server.config.operatorsList):
+                # Send Packet To Player
+                await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, False)
+                # Set Player Operator Status
+                player.opStatus = False
+                # Send Message to Player
+                await player.sendMessage("You Are No Longer An Operator")
 
 
 # The Specific Player Manager Per World
@@ -303,9 +328,9 @@ class WorldPlayerManager:
         elif isinstance(author, Player):
             # Special Formatting For OPs
             if author.opStatus:
-                message = f"<&c{author.name}&f> {message}"
+                message = f"<{self.world.worldManager.server.config.operatorChatColor}{author.name}&f> {message}"
             else:
-                message = f"<&a{author.name}&f> {message}"
+                message = f"<{self.world.worldManager.server.config.playerChatColor}{author.name}&f> {message}"
 
         # Add World Tag (If Requested)
         if worldTag:
@@ -456,7 +481,7 @@ class Player:
                 await self.sendMessage(f"&cInvalid Command: {str(e)}")
             return None  # Skip Rest
 
-        # Check If Last Character Is '&' (Crashes All Clients)
+        # Check If Last Character Is '&' (Crashes Older Minecraft Clients)
         if message[-1:] == "&":
             message = message[:-1]  # Cut Last Character
 
@@ -479,6 +504,10 @@ class Player:
 
         # Get Command Object
         command = Commands.getCommandFromName(cmdName)
+
+        # Check if user is allowed to run this command
+        if command.OP and not self.opStatus:
+            raise CommandError("You Are Not An Operator!")
 
         # Parse Command Arguments
         parsedArguments, parsedKwArgs = _parseArgs(command, cmdArgs)

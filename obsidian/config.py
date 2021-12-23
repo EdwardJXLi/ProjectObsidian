@@ -22,7 +22,11 @@ class ServerConfig:
     saveAfterConfigLoad: bool = True  # Override Flag To Enable/Disable Config Saving After Load
     # Network Configuration
     ipBlacklist: List[str] = field(default_factory=list)  # List Of Ips To Block Connection
+    # Chat Configuration
+    playerChatColor: str = "&a"
+    operatorChatColor: str = "&4"
     # World Configuration
+    operatorsList: List[str] = field(default_factory=list)  # List Of Operators
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     defaultWorld: str = "default"  # Name Of Default World
     serverMaxPlayers: int = 128  # Number Of Players Max Allowed On The Entire Server
@@ -35,7 +39,7 @@ class ServerConfig:
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     worldBlacklist: List[str] = field(default_factory=list)  # World Init Blacklist
-    defaultMOTD: List[str] = field(default_factory=lambda: ["&aObsidian Server"])  # Default MOTD
+    defaultMOTD: List[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
 
     # Server-Boot Init of Config
     def init(self):
@@ -67,6 +71,14 @@ class ServerConfig:
             Logger.debug("Config File Does Not Exist! Creating Config File.", "config")
             with open(configPath, "w") as configFile:
                 self._save(configFile)
+
+    # Save Config To File
+    def save(self):
+        Logger.debug("Saving Config", "config")
+        # Check If File Exists
+        configPath = os.path.join(SERVERPATH, self.configPath)
+        with open(configPath, "w") as configFile:
+            self._save(configFile)
 
     def _load(self, fileIO: io.TextIOWrapper):
         Logger.debug(f"Loading Config With FileIO {fileIO}", "config-load")

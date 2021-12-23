@@ -28,6 +28,7 @@ def Command(*args, **kwargs):
 class AbstractCommand(AbstractSubmodule):
     # TODO: Maybe enforce this as a tuple?
     ACTIVATORS: List[str] = field(default_factory=list)
+    OP: bool = False
 
     async def execute(self, ctx: Player):
         raise NotImplementedError("Command Hander Not Implemented")

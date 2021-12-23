@@ -587,9 +587,13 @@ class CoreModule(AbstractModule):
                 CRITICAL=False
             )
 
-        async def serialize(self):
-            raise NotImplementedError()
-            return None  # TODO
+        async def serialize(self, isOperator: bool = False):
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                0x64 if isOperator else 0x00
+            )
+            return msg
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
@@ -1284,6 +1288,75 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player):
             await ctx.sendMOTD()
+
+    #
+    # COMMANDS (OPERATORS ONLY)
+    #
+
+    @Command(
+        "Operator",
+        description="Sets A Player As An Operator",
+        version="v1.0.0"
+    )
+    class OPCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__(ACTIVATORS=["op", "setop", "operator"], OP=True)
+
+        async def execute(self, ctx: Player, player_name: str):
+            # Add Player To Operators List
+            serverConfig = ctx.playerManager.server.config
+            serverConfig.operatorsList.append(player_name.lower())
+            serverConfig.save()
+
+            # Propagate Operator Status
+            await ctx.playerManager.propagateOperatorStatus()
+
+            # Send Response Back
+            await ctx.sendMessage(f"Player {player_name} Added To Operators List")
+
+    @Command(
+        "DeOperator",
+        description="Removes A Player As An Operator",
+        version="v1.0.0"
+    )
+    class DEOPCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__(ACTIVATORS=["deop", "removeop", "deoperator"], OP=True)
+
+        async def execute(self, ctx: Player, player_name: str):
+            # Add Player To Operators List
+            serverConfig = ctx.playerManager.server.config
+            if player_name not in serverConfig.operatorsList:
+                raise CommandError(f"&cPlayer {player_name} is not an operator!&f")
+
+            serverConfig.operatorsList.remove(player_name.lower())
+            serverConfig.save()
+
+            # Propagate Operator Status
+            await ctx.playerManager.propagateOperatorStatus()
+
+            # Send Response Back
+            await ctx.sendMessage(f"Player {player_name} Removed From Operators List")
+
+    @Command(
+        "ReloadConfig",
+        description="Forces a reload of the config",
+        version="v1.0.0"
+    )
+    class ReloadConfigCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__(ACTIVATORS=["reloadconfig"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Reload Config
+            serverConfig = ctx.playerManager.server.config
+            serverConfig.reload()
+
+            # Repropagate Operator Status
+            await ctx.playerManager.propagateOperatorStatus()
+
+            # Send Response Back
+            await ctx.sendMessage("Config Reloaded!")
 
 
 # Helper functions for the command generation
