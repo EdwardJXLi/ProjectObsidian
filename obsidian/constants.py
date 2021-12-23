@@ -21,6 +21,9 @@ CRITICAL_RESPONSE_ERRORS = [
     asyncio.IncompleteReadError
 ]
 
+# Message Constants
+MAX_MESSAGE_LENGTH = 64
+
 # Console Colour
 CSI = "\u001b["  # ANSI Colour Header
 

@@ -168,6 +168,9 @@ class WorldPlayerManager:
 
         Logger.debug(f"Finished Handling Player Join For {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
+        # Send MOTD to user
+        await player.sendMOTD()
+
         # Sending Join Chat Message
         await self.sendWorldMessage(f"&e{player.name} Joined The World &9(ID {player.playerId})&f")
 
@@ -244,6 +247,15 @@ class WorldPlayerManager:
         self.player_slots[playerId] = None
 
         Logger.debug(f"Deallocated Id {playerId}", module="id-allocator")
+
+    def getPlayers(self):
+        # Loop through all players
+        players_list = []
+        for player in self.player_slots:
+            if player is not None:
+                # If its not none, its a player!
+                players_list.append(player)
+        return players_list
 
     async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
         # Send packet to all members in world
@@ -369,6 +381,7 @@ class Player:
                 await self.sendMessage(msg)
             return None  # Break Out of Function
 
+        # Send message packet to user
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
 
     async def handleBlockUpdate(self, blockX: int, blockY: int, blockZ: int, blockType: AbstractBlock):
@@ -439,8 +452,8 @@ class Player:
             try:
                 await self.handlePlayerCommand(message[1:])
             except CommandError as e:
-                Logger.info(f"Command From Player {self.name} Failed With {str(e)}", module="command")
-                await self.sendMessage(f"&c{str(e)}")
+                Logger.warn(f"Command From Player {self.name} Failed With {str(e)}", module="command")
+                await self.sendMessage(f"&cInvalid Command: {str(e)}")
             return None  # Skip Rest
 
         # Check If Last Character Is '&' (Crashes All Clients)
@@ -473,6 +486,17 @@ class Player:
         # Run Command
         try:
             await command.execute(self, *parsedArguments, **parsedKwArgs)
+        except CommandError as e:
+            raise e  # Pass error down
         except Exception as e:
             Logger.error(f"Command {command.NAME} Raised Error {str(e)}", module="command")
             await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
+
+    async def sendMOTD(self, motdMessage: Optional[List[str]] = None):
+        # If motdMessage was not passed, use default one in config
+        if motdMessage is None:
+            motdMessage = self.playerManager.server.config.defaultMOTD
+
+        # Send MOTD To Player
+        Logger.debug(f"Sending MOTD to Player {self.name}", module="command")
+        await self.sendMessage(motdMessage)

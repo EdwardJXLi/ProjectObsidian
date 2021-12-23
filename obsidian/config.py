@@ -32,8 +32,10 @@ class ServerConfig:
     defaultWorldSizeY: int = 256  # Default Size Y
     defaultWorldSizeZ: int = 256  # Default Size Z
     defaultSaveFormat: str = "raw"  # Name Of Default World Save Format
+    checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     worldBlacklist: List[str] = field(default_factory=list)  # World Init Blacklist
+    defaultMOTD: List[str] = field(default_factory=lambda: ["&aObsidian Server"])  # Default MOTD
 
     # Server-Boot Init of Config
     def init(self):

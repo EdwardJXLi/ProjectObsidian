@@ -1,11 +1,11 @@
-from obsidian.module import Module, AbstractModule
-from obsidian.constants import ClientError, ServerError, WorldFormatError, __version__
+from obsidian.module import Module, AbstractModule, ModuleManager
+from obsidian.constants import MAX_MESSAGE_LENGTH, ClientError, ServerError, WorldFormatError, CommandError, __version__
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
 from obsidian.world import World, WorldManager
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator
-from obsidian.commands import AbstractCommand, Command
+from obsidian.commands import AbstractCommand, Command, CommandManager
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.packet import (
     RequestPacket,
@@ -16,8 +16,10 @@ from obsidian.packet import (
     packageString
 )
 
+import inspect
 import struct
 import gzip
+import math
 import io
 import os
 
@@ -670,22 +672,6 @@ class CoreModule(AbstractModule):
             return mapData
 
     #
-    # COMMANDS
-    #
-
-    @Command(
-        "TEST",
-        description="Test Command",
-        version="v1.0.0"
-    )
-    class TestCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["test"])
-
-        async def execute(self, ctx: Player):
-            await ctx.sendMessage("Hello!")
-
-    #
     # BLOCKS
     #
 
@@ -1088,3 +1074,230 @@ class CoreModule(AbstractModule):
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
+
+    #
+    # COMMANDS
+    #
+
+    @Command(
+        "Help",
+        description="Generates a help command for users",
+        version="v1.0.0"
+    )
+    class HelpCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__(ACTIVATORS=["help", "commands", "cmds"])
+
+        async def execute(self, ctx: Player, page: int = 1):
+            # Get information on the number of commands, pages, and commands per page
+            num_commands = len(CommandManager._command_list)  # This should never be zero as it should always count itself!
+            commands_per_page = 4
+            num_pages = math.ceil(num_commands / commands_per_page)
+            current_page = page - 1
+
+            # Check if user input was valid
+            if page > num_pages or page <= 0:
+                raise CommandError(f"&cThere are only {num_pages} pages of commands!&f")
+
+            # Get a list of commands registed
+            commands = tuple(CommandManager._command_list.items())
+
+            # Generate command output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.generateCenteredMessage(f"&eHelp Page {page}/{num_pages}", colour="&2"))
+
+            # Add some additional tips to help command
+            output.append("&7Use /help [n] to get the nth page of help.&f")
+            output.append("&7Use /helpcmd [name] to more information on a command&f")
+
+            # Add command information
+            for cmd_name, cmd in commands[current_page * commands_per_page:current_page * commands_per_page + commands_per_page]:
+                help_message = f"&d[{cmd_name}] &e/{cmd.ACTIVATORS[0]}"
+                if len(cmd.ACTIVATORS) > 1:
+                    help_message += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS])})"
+                help_message += "&f"
+                output.append(help_message)
+                output.append(f"{cmd.DESCRIPTION}")
+
+            # Add Footer
+            output.append(CommandHelper.generateCenteredMessage(f"&eTotal Commands: {num_commands}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "HelpCmd",
+        description="Detailed help message for a specific command",
+        version="v1.0.0"
+    )
+    class HelpCmdCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__(ACTIVATORS=["helpcmd", "cmdhelp"])
+
+        async def execute(self, ctx: Player, cmd_name: str):
+            # Generate command output
+            output = []
+
+            # Get the command in question
+            if cmd_name in CommandManager._command_list:
+                # User is passing by command name
+                cmd = CommandManager._command_list[cmd_name]
+            elif cmd_name in CommandManager._activators:
+                # User is passing by activator
+                cmd = CommandManager._activators[cmd_name]
+            else:
+                # Command doesnt exist!
+                raise CommandError(f"&cCommand {cmd_name} not found!&f")
+
+            # Add Header
+            output.append(CommandHelper.generateCenteredMessage(f"&eCommand Information: {cmd.NAME}", colour="&2"))
+
+            # Add Command Description
+            output.append(f"&d[Description]&f {cmd.DESCRIPTION}")
+
+            # Generate Command Usage
+            cmd_usage_str = f"&d[Usage] &e/{cmd.ACTIVATORS[0]}"
+            # Loop through all arguments ** except for first ** (that is the ctx)
+            for name, param in list(inspect.signature(cmd.execute).parameters.items())[1:]:
+                # Code recycled from parseargs
+                # Normal arguments use ""
+                if param.kind == param.KEYWORD_ONLY:
+                    cmd_usage_str += f" &b{name}"
+                    if param.annotation != inspect._empty:
+                        cmd_usage_str += f"&7({param.annotation.__name__})"
+                # Optional arguments use []
+                elif param.kind == param.POSITIONAL_OR_KEYWORD:
+                    cmd_usage_str += f" &b[{name}"
+                    if param.annotation != inspect._empty:
+                        cmd_usage_str += f"&7({param.annotation.__name__})"
+                    cmd_usage_str += "&b]"
+                # Capture arguments use {}
+                elif param.kind == param.VAR_POSITIONAL:
+                    cmd_usage_str += f" &b{{{name}...}}"
+                    if param.annotation != inspect._empty:
+                        cmd_usage_str += f"&7({param.annotation.__name__})"
+                else:
+                    # This shouldnt really happen
+                    raise ServerError(f"Unknown argument type {param.kind} while generating help command")
+
+            cmd_usage_str += "&f"
+            output.append(cmd_usage_str)
+            output.append(CommandHelper.generateCenteredMessage(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "PluginsList",
+        description="Lists all plugins/modules installed",
+        version="v1.0.0"
+    )
+    class PulginsCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__(ACTIVATORS=["plugins", "modules"])
+
+        async def execute(self, ctx: Player, page: int = 1):
+            # Get information on the number of modules, pages, and modules per page
+            num_modules = len(ModuleManager._module_list)  # This should never be zero as it should always count itself!
+            modules_per_page = 8
+            num_pages = math.ceil(num_modules / modules_per_page)
+            current_page = page - 1
+
+            # Check if user input was valid
+            if page > num_pages or page <= 0:
+                raise CommandError(f"&cThere are only {num_pages} pages of modules!&f")
+
+            # Get a list of modules registed
+            modules = tuple(ModuleManager._module_list.items())
+
+            # Generate command output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.generateCenteredMessage(f"&eHelp Page {page}/{num_pages}", colour="&2"))
+
+            # Add command information
+            for module_name, module in modules[current_page * modules_per_page:current_page * modules_per_page + modules_per_page]:
+                output.append(f"&e{module_name}: &f{module.DESCRIPTION}")
+
+            # Add Footer
+            output.append(CommandHelper.generateCenteredMessage(f"&eTotal Modules: {num_modules}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "ListPlayers",
+        description="Lists all online players",
+        version="v1.0.0"
+    )
+    class ListPlayersCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__(ACTIVATORS=["list", "players", "online"])
+
+        async def execute(self, ctx: Player):
+            if ctx.worldPlayerManager is None:
+                raise CommandError("&cYou are not in a world!&f")
+
+            players_list = ctx.worldPlayerManager.getPlayers()
+
+            # If the list is empty, something un oh happened
+            if len(players_list) == 0:
+                raise ServerError("&cSomething went wrong while getting the list of players!&f")
+
+            # Generate command output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.generateCenteredMessage(f"&ePlayers Online: {len(players_list)}/{ctx.worldPlayerManager.world.maxPlayers}", colour="&2"))
+
+            # Generate Player List Output
+            output.append("&e")
+            while players_list:
+                player_name = players_list.pop(0).name
+                if len(players_list) != 0:
+                    player_name += ", "
+
+                # Check if adding the player name will overflow the max message length
+                if len(output[-1]) + len(player_name) > MAX_MESSAGE_LENGTH:
+                    output.append("&e")  # Add a new line for output
+
+                # Add Player Name
+                output[-1] += player_name
+
+            # Add Footer
+            output.append(CommandHelper.generateCenteredMessage(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "MOTD",
+        description="Prints Message of the Day",
+        version="v1.0.0"
+    )
+    class MOTDCommand(AbstractCommand):
+        def __init__(self):
+            super().__init__(ACTIVATORS=["motd"])
+
+        async def execute(self, ctx: Player):
+            await ctx.sendMOTD()
+
+
+# Helper functions for the command generation
+class CommandHelper():
+    @staticmethod
+    def generateCenteredMessage(message: str, colour: str = "", padCharacter: str = "="):
+        # Calculate the number of padding to add
+        max_message_length = 64
+        pad_space = max(
+            max_message_length - len(message) - 2 * (len(colour) + 1) - 2,
+            0  # Maxing at zero in case the final output goes into the negatives
+        )
+        pad_left = pad_space // 2
+        pad_right = pad_space - pad_left
+
+        # Generate and return padded message
+        return (colour + padCharacter * pad_left) + (" " + message + " ") + (colour + padCharacter * pad_right) + "&f"
