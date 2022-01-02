@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Type, Optional, List, Any, Callable
+from typing import Type, Optional, List, Any, Callable, Generic
 from pathlib import Path
 import importlib
 import pkgutil
@@ -20,7 +20,8 @@ from obsidian.constants import (
     FatalError,
     MODULESIMPORT,
     MODULESFOLDER,
-    SERVERPATH
+    SERVERPATH,
+    T
 )
 
 
@@ -60,18 +61,25 @@ class AbstractModule:
     VERSION: str
     DEPENDENCIES: list
 
+    def _initSubmodule(self, submodule, *args, **kwargs):
+        return submodule(*args, self, **kwargs)
+
     def initConfig(
         self,
-        config: type[AbstractConfig],
+        config: Type[T],
         *args,
         name: str = "config",
         overrideConfigPath: Optional[Path] = None,
         **kwargs
-    ):
+    ) -> T:
+        if isinstance(config, AbstractConfig):
+            raise Exception("Passed Config Must Extend `AbstractConfig`")
+
         if overrideConfigPath:
             rootPath = overrideConfigPath
         else:
             rootPath = Path("configs", format_name(self.NAME))
+
         return config(name, *args, rootPath=rootPath, autoInit=True, hideWarning=True, **kwargs)
 
     def postInit(*args, **kwargs):
@@ -80,13 +88,17 @@ class AbstractModule:
 
 # Submodule Skeleton
 @dataclass
-class AbstractSubmodule:
+class AbstractSubmodule(Generic[T]):
     NAME: str
     DESCRIPTION: str
     VERSION: str
     OVERRIDE: bool
     MANAGER: AbstractManager
-    MODULE: AbstractModule
+    MODULE: T
+
+    def __post_init__(self):
+        # Create alias for module
+        self.module = self.MODULE
 
 
 # Internal Module Manager Singleton
@@ -141,23 +153,23 @@ class _ModuleManager(AbstractManager):
         Logger.info("Dependencies Resolved!", module="module-resolve")
         Logger.info("PreInitializing Done!", module="module-preinit")
 
-        # --- Initialization (Submodules) ---
-        Logger.info("=== (4/6) Initializing Submodules ===", module="init-modules")
-
-        # Initialization Part Four => Initialize Submodules
-        Logger.info("Initializing Submodules...", module="submodule-init")
-        self._initSubmodules()
-        Logger.info("Submodules Initialized!", module="submodule-init")
-
         # --- Initialization (Modules) ---
-        Logger.info("=== (5/6) Initializing Modules ===", module="init-modules")
+        Logger.info("=== (4/6) Initializing Modules ===", module="init-modules")
 
-        # Initialization Part Five => Initialize Modules
+        # Initialization Part Four => Initialize Modules
         Logger.info("Initializing Modules...", module="module-init")
         self._initModules()
         Logger.info("Modules Initialized!", module="module-init")
 
         Logger.info("Initializing Done!", module="module-init")
+
+        # --- Initialization (Submodules) ---
+        Logger.info("=== (5/6) Initializing Submodules ===", module="init-modules")
+
+        # Initialization Part Five => Initialize Submodules
+        Logger.info("Initializing Submodules...", module="submodule-init")
+        self._initSubmodules()
+        Logger.info("Submodules Initialized!", module="submodule-init")
 
         # --- Finalizing Initialization ---
         Logger.info("=== (6/6) Finalizing Initialization ===", module="init-modules")
@@ -225,7 +237,7 @@ class _ModuleManager(AbstractManager):
                             Logger.verbose(f"Skipping Version Check For Dependency {dependency}", module="module-resolve")
                             pass  # No Version Check Needed
                         elif dep_ver == self._module_list[dependency.NAME].VERSION:
-                            Logger.verbose(f"Dependencies {dependency} Statisfied!", module="module-resolve")
+                            Logger.verbose(f"Dependencies {dependency} Satisfied!", module="module-resolve")
                             pass
                         else:
                             raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {dep_ver} | Has: {self._module_list[dependency.NAME].VERSION})")
@@ -315,6 +327,38 @@ class _ModuleManager(AbstractManager):
         # Print Out Status
         Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sorted_module_graph}", module="module-prep")
 
+    # Intermediate Function to Initialize Modules
+    def _initModules(self):
+        for idx, module in enumerate(self._sorted_module_graph):
+            try:
+                Logger.debug(f"Initializing Module {module.NAME}", module=f"{module.NAME}-init")
+                # Initialize Module
+                initializedModule = module(
+                    module.NAME,
+                    module.DESCRIPTION,
+                    module.AUTHOR,
+                    module.VERSION,
+                    module.DEPENDENCIES
+                )
+                # Replacing Item in _module_list and _sorted_module_graph with the Initialized Version!
+                self._module_list[module.NAME] = initializedModule
+                self._sorted_module_graph[idx] = initializedModule
+                Logger.info(f"Initialized Module {module.NAME}", module="init-module")
+            except FatalError as e:
+                # Pass Down Fatal Error To Base Server
+                raise e
+            except Exception as e:
+                # Handle Exception if Error Occurs
+                self._error_list.append((module.NAME, "Init-Module"))  # Module Loaded WITH Errors
+                # If the Error is an Init Error (raised on purpose), Don't print out TB
+                Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init", printTb=not not isinstance(e, InitError))
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-init")
+                Logger.warn(f"Skipping Module {module.NAME}?", module="module-init")
+                Logger.askConfirmation()
+                # Remove Module
+                Logger.warn(f"Removing Module {module.NAME} From Loader!", module="module-init")
+                del self._module_list[module.NAME]
+
     # Intermediate Function to Initialize Submodules
     def _initSubmodules(self):
         # Loop through all the submodules in the order of the sorted graph
@@ -322,8 +366,8 @@ class _ModuleManager(AbstractManager):
             try:
                 # Loop Through All Items within Module
                 Logger.debug(f"Checking All Items in {module.NAME}", module=f"{module.NAME}-submodule-init")
-                # Loop Through All Items In Class
-                for item in module.__dict__.values():
+                # Loop Through All Items In Class of Object
+                for item in module.__class__.__dict__.values():
                     # Check If Item Has "obsidian_submodule" Flag
                     if hasattr(item, "obsidian_submodule"):
                         Logger.verbose(f"{item} Is A Submodule! Adding As {module.NAME} Submodule.", module=f"{module.NAME}-submodule-init")
@@ -361,44 +405,13 @@ class _ModuleManager(AbstractManager):
                 Logger.warn(f"Removing Module {module.NAME} From Loader!", module="submodule-init")
                 del self._module_list[module.NAME]
 
-    # Intermediate Function to Initialize Modules
-    def _initModules(self):
-        for module in self._sorted_module_graph:
-            try:
-                Logger.debug(f"Initializing Module {module.NAME}", module=f"{module.NAME}-init")
-                # Initialize Module
-                initializedModule = module(
-                    module.NAME,
-                    module.DESCRIPTION,
-                    module.AUTHOR,
-                    module.VERSION,
-                    module.DEPENDENCIES
-                )
-                # Replacing Item in _module_list with the Initialized Version!
-                self._module_list[module.NAME] = initializedModule
-                Logger.info(f"Initialized Module {module.NAME}", module="init-module")
-            except FatalError as e:
-                # Pass Down Fatal Error To Base Server
-                raise e
-            except Exception as e:
-                # Handle Exception if Error Occurs
-                self._error_list.append((module.NAME, "Init-Module"))  # Module Loaded WITH Errors
-                # If the Error is an Init Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init", printTb=not not isinstance(e, InitError))
-                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-init")
-                Logger.warn(f"Skipping Module {module.NAME}?", module="module-init")
-                Logger.askConfirmation()
-                # Remove Module
-                Logger.warn(f"Removing Module {module.NAME} From Loader!", module="module-init")
-                del self._module_list[module.NAME]
-
     # Intermediate Function to run Post-Initialization Scripts
     def _postInit(self):
         for module in self._sorted_module_graph:
             try:
                 Logger.debug(f"Running Post-Initialization for Module {module.NAME}", module=f"{module.NAME}-postinit")
                 # Calling the Final Init function
-                module.postInit(module)
+                module.postInit()
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e

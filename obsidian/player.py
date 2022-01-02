@@ -401,7 +401,7 @@ class Player:
         Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
-            Logger.debug("Sending List Of Messages To Player!")
+            Logger.debug("Sending List Of Messages To Player!", "player-message")
             for msg in message:
                 await self.sendMessage(msg)
             return None  # Break Out of Function

@@ -6,7 +6,7 @@ import traceback
 import os
 import sys
 
-from obsidian.config import ServerConfig
+from obsidian.config import AbstractConfig, ServerConfig
 from obsidian.packet import PacketManager, Packets
 from obsidian.constants import (
     managers_list,
@@ -51,8 +51,9 @@ class Server:
         self.playerManager: Optional[PlayerManager] = None  # Player Manager Class (initialized later)
         self.ensureFiles: List[str] = []  # List of folders to ensure they exist
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
-        self.initialized = False  # Flag Set When Everything Is Fully Loaded
-        self.stopping = False  # Flag To Prevent Crl-C Spamming
+        self.initialized: bool = False  # Flag Set When Everything Is Fully Loaded
+        self.stopping: bool = False  # Flag To Prevent Crl-C Spamming
+        self.moduleConfigs: List[AbstractConfig] = []  # List of Module Configs (Autosave when server stops)
 
         # Init Colour
         if colour:
@@ -222,7 +223,6 @@ class Server:
                 Logger.info("Trying to shut down server that is not initialized!", module="server-stop")
                 Logger.info("Skipping Shutdown and Cleanup Procedure", module="server-stop")
                 sys.exit(0)
-                return None
 
             # Preparing to stop server!
             Logger.info("Stopping Server...", module="server-stop")

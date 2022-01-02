@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Dict, Type
+from typing import Dict, Type, Generic
 from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, FatalError
+from obsidian.constants import InitRegisterError, FatalError, T
 from obsidian.log import Logger
 
 
@@ -17,7 +17,7 @@ def MapGenerator(*args, **kwargs):
 
 # Map Generator Skeleton
 @dataclass
-class AbstractMapGenerator(AbstractSubmodule):
+class AbstractMapGenerator(AbstractSubmodule[T], Generic[T]):
     def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, *args, **kwargs):
         raise NotImplementedError("Map Generation Not Implemented")
 

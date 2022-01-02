@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import asyncio
+import typing
 
 # Server Version
 __version__ = "1.0.0"
@@ -30,6 +31,9 @@ CSI = "\u001b["  # ANSI Colour Header
 # Module Constants
 MODULESFOLDER = "modules"
 MODULESIMPORT = "obsidian.modules."
+
+# Temporary Types
+T = typing.TypeVar("T")
 
 # Managers
 # Dynamically generated list of registered managers.

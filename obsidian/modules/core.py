@@ -43,7 +43,7 @@ class CoreModule(AbstractModule):
         "PlayerIdentification",
         description="Handle First Packet Sent By Player"
     )
-    class PlayerIdentificationPacket(AbstractRequestPacket):
+    class PlayerIdentificationPacket(AbstractRequestPacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -85,7 +85,7 @@ class CoreModule(AbstractModule):
         "UpdateBlock",
         description="Packet Received When Block Placed/Broken"
     )
-    class UpdateBlockPacket(AbstractRequestPacket):
+    class UpdateBlockPacket(AbstractRequestPacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -128,7 +128,7 @@ class CoreModule(AbstractModule):
         "MovementUpdate",
         description="Received When Player Position And Orentation Is Sent"
     )
-    class MovementUpdatePacket(AbstractRequestPacket):
+    class MovementUpdatePacket(AbstractRequestPacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -165,7 +165,7 @@ class CoreModule(AbstractModule):
         "PlayerMessage",
         description="Received When Player Sends A Message"
     )
-    class PlayerMessagePacket(AbstractRequestPacket):
+    class PlayerMessagePacket(AbstractRequestPacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -209,7 +209,7 @@ class CoreModule(AbstractModule):
         "ServerIdentification",
         description="Response Packet After Player Identification"
     )
-    class ServerIdentificationPacket(AbstractResponsePacket):
+    class ServerIdentificationPacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -242,7 +242,7 @@ class CoreModule(AbstractModule):
         "Ping",
         description="General Ping Packet To Test Network Connection"
     )
-    class PingPacket(AbstractResponsePacket):
+    class PingPacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -264,7 +264,7 @@ class CoreModule(AbstractModule):
         "LevelInitialize",
         description="Packet To Begin World Data Transfer"
     )
-    class LevelInitializePacket(AbstractResponsePacket):
+    class LevelInitializePacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -286,7 +286,7 @@ class CoreModule(AbstractModule):
         "LevelDataChunk",
         description="Packet Containing Chunk Of Gzipped Map"
     )
-    class LevelDataChunkPacket(AbstractResponsePacket):
+    class LevelDataChunkPacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -321,7 +321,7 @@ class CoreModule(AbstractModule):
         "LevelFinalize",
         description="Packet To Finish World Data Transfer"
     )
-    class LevelFinalizePacket(AbstractResponsePacket):
+    class LevelFinalizePacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -352,7 +352,7 @@ class CoreModule(AbstractModule):
         "SetBlock",
         description="Sent To Update Block Changes"
     )
-    class SetBlockPacket(AbstractResponsePacket):
+    class SetBlockPacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -385,7 +385,7 @@ class CoreModule(AbstractModule):
         "SpawnPlayer",
         description="Packet Sent To All Players Initializing Player Spawn"
     )
-    class SpawnPlayerPacket(AbstractResponsePacket):
+    class SpawnPlayerPacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -424,7 +424,7 @@ class CoreModule(AbstractModule):
         "PlayerPositionUpdate",
         description="Sent To Update Player Position and Rotation"
     )
-    class PlayerPositionUpdatePacket(AbstractResponsePacket):
+    class PlayerPositionUpdatePacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -461,7 +461,7 @@ class CoreModule(AbstractModule):
         "PositionOrientationUpdate",
         description="Sent to Update Changes in Position and Orientation"
     )
-    class PositionOrientationUpdatePacket(AbstractResponsePacket):
+    class PositionOrientationUpdatePacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -480,7 +480,7 @@ class CoreModule(AbstractModule):
         "PositionUpdate",
         description="Sent to Update Changes in Position"
     )
-    class PositionUpdatePacket(AbstractResponsePacket):
+    class PositionUpdatePacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -499,7 +499,7 @@ class CoreModule(AbstractModule):
         "OrientationUpdate",
         description="Sent to Update Changes in Orientation"
     )
-    class OrientationUpdatePacket(AbstractResponsePacket):
+    class OrientationUpdatePacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -518,7 +518,7 @@ class CoreModule(AbstractModule):
         "DespawnPlayer",
         description="Sent to Despawn Existing Player"
     )
-    class DespawnPlayerPacket(AbstractResponsePacket):
+    class DespawnPlayerPacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -545,7 +545,7 @@ class CoreModule(AbstractModule):
         "SendMessage",
         description="Broadcasts Message To Player"
     )
-    class SendMessagePacket(AbstractResponsePacket):
+    class SendMessagePacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -576,7 +576,7 @@ class CoreModule(AbstractModule):
         "DisconnectPlayer",
         description="Packet Sent To Client To Force Disconnect"
     )
-    class DisconnectPlayerPacket(AbstractResponsePacket):
+    class DisconnectPlayerPacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -603,7 +603,7 @@ class CoreModule(AbstractModule):
         "UpdateUserType",
         description="Sent to Update User OP Status. User type is 0x64 for op, 0x00 for normal user."
     )
-    class UserTypeUpdatePacket(AbstractResponsePacket):
+    class UserTypeUpdatePacket(AbstractResponsePacket["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -632,7 +632,7 @@ class CoreModule(AbstractModule):
         description="Raw Map Data File (WORLD HAS TO BE 256x256x256)",
         version="v1.0.0"
     )
-    class RawWorldFormat(AbstractWorldFormat):
+    class RawWorldFormat(AbstractWorldFormat["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -688,7 +688,7 @@ class CoreModule(AbstractModule):
         description="Default Map Generator. Just Flat.",
         version="v1.0.0"
     )
-    class FlatMapGenerator(AbstractMapGenerator):
+    class FlatMapGenerator(AbstractMapGenerator["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args)
 
@@ -706,7 +706,7 @@ class CoreModule(AbstractModule):
     #
 
     @Block("Air")
-    class Air(AbstractBlock):
+    class Air(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=0)
 
@@ -714,7 +714,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Stone")
-    class Stone(AbstractBlock):
+    class Stone(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=1)
 
@@ -722,7 +722,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Grass")
-    class Grass(AbstractBlock):
+    class Grass(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=2)
 
@@ -730,7 +730,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Dirt")
-    class Dirt(AbstractBlock):
+    class Dirt(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=3)
 
@@ -738,7 +738,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Cobblestone")
-    class Cobblestone(AbstractBlock):
+    class Cobblestone(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=4)
 
@@ -746,7 +746,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Planks")
-    class Planks(AbstractBlock):
+    class Planks(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=5)
 
@@ -754,7 +754,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Sapling")
-    class Sapling(AbstractBlock):
+    class Sapling(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=6)
 
@@ -762,7 +762,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Bedrock")
-    class Bedrock(AbstractBlock):
+    class Bedrock(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=7)
 
@@ -770,7 +770,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("FlowingWater")
-    class FlowingWater(AbstractBlock):
+    class FlowingWater(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=8)
 
@@ -778,7 +778,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("StationaryWater")
-    class StationaryWater(AbstractBlock):
+    class StationaryWater(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=9)
 
@@ -786,7 +786,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("FlowingLava")
-    class FlowingLava(AbstractBlock):
+    class FlowingLava(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=10)
 
@@ -794,7 +794,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("StationaryLava")
-    class StationaryLava(AbstractBlock):
+    class StationaryLava(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=11)
 
@@ -802,7 +802,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Sand")
-    class Sand(AbstractBlock):
+    class Sand(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=12)
 
@@ -810,7 +810,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Gravel")
-    class Gravel(AbstractBlock):
+    class Gravel(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=13)
 
@@ -818,7 +818,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("GoldOre")
-    class GoldOre(AbstractBlock):
+    class GoldOre(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=14)
 
@@ -826,7 +826,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("IronOre")
-    class IronOre(AbstractBlock):
+    class IronOre(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=15)
 
@@ -834,7 +834,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("CoalOre")
-    class CoalOre(AbstractBlock):
+    class CoalOre(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=16)
 
@@ -842,7 +842,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Wood")
-    class Wood(AbstractBlock):
+    class Wood(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=17)
 
@@ -850,7 +850,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Leaves")
-    class Leaves(AbstractBlock):
+    class Leaves(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=18)
 
@@ -858,7 +858,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Sponge")
-    class Sponge(AbstractBlock):
+    class Sponge(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=19)
 
@@ -866,7 +866,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Glass")
-    class Glass(AbstractBlock):
+    class Glass(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=20)
 
@@ -874,7 +874,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("RedCloth")
-    class RedCloth(AbstractBlock):
+    class RedCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=21)
 
@@ -882,7 +882,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("OrangeCloth")
-    class OrangeCloth(AbstractBlock):
+    class OrangeCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=22)
 
@@ -890,7 +890,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("YellowCloth")
-    class YellowCloth(AbstractBlock):
+    class YellowCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=23)
 
@@ -898,7 +898,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("ChartreuseCloth")
-    class ChartreuseCloth(AbstractBlock):
+    class ChartreuseCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=24)
 
@@ -906,7 +906,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("GreenCloth")
-    class GreenCloth(AbstractBlock):
+    class GreenCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=25)
 
@@ -914,7 +914,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("SpringGreenCloth")
-    class SpringGreenCloth(AbstractBlock):
+    class SpringGreenCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=26)
 
@@ -922,7 +922,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("CyanCloth")
-    class CyanCloth(AbstractBlock):
+    class CyanCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=27)
 
@@ -930,7 +930,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("CapriCloth")
-    class CapriCloth(AbstractBlock):
+    class CapriCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=28)
 
@@ -938,7 +938,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("UltramarineCloth")
-    class UltramarineCloth(AbstractBlock):
+    class UltramarineCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=29)
 
@@ -946,7 +946,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("VioletCloth")
-    class VioletCloth(AbstractBlock):
+    class VioletCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=30)
 
@@ -954,7 +954,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("PurpleCloth")
-    class PurpleCloth(AbstractBlock):
+    class PurpleCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=31)
 
@@ -962,7 +962,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("MagentaCloth")
-    class MagentaCloth(AbstractBlock):
+    class MagentaCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=32)
 
@@ -970,7 +970,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("RoseCloth")
-    class RoseCloth(AbstractBlock):
+    class RoseCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=33)
 
@@ -978,7 +978,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("DarkGrayCloth")
-    class DarkGrayCloth(AbstractBlock):
+    class DarkGrayCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=34)
 
@@ -986,7 +986,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("LightGrayCloth")
-    class LightGrayCloth(AbstractBlock):
+    class LightGrayCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=35)
 
@@ -994,7 +994,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("WhiteCloth")
-    class WhiteCloth(AbstractBlock):
+    class WhiteCloth(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=36)
 
@@ -1002,7 +1002,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Dandelion")
-    class Dandelion(AbstractBlock):
+    class Dandelion(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=37)
 
@@ -1010,7 +1010,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Rose")
-    class Rose(AbstractBlock):
+    class Rose(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=38)
 
@@ -1018,7 +1018,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("BrownMushroom")
-    class BrownMushroom(AbstractBlock):
+    class BrownMushroom(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=39)
 
@@ -1026,7 +1026,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("RedMushroom")
-    class RedMushroom(AbstractBlock):
+    class RedMushroom(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=40)
 
@@ -1034,7 +1034,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("BlockGold")
-    class BlockGold(AbstractBlock):
+    class BlockGold(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=41)
 
@@ -1042,7 +1042,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("BlockIron")
-    class BlockIron(AbstractBlock):
+    class BlockIron(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=42)
 
@@ -1050,7 +1050,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("DoubleSlab")
-    class DoubleSlab(AbstractBlock):
+    class DoubleSlab(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=43)
 
@@ -1058,7 +1058,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Slab")
-    class Slab(AbstractBlock):
+    class Slab(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=44)
 
@@ -1066,7 +1066,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Bricks")
-    class Bricks(AbstractBlock):
+    class Bricks(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=45)
 
@@ -1074,7 +1074,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("TNT")
-    class TNT(AbstractBlock):
+    class TNT(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=46)
 
@@ -1082,7 +1082,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Bookshelf")
-    class Bookshelf(AbstractBlock):
+    class Bookshelf(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=47)
 
@@ -1090,7 +1090,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("MossyCobblestone")
-    class MossyCobblestone(AbstractBlock):
+    class MossyCobblestone(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=48)
 
@@ -1098,7 +1098,7 @@ class CoreModule(AbstractModule):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Obsidian")
-    class Obsidian(AbstractBlock):
+    class Obsidian(AbstractBlock["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ID=49)
 
@@ -1114,7 +1114,7 @@ class CoreModule(AbstractModule):
         description="Generates a help command for users",
         version="v1.0.0"
     )
-    class HelpCommand(AbstractCommand):
+    class HelpCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["help", "commands", "cmds"])
 
@@ -1162,7 +1162,7 @@ class CoreModule(AbstractModule):
         description="Detailed help message for a specific command",
         version="v1.0.0"
     )
-    class HelpCmdCommand(AbstractCommand):
+    class HelpCmdCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["helpcmd", "cmdhelp"])
 
@@ -1224,7 +1224,7 @@ class CoreModule(AbstractModule):
         description="Lists all plugins/modules installed",
         version="v1.0.0"
     )
-    class PulginsCommand(AbstractCommand):
+    class PulginsCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["plugins", "modules"])
 
@@ -1263,7 +1263,7 @@ class CoreModule(AbstractModule):
         description="Lists all online players",
         version="v1.0.0"
     )
-    class ListPlayersCommand(AbstractCommand):
+    class ListPlayersCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["list", "players", "online"])
 
@@ -1308,7 +1308,7 @@ class CoreModule(AbstractModule):
         description="Lists all online staff/operators",
         version="v1.0.0"
     )
-    class ListStaffCommand(AbstractCommand):
+    class ListStaffCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["liststaff", "staff", "operators", "listoperators"])
 
@@ -1356,7 +1356,7 @@ class CoreModule(AbstractModule):
         description="Prints Message of the Day",
         version="v1.0.0"
     )
-    class MOTDCommand(AbstractCommand):
+    class MOTDCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["motd"])
 
@@ -1372,7 +1372,7 @@ class CoreModule(AbstractModule):
         description="Sets A Player As An Operator",
         version="v1.0.0"
     )
-    class OPCommand(AbstractCommand):
+    class OPCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["op", "setop", "operator"], OP=True)
 
@@ -1393,7 +1393,7 @@ class CoreModule(AbstractModule):
         description="Removes A Player As An Operator",
         version="v1.0.0"
     )
-    class DEOPCommand(AbstractCommand):
+    class DEOPCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["deop", "removeop", "deoperator"], OP=True)
 
@@ -1417,7 +1417,7 @@ class CoreModule(AbstractModule):
         description="Forces a reload of the config",
         version="v1.0.0"
     )
-    class ReloadConfigCommand(AbstractCommand):
+    class ReloadConfigCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["reloadconfig"], OP=True)
 
@@ -1437,7 +1437,7 @@ class CoreModule(AbstractModule):
         description="Stops the server",
         version="v1.0.0"
     )
-    class StopServerCommand(AbstractCommand):
+    class StopServerCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["stop"], OP=True)
 

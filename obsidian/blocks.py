@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Dict, Type
+from typing import Dict, Type, Generic
 from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, BlockError, FatalError, ClientError
+from obsidian.constants import InitRegisterError, BlockError, FatalError, ClientError, T
 from obsidian.log import Logger
 
 
@@ -21,7 +21,7 @@ def Block(*args, **kwargs):
 
 # Block Skeleton
 @dataclass
-class AbstractBlock(AbstractSubmodule):
+class AbstractBlock(AbstractSubmodule[T], Generic[T]):
     ID: int = 0
 
     async def placeBlock(self, ctx: Player, blockX: int, blockY: int, blockZ: int):

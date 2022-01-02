@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Dict, Type, List
+from typing import Dict, Type, List, Generic
 from dataclasses import dataclass, field
 import inspect
 
@@ -13,7 +13,8 @@ from obsidian.log import Logger
 from obsidian.constants import (
     InitRegisterError,
     CommandError,
-    FatalError
+    FatalError,
+    T
 )
 
 
@@ -25,7 +26,7 @@ def Command(*args, **kwargs):
 
 # Command Skeleton
 @dataclass
-class AbstractCommand(AbstractSubmodule):
+class AbstractCommand(AbstractSubmodule[T], Generic[T]):
     # TODO: Maybe enforce this as a tuple?
     ACTIVATORS: List[str] = field(default_factory=list)
     OP: bool = False

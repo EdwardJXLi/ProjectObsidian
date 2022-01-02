@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 import enum
 import struct
-from typing import Type, Optional
+from typing import Type, Optional, Generic
 from dataclasses import dataclass
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
@@ -13,7 +13,8 @@ from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, Abstra
 from obsidian.constants import (
     InitRegisterError,
     PacketError,
-    FatalError
+    FatalError,
+    T
 )
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
@@ -44,7 +45,7 @@ def packageString(data: str, maxSize: int = 64, encoding: str = "ascii"):
 
 # Packet Skeleton
 @dataclass
-class AbstractPacket(AbstractSubmodule):
+class AbstractPacket(AbstractSubmodule[T], Generic[T]):
     ID: int = 0             # Packet Id
     FORMAT: str = ""        # Packet Structure Format
     CRITICAL: bool = False  # Packet Criticality. Dictates What Event Should Occur When Error
@@ -60,7 +61,7 @@ class AbstractPacket(AbstractSubmodule):
 
 
 @dataclass
-class AbstractRequestPacket(AbstractPacket):
+class AbstractRequestPacket(AbstractPacket[T], Generic[T]):
     # Mandatory Values Defined In Packet Init
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
@@ -70,7 +71,7 @@ class AbstractRequestPacket(AbstractPacket):
 
 
 @dataclass
-class AbstractResponsePacket(AbstractPacket):
+class AbstractResponsePacket(AbstractPacket[T], Generic[T]):
     # Mandatory Values Defined In Packet Init
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
