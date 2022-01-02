@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from obsidian.network import NetworkHandler
     from obsidian.blocks import AbstractBlock
 
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Type
 
 from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
@@ -78,13 +78,13 @@ class PlayerManager:
 
     async def sendGlobalMessage(
         self,
-        message: Union[str, list],
-        author: Union[None, str, Player] = None,  # Information on the message author
+        message: str | list,
+        author: None | str | Player = None,  # Information on the message author
         globalTag: bool = False,  # Flag dictating if the [world] header should be added
         ignoreList: List[Player] = []  # List of players to not send the message not
     ):
         # If Message Is A List, Recursively Send All Messages Within
-        if type(message) is list:
+        if isinstance(message, list):
             Logger.debug("Sending List Of Messages!", module="global-message")
             for msg in message:
                 await self.sendGlobalMessage(msg, author=author, globalTag=globalTag, ignoreList=ignoreList)
@@ -308,13 +308,13 @@ class WorldPlayerManager:
 
     async def sendWorldMessage(
         self,
-        message: Union[str, list],
-        author: Union[None, str, Player] = None,  # Information on the message author
+        message: str | list,
+        author: None | str | Player = None,  # Information on the message author
         worldTag: bool = False,  # Flag dictating if the [world] header should be added
         ignoreList: List[Player] = []  # List of players to not send the message not
     ):
         # If Message Is A List, Recursively Send All Messages Within
-        if type(message) is list:
+        if isinstance(message, list):
             Logger.debug("Sending List Of Messages!", module="world-message")
             for msg in message:
                 await self.sendWorldMessage(msg, author=author, worldTag=worldTag, ignoreList=ignoreList)
@@ -397,10 +397,10 @@ class Player:
                 # Not ignoring self as we WANT to update player
             )
 
-    async def sendMessage(self, message: Union[str, list]):
+    async def sendMessage(self, message: str | list):
         Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
         # If Message Is A List, Recursively Send All Messages Within
-        if type(message) is list:
+        if isinstance(message, list):
             Logger.debug("Sending List Of Messages To Player!")
             for msg in message:
                 await self.sendMessage(msg)

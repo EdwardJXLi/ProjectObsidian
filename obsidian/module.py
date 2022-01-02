@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union, Type, Optional, List, Any, Callable
+from typing import Type, Optional, List, Any, Callable
 from pathlib import Path
 import importlib
 import pkgutil
@@ -31,7 +31,7 @@ def format_name(name):
 
 # Manager Skeleton
 class AbstractManager:
-    def __init__(self, name: str, submodule: Union[Type[AbstractSubmodule], Type[AbstractModule]]):
+    def __init__(self, name: str, submodule: Type[AbstractSubmodule] | Type[AbstractModule]):
         self.NAME = name
         self.SUBMODULE = submodule
         managers_list.append(self)
@@ -195,11 +195,7 @@ class _ModuleManager(AbstractManager):
                     # Handle Exception if Error Occurs
                     self._error_list.append((module_name, "PreInit-Import"))  # Module Loaded WITH Errors
                     # If the Error is a Register Error (raised on purpose), Don't print out TB
-                    if type(e) is InitRegisterError:
-                        printTb = False
-                    else:
-                        printTb = True
-                    Logger.error(f"Error While Importing Module {module_name} - {type(e).__name__}: {e}\n", module="module-import", printTb=printTb)
+                    Logger.error(f"Error While Importing Module {module_name} - {type(e).__name__}: {e}\n", module="module-import", printTb=not isinstance(e, InitRegisterError))
                     Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-import")
                     Logger.askConfirmation()
             else:
@@ -244,11 +240,7 @@ class _ModuleManager(AbstractManager):
                 # Handle Exception if Error Occurs
                 self._error_list.append((module_name, "PreInit-Dependency"))  # Module Loaded WITH Errors
                 # If the Error is a Dependency Error (raised on purpose), Don't print out TB
-                if type(e) is DependencyError:
-                    printTb = False
-                else:
-                    printTb = True
-                Logger.error(f"Error While Initializing Dependencies For {module_name} - {type(e).__name__}: {e}\n", module="module-resolve", printTb=printTb)
+                Logger.error(f"Error While Initializing Dependencies For {module_name} - {type(e).__name__}: {e}\n", module="module-resolve", printTb=not isinstance(e, DependencyError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-resolve")
                 Logger.warn(f"Skipping Module {module_name}?", module="module-resolve")
                 Logger.askConfirmation()
@@ -282,11 +274,7 @@ class _ModuleManager(AbstractManager):
                 # Handle Exception if Error Occurs
                 self._error_list.append((module_name, "PreInit-Dependency"))  # Module Loaded WITH Errors
                 # If the Error is a Dependency Error (raised on purpose), Don't print out TB
-                if type(e) is DependencyError:
-                    printTb = False
-                else:
-                    printTb = True
-                Logger.error(f"Error While Resolving Dependency Cycles For {module_name} - {type(e).__name__}: {e}\n", module="module-verify", printTb=printTb)
+                Logger.error(f"Error While Resolving Dependency Cycles For {module_name} - {type(e).__name__}: {e}\n", module="module-verify", printTb=not isinstance(e, DependencyError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-verify")
                 Logger.warn(f"Skipping Module {module_name}?", module="module-verify")
                 Logger.askConfirmation()
@@ -365,11 +353,7 @@ class _ModuleManager(AbstractManager):
                 # Handle Exception if Error Occurs
                 self._error_list.append((module.NAME, "Init-Submodule"))  # Module Loaded WITH Errors
                 # If the Error is an Init Error (raised on purpose), Don't print out TB
-                if type(e) is InitError:
-                    printTb = False
-                else:
-                    printTb = True
-                Logger.error(f"Error While Initializing Submodules For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init", printTb=printTb)
+                Logger.error(f"Error While Initializing Submodules For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init", printTb=not isinstance(e, InitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="submodule-init")
                 Logger.warn(f"Skipping Module {module.NAME}?", module="submodule-init")
                 Logger.askConfirmation()
@@ -400,11 +384,7 @@ class _ModuleManager(AbstractManager):
                 # Handle Exception if Error Occurs
                 self._error_list.append((module.NAME, "Init-Module"))  # Module Loaded WITH Errors
                 # If the Error is an Init Error (raised on purpose), Don't print out TB
-                if type(e) is InitError:
-                    printTb = False
-                else:
-                    printTb = True
-                Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init", printTb=printTb)
+                Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init", printTb=not not isinstance(e, InitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-init")
                 Logger.warn(f"Skipping Module {module.NAME}?", module="module-init")
                 Logger.askConfirmation()
@@ -426,11 +406,7 @@ class _ModuleManager(AbstractManager):
                 # Handle Exception if Error Occurs
                 self._error_list.append((module.NAME, "Init-Final"))  # Module Loaded WITH Errors
                 # If the Error is an Postinit Error (raised on purpose), Don't print out TB
-                if type(e) is PostInitError:
-                    printTb = False
-                else:
-                    printTb = True
-                Logger.error(f"Error While Running Post-Initialization For {module.NAME} - {type(e).__name__}: {e}\n", module="postinit", printTb=printTb)
+                Logger.error(f"Error While Running Post-Initialization For {module.NAME} - {type(e).__name__}: {e}\n", module="postinit", printTb=not isinstance(e, PostInitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="postinit")
                 Logger.warn(f"Skipping Module {module.NAME}?", module="postinit")
                 Logger.askConfirmation()

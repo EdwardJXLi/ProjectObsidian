@@ -4,8 +4,8 @@ Copyright (C) RadioactiveHydra (Edward) 2021
 
 # Check python version to see if compatible
 import sys
-if sys.version_info.major < 3 or sys.version_info.minor < 8:
-    raise Exception("Python Version Out Of Date! Minimum Required: 3.8.0")
+if sys.version_info.major < 3 or sys.version_info.minor < 10:
+    raise Exception("Python Version Out Of Date! Minimum Required: 3.10.0")
 
 import argparse
 import asyncio

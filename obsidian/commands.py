@@ -41,7 +41,7 @@ def _convertArgs(name: str, param: inspect.Parameter, arg: str):
     Logger.verbose(f"Transforming Argument Data For Argument {name}", module="command")
 
     # If There Is No Type To Convert, Ignore
-    if param.annotation == inspect._empty:  # type: ignore
+    if param.annotation == inspect._empty:
         return arg
 
     # Try to parse, if error, cancel
@@ -88,7 +88,7 @@ def _parseArgs(command: AbstractCommand, data: list):
                 args.append(transformed)
             except StopIteration:
                 # Not Enough Data, Check If Error Or Use Default Value
-                if param.default == inspect._empty:  # type: ignore
+                if param.default == inspect._empty:
                     raise CommandError(f"Command {command.NAME} Expected Field '{name}' But Got Nothing")
                 else:
                     args.append(param.default)
@@ -101,7 +101,7 @@ def _parseArgs(command: AbstractCommand, data: list):
 
             # If Empty, Check If Default Value Was Requested
             if rest == []:
-                if param.default == inspect._empty:  # type: ignore
+                if param.default == inspect._empty:
                     raise CommandError(f"Command {command.NAME} Expected Field '{name}' But Got Nothing")
                 else:
                     kwargs[name] = param.default

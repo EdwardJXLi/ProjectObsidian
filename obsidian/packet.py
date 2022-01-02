@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 import enum
 import struct
-from typing import Type
+from typing import Type, Optional
 from dataclasses import dataclass
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
@@ -50,8 +50,9 @@ class AbstractPacket(AbstractSubmodule):
     CRITICAL: bool = False  # Packet Criticality. Dictates What Event Should Occur When Error
 
     # Error Handler. Called If Critical If False And An Error Occurs
-    def onError(self, error: str):
-        Logger.error(f"Packet {self.NAME} Raised Error {error}", module="packet")
+    @classmethod
+    def onError(cls, error: Exception):
+        Logger.error(f"Packet {cls.NAME} Raised Error {error}", module="packet")
 
     @property
     def SIZE(self) -> int:
@@ -64,8 +65,8 @@ class AbstractRequestPacket(AbstractPacket):
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
-    async def deserialize(self, ctx: Player, *args, **kwargs):
-        return None
+    async def deserialize(self, ctx: Optional[Player], *args, **kwargs):
+        raise NotImplementedError("Deserialization For This Packet Is Not Implemented")
 
 
 @dataclass
@@ -124,13 +125,11 @@ class _DirectionalPacketManager(AbstractManager):
             raise InitRegisterError(f"Packet Id {packet.ID} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Only Used If Request
-        if self.direction is PacketDirections.REQUEST:
-            # Cast Packet into Request Packet Type
-            requestPacket: AbstractRequestPacket = packet  # type: ignore
+        if isinstance(packet, AbstractRequestPacket):
             # Add To Packet Cache If Packet Is Used In Main Player Loop
-            if requestPacket.PLAYERLOOP:
-                Logger.verbose(f"Adding Packet {requestPacket.ID} To Main Player Loop Request Packet Cache", module=f"{module.NAME}-submodule-init")
-                self.loopPackets[requestPacket.ID] = requestPacket
+            if packet.PLAYERLOOP:
+                Logger.verbose(f"Adding Packet {packet.ID} To Main Player Loop Request Packet Cache", module=f"{module.NAME}-submodule-init")
+                self.loopPackets[packet.ID] = packet
 
         # Add Packet to Packets List
         self._packet_list[packet.NAME] = packet

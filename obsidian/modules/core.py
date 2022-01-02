@@ -16,6 +16,7 @@ from obsidian.packet import (
     packageString
 )
 
+from typing import Optional
 import inspect
 import struct
 import gzip
@@ -52,7 +53,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=False
             )
 
-        async def deserialize(self, ctx: Player, rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
             # <Player Identification Packet>
             # (Byte) Packet ID
             # (Byte) Protocol Version
@@ -94,7 +95,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Player, rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
             # <Block Update Packet>
             # (Byte) Packet ID
             # (Short) X Position
@@ -103,6 +104,10 @@ class CoreModule(AbstractModule):
             # (Byte) Mode
             # (Byte) Block Type
             _, blockX, blockY, blockZ, updateMode, blockId = struct.unpack(self.FORMAT, bytearray(rawData))
+
+            # Check if player was passed / initialized
+            if ctx is None:
+                raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
             # Get Block Types
             if updateMode == 0:  # updateMode 0 is Block Breaking (set to air)
@@ -133,7 +138,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Player, rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
             # <Player Movement Packet>
             # (Byte) Packet ID
             # (Byte) Player ID  <- Should Always Be 255
@@ -143,6 +148,10 @@ class CoreModule(AbstractModule):
             # (Byte) Yaw
             # (Byte) Pitch
             _, _, posX, posY, posZ, posYaw, posPitch = struct.unpack(self.FORMAT, bytearray(rawData))
+
+            # Check if player was passed / initialized
+            if ctx is None:
+                raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
             # Handle Player Movement
             await ctx.handlePlayerMovement(posX, posY, posZ, posYaw, posPitch)
@@ -166,16 +175,16 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Player, rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
             # <Player Message Packet>
             # (Byte) Packet ID
             # (Byte) Unused (Should Always Be 0xFF)
             # (64String) Message
             _, _, message = struct.unpack(self.FORMAT, bytearray(rawData))
 
-            # Check if player was passed
+            # Check if player was passed / initialized
             if ctx is None:
-                raise ServerError("Player Context Was Not Passed!")
+                raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
             # Unpackage String
             # Message
@@ -462,8 +471,7 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self):
-            raise NotImplementedError(self)
-            return None  # TODO
+            raise NotImplementedError(self)  # TODO
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
@@ -482,8 +490,7 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self):
-            raise NotImplementedError(self)
-            return None  # TODO
+            raise NotImplementedError(self)  # TODO
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
@@ -502,8 +509,7 @@ class CoreModule(AbstractModule):
             )
 
         async def serialize(self):
-            raise NotImplementedError(self)
-            return None  # TODO
+            raise NotImplementedError(self)  # TODO
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)

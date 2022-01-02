@@ -28,7 +28,7 @@ class NetworkHandler:
         self.server: Server = server
         self.reader: asyncio.StreamReader = reader
         self.writer: asyncio.StreamWriter = writer
-        self.ip: Tuple[str, int] = self.reader._transport.get_extra_info("peername")  # type: ignore
+        self.ip: Tuple[str, int] = self.writer.get_extra_info('peername')
         self.dispacher: NetworkDispacher = NetworkDispacher(self)
         self.isConnected: bool = True  # Connected Flag So Outbound Queue Buffer Can Stop
         self.player: Optional[Player] = None
@@ -179,8 +179,9 @@ class NetworkDispacher:
     # Used when exact packet is expected
     async def readPacket(
         self,
-        packet: Type[AbstractRequestPacket],
+        packet: AbstractRequestPacket,
         timeout: int = NET_TIMEOUT,
+        critical: bool = False,  # Hacky critical flag to please type checker
         checkId=True
     ):
         try:
@@ -188,29 +189,28 @@ class NetworkDispacher:
             Logger.verbose(f"Expected Packet {packet.ID} Size {packet.SIZE} from {self.handler.ip}", module="network")
             rawData = await asyncio.wait_for(
                 self.handler.reader.readexactly(
-                    packet.SIZE  # type: ignore
+                    packet.SIZE
                 ), timeout
             )
             Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.ip} | DATA: {rawData}", module="network")
 
             # Check If Packet ID is Valid
-            header = rawData[0]  # type: ignore
+            header = rawData[0]
             if checkId and header != packet.ID:
                 Logger.verbose(f"{self.handler.ip} | Packet Invalid!", module="network")
                 raise ClientError(f"Invalid Packet {header}")
 
             # Deserialize Packet
-            # TODO: Fix type complaint!
-            serializedData = await packet.deserialize(self.handler.player, rawData)  # type: ignore
+            serializedData = await packet.deserialize(self.handler.player, rawData)
             return serializedData
         except asyncio.TimeoutError:
             raise ClientError(f"Did Not Receive Packet {packet.ID} In Time!")
         except Exception as e:
-            if packet.CRITICAL or type(e) in CRITICAL_REQUEST_ERRORS:
+            if packet.CRITICAL or type(e) in CRITICAL_REQUEST_ERRORS or critical:
                 raise e  # Pass Down Exception To Lower Layer
             else:
-                # TODO: Remove Hacky Type Ignore
-                return packet.onError(e)  # type: ignore
+                packet.onError(e)
+                raise e
 
     async def sendPacket(
         self,
@@ -235,8 +235,7 @@ class NetworkDispacher:
             if packet.CRITICAL or type(e) in CRITICAL_RESPONSE_ERRORS:
                 raise e  # Pass Down Exception To Lower Layer
             else:
-                # TODO: Remove Hacky Type Ignore
-                return packet.onError(e)  # type: ignore
+                return packet.onError(e)
 
     # Used in main listen loop; expect multiple types of packets!
     async def listenForPackets(
@@ -286,7 +285,6 @@ class NetworkDispacher:
                 if packet.CRITICAL or type(e) in CRITICAL_REQUEST_ERRORS:
                     raise e  # Pass Down Exception To Lower Layer
                 else:
-                    # TODO: Remove Hacky Type Ignore
                     return packetHeader, packet.onError(e)
 
         except asyncio.TimeoutError:

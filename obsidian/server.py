@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional, Any, List, Union
+from typing import Optional, Any, List
 import traceback
 import os
 import sys
@@ -61,9 +61,9 @@ class Server:
         # Initialize Config, Depending On What Type It Is
         if config is None:
             self.config: ServerConfig = ServerConfig("server", hideWarning=True)
-        elif type(config) == str:
+        elif isinstance(config, str):
             self.config: ServerConfig = ServerConfig(config)
-        elif type(config) == ServerConfig:
+        elif isinstance(config, ServerConfig):
             self.config: ServerConfig = config
         else:
             raise InitError(f"Unknown Config Type {type(config)}")
@@ -183,9 +183,9 @@ class Server:
 
         return handler
 
-    def _ensureFileStructure(self, folders: Union[str, List[str]]):
+    def _ensureFileStructure(self, folders: str | List[str]):
         # Check Type, If Str Put In List
-        if type(folders) is str:
+        if isinstance(folders, str):
             folders = [folders]
         Logger.debug(f"Ensuring Folders {folders}", module="init")
         # Ensure All Folders
