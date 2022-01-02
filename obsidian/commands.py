@@ -7,7 +7,7 @@ from typing import Dict, Type, List
 from dataclasses import dataclass, field
 import inspect
 
-from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
+from obsidian.module import format_name, Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.constants import (
@@ -166,7 +166,7 @@ class _CommandManager(AbstractManager):
             command.ACTIVATORS = []
         if len(command.ACTIVATORS) == 0:
             Logger.warn(f"Command {command.NAME} Was Registered Without Any Activators. Using Name As Command Activator.", module=f"{module.NAME}-submodule-init")
-            command.ACTIVATORS = [command.NAME.lower()]
+            command.ACTIVATORS = [format_name(command.NAME)]
         # Add Activators To Command Cache
         Logger.debug(f"Adding Activators {command.ACTIVATORS} To Activator Cache", module=f"{module.NAME}-submodule-init")
         for activator in command.ACTIVATORS:

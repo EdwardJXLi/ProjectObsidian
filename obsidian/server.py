@@ -49,25 +49,24 @@ class Server:
         self.server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object (initialized later)
         self.worldManager: Optional[WorldManager] = None  # World Manager Class (initialized later)
         self.playerManager: Optional[PlayerManager] = None  # Player Manager Class (initialized later)
-        self.config: ServerConfig = ServerConfig()  # Server Config Class; Default to blank config incase not set
         self.ensureFiles: List[str] = []  # List of folders to ensure they exist
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized = False  # Flag Set When Everything Is Fully Loaded
         self.stopping = False  # Flag To Prevent Crl-C Spamming
 
-        # Initialize Config, Depending On What Type It Is
-        if config is None:
-            self.config = ServerConfig()
-        elif type(config) == str:
-            self.config = ServerConfig(configPath=config)
-        elif type(config) == ServerConfig:
-            self.config = config
-        else:
-            raise InitError(f"Unknown Config Type {type(config)}")
-
         # Init Colour
         if colour:
             Colour.init()
+
+        # Initialize Config, Depending On What Type It Is
+        if config is None:
+            self.config: ServerConfig = ServerConfig("server", hideWarning=True)
+        elif type(config) == str:
+            self.config: ServerConfig = ServerConfig(config)
+        elif type(config) == ServerConfig:
+            self.config: ServerConfig = config
+        else:
+            raise InitError(f"Unknown Config Type {type(config)}")
 
     async def init(self, *args, **kwargs):
         try:
@@ -107,7 +106,7 @@ class Server:
 
         # Print out SubModule Managers
         Logger.info("SubModule Managers Initiated!", module="init")
-        Logger.info(f"[{', '.join([m.NAME for m in managers_list])}]")
+        Logger.info(f"Submodules Intitiated: [{', '.join([m.NAME for m in managers_list])}]", module="init")
 
         # Load and Log Modules
         Logger.info("Starting Module Initialization", module="init")
@@ -244,6 +243,11 @@ class Server:
             Logger.info("Stopping Connection Handler Loop", module="server-stop")
             if self.server is not None:
                 self.server.close()
+
+            # Saving Config
+            Logger.info("Saving Config", module="server-stop")
+            if self.config is not None:
+                self.config.save()
 
             # Managing worlds
             if self.worldManager:

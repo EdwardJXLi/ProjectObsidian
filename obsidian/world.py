@@ -9,6 +9,7 @@ import os
 import gzip
 import struct
 
+from obsidian.module import format_name
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
 from obsidian.blocks import BlockManager, Blocks
@@ -39,7 +40,7 @@ class WorldManager:
         # Loop Through All World Formats
         for worldFormat in WorldFormats._format_list.values():
             # Check If key Matches With Config Key List
-            if self.server.config.defaultSaveFormat.lower() in worldFormat.KEYS:
+            if format_name(self.server.config.defaultSaveFormat) in worldFormat.KEYS:
                 # Set World Format
                 self.worldFormat: AbstractWorldFormat = worldFormat
                 break

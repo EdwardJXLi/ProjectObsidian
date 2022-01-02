@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Union, Type, Optional, List, Any, Callable
+from pathlib import Path
 import importlib
 import pkgutil
 import os
@@ -9,6 +10,7 @@ import inspect
 
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
+from obsidian.config import AbstractConfig
 from obsidian.constants import (
     managers_list,
     InitRegisterError,
@@ -22,6 +24,11 @@ from obsidian.constants import (
 )
 
 
+# Format Names Into A Safer Format
+def format_name(name):
+    return name.replace(" ", "_").lower()
+
+
 # Manager Skeleton
 class AbstractManager:
     def __init__(self, name: str, submodule: Union[Type[AbstractSubmodule], Type[AbstractModule]]):
@@ -32,14 +39,14 @@ class AbstractManager:
     def _initSubmodule(self, submodule: Any, module: AbstractModule):
         Logger.debug(f"Initializing {submodule.MANAGER.NAME} {submodule.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         # Create Object
-        obj = submodule()
-        # Initialize and Transfer Object Variables
-        obj.NAME = submodule.NAME
-        obj.DESCRIPTION = submodule.DESCRIPTION
-        obj.VERSION = submodule.VERSION
-        obj.OVERRIDE = submodule.OVERRIDE
-        obj.MANAGER = submodule.MANAGER
-        obj.MODULE = module
+        obj = submodule(
+            submodule.NAME,
+            submodule.DESCRIPTION,
+            submodule.VERSION,
+            submodule.OVERRIDE,
+            submodule.MANAGER,
+            module
+        )
 
         return obj
 
@@ -47,11 +54,25 @@ class AbstractManager:
 # Module Skeleton
 @dataclass
 class AbstractModule:
-    NAME: str = ""
-    DESCRIPTION: str = ""
-    AUTHOR: str = ""
-    VERSION: str = ""
-    DEPENDENCIES: list = field(default_factory=list)
+    NAME: str
+    DESCRIPTION: str
+    AUTHOR: str
+    VERSION: str
+    DEPENDENCIES: list
+
+    def initConfig(
+        self,
+        config: type[AbstractConfig],
+        *args,
+        name: str = "config",
+        overrideConfigPath: Optional[Path] = None,
+        **kwargs
+    ):
+        if overrideConfigPath:
+            rootPath = overrideConfigPath
+        else:
+            rootPath = Path("configs", format_name(self.NAME))
+        return config(name, *args, rootPath=rootPath, autoInit=True, hideWarning=True, **kwargs)
 
     def postInit(*args, **kwargs):
         pass
@@ -60,13 +81,12 @@ class AbstractModule:
 # Submodule Skeleton
 @dataclass
 class AbstractSubmodule:
-    NAME: str = ""
-    DESCRIPTION: str = ""
-    VERSION: str = ""
-    OVERRIDE: bool = False
-    # These should be initialized as soon as the module loads, so ignoring the type for now.
-    MANAGER: AbstractManager = None  # type: ignore
-    MODULE: AbstractModule = None  # type: ignore
+    NAME: str
+    DESCRIPTION: str
+    VERSION: str
+    OVERRIDE: bool
+    MANAGER: AbstractManager
+    MODULE: AbstractModule
 
 
 # Internal Module Manager Singleton
@@ -363,13 +383,13 @@ class _ModuleManager(AbstractManager):
             try:
                 Logger.debug(f"Initializing Module {module.NAME}", module=f"{module.NAME}-init")
                 # Initialize Module
-                initializedModule = module()
-                # Initialize and Transfer Module Variables
-                initializedModule.NAME = module.NAME
-                initializedModule.DESCRIPTION = module.DESCRIPTION
-                initializedModule.AUTHOR = module.AUTHOR
-                initializedModule.VERSION = module.VERSION
-                initializedModule.DEPENDENCIES = module.DEPENDENCIES
+                initializedModule = module(
+                    module.NAME,
+                    module.DESCRIPTION,
+                    module.AUTHOR,
+                    module.VERSION,
+                    module.DEPENDENCIES
+                )
                 # Replacing Item in _module_list with the Initialized Version!
                 self._module_list[module.NAME] = initializedModule
                 Logger.info(f"Initialized Module {module.NAME}", module="init-module")
@@ -431,8 +451,8 @@ class _ModuleManager(AbstractManager):
         Logger.info(f"Discovered Module {name}.", module="module-import")
         Logger.debug(f"Registering Module {name}", module="module-import")
 
-        # Lowercase Name
-        name = name.lower()
+        # Format Name
+        name = format_name(name)
         # Checking If Module Is Already In Modules List
         if name in self._module_list.keys():
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
@@ -498,7 +518,7 @@ class Dependency:
     # Base Init - Main Data
     def __init__(self, name: str, version: Optional[str] = None):
         # User Defined Values
-        self.NAME = name.lower()
+        self.NAME = format_name(name)
         self.VERSION = version
         # Reference To The Module Class - Handeled By Init Dependencies
         self.MODULE = None

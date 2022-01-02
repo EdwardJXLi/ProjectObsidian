@@ -31,8 +31,8 @@ import os
     version=__version__
 )
 class CoreModule(AbstractModule):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args):
+        super().__init__(*args)
 
     #
     # REQUEST PACKETS
@@ -43,8 +43,9 @@ class CoreModule(AbstractModule):
         description="Handle First Packet Sent By Player"
     )
     class PlayerIdentificationPacket(AbstractRequestPacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x00,
                 FORMAT="BB64s64sB",
                 CRITICAL=True,
@@ -84,8 +85,9 @@ class CoreModule(AbstractModule):
         description="Packet Received When Block Placed/Broken"
     )
     class UpdateBlockPacket(AbstractRequestPacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x05,
                 FORMAT="!BhhhBB",
                 CRITICAL=False,
@@ -122,8 +124,9 @@ class CoreModule(AbstractModule):
         description="Received When Player Position And Orentation Is Sent"
     )
     class MovementUpdatePacket(AbstractRequestPacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x08,
                 FORMAT="!BBhhhBB",
                 CRITICAL=False,
@@ -154,8 +157,9 @@ class CoreModule(AbstractModule):
         description="Received When Player Sends A Message"
     )
     class PlayerMessagePacket(AbstractRequestPacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x0d,
                 FORMAT="BB64s",
                 CRITICAL=False,
@@ -197,8 +201,9 @@ class CoreModule(AbstractModule):
         description="Response Packet After Player Identification"
     )
     class ServerIdentificationPacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x00,
                 FORMAT="BB64s64sB",
                 CRITICAL=True
@@ -229,8 +234,9 @@ class CoreModule(AbstractModule):
         description="General Ping Packet To Test Network Connection"
     )
     class PingPacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x01,
                 FORMAT="B",
                 CRITICAL=False
@@ -250,8 +256,9 @@ class CoreModule(AbstractModule):
         description="Packet To Begin World Data Transfer"
     )
     class LevelInitializePacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x02,
                 FORMAT="B",
                 CRITICAL=True
@@ -271,8 +278,9 @@ class CoreModule(AbstractModule):
         description="Packet Containing Chunk Of Gzipped Map"
     )
     class LevelDataChunkPacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x03,
                 FORMAT="!Bh1024sB",
                 CRITICAL=True
@@ -305,8 +313,9 @@ class CoreModule(AbstractModule):
         description="Packet To Finish World Data Transfer"
     )
     class LevelFinalizePacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x04,
                 FORMAT="!Bhhh",
                 CRITICAL=True
@@ -335,8 +344,9 @@ class CoreModule(AbstractModule):
         description="Sent To Update Block Changes"
     )
     class SetBlockPacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x06,
                 FORMAT="!BhhhB",
                 CRITICAL=False
@@ -367,8 +377,9 @@ class CoreModule(AbstractModule):
         description="Packet Sent To All Players Initializing Player Spawn"
     )
     class SpawnPlayerPacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x07,
                 FORMAT="!BB64shhhBB",
                 CRITICAL=True
@@ -405,8 +416,9 @@ class CoreModule(AbstractModule):
         description="Sent To Update Player Position and Rotation"
     )
     class PlayerPositionUpdatePacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x08,
                 FORMAT="!BBhhhBB",
                 CRITICAL=False
@@ -441,8 +453,9 @@ class CoreModule(AbstractModule):
         description="Sent to Update Changes in Position and Orientation"
     )
     class PositionOrientationUpdatePacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x09,
                 FORMAT="!BBbbbBB",
                 CRITICAL=False
@@ -460,8 +473,9 @@ class CoreModule(AbstractModule):
         description="Sent to Update Changes in Position"
     )
     class PositionUpdatePacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x0a,
                 FORMAT="!BBbb",
                 CRITICAL=False
@@ -479,8 +493,9 @@ class CoreModule(AbstractModule):
         description="Sent to Update Changes in Orientation"
     )
     class OrientationUpdatePacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x0b,
                 FORMAT="!BBBB",
                 CRITICAL=False
@@ -498,8 +513,9 @@ class CoreModule(AbstractModule):
         description="Sent to Despawn Existing Player"
     )
     class DespawnPlayerPacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x0c,
                 FORMAT="BB",
                 CRITICAL=True
@@ -524,8 +540,9 @@ class CoreModule(AbstractModule):
         description="Broadcasts Message To Player"
     )
     class SendMessagePacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x0d,
                 FORMAT="BB64s",
                 CRITICAL=False
@@ -554,8 +571,9 @@ class CoreModule(AbstractModule):
         description="Packet Sent To Client To Force Disconnect"
     )
     class DisconnectPlayerPacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x0e,
                 FORMAT="B64s",
                 CRITICAL=True
@@ -580,8 +598,9 @@ class CoreModule(AbstractModule):
         description="Sent to Update User OP Status. User type is 0x64 for op, 0x00 for normal user."
     )
     class UserTypeUpdatePacket(AbstractResponsePacket):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 ID=0x0f,
                 FORMAT="BB",
                 CRITICAL=False
@@ -608,8 +627,9 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class RawWorldFormat(AbstractWorldFormat):
-        def __init__(self):
+        def __init__(self, *args):
             super().__init__(
+                *args,
                 KEYS=["raw"],
                 EXTENTIONS=["gz"]
             )
@@ -663,8 +683,8 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class FlatMapGenerator(AbstractMapGenerator):
-        def __init__(self):
-            super().__init__()
+        def __init__(self, *args):
+            super().__init__(*args)
 
         # Default Map Generator (Creates Flat Map Of Grass And Dirt)
         def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: int = 32):
@@ -681,400 +701,400 @@ class CoreModule(AbstractModule):
 
     @Block("Air")
     class Air(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=0)
+        def __init__(self, *args):
+            super().__init__(*args, ID=0)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Stone")
     class Stone(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=1)
+        def __init__(self, *args):
+            super().__init__(*args, ID=1)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Grass")
     class Grass(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=2)
+        def __init__(self, *args):
+            super().__init__(*args, ID=2)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Dirt")
     class Dirt(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=3)
+        def __init__(self, *args):
+            super().__init__(*args, ID=3)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Cobblestone")
     class Cobblestone(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=4)
+        def __init__(self, *args):
+            super().__init__(*args, ID=4)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Planks")
     class Planks(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=5)
+        def __init__(self, *args):
+            super().__init__(*args, ID=5)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Sapling")
     class Sapling(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=6)
+        def __init__(self, *args):
+            super().__init__(*args, ID=6)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Bedrock")
     class Bedrock(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=7)
+        def __init__(self, *args):
+            super().__init__(*args, ID=7)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("FlowingWater")
     class FlowingWater(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=8)
+        def __init__(self, *args):
+            super().__init__(*args, ID=8)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("StationaryWater")
     class StationaryWater(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=9)
+        def __init__(self, *args):
+            super().__init__(*args, ID=9)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("FlowingLava")
     class FlowingLava(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=10)
+        def __init__(self, *args):
+            super().__init__(*args, ID=10)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("StationaryLava")
     class StationaryLava(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=11)
+        def __init__(self, *args):
+            super().__init__(*args, ID=11)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Sand")
     class Sand(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=12)
+        def __init__(self, *args):
+            super().__init__(*args, ID=12)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Gravel")
     class Gravel(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=13)
+        def __init__(self, *args):
+            super().__init__(*args, ID=13)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("GoldOre")
     class GoldOre(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=14)
+        def __init__(self, *args):
+            super().__init__(*args, ID=14)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("IronOre")
     class IronOre(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=15)
+        def __init__(self, *args):
+            super().__init__(*args, ID=15)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("CoalOre")
     class CoalOre(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=16)
+        def __init__(self, *args):
+            super().__init__(*args, ID=16)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Wood")
     class Wood(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=17)
+        def __init__(self, *args):
+            super().__init__(*args, ID=17)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Leaves")
     class Leaves(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=18)
+        def __init__(self, *args):
+            super().__init__(*args, ID=18)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Sponge")
     class Sponge(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=19)
+        def __init__(self, *args):
+            super().__init__(*args, ID=19)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Glass")
     class Glass(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=20)
+        def __init__(self, *args):
+            super().__init__(*args, ID=20)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("RedCloth")
     class RedCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=21)
+        def __init__(self, *args):
+            super().__init__(*args, ID=21)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("OrangeCloth")
     class OrangeCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=22)
+        def __init__(self, *args):
+            super().__init__(*args, ID=22)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("YellowCloth")
     class YellowCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=23)
+        def __init__(self, *args):
+            super().__init__(*args, ID=23)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("ChartreuseCloth")
     class ChartreuseCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=24)
+        def __init__(self, *args):
+            super().__init__(*args, ID=24)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("GreenCloth")
     class GreenCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=25)
+        def __init__(self, *args):
+            super().__init__(*args, ID=25)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("SpringGreenCloth")
     class SpringGreenCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=26)
+        def __init__(self, *args):
+            super().__init__(*args, ID=26)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("CyanCloth")
     class CyanCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=27)
+        def __init__(self, *args):
+            super().__init__(*args, ID=27)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("CapriCloth")
     class CapriCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=28)
+        def __init__(self, *args):
+            super().__init__(*args, ID=28)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("UltramarineCloth")
     class UltramarineCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=29)
+        def __init__(self, *args):
+            super().__init__(*args, ID=29)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("VioletCloth")
     class VioletCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=30)
+        def __init__(self, *args):
+            super().__init__(*args, ID=30)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("PurpleCloth")
     class PurpleCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=31)
+        def __init__(self, *args):
+            super().__init__(*args, ID=31)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("MagentaCloth")
     class MagentaCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=32)
+        def __init__(self, *args):
+            super().__init__(*args, ID=32)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("RoseCloth")
     class RoseCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=33)
+        def __init__(self, *args):
+            super().__init__(*args, ID=33)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("DarkGrayCloth")
     class DarkGrayCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=34)
+        def __init__(self, *args):
+            super().__init__(*args, ID=34)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("LightGrayCloth")
     class LightGrayCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=35)
+        def __init__(self, *args):
+            super().__init__(*args, ID=35)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("WhiteCloth")
     class WhiteCloth(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=36)
+        def __init__(self, *args):
+            super().__init__(*args, ID=36)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Dandelion")
     class Dandelion(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=37)
+        def __init__(self, *args):
+            super().__init__(*args, ID=37)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Rose")
     class Rose(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=38)
+        def __init__(self, *args):
+            super().__init__(*args, ID=38)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("BrownMushroom")
     class BrownMushroom(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=39)
+        def __init__(self, *args):
+            super().__init__(*args, ID=39)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("RedMushroom")
     class RedMushroom(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=40)
+        def __init__(self, *args):
+            super().__init__(*args, ID=40)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("BlockGold")
     class BlockGold(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=41)
+        def __init__(self, *args):
+            super().__init__(*args, ID=41)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("BlockIron")
     class BlockIron(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=42)
+        def __init__(self, *args):
+            super().__init__(*args, ID=42)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("DoubleSlab")
     class DoubleSlab(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=43)
+        def __init__(self, *args):
+            super().__init__(*args, ID=43)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Slab")
     class Slab(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=44)
+        def __init__(self, *args):
+            super().__init__(*args, ID=44)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Bricks")
     class Bricks(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=45)
+        def __init__(self, *args):
+            super().__init__(*args, ID=45)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("TNT")
     class TNT(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=46)
+        def __init__(self, *args):
+            super().__init__(*args, ID=46)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Bookshelf")
     class Bookshelf(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=47)
+        def __init__(self, *args):
+            super().__init__(*args, ID=47)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("MossyCobblestone")
     class MossyCobblestone(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=48)
+        def __init__(self, *args):
+            super().__init__(*args, ID=48)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
 
     @Block("Obsidian")
     class Obsidian(AbstractBlock):
-        def __init__(self):
-            super().__init__(ID=49)
+        def __init__(self, *args):
+            super().__init__(*args, ID=49)
 
         async def placeBlock(self, *args, **kwargs):
             return await super().placeBlock(*args, **kwargs)
@@ -1089,8 +1109,8 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class HelpCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["help", "commands", "cmds"])
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["help", "commands", "cmds"])
 
         async def execute(self, ctx: Player, page: int = 1):
             # Get information on the number of commands, pages, and commands per page
@@ -1137,8 +1157,8 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class HelpCmdCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["helpcmd", "cmdhelp"])
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["helpcmd", "cmdhelp"])
 
         async def execute(self, ctx: Player, cmd_name: str):
             # Generate command output
@@ -1199,8 +1219,8 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class PulginsCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["plugins", "modules"])
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["plugins", "modules"])
 
         async def execute(self, ctx: Player, page: int = 1):
             # Get information on the number of modules, pages, and modules per page
@@ -1238,8 +1258,8 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class ListPlayersCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["list", "players", "online"])
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["list", "players", "online"])
 
         async def execute(self, ctx: Player):
             if ctx.worldPlayerManager is None:
@@ -1278,13 +1298,61 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
+        "ListStaff",
+        description="Lists all online staff/operators",
+        version="v1.0.0"
+    )
+    class ListStaffCommand(AbstractCommand):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["liststaff", "staff", "operators", "listoperators"])
+
+        async def execute(self, ctx: Player):
+            if ctx.worldPlayerManager is None:
+                raise CommandError("&cYou are not in a world!&f")
+
+            players_list = ctx.worldPlayerManager.getPlayers()
+
+            # If the list is empty, something un oh happened
+            if len(players_list) == 0:
+                raise ServerError("&cSomething went wrong while getting the list of players!&f")
+
+            # Generate command output
+            output = []
+
+            # Filter List to Staff Only
+            players_list = [player for player in players_list if player.opStatus is True]
+
+            # Add Header
+            output.append(CommandHelper.generateCenteredMessage(f"&eStaff Online: {len(players_list)}", colour="&2"))
+
+            # Generate Player List Output
+            output.append("&4")
+            while players_list:
+                player_name = players_list.pop(0).name
+                if len(players_list) != 0:
+                    player_name += ", "
+
+                # Check if adding the player name will overflow the max message length
+                if len(output[-1]) + len(player_name) > MAX_MESSAGE_LENGTH:
+                    output.append("&4")  # Add a new line for output
+
+                # Add Player Name
+                output[-1] += player_name
+
+            # Add Footer
+            output.append(CommandHelper.generateCenteredMessage(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
         "MOTD",
         description="Prints Message of the Day",
         version="v1.0.0"
     )
     class MOTDCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["motd"])
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["motd"])
 
         async def execute(self, ctx: Player):
             await ctx.sendMOTD()
@@ -1299,8 +1367,8 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class OPCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["op", "setop", "operator"], OP=True)
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["op", "setop", "operator"], OP=True)
 
         async def execute(self, ctx: Player, player_name: str):
             # Add Player To Operators List
@@ -1320,8 +1388,8 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class DEOPCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["deop", "removeop", "deoperator"], OP=True)
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["deop", "removeop", "deoperator"], OP=True)
 
         async def execute(self, ctx: Player, player_name: str):
             # Add Player To Operators List
@@ -1344,8 +1412,8 @@ class CoreModule(AbstractModule):
         version="v1.0.0"
     )
     class ReloadConfigCommand(AbstractCommand):
-        def __init__(self):
-            super().__init__(ACTIVATORS=["reloadconfig"], OP=True)
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["reloadconfig"], OP=True)
 
         async def execute(self, ctx: Player):
             # Reload Config
@@ -1357,6 +1425,19 @@ class CoreModule(AbstractModule):
 
             # Send Response Back
             await ctx.sendMessage("Config Reloaded!")
+
+    @Command(
+        "StopServer",
+        description="Stops the server",
+        version="v1.0.0"
+    )
+    class StopServerCommand(AbstractCommand):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["stop"], OP=True)
+
+        async def execute(self, ctx: Player):
+            await ctx.sendMessage("Stopping Server")
+            await ctx.playerManager.server.stop()
 
 
 # Helper functions for the command generation

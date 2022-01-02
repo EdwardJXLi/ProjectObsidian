@@ -16,3 +16,6 @@ protocol-test
 
 # Pycache
 __pycache__
+
+# Ignore Temporary Files
+ignore_*
