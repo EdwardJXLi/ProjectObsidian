@@ -16,18 +16,21 @@ A fully featured Minecraft Classic Server fully reimplemented in Python!
 # Instructions
 > Obsidian Server requires **no 3rd party libraries**, meaning that you can run this server with a stock python installation!
 
-On linux, install `python3.8` and clone the repository.
+On linux, install `python3.10` and clone the repository.
 ```
-apt-get install python3.8
+sudo apt update && sudo apt upgrade -y
+sudo apt install software-properties-common -y
+sudo add-apt-repository ppa:deadsnakes/ppa
+apt-get install python3.10
 git clone https://github.com/RadioactiveHydra/ProjectObsidian.git
 ```
 
-> (!) Minimum of **python 3.8** is required! (!)
+> (!) Minimum of **python 3.10** is required! (!)
 
 Then, just navigate into the directory and run `main.py`!
 ```
 cd ProjectObsidian
-python3.8 main.py
+python3.10 main.py
 ```
 
 Once you have the server up, you can run `main.py -h` to see the available flags you can set
@@ -42,7 +45,6 @@ For information regarding plugin development, refer to the Plugin Development Gu
 - CPE (Classic Protocol Extension) Support
 - ClassicWorld Format (.cw) Support
 - Server Map Format (.dat) Support
-- Improved Function Overriding for Modules
 - Command Line Console
 - Better Chat Colour Support
 - Better Module Log and Config Handling
