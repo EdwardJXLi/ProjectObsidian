@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
 import time
 import traceback
 import datetime
 import sys
-import os
 
 from typing import Optional, List
-from obsidian.constants import Colour
+from obsidian.constants import Colour, SERVERPATH
 
 
 class Logger:
@@ -21,20 +21,15 @@ class Logger:
         return time.strftime("%H:%M:%S", time.localtime())
 
     @classmethod
-    def setupLogFile(cls, logPath: Optional[str] = None):
+    def setupLogFile(cls, logPath: Optional[Path] = None):
         # Setup LogPath If Not Defined
         if logPath is None:
-            logPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+            logPath = Path(SERVERPATH, "logs")
         # Ensure File Exists
-        if not os.path.exists(logPath):
-            os.makedirs(logPath)
+        logPath.mkdir(parents=True, exist_ok=True)
         # Open File
-        cls.LOGFILE = open(
-            os.path.join(
-                logPath,
-                f"{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log"
-            ), "a"
-        )
+        logPath = Path(logPath, f"{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log")
+        cls.LOGFILE = open(logPath, "a")
 
     @classmethod
     def log(cls, message: str, tags: List[str] = [], colour: str = Colour.NONE, textColour: str = Colour.NONE):

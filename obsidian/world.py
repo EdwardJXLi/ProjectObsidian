@@ -4,8 +4,8 @@ if TYPE_CHECKING:
     from obsidian.server import Server
 
 from typing import Dict, List, Optional
+from pathlib import Path
 import io
-import os
 import gzip
 import struct
 
@@ -127,37 +127,37 @@ class WorldManager:
         if self.persistant and (self.server.config.worldSaveLocation is not None):
             Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
             # Loop Through All Files Given In World Folder
-            for filename in os.listdir(os.path.join(SERVERPATH, self.server.config.worldSaveLocation)):
+            for savefile in Path(SERVERPATH, self.server.config.worldSaveLocation).iterdir():
                 # Get Pure File Name (No Extentions)
-                saveName = os.path.splitext(os.path.basename(filename))[0]
-                Logger.verbose(f"Checking Extention and Status of World File {filename}", module="world-load")
+                savename = savefile.stem
+                Logger.verbose(f"Checking Extention and Status of World File {savefile}", module="world-load")
                 # Check If File Type Matches With The Extentions Provided By worldFormat
-                if not any([filename.endswith(ext) for ext in self.worldFormat.EXTENTIONS]):
-                    Logger.debug(f"Ignoring World File {filename}. File Extention Not Known!", module="world-load")
+                if savefile.suffix[1:] not in self.worldFormat.EXTENTIONS:  # doing [1:] to remove the "."
+                    Logger.debug(f"Ignoring World File {savefile}. File Extention Not Known!", module="world-load")
                 # Also Check If World Is Blacklisted
-                elif saveName in self.server.config.worldBlacklist:
-                    Logger.info(f"Ignoring World File {filename}. World Name Is Blacklisted!", module="world-load")
+                elif savename in self.server.config.worldBlacklist:
+                    Logger.info(f"Ignoring World File {savefile}. World Name Is Blacklisted!", module="world-load")
                 # Also Check If World Name Is Already Loaded (Same File Names with Different Extentions)
-                elif saveName in self.worlds.keys():
-                    Logger.warn(f"Ignoring World File {filename}. World With Similar Name Has Already Been Registered!", module="world-load")
-                    Logger.warn(f"World File {os.path.basename(self.worlds[saveName].name)} Conflicts With World File {filename}!", module="world-load")
+                elif savename in self.worlds.keys():
+                    Logger.warn(f"Ignoring World File {savefile}. World With Similar Name Has Already Been Registered!", module="world-load")
+                    Logger.warn(f"World File {self.worlds[savename].name} Conflicts With World File {savefile}!", module="world-load")
                     Logger.askConfirmation()
                 else:
-                    Logger.debug(f"Detected World File {filename}. Attempting To Load World", module="world-load")
+                    Logger.debug(f"Detected World File {savefile}. Attempting To Load World", module="world-load")
                     # (Attempt) To Load Up World
                     try:
-                        Logger.info(f"Loading World {saveName}", module="world-load")
-                        fileIO = open(os.path.join(SERVERPATH, self.server.config.worldSaveLocation, filename), "rb+")
-                        self.worlds[saveName] = self.worldFormat.loadWorld(fileIO, self, persistant=self.persistant)
+                        Logger.info(f"Loading World {savename}", module="world-load")
+                        fileIO = open(savefile, "rb+")
+                        self.worlds[savename] = self.worldFormat.loadWorld(fileIO, self, persistant=self.persistant)
                     except Exception as e:
-                        Logger.error(f"Error While Loading World {filename} - {type(e).__name__}: {e}", module="world-load")
+                        Logger.error(f"Error While Loading World {savefile} - {type(e).__name__}: {e}", module="world-load")
                         Logger.askConfirmation()
             # Check If Default World Is Loaded
             if self.server.config.defaultWorld not in self.worlds.keys():
                 # Check if other worlds were loaded as well
                 if len(self.worlds.keys()) > 0:
                     Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
-                    Logger.warn("Consider Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
+                    Logger.warn("Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
                     # Ask User If They Want To Continue With World Generation
                     Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load")
                     Logger.askConfirmation(message="Generate New World?")
@@ -245,7 +245,7 @@ class WorldManager:
             worldFormat = self.worldFormat
 
         # Generating File Path
-        worldPath = os.path.join(
+        worldPath = Path(
             SERVERPATH,
             savePath,
             worldName + "." + worldFormat.EXTENTIONS[0]  # Gets the first value in the valid extentions list
@@ -253,7 +253,7 @@ class WorldManager:
         Logger.debug(f"File world path is {worldPath}", module="world-gen")
 
         # Check if file already exists
-        if os.path.isfile(worldPath):
+        if worldPath.is_file():
             raise WorldSaveError(f"Trying To Create World File {worldPath} That Already Exists")
 
         return open(worldPath, "wb+")

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from typing import Optional, Any, List
+from pathlib import Path
 import traceback
-import os
 import sys
 
 from obsidian.config import ServerConfig
@@ -93,16 +93,15 @@ class Server:
         # Initializing Config
         Logger.info("Initializing Server Config", module="init")
         # Ensuring Config Path
-        self._ensureFileStructure(os.path.dirname(self.config.configPath))
+        Path(SERVERPATH, self.config.configPath).parent.mkdir(parents=True, exist_ok=True)
         # Initing Config
         self.config.init()
 
         # Setting Up File Structure
         Logger.info("Setting Up File Structure", module="init")
+        Path(SERVERPATH, MODULESFOLDER).mkdir(parents=True, exist_ok=True)
         if self.config.worldSaveLocation is not None:
-            self.ensureFiles.append(MODULESFOLDER)
-            self.ensureFiles.append(self.config.worldSaveLocation)
-        self._ensureFileStructure(self.ensureFiles)
+            Path(SERVERPATH, self.config.worldSaveLocation).mkdir(parents=True, exist_ok=True)
 
         # Print out SubModule Managers
         Logger.info("SubModule Managers Initiated!", module="init")
@@ -182,18 +181,6 @@ class Server:
                 writer.close()
 
         return handler
-
-    def _ensureFileStructure(self, folders: str | List[str]):
-        # Check Type, If Str Put In List
-        if isinstance(folders, str):
-            folders = [folders]
-        Logger.debug(f"Ensuring Folders {folders}", module="init")
-        # Ensure All Folders
-        for folder in folders:
-            folder = os.path.join(SERVERPATH, folder)
-            if not os.path.exists(folder):
-                Logger.debug(f"Creating Folder Structure {folder}", module="init")
-                os.makedirs(folder)
 
     # Quick hack to run function in async mode no matter what
     def asyncstop(self, *args, **kwargs):

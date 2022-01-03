@@ -10,6 +10,7 @@ if sys.version_info.major < 3 or sys.version_info.minor < 10:
 import argparse
 import asyncio
 import signal
+import traceback
 
 from obsidian.server import Server
 from obsidian.log import Logger
@@ -61,3 +62,4 @@ if __name__ == '__main__':
         asyncio.run(main())
     except Exception as e:
         Logger.fatal(f"Unhandled Server Exception - {type(e).__name__}: {e}", module="main", printTb=False)
+        traceback.print_exc()

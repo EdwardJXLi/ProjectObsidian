@@ -5,7 +5,6 @@ from typing import Type, Optional, List, Any, Callable, Generic
 from pathlib import Path
 import importlib
 import pkgutil
-import os
 import inspect
 import re
 
@@ -194,7 +193,7 @@ class _ModuleManager(AbstractManager):
         # Initialize Temporary List of Files Imported
         _module_files = []
         # Walk Through All Packages And Import Library
-        for _, module_name, _ in pkgutil.walk_packages([os.path.join(SERVERPATH, MODULESFOLDER)]):
+        for _, module_name, _ in pkgutil.walk_packages([str(Path(SERVERPATH, MODULESFOLDER))]):
             # Load Modules
             Logger.debug(f"Detected Module {module_name}", module="module-import")
             if module_name not in self._module_blacklist:

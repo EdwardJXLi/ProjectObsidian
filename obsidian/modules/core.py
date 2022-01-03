@@ -17,12 +17,12 @@ from obsidian.packet import (
 )
 
 from typing import Optional, Iterable, Callable, Any
+from pathlib import Path
 import inspect
 import struct
 import gzip
 import math
 import io
-import os
 
 
 @Module(
@@ -656,7 +656,7 @@ class CoreModule(AbstractModule):
             # Create World Data
             return World(
                 worldManager,  # Pass In World Manager
-                os.path.splitext(os.path.basename(fileIO.name))[0],  # Pass In World Name (Save File Name Without EXT)
+                Path(fileIO.name).stem,  # Pass In World Name (Save File Name Without EXT)
                 256, 256, 256,  # Passing World X, Y, Z
                 bytearray(rawData),  # Generating Map Data
                 persistant=persistant,  # Pass In Persistant Flag
