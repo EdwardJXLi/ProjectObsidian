@@ -499,6 +499,8 @@ class Player:
 
         # Splitting Command Data
         cmdName, *cmdArgs = cmdMessage.split(" ")
+        # Format cmdName
+        cmdName = cmdName.lower()
         Logger.info(f"Command {cmdName} Received From Player {self.name}", module="command")
         Logger.debug(f"Handling Command {cmdName} With Arguments {cmdArgs}", module="command")
 

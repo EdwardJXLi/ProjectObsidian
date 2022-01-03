@@ -46,7 +46,7 @@ class _BlockManager(AbstractManager):
 
         # TODO Rename these!
         # Creates List Of Blocks That Has The Block Name As Keys
-        self._block_list: Dict[str, AbstractBlock] = dict()
+        self._block_dict: Dict[str, AbstractBlock] = dict()
         # Create Cache Of Block Ids to Obj
         self._block_ids: Dict[int, AbstractBlock] = dict()
 
@@ -55,18 +55,22 @@ class _BlockManager(AbstractManager):
         Logger.debug(f"Registering Block {blockClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         block: AbstractBlock = super()._initSubmodule(blockClass, module)
 
+        # Check if the name has a space. If so, raise warning
+        if " " in block.NAME:
+            Logger.warn(f"Block '{block.NAME}' has whitspace in its name!", module=f"{module.NAME}-submodule-init")
+
         # Handling Special Cases if OVERRIDE is Set
         if block.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if (block.ID not in self._block_ids) and (block.NAME not in self._block_list.keys()):
+            if (block.ID not in self._block_ids) and (block.NAME not in self._block_dict.keys()):
                 Logger.warn(f"Block {block.NAME} (ID: {block.ID}) From Module {block.MODULE.NAME} Is Trying To Override A Block That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
                 Logger.debug(f"Block {block.NAME} Is Overriding Block {self._block_ids[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
 
         # Checking If Block Name Is Already In Blocks List
         # Ignoring if OVERRIDE is set
-        if block.NAME in self._block_list.keys() and not block.OVERRIDE:
+        if block.NAME in self._block_dict.keys() and not block.OVERRIDE:
             raise InitRegisterError(f"Block {block.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Add Block To Cache
@@ -79,7 +83,7 @@ class _BlockManager(AbstractManager):
             raise InitRegisterError(f"Block Id {block.ID} Has Been Already Registered. Conflicting Blocks Are '{self._block_ids[block.ID].NAME} ({self._block_ids[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
 
         # Add Block to Blocks List
-        self._block_list[block.NAME] = block
+        self._block_dict[block.NAME] = block
 
     # Generate a Pretty List of Blocks
     def generateTable(self):
@@ -88,7 +92,7 @@ class _BlockManager(AbstractManager):
 
             table.field_names = ["Blocks", "BlockId", "Module"]
             # Loop Through All Blocks And Add Value
-            for _, block in self._block_list.items():
+            for _, block in self._block_dict.items():
                 # Add Row To Table
                 table.add_row([block.NAME, block.ID, block.MODULE.NAME])
             return table
@@ -101,7 +105,7 @@ class _BlockManager(AbstractManager):
     # Property Method To Get Number Of Blocks
     @property
     def numBlocks(self):
-        return len(self._block_list)
+        return len(self._block_dict)
 
     # Generate a List of All Block Ids
     def getAllBlockIds(self):
@@ -116,7 +120,7 @@ class _BlockManager(AbstractManager):
 
     # Handles _BlockManager["item"]
     def __getitem__(self, block: str):
-        return self._block_list[block]
+        return self._block_dict[block]
 
     # Handles _BlockManager.item
     def __getattr__(self, *args, **kwargs):

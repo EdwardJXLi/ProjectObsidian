@@ -17,6 +17,7 @@ class AbstractConfig:
     configPath: Path = Path()  # Path Location Of Config File (Used for reloads)
     saveAfterConfigLoad: bool = True  # Override Flag To Enable/Disable Config Saving After Load
     configOverrides: List[str] = field(default_factory=list)  # List of configs to ignore while loading and writing configs
+    autoSave: bool = True
     # Init Vars (Temporary and will not be duplicated)
     rootPath: InitVar[Path] = Path("configs")
     ignoreValues: InitVar[tuple] = tuple()

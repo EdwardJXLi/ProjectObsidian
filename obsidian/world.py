@@ -38,7 +38,7 @@ class WorldManager:
 
         # Get worldFormat Using Given World Format Key
         # Loop Through All World Formats
-        for worldFormat in WorldFormats._format_list.values():
+        for worldFormat in WorldFormats._format_dict.values():
             # Check If key Matches With Config Key List
             if format_name(self.server.config.defaultSaveFormat) in worldFormat.KEYS:
                 # Set World Format
@@ -351,7 +351,7 @@ class World:
         if not self.canEdit:  # Checking If World Is Read-Only
             if not player.opStatus:  # Checking If Player Is Not OP
                 # Check If Air Exists (Prevents Crash if Stuff Wacky)
-                if "Air" in Blocks._block_list:
+                if "Air" in Blocks._block_dict:
                     if block.ID == Blocks.Air.ID:
                         raise ClientError("You Do Not Have Permission To Break This Block")
                     else:

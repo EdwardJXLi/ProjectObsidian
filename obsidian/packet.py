@@ -98,7 +98,7 @@ class _DirectionalPacketManager(AbstractManager):
         super().__init__(f"{direction.name.title()} Packet", AbstractPacket)
 
         # Creates List Of Packets That Has The Packet Name As Keys
-        self._packet_list = dict()  # Not putting a type here as it breaks more things than it fixes
+        self._packet_dict = dict()  # Not putting a type here as it breaks more things than it fixes
         self.direction: PacketDirections = direction
         # Only Used If Request
         if self.direction is PacketDirections.REQUEST:
@@ -109,18 +109,22 @@ class _DirectionalPacketManager(AbstractManager):
         Logger.debug(f"Registering Packet {packetClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         packet: AbstractPacket = super()._initSubmodule(packetClass, module)
 
+        # Check if the name has a space. If so, raise warning
+        if " " in packetClass.NAME:
+            Logger.warn(f"Packet '{packetClass.NAME}' has whitspace in its name!", module=f"{module.NAME}-submodule-init")
+
         # Handling Special Cases if OVERRIDE is Set
         if packet.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if (packet.ID not in self._packet_list.keys()) and (packet.NAME not in self.getAllPacketIds()):
+            if (packet.ID not in self._packet_dict.keys()) and (packet.NAME not in self.getAllPacketIds()):
                 Logger.warn(f"Packet {packet.NAME} (ID: {packet.ID}) From Module {packet.MODULE.NAME} Is Trying To Override A Packet That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
-                Logger.debug(f"Packet {packet.NAME} Is Overriding Packet {self._packet_list[packet.NAME].NAME} (ID: {packet.ID})", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Packet {packet.NAME} Is Overriding Packet {self._packet_dict[packet.NAME].NAME} (ID: {packet.ID})", module=f"{module.NAME}-submodule-init")
 
         # Checking If Packet And PacketId Is Already In Packets List
         # Ignoring if OVERRIDE is set
-        if packet.NAME in self._packet_list.keys() and not packet.OVERRIDE:
+        if packet.NAME in self._packet_dict.keys() and not packet.OVERRIDE:
             raise InitRegisterError(f"Packet {packet.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
         if packet.ID in self.getAllPacketIds() and not packet.OVERRIDE:
             raise InitRegisterError(f"Packet Id {packet.ID} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
@@ -133,21 +137,21 @@ class _DirectionalPacketManager(AbstractManager):
                 self.loopPackets[packet.ID] = packet
 
         # Add Packet to Packets List
-        self._packet_list[packet.NAME] = packet
+        self._packet_dict[packet.NAME] = packet
 
     def getAllPacketIds(self):
-        return [obj.ID for obj in self._packet_list.values()]
+        return [obj.ID for obj in self._packet_dict.values()]
 
     def getPacketById(self, packetId: int):
         # Search Packet With Matching packetId
-        for packet in self._packet_list.values():
+        for packet in self._packet_dict.values():
             if packet.ID == packetId:
                 return packet
         raise PacketError(f"Packet {packetId} Was Not Found")
 
     # Handles _DirectionalPacketManager["item"]
     def __getitem__(self, packet: str):
-        return self._packet_list[packet]
+        return self._packet_dict[packet]
 
     # Handles _DirectionalPacketManager.item
     def __getattr__(self, *args, **kwargs):
@@ -170,12 +174,12 @@ class _PacketManager:
 
             table.field_names = ["Direction", "Packet", "Id", "Player Loop", "Module"]
             # Loop Through All Request Modules And Add Value
-            for _, packet in self.RequestManager._packet_list.items():
+            for _, packet in self.RequestManager._packet_dict.items():
                 requestPacket: AbstractRequestPacket = packet
                 # Adding Row To Table
                 table.add_row(["Request", requestPacket.NAME, requestPacket.ID, requestPacket.PLAYERLOOP, requestPacket.MODULE.NAME])
             # Loop Through All Response Modules And Add Value
-            for _, packet in self.ResponseManager._packet_list.items():
+            for _, packet in self.ResponseManager._packet_dict.items():
                 responsePacket: AbstractResponsePacket = packet
                 # Adding Row To Table
                 table.add_row(["Response", responsePacket.NAME, responsePacket.ID, "N/A", responsePacket.MODULE.NAME])
@@ -190,7 +194,7 @@ class _PacketManager:
     # Property Method To Get Number Of Packets
     @property
     def numPackets(self):
-        return len(self.RequestManager._packet_list) + len(self.ResponseManager._packet_list)
+        return len(self.RequestManager._packet_dict) + len(self.ResponseManager._packet_dict)
 
 
 # Creates Global PacketManager As Singleton

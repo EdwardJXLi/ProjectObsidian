@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Type, Optional, List, Any, Callable, Generic
 from pathlib import Path
 import importlib
 import pkgutil
 import os
 import inspect
+import re
 
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
@@ -27,7 +28,7 @@ from obsidian.constants import (
 
 # Format Names Into A Safer Format
 def format_name(name):
-    return name.replace(" ", "_").lower()
+    return re.sub(r'\W+', '', name.replace(" ", "_").lower())
 
 
 # Manager Skeleton
@@ -49,6 +50,9 @@ class AbstractManager:
             module
         )
 
+        # Append module onto list of submodules
+        module.SUBMODULES.append(obj)
+
         return obj
 
 
@@ -60,9 +64,7 @@ class AbstractModule:
     AUTHOR: str
     VERSION: str
     DEPENDENCIES: list
-
-    def _initSubmodule(self, submodule, *args, **kwargs):
-        return submodule(*args, self, **kwargs)
+    SUBMODULES: list[AbstractSubmodule] = field(default_factory=list)
 
     def initConfig(
         self,
@@ -108,7 +110,7 @@ class _ModuleManager(AbstractManager):
         super().__init__("Module", AbstractModule)
 
         # Creates List Of Modules That Has The Module Name As Keys
-        self._module_list = dict()
+        self._module_dict = dict()
         self._module_blacklist = []
         self._sorted_module_graph = []
         self._completed = False
@@ -215,13 +217,13 @@ class _ModuleManager(AbstractManager):
         Logger.verbose(f"Detected and Imported Module Files {_module_files}", module="module-import")
         # Check If Core Was Loaded
         if self._ensure_core:
-            if "core" not in self._module_list.keys():
+            if "core" not in self._module_dict.keys():
                 self._error_list.append(("core", "PreInit-EnsureCore"))  # Module Loaded WITH Errors
                 raise FatalError("Error While Loading Module core - Critical Module Not Found")
 
     # Intermediate Function to Check and Initialize Dependencies
     def _initDependencies(self):
-        for module_name, module_obj in list(self._module_list.items()):
+        for module_name, module_obj in list(self._module_dict.items()):
             try:
                 Logger.debug(f"Checking Dependencies for Module {module_name}", module="module-resolve")
                 # Loop through all dependencies, check type, then check if exists
@@ -231,18 +233,18 @@ class _ModuleManager(AbstractManager):
                     dep_ver = dependency.VERSION
                     Logger.verbose(f"Checking if Dependency {dep_name} Exists", module="module-resolve")
                     # Check if Dependency is "Loaded"
-                    if dep_name in self._module_list.keys():
+                    if dep_name in self._module_dict.keys():
                         # Check if Version should be checked
                         if dep_ver is None:
                             Logger.verbose(f"Skipping Version Check For Dependency {dependency}", module="module-resolve")
                             pass  # No Version Check Needed
-                        elif dep_ver == self._module_list[dependency.NAME].VERSION:
+                        elif dep_ver == self._module_dict[dependency.NAME].VERSION:
                             Logger.verbose(f"Dependencies {dependency} Satisfied!", module="module-resolve")
                             pass
                         else:
-                            raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {dep_ver} | Has: {self._module_list[dependency.NAME].VERSION})")
+                            raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {dep_ver} | Has: {self._module_dict[dependency.NAME].VERSION})")
                         # If All Passes, Link Module Class
-                        dependency.MODULE = self._module_list[dependency.NAME]
+                        dependency.MODULE = self._module_dict[dependency.NAME]
                     else:
                         raise DependencyError(f"Dependency '{dependency}' Not Found!")
             except FatalError as e:
@@ -258,7 +260,7 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {module_name} From Loader!", module="module-resolve")
-                del self._module_list[module_name]
+                del self._module_dict[module_name]
 
     # Intermediate Function to Resolve Circular Dependencies
     def _resolveDependencyCycles(self):
@@ -274,7 +276,7 @@ class _ModuleManager(AbstractManager):
             for dependency in current.DEPENDENCIES:
                 _ensureNoCycles(dependency.MODULE, [*previous, current.NAME])
 
-        for module_name, module_obj in list(self._module_list.items()):
+        for module_name, module_obj in list(self._module_dict.items()):
             try:
                 Logger.debug(f"Ensuring No Circular Dependencies For Module {module_name}", module="module-verify")
                 # Run DFS Through All Decencies To Check If Cycle Exists
@@ -292,7 +294,7 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {module_name} From Loader!", module="module-verify")
-                del self._module_list[module_name]
+                del self._module_dict[module_name]
 
     # Intermediate Function to Build Dependency Graph
     def _buildDependencyGraph(self):
@@ -319,10 +321,10 @@ class _ModuleManager(AbstractManager):
             Logger.verbose(f"Added {module.NAME} To Dependency Graph. DG Is Now {self._sorted_module_graph}", module="topological-sort")
 
         # Run Topological Sort on All Non-Visited Modules
-        for module_name in list(self._module_list.keys()):
+        for module_name in list(self._module_dict.keys()):
             Logger.verbose(f"Attempting Topological Sort on {module_name}", module="module-prep")
             if module_name not in visited:
-                _topologicalSort(self._module_list[module_name])
+                _topologicalSort(self._module_dict[module_name])
 
         # Print Out Status
         Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sorted_module_graph}", module="module-prep")
@@ -340,8 +342,8 @@ class _ModuleManager(AbstractManager):
                     module.VERSION,
                     module.DEPENDENCIES
                 )
-                # Replacing Item in _module_list and _sorted_module_graph with the Initialized Version!
-                self._module_list[module.NAME] = initializedModule
+                # Replacing Item in _module_dict and _sorted_module_graph with the Initialized Version!
+                self._module_dict[module.NAME] = initializedModule
                 self._sorted_module_graph[idx] = initializedModule
                 Logger.info(f"Initialized Module {module.NAME}", module="init-module")
             except FatalError as e:
@@ -357,7 +359,7 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {module.NAME} From Loader!", module="module-init")
-                del self._module_list[module.NAME]
+                del self._module_dict[module.NAME]
 
     # Intermediate Function to Initialize Submodules
     def _initSubmodules(self):
@@ -403,7 +405,7 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {module.NAME} From Loader!", module="submodule-init")
-                del self._module_list[module.NAME]
+                del self._module_dict[module.NAME]
 
     # Intermediate Function to run Post-Initialization Scripts
     def _postInit(self):
@@ -425,7 +427,7 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {module.NAME} From Loader!", module="postinit")
-                del self._module_list[module.NAME]
+                del self._module_dict[module.NAME]
 
     # Registration. Called by Module Decorator
     def register(
@@ -443,7 +445,7 @@ class _ModuleManager(AbstractManager):
         # Format Name
         name = format_name(name)
         # Checking If Module Is Already In Modules List
-        if name in self._module_list.keys():
+        if name in self._module_dict.keys():
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
         # Check If Module Is Blacklisted
         if name in self._module_blacklist:
@@ -462,7 +464,7 @@ class _ModuleManager(AbstractManager):
         module.AUTHOR = author
         module.VERSION = version
         module.DEPENDENCIES = dependencies
-        self._module_list[name] = module
+        self._module_dict[name] = module
 
     # Generate a Pretty List of Modules
     def generateTable(self):
@@ -471,7 +473,7 @@ class _ModuleManager(AbstractManager):
 
             table.field_names = ["Module", "Author", "Version"]
             # Loop Through All Modules And Add Value
-            for _, module in self._module_list.items():
+            for _, module in self._module_dict.items():
                 # Adding Special Characters And Handlers
                 if module.VERSION is None:
                     module.VERSION = "Unknown"
@@ -490,11 +492,11 @@ class _ModuleManager(AbstractManager):
     # Property Method To Get Number Of Modules
     @property
     def numModules(self):
-        return len(self._module_list)
+        return len(self._module_dict)
 
     # Handles _ModuleManager["item"]
     def __getitem__(self, module: str):
-        return self._module_list[module]
+        return self._module_dict[module]
 
     # Handles _ModuleManager.item
     def __getattr__(self, *args, **kwargs):
@@ -502,7 +504,6 @@ class _ModuleManager(AbstractManager):
 
 
 # Dependency Object
-@dataclass
 class Dependency:
     # Base Init - Main Data
     def __init__(self, name: str, version: Optional[str] = None):

@@ -3,8 +3,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Dict, Type, List, Generic
+from typing import Dict, Type, List, Union, Generic, get_args, get_origin
 from dataclasses import dataclass, field
+from types import UnionType
 import inspect
 
 from obsidian.module import format_name, Submodule, AbstractModule, AbstractSubmodule, AbstractManager
@@ -31,11 +32,29 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
     ACTIVATORS: List[str] = field(default_factory=list)
     OP: bool = False
 
-    async def execute(self, ctx: Player):
+    async def execute(self, ctx: Player, *args, **kwargs):
         raise NotImplementedError("Command Hander Not Implemented")
 
 
 # == Command Utils ==
+
+def _typeToString(annotation):
+    if annotation == inspect._empty:
+        return "None"
+    elif isinstance(annotation, str):
+        return annotation
+    elif isinstance(annotation, list):
+        return f"[{', '.join([_typeToString(x) for x in annotation])}]"
+    elif get_origin(annotation):
+        if get_origin(annotation) is Union or get_origin(annotation) is UnionType:
+            return ' | '.join([_typeToString(arg) for arg in get_args(annotation)])
+        return f"{_typeToString(get_origin(annotation))}[{', '.join([_typeToString(arg) for arg in get_args(annotation)])}]"
+    elif hasattr(annotation, "__name__"):
+        return annotation.__name__
+    else:
+        Logger.warn(f"Unknown annotation type {annotation}", module="command")
+        return "Unknown"
+
 
 # Take Parameter Info + Argument Info To Automatically Convert Types
 def _convertArgs(name: str, param: inspect.Parameter, arg: str):
@@ -50,6 +69,9 @@ def _convertArgs(name: str, param: inspect.Parameter, arg: str):
         return param.annotation(arg)
     except ValueError:
         raise CommandError(f"Argument '{name}' Expected {param.annotation.__name__} But Got '{type(arg).__name__}'")
+    except TypeError:
+        # Probs cant instantiate. Just pass it in and yolo
+        return arg
 
 
 # Parse Command Argument Into Args and KWArgs In Accordance To Command Information
@@ -134,7 +156,7 @@ class _CommandManager(AbstractManager):
         super().__init__("Command", AbstractCommand)
 
         # Creates List Of Commands That Has The Command Name As Keys
-        self._command_list: Dict[str, AbstractCommand] = dict()
+        self._command_dict: Dict[str, AbstractCommand] = dict()
         # Create Cache Of Activator to Obj
         self._activators: Dict[str, AbstractCommand] = dict()
 
@@ -143,35 +165,49 @@ class _CommandManager(AbstractManager):
         Logger.debug(f"Registering Command {commandClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         command: AbstractCommand = super()._initSubmodule(commandClass, module)
 
+        # Check if the name has a space. If so, raise warning
+        if " " in commandClass.NAME:
+            Logger.warn(f"Command '{commandClass.NAME}' has whitspace in its name!", module=f"{module.NAME}-submodule-init")
+
         # Handling Special Cases if OVERRIDE is Set
         if command.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if command.NAME not in self._command_list.keys():
+            if command.NAME not in self._command_dict.keys():
                 Logger.warn(f"Command {command.NAME}  From Module {command.MODULE.NAME} Is Trying To Override A Command That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
-                Logger.debug(f"Command {command.NAME} Is Overriding Command {self._command_list[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Command {command.NAME} Is Overriding Command {self._command_dict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
                 # Un-registering All Activators for the Command Being Overwritten. Prevents Issues!
-                Logger.debug(f"Un-registering Activators for Command {self._command_list[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
-                for activator in list(self._command_list[command.NAME].ACTIVATORS):
+                Logger.debug(f"Un-registering Activators for Command {self._command_dict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                for activator in list(self._command_dict[command.NAME].ACTIVATORS):
                     # Deleting from Cache
                     del self._activators[activator]
 
         # Checking If Command Name Is Already In Commands List
         # Ignoring if OVERRIDE is set
-        if command.NAME in self._command_list.keys() and not command.OVERRIDE:
+        if command.NAME in self._command_dict.keys() and not command.OVERRIDE:
             raise InitRegisterError(f"Command {command.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Setting Activators To Default If None
         if command.ACTIVATORS is None:
             command.ACTIVATORS = []
-        if len(command.ACTIVATORS) == 0:
+        if len(command.ACTIVATORS) <= 0:
             Logger.warn(f"Command {command.NAME} Was Registered Without Any Activators. Using Name As Command Activator.", module=f"{module.NAME}-submodule-init")
             command.ACTIVATORS = [format_name(command.NAME)]
         # Add Activators To Command Cache
         Logger.debug(f"Adding Activators {command.ACTIVATORS} To Activator Cache", module=f"{module.NAME}-submodule-init")
         for activator in command.ACTIVATORS:
             Logger.verbose(f"Adding Activator {activator}", module=f"{module.NAME}-submodule-init")
+            # CHECK IF ACTIVATOR IS VALID
+            # Checking If:
+            # Activator is blank
+            # Activator contains whitespace
+            # Activator contains is just all number
+            # Activator contains uppercase letters
+            # Activator is not alphanumeric
+            # This is so that /help knows if its referring to a page number or command
+            if (activator == "") or (activator.strip() != activator) or (activator.isdecimal()) or (not activator.islower()) or (not activator.isalnum()):
+                raise InitRegisterError(f"Command Activator '{activator}' for Command {command.NAME} Is Not Valid!")
             # If Activator Already Exists, Error
             if activator not in self._activators:
                 self._activators[activator] = command
@@ -179,7 +215,7 @@ class _CommandManager(AbstractManager):
                 raise InitRegisterError(f"Another Command Has Already Registered Command Activator {activator}")
 
         # Add Command to Commands List
-        self._command_list[command.NAME] = command
+        self._command_dict[command.NAME] = command
 
     # Generate a Pretty List of Commands
     def generateTable(self):
@@ -188,7 +224,7 @@ class _CommandManager(AbstractManager):
 
             table.field_names = ["Command", "Activators", "Version", "Module"]
             # Loop Through All Commands And Add Value
-            for _, command in self._command_list.items():
+            for _, command in self._command_dict.items():
                 # Add Row To Table
                 table.add_row([command.NAME, command.ACTIVATORS, command.VERSION, command.MODULE.NAME])
             return table
@@ -208,11 +244,11 @@ class _CommandManager(AbstractManager):
     # Property Method To Get Number Of Commands
     @property
     def numCommands(self):
-        return len(self._command_list)
+        return len(self._command_dict)
 
     # Handles _CommandManager["item"]
     def __getitem__(self, command: str):
-        return self._command_list[command]
+        return self._command_dict[command]
 
     # Handles _CommandManager.item
     def __getattr__(self, *args, **kwargs):
