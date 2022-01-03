@@ -161,7 +161,7 @@ class ServerConfig(AbstractConfig):
     allowPlayerColor: bool = True
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
-    automaticallyDetermineSpawn: bool = False  # Location of Save Folder
+    automaticallyDetermineSpawn: bool = False  # Reset Spawn Location for Every Player
     defaultWorld: str = "default"  # Name Of Default World
     serverMaxPlayers: int = 128  # Number Of Players Max Allowed On The Entire Server
     worldMaxPlayers: int = 128  # Number Of Players Max Allowed In One World

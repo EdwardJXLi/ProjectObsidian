@@ -154,6 +154,10 @@ class WorldPlayerManager:
         player.playerId = playerId
         self.player_slots[playerId] = player
 
+        # If automaticallyDetermineSpawn is enabled, determine new spawn point
+        if self.world.worldManager.server.config.automaticallyDetermineSpawn:
+            self.world.generateSpawnCoords(forceSpawnX=True, forceSpawnZ=True, forceSpawnY=True, forceSpawnYaw=True, forceSpawnPitch=True)
+
         # Solve rare edge case where Spawn coords may not be set!
         if (
             self.world.spawnX is not None and

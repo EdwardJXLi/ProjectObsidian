@@ -289,8 +289,8 @@ class World:
         self.sizeY = sizeY
         self.sizeZ = sizeZ
         self.spawnX = spawnX
-        self.spawnZ = spawnZ
         self.spawnY = spawnY
+        self.spawnZ = spawnZ
         self.spawnYaw = spawnYaw
         self.spawnPitch = spawnPitch
         self.mapArray = mapArray
@@ -312,39 +312,50 @@ class World:
                 Logger.debug(f"Persistant World Has FileIO {self.fileIO}", "world-load")
 
         # Generate/Set Spawn Coords
+        self.generateSpawnCoords()
+
+        # Initialize WorldPlayerManager
+        Logger.info("Initializing World Player Manager", module="init-world")
+        self.playerManager = WorldPlayerManager(self)
+
+    def generateSpawnCoords(
+        self,
+        forceSpawnX: bool = False,
+        forceSpawnY: bool = False,
+        forceSpawnZ: bool = False,
+        forceSpawnYaw: bool = False,
+        forceSpawnPitch: bool = False
+    ):
+        # Generate spawn coords using an iterative system
         # Set spawnX
-        if self.spawnX is None:
+        if self.spawnX is None or forceSpawnX:
             # Generate SpawnX (Set to middle of map)
             self.spawnX = (self.sizeX // 2) * 32 + 51
             Logger.verbose(f"spawnX was not provided. Generated to {self.spawnX}", "world-load")
 
         # Set spawnZ
-        if self.spawnZ is None:
+        if self.spawnZ is None or forceSpawnZ:
             # Generate SpawnZ (Set to middle of map)
             self.spawnZ = (self.sizeZ // 2) * 32 + 51
             Logger.verbose(f"spawnZ was not provided. Generated to {self.spawnZ}", "world-load")
 
         # Set spawnY
-        if self.spawnY is None:
+        if self.spawnY is None or forceSpawnY:
             # Kinda hacky to get the block coords form the in-game coords
-            self.spawnY = (self.getHighestBlock(round((self.spawnX - 51) / 32), round((self.spawnZ - 51) / 32)) + 1) * 32 + 51
+            self.spawnY = (self.getHighestBlock(round((self.spawnX - 51) / 32) + 1, round((self.spawnZ - 51) / 32) + 1) + 1) * 32 + 51
             Logger.verbose(f"spawnY was not provided. Generated to {self.spawnY}", "world-load")
 
         # Set spawnYaw
-        if spawnYaw is None:
+        if self.spawnYaw is None or forceSpawnYaw:
             # Generate SpawnYaw (0)
             self.spawnYaw = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
 
         # Set spawnPitch
-        if spawnPitch is None:
+        if self.spawnPitch is None or forceSpawnPitch:
             # Generate SpawnPitch (0)
             self.spawnPitch = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
-
-        # Initialize WorldPlayerManager
-        Logger.info("Initializing World Player Manager", module="init-world")
-        self.playerManager = WorldPlayerManager(self)
 
     def canEditBlock(self, player, block):
         # Checking If User Can Set Blocks
