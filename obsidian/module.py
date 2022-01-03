@@ -79,7 +79,7 @@ class AbstractModule:
             raise Exception("Passed Config Must Extend `AbstractConfig`")
 
         # Generate the path
-        Logger.log(f"Initializing Module Config {name} for module {self.NAME}")
+        Logger.info(f"Initializing Module Config {name} for module {self.NAME}", f"config-init-{self.NAME}")
         if overrideConfigPath:
             rootPath = overrideConfigPath
         else:

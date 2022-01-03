@@ -151,12 +151,10 @@ class ServerConfig(AbstractConfig):
     # Module Configuration
     moduleBlacklist: List[str] = field(default_factory=list)  # Module Init Blacklist
     # Server Configuration
-    serverMode: bool = False  # Enables and Disables some features for an always-on server (i.e. Auto denys confirmation dialog)
     operatorsList: List[str] = field(default_factory=list)  # List Of Operators
     ipBlacklist: List[str] = field(default_factory=list)  # List Of Ips To Block Connection
     userBlacklist: List[str] = field(default_factory=list)  # List Of Usernames To Block Connection
     disabledCommands: List[str] = field(default_factory=list)  # List Of Disabled Commands
-    enableLogging: bool = False  # Enables and Disables logging to file
     # Chat Configuration
     playerChatColor: str = "&a"
     operatorChatColor: str = "&4"

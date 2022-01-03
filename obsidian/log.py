@@ -13,6 +13,7 @@ from obsidian.constants import Colour
 class Logger:
     DEBUG = False
     VERBOSE = False
+    SERVERMODE = False
     LOGFILE = None
 
     @staticmethod
@@ -66,17 +67,26 @@ class Logger:
         print(output)
 
     @classmethod
-    def askConfirmation(cls, message: str = "Do you want to continue?"):
-        while True:
-            # Give user Warning, and ask them for further input
-            cls.warn(f"{message} (y/n)", module="confirmation")
-            userInput = input()
-            if userInput.lower() == "y" or userInput.lower() == "yes":
-                cls.log("")
-                break
-            elif userInput.lower() == "n" or userInput.lower() == "no":
-                cls.warn("Ok Exiting...", module="confirmation")
+    def askConfirmation(cls, message: str = "Do you want to continue?", exit_on_no: bool = True):
+        if not cls.SERVERMODE:
+            while True:
+                # Give user Warning, and ask them for further input
+                cls.warn(f"{message} (y/n)", module="confirmation")
+                userInput = input()
+                if userInput.lower() == "y" or userInput.lower() == "yes":
+                    cls.log("")
+                    return True
+                elif userInput.lower() == "n" or userInput.lower() == "no":
+                    if exit_on_no:
+                        cls.warn("Ok Exiting...", module="confirmation")
+                        sys.exit()
+                    return False
+        else:
+            cls.warn(f"{message} [SKIPPING (servermode enabled)]", module="confirmation")
+            if exit_on_no:
+                cls.warn("Stopping Server due to Unsafe Status", module="confirmation")
                 sys.exit()
+            return False
 
     @classmethod
     def info(cls, message: str, module: str = "unknown"):
