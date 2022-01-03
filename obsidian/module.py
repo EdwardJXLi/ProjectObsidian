@@ -74,14 +74,18 @@ class AbstractModule:
         overrideConfigPath: Optional[Path] = None,
         **kwargs
     ) -> T:
+        # Checking if config is of right ty[e]
         if isinstance(config, AbstractConfig):
             raise Exception("Passed Config Must Extend `AbstractConfig`")
 
+        # Generate the path
+        Logger.log(f"Initializing Module Config {name} for module {self.NAME}")
         if overrideConfigPath:
             rootPath = overrideConfigPath
         else:
             rootPath = Path("configs", format_name(self.NAME))
 
+        # Initialize and Return the config
         return config(name, *args, rootPath=rootPath, autoInit=True, hideWarning=True, **kwargs)
 
     def postInit(*args, **kwargs):

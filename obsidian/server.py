@@ -6,7 +6,7 @@ import traceback
 import os
 import sys
 
-from obsidian.config import AbstractConfig, ServerConfig
+from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager, Packets
 from obsidian.constants import (
     managers_list,
@@ -53,7 +53,6 @@ class Server:
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized: bool = False  # Flag Set When Everything Is Fully Loaded
         self.stopping: bool = False  # Flag To Prevent Crl-C Spamming
-        self.moduleConfigs: List[AbstractConfig] = []  # List of Module Configs (Autosave when server stops)
 
         # Init Colour
         if colour:
@@ -248,6 +247,7 @@ class Server:
             Logger.info("Saving Config", module="server-stop")
             if self.config is not None:
                 self.config.save()
+            # TODO: Autosave Module Configs
 
             # Managing worlds
             if self.worldManager:

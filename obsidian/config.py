@@ -17,7 +17,7 @@ class AbstractConfig:
     configPath: Path = Path()  # Path Location Of Config File (Used for reloads)
     saveAfterConfigLoad: bool = True  # Override Flag To Enable/Disable Config Saving After Load
     configOverrides: List[str] = field(default_factory=list)  # List of configs to ignore while loading and writing configs
-    autoSave: bool = True
+    # autoSave: bool = True  # Not Implemented
     # Init Vars (Temporary and will not be duplicated)
     rootPath: InitVar[Path] = Path("configs")
     ignoreValues: InitVar[tuple] = tuple()
@@ -150,14 +150,20 @@ class AbstractConfig:
 class ServerConfig(AbstractConfig):
     # Module Configuration
     moduleBlacklist: List[str] = field(default_factory=list)  # Module Init Blacklist
-    # Network Configuration
+    # Server Configuration
+    serverMode: bool = False  # Enables and Disables some features for an always-on server (i.e. Auto denys confirmation dialog)
+    operatorsList: List[str] = field(default_factory=list)  # List Of Operators
     ipBlacklist: List[str] = field(default_factory=list)  # List Of Ips To Block Connection
+    userBlacklist: List[str] = field(default_factory=list)  # List Of Usernames To Block Connection
+    disabledCommands: List[str] = field(default_factory=list)  # List Of Disabled Commands
+    enableLogging: bool = False  # Enables and Disables logging to file
     # Chat Configuration
     playerChatColor: str = "&a"
     operatorChatColor: str = "&4"
+    allowPlayerColor: bool = True
     # World Configuration
-    operatorsList: List[str] = field(default_factory=list)  # List Of Operators
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
+    automaticallyDetermineSpawn: bool = False  # Location of Save Folder
     defaultWorld: str = "default"  # Name Of Default World
     serverMaxPlayers: int = 128  # Number Of Players Max Allowed On The Entire Server
     worldMaxPlayers: int = 128  # Number Of Players Max Allowed In One World
