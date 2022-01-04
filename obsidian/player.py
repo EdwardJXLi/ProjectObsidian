@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from obsidian.network import NetworkHandler
     from obsidian.blocks import AbstractBlock
 
-from typing import List, Optional, Type
+from typing import List, Dict, Optional, Type
 
 from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
@@ -25,24 +25,44 @@ from obsidian.constants import (
 class PlayerManager:
     def __init__(self, server: Server, maxSize: int = 1024):
         self.server: Server = server
-        self.players: List[Player] = []  # List of players (no order)
+        self.players: Dict[str, Player] = {}  # Dict of Players with Usernames as Keys
         self.maxSize: int = maxSize
 
     async def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
         Logger.debug(f"Creating Player For Ip {network.ip}", module="player-manager")
+        # Check if name is alphanumeric
+        if not username.isalnum():
+            raise ClientError("Username Must Be Alphanumeric Only!")
+
+        # Check if user is banned!
+        if username.lower() in self.server.config.bannedPlayers:
+            raise ClientError("You are banned.")
+
         # Check if user is an operator
         opStatus = False
         if username.lower() in self.server.config.operatorsList:
             opStatus = True
             await network.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
-        # Creating Player Class
-        player = Player(self, network, username, verificationKey, opStatus=opStatus)
+
         # Checking if server is full
         if len(self.players) >= self.maxSize:
             raise ClientError("Server Is Full!")
+
+        # Creating Player Class
+        player = Player(self, network, username, verificationKey, opStatus=opStatus)
         # Adding Player Class
-        self.players.append(player)
+        self.players[username.lower()] = player
         return player
+
+    def getPlayersByIp(self, ip: str):
+        Logger.verbose(f"Getting Players With Ip {ip}", module="player-manager")
+        # Loop through all players and find those who need to be kicked
+        toKick: List[Player] = []
+        for player in self.players.values():
+            if player.networkHandler.ip[0] == ip:
+                toKick.append(player)
+        Logger.verbose(f"Found Players: {toKick}", module="player-manager")
+        return toKick
 
     async def deletePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name}", module="player-manager")
@@ -52,17 +72,48 @@ class PlayerManager:
             await player.worldPlayerManager.removePlayer(player)
 
         # Remove Player From PlayerManager
-        for playerIndex, playerObj in enumerate(self.players):
-            if(playerObj.networkHandler.ip == player.networkHandler.ip):
-                del self.players[playerIndex]
+        for playerName, playerObj in self.players.items():
+            if player is playerObj:
+                del self.players[playerName]
+                break
 
         Logger.debug(f"Successfully Removed Player {player.name}", module="player-manager")
+
+    async def kickPlayer(self, username: str, reason: str = "Kicked By Server"):
+        Logger.info(f"Kicking Player {username}", module="player-manager")
+        # Check if username matches a player
+        if username.lower() in self.players:
+            # Get Player Object
+            player = self.players[username.lower()]
+            # Kick Player
+            await player.networkHandler.closeConnection(reason, notifyPlayer=True)
+            Logger.debug(f"Successfully Kicked Player {username}", module="player")
+            return True
+        else:
+            Logger.warn(f"Player {username} Does Not Exist", module="player-manager")
+            return False
+
+    async def kickPlayerByIp(self, ip: str, reason: str = "Kicked By Server"):
+        Logger.info(f"Kicking Player(s) by Ip {ip}", module="player-manager")
+        # Get players with ip
+        toKick = self.getPlayersByIp(ip)
+
+        # Check if anyone is getting kicked
+        if not toKick:
+            Logger.warn(f"No players found with Ip {ip}. Not kicking anyone", module="player-manager")
+            return False
+
+        # Kick Players
+        Logger.info(f"Kicking {len(toKick)} Player(s) by Ip {ip}", module="player-manager")
+        for player in toKick:
+            Logger.debug(f"Player {player.name} is being kicked", module="player-manager")
+            await player.networkHandler.closeConnection(reason, notifyPlayer=True)
 
     async def sendGlobalPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
         # Send packet to ALL members connected to server (all worlds)
         Logger.verbose(f"Sending Packet {packet.NAME} To All Connected Players", module="global-packet-dispatcher")
         # Loop Through All Players
-        for player in self.players:
+        for player in self.players.values():
             # Checking if player is not in ignoreList
             if player not in ignoreList:
                 try:
@@ -113,26 +164,6 @@ class PlayerManager:
             textColour=Colour.WHITE
         )
         await self.sendGlobalPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
-
-    async def propagateOperatorStatus(self):
-        Logger.debug("Propagating Operator Status", module="player-manager")
-        # Loop Through All Players
-        for player in self.players:
-            # Check if player is an operator
-            if (not player.opStatus) and (player.name.lower() in self.server.config.operatorsList):
-                # Send Packet To Player
-                await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
-                # Set Player Operator Status
-                player.opStatus = True
-                # Send Message to Player
-                await player.sendMessage("You Are Now An Operator")
-            elif (player.opStatus) and (player.name.lower() not in self.server.config.operatorsList):
-                # Send Packet To Player
-                await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, False)
-                # Set Player Operator Status
-                player.opStatus = False
-                # Send Message to Player
-                await player.sendMessage("You Are No Longer An Operator")
 
 
 # The Specific Player Manager Per World
@@ -486,7 +517,7 @@ class Player:
             return None  # Skip Rest
 
         # Check If Last Character Is '&' (Crashes Older Minecraft Clients)
-        if message[-1:] == "&":
+        if len(message) > 0 and message[-1:] == "&":
             message = message[:-1]  # Cut Last Character
 
         if len(message) > 32:  # Cut Message If Too Long

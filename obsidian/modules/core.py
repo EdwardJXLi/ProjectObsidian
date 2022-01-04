@@ -1,5 +1,5 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
-from obsidian.constants import MAX_MESSAGE_LENGTH, ClientError, ServerError, WorldFormatError, CommandError, __version__
+from obsidian.constants import MAX_MESSAGE_LENGTH, ClientError, ServerError, WorldFormatError, CommandError, validIp, __version__
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
@@ -13,7 +13,8 @@ from obsidian.packet import (
     AbstractRequestPacket,
     AbstractResponsePacket,
     unpackageString,
-    packageString
+    packageString,
+    Packets
 )
 
 from typing import Optional, Iterable, Callable, Any
@@ -561,11 +562,19 @@ class CoreModule(AbstractModule):
             # (64String) Message
             if len(message) > 64:
                 Logger.warn(f"Trying to send message '{message}' over the 64 character limit!", module="packet-serializer")
+
+            # Format Message Packet
+            packedMessage = packageString(message)
+            if len(packedMessage) > 0 and packedMessage[-1] == ord("&"):  # Using the ascii value as it is packed into a bytearray already
+                Logger.warn(f"Trying to send message '{message}' with '&' as the last character!", module="packet-serializer")
+                packedMessage = packedMessage[:-1]
+
+            # Send Message Packet
             msg = struct.pack(
                 self.FORMAT,
                 self.ID,
                 int(playerId),
-                bytearray(packageString(message))
+                bytearray(packedMessage)
             )
             return msg
 
@@ -1160,7 +1169,7 @@ class CoreModule(AbstractModule):
                 if cmd.OP:
                     help_message = "&4[OP] " + help_message
                 if len(cmd.ACTIVATORS) > 1:
-                    help_message += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS])})"
+                    help_message += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS][1:])})"
                 help_message += "&f"
                 output.append(help_message)
                 output.append(f"{cmd.DESCRIPTION}")
@@ -1251,7 +1260,7 @@ class CoreModule(AbstractModule):
 
             # Append list of aliases (if they exist)
             if len(cmd.ACTIVATORS) > 1:
-                output += CommandHelper.format_list(cmd.ACTIVATORS, initial_message="&d[Aliases] &e", seperator=", ", line_start="&e", prefix="/")
+                output += CommandHelper.format_list(cmd.ACTIVATORS[1:], initial_message="&d[Aliases] &e", seperator=", ", line_start="&e", prefix="/")
 
             # If command is operator only, add a warning
             if cmd.OP:
@@ -1308,7 +1317,7 @@ class CoreModule(AbstractModule):
     )
     class PluginInfoCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["plugin", "module", "plugininfo", "helpplugin", "pluginhelp", "moduleinfo", "helpmodule", "modulehelp"])
+            super().__init__(*args, ACTIVATORS=["plugin", "module", "plugininfo", "moduleinfo"])
 
         async def execute(self, ctx: Player, module_name: str):
             # Generate plugin output
@@ -1399,7 +1408,7 @@ class CoreModule(AbstractModule):
     )
     class ListStaffCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["liststaff", "staff", "operators", "listoperators"])
+            super().__init__(*args, ACTIVATORS=["liststaff", "staff"])
 
         async def execute(self, ctx: Player):
             if ctx.worldPlayerManager is None:
@@ -1452,19 +1461,20 @@ class CoreModule(AbstractModule):
     )
     class OPCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["op", "setop", "operator"], OP=True)
+            super().__init__(*args, ACTIVATORS=["op", "operator"], OP=True)
 
         async def execute(self, ctx: Player, player_name: str):
-            # Add Player To Operators List
+            # Check if user is already operator
             serverConfig = ctx.playerManager.server.config
+            if player_name in serverConfig.operatorsList:
+                raise CommandError(f"Player {player_name} is already an operator!")
+
+            # Add Player To Operators List
             serverConfig.operatorsList.append(player_name.lower())
             serverConfig.save()
 
-            # Propagate Operator Status
-            await ctx.playerManager.propagateOperatorStatus()
-
             # Send Response Back
-            await ctx.sendMessage(f"Player {player_name} Added To Operators List")
+            await ctx.sendMessage(f"&aPlayer {player_name} Added To Operators List")
 
     @Command(
         "DeOperator",
@@ -1473,22 +1483,216 @@ class CoreModule(AbstractModule):
     )
     class DEOPCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["deop", "removeop", "deoperator"], OP=True)
+            super().__init__(*args, ACTIVATORS=["deop", "deoperator"], OP=True)
 
         async def execute(self, ctx: Player, player_name: str):
-            # Add Player To Operators List
+            # Remove Player From Operators List
             serverConfig = ctx.playerManager.server.config
             if player_name not in serverConfig.operatorsList:
-                raise CommandError(f"&cPlayer {player_name} is not an operator!&f")
+                raise CommandError(f"Player {player_name} is not an operator!")
 
             serverConfig.operatorsList.remove(player_name.lower())
             serverConfig.save()
 
-            # Propagate Operator Status
-            await ctx.playerManager.propagateOperatorStatus()
+            # Send Response Back
+            await ctx.sendMessage(f"&aPlayer {player_name} Removed From Operators List")
+
+    @Command(
+        "ListOperators",
+        description="List all operators",
+        version="v1.0.0"
+    )
+    class ListOPCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["listop", "oplist"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Send formatted operators list
+            await ctx.sendMessage(
+                CommandHelper.format_list(
+                    ctx.playerManager.server.config.operatorsList,
+                    initial_message="&4[Operators] &e",
+                    line_start="&e", seperator=", "
+                )
+            )
+
+    @Command(
+        "Kick",
+        description="Kicks a user by name",
+        version="v1.0.0"
+    )
+    class KickCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["kick", "kickuser"], OP=True)
+
+        async def execute(self, ctx: Player, player_name: str, reason: str = "Kicked By Operator"):
+            # Lower Player Name
+            player_name = player_name.lower()
+            # Check if user is in list of players
+            if not ctx.playerManager.players.get(player_name, None):
+                raise CommandError(f"Player {player_name} is not online!")
+
+            # Kick Player
+            await ctx.playerManager.kickPlayer(player_name, reason=reason)
 
             # Send Response Back
-            await ctx.sendMessage(f"Player {player_name} Removed From Operators List")
+            await ctx.sendMessage(f"&aPlayer {player_name} Kicked!")
+
+    @Command(
+        "KickIp",
+        description="Kicks a user by ip",
+        version="v1.0.0"
+    )
+    class KickIpCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["kickip"], OP=True)
+
+        async def execute(self, ctx: Player, ip: str, reason: str = "Kicked By Operator"):
+            # Check if IP is valid
+            if not validIp.match(ip):
+                raise CommandError(f"Ip {ip} is not a valid Ip!")
+
+            # Check if user with ip is connected
+            if not ctx.playerManager.getPlayersByIp(ip):
+                raise CommandError(f"No Players With Ip {ip} is online!")
+
+            # Kick Player
+            await ctx.playerManager.kickPlayerByIp(ip, reason=reason)
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aKick Players With {ip}!")
+
+    @Command(
+        "Ban",
+        description="Bans a user by name",
+        version="v1.0.0"
+    )
+    class BanCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["ban", "banuser"], OP=True)
+
+        async def execute(self, ctx: Player, player_name: str, *, reason: str = "Banned By Operator"):
+            # Lower Player Name
+            player_name = player_name.lower()
+            # Check if user is already banned
+            serverConfig = ctx.playerManager.server.config
+            if player_name in serverConfig.bannedPlayers:
+                raise CommandError(f"Player {player_name} is already banned!")
+
+            # Add Player To Banned Users List
+            serverConfig.bannedPlayers.append(player_name.lower())
+            serverConfig.save()
+
+            # If Player Is Connected, Kick Player
+            if ctx.playerManager.players.get(player_name, None):
+                await ctx.playerManager.kickPlayer(player_name, reason=reason)
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aPlayer {player_name} Banned!")
+
+    @Command(
+        "Unban",
+        description="Unbans a user by name",
+        version="v1.0.0"
+    )
+    class UnbanCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["unban", "unbanuser"], OP=True)
+
+        async def execute(self, ctx: Player, player_name: str):
+            # Lower Player Name
+            player_name = player_name.lower()
+            # Remove Player From Banned List
+            serverConfig = ctx.playerManager.server.config
+            if player_name not in serverConfig.bannedPlayers:
+                raise CommandError(f"Player {player_name} is not banned!")
+
+            serverConfig.bannedPlayers.remove(player_name.lower())
+            serverConfig.save()
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aPlayer {player_name} Unbanned!")
+
+    @Command(
+        "BanIp",
+        description="Bans a user by ip",
+        version="v1.0.0"
+    )
+    class BanIpCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["banip"], OP=True)
+
+        async def execute(self, ctx: Player, ip: str, *, reason: str = "Banned By Operator"):
+            # Check if IP is valid
+            if not validIp.match(ip):
+                raise CommandError(f"Ip {ip} is not a valid Ip!")
+
+            # Check if Ip is already banned
+            serverConfig = ctx.playerManager.server.config
+            if ip in serverConfig.bannedIps:
+                raise CommandError(f"Ip {ip} is already banned!")
+
+            # Add Player To Banned Ips List
+            serverConfig.bannedIps.append(ip)
+            serverConfig.save()
+
+            # If Ip Is Connected, Kick Players With That Ip
+            if ctx.playerManager.getPlayersByIp(ip):
+                await ctx.playerManager.kickPlayerByIp(ip, reason=reason)
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aIp {ip} Banned!")
+
+    @Command(
+        "UnbanIp",
+        description="Unbans an Ip",
+        version="v1.0.0"
+    )
+    class UnbanIpCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["unbanip"], OP=True)
+
+        async def execute(self, ctx: Player, ip: str):
+            # Check if IP is valid
+            if not validIp.match(ip):
+                raise CommandError(f"Ip {ip} is not a valid Ip!")
+
+            # Remove Player From Banned Ips List
+            serverConfig = ctx.playerManager.server.config
+            if ip not in serverConfig.bannedIps:
+                raise CommandError(f"Ip {ip} is not banned!")
+
+            serverConfig.bannedIps.remove(ip)
+            serverConfig.save()
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aIp {ip} Unbanned!")
+
+    @Command(
+        "BanList",
+        description="List all banned players",
+        version="v1.0.0"
+    )
+    class BanListCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["banlist", "listbans"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Send formatted banned list
+            await ctx.sendMessage(
+                CommandHelper.format_list(
+                    ctx.playerManager.server.config.bannedPlayers,
+                    initial_message="&4[Banned Players] &e",
+                    line_start="&e", seperator=", "
+                )
+            )
+            await ctx.sendMessage(
+                CommandHelper.format_list(
+                    ctx.playerManager.server.config.bannedIps,
+                    initial_message="&4[Banned Ips] &e",
+                    line_start="&e", seperator=", "
+                )
+            )
 
     @Command(
         "ReloadConfig",
@@ -1504,11 +1708,40 @@ class CoreModule(AbstractModule):
             serverConfig = ctx.playerManager.server.config
             serverConfig.reload()
 
-            # Repropagate Operator Status
-            await ctx.playerManager.propagateOperatorStatus()
+            # Send Response Back
+            await ctx.sendMessage("&aConfig Reloaded!")
+
+    @Command(
+        "ReloadOperators",
+        description="Repropagate Operator Status Across All Worlds",
+        version="v1.0.0"
+    )
+    class ReloadOperatorsCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["reloadops"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Propagate Operator Status
+            # Loop Through All Players
+            for player in ctx.playerManager.players.values():
+                # Check if player is an operator
+                if (not player.opStatus) and (player.name.lower() in ctx.playerManager.server.config.operatorsList):
+                    # Send Packet To Player
+                    await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
+                    # Set Player Operator Status
+                    player.opStatus = True
+                    # Send Message to Player
+                    await player.sendMessage("You Are Now An Operator")
+                elif (player.opStatus) and (player.name.lower() not in ctx.playerManager.server.config.operatorsList):
+                    # Send Packet To Player
+                    await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, False)
+                    # Set Player Operator Status
+                    player.opStatus = False
+                    # Send Message to Player
+                    await player.sendMessage("You Are No Longer An Operator")
 
             # Send Response Back
-            await ctx.sendMessage("Config Reloaded!")
+            await ctx.sendMessage("&aOperators Reloaded!")
 
     @Command(
         "StopServer",
@@ -1520,7 +1753,7 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["stop"], OP=True)
 
         async def execute(self, ctx: Player):
-            await ctx.sendMessage("Stopping Server")
+            await ctx.sendMessage("&4Stopping Server")
             await ctx.playerManager.server.stop()
 
 

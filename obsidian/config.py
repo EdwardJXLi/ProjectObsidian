@@ -136,24 +136,15 @@ class AbstractConfig:
         # Converts the config to a dict.
         return asdict(self)
 
-    def to_json(self):
-        # Converts the config to a json string.
-        return json.dumps(self.to_dict())
-
-    def to_file(self, filename: Path):
-        # Writes the config to a file.
-        with open(filename, "w") as f:
-            f.write(self.to_json())
-
 
 @dataclass
 class ServerConfig(AbstractConfig):
     # Module Configuration
-    moduleBlacklist: List[str] = field(default_factory=list)  # Module Init Blacklist
+    moduleIgnorelist: List[str] = field(default_factory=list)  # Module Init Ignore List
     # Server Configuration
     operatorsList: List[str] = field(default_factory=list)  # List Of Operators
-    ipBlacklist: List[str] = field(default_factory=list)  # List Of Ips To Block Connection
-    userBlacklist: List[str] = field(default_factory=list)  # List Of Usernames To Block Connection
+    bannedIps: List[str] = field(default_factory=list)  # List Of Ips that are banned (Reject Connection)
+    bannedPlayers: List[str] = field(default_factory=list)  # List Of Usernames that are banned (Reject Connection)
     disabledCommands: List[str] = field(default_factory=list)  # List Of Disabled Commands
     # Chat Configuration
     playerChatColor: str = "&a"
@@ -172,5 +163,5 @@ class ServerConfig(AbstractConfig):
     defaultSaveFormat: str = "raw"  # Name Of Default World Save Format
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
-    worldBlacklist: List[str] = field(default_factory=list)  # World Init Blacklist
+    worldIgnorelist: List[str] = field(default_factory=list)  # Worlds to ignore
     defaultMOTD: List[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD

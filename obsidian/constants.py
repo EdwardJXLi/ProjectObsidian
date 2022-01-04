@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import asyncio
 import typing
+import re
 
 # Server Version
 __version__ = "1.0.0"
@@ -38,6 +39,9 @@ T = typing.TypeVar("T")
 # Managers
 # Dynamically generated list of registered managers.
 managers_list = []
+
+# Regex for a valid IP
+validIp = re.compile("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
 
 
 # Custom Errors

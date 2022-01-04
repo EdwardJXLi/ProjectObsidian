@@ -28,10 +28,10 @@ from obsidian.constants import (
 
 
 class WorldManager:
-    def __init__(self, server: Server, blacklist: List[str] = []):
+    def __init__(self, server: Server, ignorelist: List[str] = []):
         self.server: Server = server
         self.worlds: Dict[str, World] = dict()
-        self.blacklist: List[str] = blacklist
+        self.ignorelist: List[str] = ignorelist
         self.persistant: bool = True
         # Defined Later In Init
         # self.worldFormat: AbstractWorldFormat
@@ -134,9 +134,9 @@ class WorldManager:
                 # Check If File Type Matches With The Extentions Provided By worldFormat
                 if savefile.suffix[1:] not in self.worldFormat.EXTENTIONS:  # doing [1:] to remove the "."
                     Logger.debug(f"Ignoring World File {savefile}. File Extention Not Known!", module="world-load")
-                # Also Check If World Is Blacklisted
-                elif savename in self.server.config.worldBlacklist:
-                    Logger.info(f"Ignoring World File {savefile}. World Name Is Blacklisted!", module="world-load")
+                # Also Check If World Is Ignored
+                elif savename in self.ignorelist:
+                    Logger.info(f"Ignoring World File {savefile}. World Name Is On Ignore List!", module="world-load")
                 # Also Check If World Name Is Already Loaded (Same File Names with Different Extentions)
                 elif savename in self.worlds.keys():
                     Logger.warn(f"Ignoring World File {savefile}. World With Similar Name Has Already Been Registered!", module="world-load")

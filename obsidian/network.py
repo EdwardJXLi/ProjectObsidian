@@ -60,9 +60,9 @@ class NetworkHandler:
         Logger.info(f"New Connection From {self.ip}", module="network")
 
         # Check if user is IP banned
-        if self.ip[0] in self.server.config.ipBlacklist:
-            Logger.info(f"IP {self.ip} Is Blacklisted. Kicking!", module="network")
-            raise ClientError("Your IP Has Been Blacklisted From The Server!")
+        if self.ip[0] in self.server.config.bannedIps:
+            Logger.info(f"IP {self.ip} Is Banned. Kicking!", module="network")
+            raise ClientError("Your IP Has Been Banned From The Server!")
 
         # Start the server <-> client login protocol
         Logger.debug(f"{self.ip} | Starting Client <-> Server Handshake", module="network")
@@ -156,15 +156,20 @@ class NetworkHandler:
         if reason is None:
             reason = "No Reason Provided"
 
-        Logger.debug(f"Closing Connection {self.ip} For Reason {reason}", module="network")
-        # Send Disconnect Message
-        if notifyPlayer:
-            await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
+        # Check if user has already been disconnected
+        if not self.isConnected:
+            Logger.debug("User Already Disconnected.", module="network")
+            return
 
         # Removing and Cleaning Up Player If Necessary
         if self.player is not None:
             Logger.debug("Closing and Cleaning Up User", module="network")
             await self.player.playerManager.deletePlayer(self.player)
+
+        Logger.debug(f"Closing Connection {self.ip} For Reason {reason}", module="network")
+        # Send Disconnect Message
+        if notifyPlayer:
+            await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
 
         # Set Disconnect Flags
         self.isConnected = False

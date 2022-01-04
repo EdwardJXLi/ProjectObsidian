@@ -114,7 +114,7 @@ class _ModuleManager(AbstractManager):
 
         # Creates List Of Modules That Has The Module Name As Keys
         self._module_dict = dict()
-        self._module_blacklist = []
+        self._module_ignorelist = []
         self._sorted_module_graph = []
         self._completed = False
         self._ensure_core = True
@@ -122,10 +122,10 @@ class _ModuleManager(AbstractManager):
 
     # Function to libimport all modules
     # EnsureCore ensures core module is present
-    def initModules(self, blacklist: List[str] = [], ensureCore: bool = True):
+    def initModules(self, ignorelist: List[str] = [], ensureCore: bool = True):
         # Setting Vars
         self._ensure_core = ensureCore
-        self._module_blacklist = blacklist
+        self._module_ignorelist = ignorelist
 
         # --- PreInitialization ---
         Logger.info("=== (1/6) PreInitializing Modules ===", module="init-modules")
@@ -196,9 +196,9 @@ class _ModuleManager(AbstractManager):
         for _, module_name, _ in pkgutil.walk_packages([str(Path(SERVERPATH, MODULESFOLDER))]):
             # Load Modules
             Logger.debug(f"Detected Module {module_name}", module="module-import")
-            if module_name not in self._module_blacklist:
+            if module_name not in self._module_ignorelist:
                 try:
-                    Logger.verbose(f"Module {module_name} Not In Blacklist. Adding!", module="module-import")
+                    Logger.verbose(f"Module {module_name} Not In Ignore List. Adding!", module="module-import")
                     # Import Module
                     _module = importlib.import_module(MODULESIMPORT + module_name)
                     # Appending To A List of Module Files to be Used Later
@@ -216,7 +216,7 @@ class _ModuleManager(AbstractManager):
                     Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-import")
                     Logger.askConfirmation()
             else:
-                Logger.verbose(f"Skipping Module {module_name} Due To Blacklist", module="module-import")
+                Logger.verbose(f"Skipping Module {module_name} Due To Ignore List", module="module-import")
         Logger.verbose(f"Detected and Imported Module Files {_module_files}", module="module-import")
         # Check If Core Was Loaded
         if self._ensure_core:
@@ -450,8 +450,8 @@ class _ModuleManager(AbstractManager):
         # Checking If Module Is Already In Modules List
         if name in self._module_dict.keys():
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
-        # Check If Module Is Blacklisted
-        if name in self._module_blacklist:
+        # Check If Module Is Ignored
+        if name in self._module_ignorelist:
             return  # Skip
         # Format Empty Dependencies
         if dependencies is None:
