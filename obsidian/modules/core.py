@@ -1742,14 +1742,14 @@ class CoreModule(AbstractModule):
             # Loop Through All Players
             for player in ctx.playerManager.players.values():
                 # Check if player is an operator
-                if (not player.opStatus) and (player.name.lower() in ctx.playerManager.server.config.operatorsList):
+                if (not player.opStatus) and (player.username in ctx.playerManager.server.config.operatorsList):
                     # Send Packet To Player
                     await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
                     # Set Player Operator Status
                     player.opStatus = True
                     # Send Message to Player
                     await player.sendMessage("You Are Now An Operator")
-                elif (player.opStatus) and (player.name.lower() not in ctx.playerManager.server.config.operatorsList):
+                elif (player.opStatus) and (player.username not in ctx.playerManager.server.config.operatorsList):
                     # Send Packet To Player
                     await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, False)
                     # Set Player Operator Status
