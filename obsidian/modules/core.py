@@ -1533,7 +1533,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["kick", "kickuser"], OP=True)
 
-        async def execute(self, ctx: Player, name: str, reason: str = "Kicked By Operator"):
+        async def execute(self, ctx: Player, name: str, reason: str = "You Have Been Kicked By An Operator"):
             # Parse Name Into Username
             username = _formatUsername(name)
 
@@ -1556,7 +1556,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["kickip"], OP=True)
 
-        async def execute(self, ctx: Player, ip: str, reason: str = "Kicked By Operator"):
+        async def execute(self, ctx: Player, ip: str, reason: str = "You Have Been Kicked By An Operator"):
             # Check if IP is valid
             try:
                 ip = _formatIp(ip)
@@ -1582,7 +1582,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["ban", "banuser"], OP=True)
 
-        async def execute(self, ctx: Player, name: str, *, reason: str = "Banned By Operator"):
+        async def execute(self, ctx: Player, name: str, *, reason: str = "You Have Been Banned By An Operator"):
             # Parse Name Into Username
             username = _formatUsername(name)
 
@@ -1627,15 +1627,52 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(f"&aPlayer {username} Unbanned!")
 
     @Command(
-        "BanIp",
+        "IpBan",
         description="Bans a user by ip",
+        version="v1.0.0"
+    )
+    class IpBanCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["ipban"], OP=True)
+
+        async def execute(self, ctx: Player, name: str, *, reason: str = "You Have Been Banned By An Operator"):
+            # Parse Name Into Username
+            username = _formatUsername(name)
+
+            # Get Player Object
+            player = ctx.playerManager.players.get(username, None)
+
+            # If Player is Not Found, Return Error
+            if not player:
+                raise CommandError(f"Player {username} is not online!")
+
+            # Check if player ip is already banned.
+            serverConfig = ctx.playerManager.server.config
+            ip = player.networkHandler.ip
+            if ip in serverConfig.bannedIps:
+                await ctx.sendMessage(f"Player Ip {ip} is already banned! Kicking All Players With IP.")
+            else:
+                # Add Ip To Banned Ips List
+                serverConfig.bannedIps.append(ip)
+                serverConfig.save()
+
+            # If Ip Is Connected, Kick Players With That Ip
+            if ctx.playerManager.getPlayersByIp(ip):
+                await ctx.playerManager.kickPlayerByIp(ip, reason=reason)
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aPlayer {username} Banned By Ip {ip}!")
+
+    @Command(
+        "BanIp",
+        description="Bans an ip",
         version="v1.0.0"
     )
     class BanIpCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["banip"], OP=True)
 
-        async def execute(self, ctx: Player, ip: str, *, reason: str = "Banned By Operator"):
+        async def execute(self, ctx: Player, ip: str, *, reason: str = "You Have Been Banned By An Operator"):
             # Check if IP is valid
             try:
                 ip = _formatIp(ip)
@@ -1647,7 +1684,7 @@ class CoreModule(AbstractModule):
             if ip in serverConfig.bannedIps:
                 raise CommandError(f"Ip {ip} is already banned!")
 
-            # Add Player To Banned Ips List
+            # Add Ip To Banned Ips List
             serverConfig.bannedIps.append(ip)
             serverConfig.save()
 
