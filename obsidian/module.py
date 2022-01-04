@@ -1,33 +1,29 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Type, Optional, List, Any, Callable, Generic
+from typing import Any, Type, Optional, Callable, Generic
 from pathlib import Path
 import importlib
 import pkgutil
 import inspect
-import re
 
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.config import AbstractConfig
 from obsidian.constants import (
     managers_list,
+    MODULESIMPORT,
+    MODULESFOLDER,
+    SERVERPATH
+)
+from obsidian.errors import (
     InitRegisterError,
     DependencyError,
     InitError,
     PostInitError,
-    FatalError,
-    MODULESIMPORT,
-    MODULESFOLDER,
-    SERVERPATH,
-    T
+    FatalError
 )
-
-
-# Format Names Into A Safer Format
-def format_name(name):
-    return re.sub(r'\W+', '', name.replace(" ", "_").lower())
+from obsidian.types import format_name, T
 
 
 # Manager Skeleton
@@ -122,7 +118,7 @@ class _ModuleManager(AbstractManager):
 
     # Function to libimport all modules
     # EnsureCore ensures core module is present
-    def initModules(self, ignorelist: List[str] = [], ensureCore: bool = True):
+    def initModules(self, ignorelist: list[str] = [], ensureCore: bool = True):
         # Setting Vars
         self._ensure_core = ensureCore
         self._module_ignorelist = ignorelist
@@ -268,7 +264,7 @@ class _ModuleManager(AbstractManager):
     # Intermediate Function to Resolve Circular Dependencies
     def _resolveDependencyCycles(self):
         # Helper Function To Run Down Module Dependency Tree To Check For Cycles
-        def _ensureNoCycles(current: Type[AbstractModule], previous: List[str]):
+        def _ensureNoCycles(current: Type[AbstractModule], previous: list[str]):
             Logger.verbose(f"Travelling Down Dependency Tree. CUR: {current} PREV: {previous}", module="cycle-check")
             # If Current Name Appears In Any Previous Dependency, There Is An Infinite Cycle
             if current.NAME in previous:

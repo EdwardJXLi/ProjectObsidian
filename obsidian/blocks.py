@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Dict, Type, Generic
+from typing import Type, Generic
 from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, BlockError, FatalError, ClientError, T
+from obsidian.errors import InitRegisterError, BlockError, FatalError, ClientError
 from obsidian.log import Logger
+from obsidian.types import T
 
 
 # Block Decorator
@@ -46,9 +47,9 @@ class _BlockManager(AbstractManager):
 
         # TODO Rename these!
         # Creates List Of Blocks That Has The Block Name As Keys
-        self._block_dict: Dict[str, AbstractBlock] = dict()
+        self._block_dict: dict[str, AbstractBlock] = dict()
         # Create Cache Of Block Ids to Obj
-        self._block_ids: Dict[int, AbstractBlock] = dict()
+        self._block_ids: dict[int, AbstractBlock] = dict()
 
     # Registration. Called by Block Decorator
     def register(self, blockClass: Type[AbstractBlock], module: AbstractModule):

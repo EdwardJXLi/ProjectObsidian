@@ -4,13 +4,14 @@ if TYPE_CHECKING:
     from obsidian.world import World, WorldManager
     import io
 
-from typing import Dict, Type, List, Generic
+from typing import Type, Generic
 from dataclasses import dataclass, field
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, FatalError, T
+from obsidian.errors import InitRegisterError, FatalError
 from obsidian.log import Logger
+from obsidian.types import T
 
 
 # World Format Decorator
@@ -23,8 +24,8 @@ def WorldFormat(*args, **kwargs):
 @dataclass
 class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
     # Mandatory Values Defined In Packet Init
-    KEYS: List[str] = field(default_factory=list)        # List of "keys" that dictate this world format
-    EXTENTIONS: List[str] = field(default_factory=list)  # List of file extentions
+    KEYS: list[str] = field(default_factory=list)        # List of "keys" that dictate this world format
+    EXTENTIONS: list[str] = field(default_factory=list)  # List of file extentions
 
     def loadWorld(
         self,
@@ -54,7 +55,7 @@ class _WorldFormatManager(AbstractManager):
         super().__init__("World Format", AbstractWorldFormat)
 
         # Creates List Of World Formats That Has The World Format Name As Keys
-        self._format_dict: Dict[str, AbstractWorldFormat] = dict()
+        self._format_dict: dict[str, AbstractWorldFormat] = dict()
 
     # Registration. Called by World Format Decorator
     def register(self, worldFormatClass: Type[AbstractWorldFormat], module: AbstractModule):

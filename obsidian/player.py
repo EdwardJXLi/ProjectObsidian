@@ -6,14 +6,14 @@ if TYPE_CHECKING:
     from obsidian.network import NetworkHandler
     from obsidian.blocks import AbstractBlock
 
-from typing import List, Dict, Optional, Type
+from typing import Optional, Type
 
 from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
 from obsidian.commands import Commands, _parseArgs
-from obsidian.constants import (
-    Colour,
-    CRITICAL_RESPONSE_ERRORS,
+from obsidian.constants import Colour, CRITICAL_RESPONSE_ERRORS
+from obsidian.types import UsernameType, _formatUsername
+from obsidian.errors import (
     ServerError,
     WorldError,
     ClientError,
@@ -25,22 +25,25 @@ from obsidian.constants import (
 class PlayerManager:
     def __init__(self, server: Server, maxSize: int = 1024):
         self.server: Server = server
-        self.players: Dict[str, Player] = {}  # Dict of Players with Usernames as Keys
+        self.players: dict[UsernameType, Player] = {}  # Dict of Players with Usernames as Keys
         self.maxSize: int = maxSize
 
-    async def createPlayer(self, network: NetworkHandler, username: str, verificationKey: str):
-        Logger.debug(f"Creating Player For Ip {network.ip}", module="player-manager")
+    async def createPlayer(self, network: NetworkHandler, displayName: str, verificationKey: str):
+        Logger.debug(f"Creating Player For Ip {network.conninfo}", module="player-manager")
         # Check if name is alphanumeric
-        if not username.isalnum():
+        if not displayName.isalnum():
             raise ClientError("Username Must Be Alphanumeric Only!")
 
+        # Format Username
+        username = _formatUsername(displayName)
+
         # Check if user is banned!
-        if username.lower() in self.server.config.bannedPlayers:
+        if username in self.server.config.bannedPlayers:
             raise ClientError("You are banned.")
 
         # Check if user is an operator
         opStatus = False
-        if username.lower() in self.server.config.operatorsList:
+        if username in self.server.config.operatorsList:
             opStatus = True
             await network.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
 
@@ -49,17 +52,17 @@ class PlayerManager:
             raise ClientError("Server Is Full!")
 
         # Creating Player Class
-        player = Player(self, network, username, verificationKey, opStatus=opStatus)
+        player = Player(self, network, username, displayName, verificationKey, opStatus=opStatus)
         # Adding Player Class
-        self.players[username.lower()] = player
+        self.players[username] = player
         return player
 
     def getPlayersByIp(self, ip: str):
         Logger.verbose(f"Getting Players With Ip {ip}", module="player-manager")
         # Loop through all players and find those who need to be kicked
-        toKick: List[Player] = []
+        toKick: list[Player] = []
         for player in self.players.values():
-            if player.networkHandler.ip[0] == ip:
+            if player.networkHandler.ip == ip:
                 toKick.append(player)
         Logger.verbose(f"Found Players: {toKick}", module="player-manager")
         return toKick
@@ -79,12 +82,12 @@ class PlayerManager:
 
         Logger.debug(f"Successfully Removed Player {player.name}", module="player-manager")
 
-    async def kickPlayer(self, username: str, reason: str = "Kicked By Server"):
+    async def kickPlayer(self, username: UsernameType, reason: str = "Kicked By Server"):
         Logger.info(f"Kicking Player {username}", module="player-manager")
         # Check if username matches a player
-        if username.lower() in self.players:
+        if username in self.players:
             # Get Player Object
-            player = self.players[username.lower()]
+            player = self.players[username]
             # Kick Player
             await player.networkHandler.closeConnection(reason, notifyPlayer=True)
             Logger.debug(f"Successfully Kicked Player {username}", module="player")
@@ -109,7 +112,7 @@ class PlayerManager:
             Logger.debug(f"Player {player.name} is being kicked", module="player-manager")
             await player.networkHandler.closeConnection(reason, notifyPlayer=True)
 
-    async def sendGlobalPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
+    async def sendGlobalPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: list[Player] = [], **kwargs):
         # Send packet to ALL members connected to server (all worlds)
         Logger.verbose(f"Sending Packet {packet.NAME} To All Connected Players", module="global-packet-dispatcher")
         # Loop Through All Players
@@ -122,17 +125,17 @@ class PlayerManager:
                 except Exception as e:
                     if e not in CRITICAL_RESPONSE_ERRORS:
                         # Something Broke!
-                        Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}", module="global-packet-dispatcher")
+                        Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.conninfo} - {type(e).__name__}: {e}", module="global-packet-dispatcher")
                     else:
                         # Bad Timing with Connection Closure. Ignoring
-                        Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.ip}", module="global-packet-dispatcher")
+                        Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.conninfo}", module="global-packet-dispatcher")
 
     async def sendGlobalMessage(
         self,
         message: str | list,
         author: None | str | Player = None,  # Information on the message author
         globalTag: bool = False,  # Flag dictating if the [world] header should be added
-        ignoreList: List[Player] = []  # List of players to not send the message not
+        ignoreList: list[Player] = []  # List of players to not send the message not
     ):
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
@@ -170,7 +173,7 @@ class PlayerManager:
 class WorldPlayerManager:
     def __init__(self, world: World):
         self.world: World = world
-        self.player_slots: List[Optional[Player]] = [None] * world.maxPlayers
+        self.player_slots: list[Optional[Player]] = [None] * world.maxPlayers
 
     async def joinPlayer(self, player: Player):
         # Trying To Allocate Id
@@ -181,7 +184,7 @@ class WorldPlayerManager:
             raise ClientError(f"World {self.world.name} Is Full")
 
         # Adding Player To Players List Using Id
-        Logger.debug(f"Player {player.networkHandler.ip} Username {player.name} Id {playerId} Is Joining World {self.world.name}", module="world-player")
+        Logger.debug(f"Player {player.networkHandler.conninfo} Username {player.name} Id {playerId} Is Joining World {self.world.name}", module="world-player")
         player.playerId = playerId
         self.player_slots[playerId] = player
 
@@ -265,10 +268,10 @@ class WorldPlayerManager:
             except Exception as e:
                 if e not in CRITICAL_RESPONSE_ERRORS:
                     # Something Broke!
-                    Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
+                    Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.conninfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
                 else:
                     # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.ip}", module="world-packet-dispatcher")
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.conninfo}", module="world-packet-dispatcher")
 
     async def removePlayer(self, player: Player):
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
@@ -285,7 +288,7 @@ class WorldPlayerManager:
             ignoreList=[player]  # Don't send packet to self!
         )
 
-        Logger.debug(f"Removed Player {player.networkHandler.ip} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
+        Logger.debug(f"Removed Player {player.networkHandler.conninfo} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
         # Sending Leave Chat Message
         await self.sendWorldMessage(f"&e{player.name} Left The World &9(ID {player.playerId})&f")
@@ -317,7 +320,7 @@ class WorldPlayerManager:
                 players_list.append(player)
         return players_list
 
-    async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: List[Player] = [], **kwargs):
+    async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: list[Player] = [], **kwargs):
         # Send packet to all members in world
         Logger.verbose(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="world-packet-dispatcher")
         # Loop Through All Players
@@ -336,17 +339,17 @@ class WorldPlayerManager:
             except Exception as e:
                 if e not in CRITICAL_RESPONSE_ERRORS:
                     # Something Broke!
-                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.ip} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
+                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.conninfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
                 else:
                     # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.ip}", module="world-packet-dispatcher")
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.conninfo}", module="world-packet-dispatcher")
 
     async def sendWorldMessage(
         self,
         message: str | list,
         author: None | str | Player = None,  # Information on the message author
         worldTag: bool = False,  # Flag dictating if the [world] header should be added
-        ignoreList: List[Player] = []  # List of players to not send the message not
+        ignoreList: list[Player] = []  # List of players to not send the message not
     ):
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
@@ -382,8 +385,9 @@ class WorldPlayerManager:
 
 
 class Player:
-    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, name: str, key: str, opStatus: bool = False):
-        self.name: str = name
+    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, username: UsernameType, displayName: str, key: str, opStatus: bool = False):
+        self.username: UsernameType = username
+        self.name: str = displayName
         self.posX: int = 0
         self.posY: int = 0
         self.posZ: int = 0
@@ -397,7 +401,7 @@ class Player:
         self.playerId: Optional[int] = None
 
     async def joinWorld(self, world: World):
-        Logger.debug(f"Player {self.name} Joining World {world.name}", module="player")
+        Logger.debug(f"Player {self.name} (With Displayname {self.name}) Joining World {world.name}", module="player")
         # Setting Self World Player Manager
         self.worldPlayerManager = world.playerManager
         # Attaching Player Onto World Player Manager
@@ -558,7 +562,7 @@ class Player:
             Logger.error(f"Command {command.NAME} Raised Error {str(e)}", module="command")
             await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
 
-    async def sendMOTD(self, motdMessage: Optional[List[str]] = None):
+    async def sendMOTD(self, motdMessage: Optional[list[str]] = None):
         # If motdMessage was not passed, use default one in config
         if motdMessage is None:
             motdMessage = self.playerManager.server.config.defaultMOTD

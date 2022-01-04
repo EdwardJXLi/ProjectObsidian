@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Dict, Type, Generic
+from typing import Type, Generic
 from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.constants import InitRegisterError, FatalError, T
+from obsidian.errors import InitRegisterError, FatalError
+from obsidian.types import T
 from obsidian.log import Logger
 
 
@@ -29,7 +30,7 @@ class _MapGeneratorManager(AbstractManager):
         super().__init__("Map Generator", AbstractMapGenerator)
 
         # Creates List Of Map Generators That Has The Generator Name As Keys
-        self._generator_dict: Dict[str, AbstractMapGenerator] = dict()
+        self._generator_dict: dict[str, AbstractMapGenerator] = dict()
 
     # Registration. Called by Map Generator Decorator
     def register(self, mapGenClass: Type[AbstractMapGenerator], module: AbstractModule):

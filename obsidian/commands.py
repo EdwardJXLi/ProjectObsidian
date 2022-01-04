@@ -3,20 +3,20 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
 
-from typing import Dict, Type, List, Union, Generic, get_args, get_origin
+from typing import Union, Type, Generic, get_args, get_origin
 from dataclasses import dataclass, field
 from types import UnionType
 import inspect
 
-from obsidian.module import format_name, Submodule, AbstractModule, AbstractSubmodule, AbstractManager
+from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
-from obsidian.constants import (
+from obsidian.errors import (
     InitRegisterError,
     CommandError,
-    FatalError,
-    T
+    FatalError
 )
+from obsidian.types import format_name, T
 
 
 # Command Decorator
@@ -29,7 +29,7 @@ def Command(*args, **kwargs):
 @dataclass
 class AbstractCommand(AbstractSubmodule[T], Generic[T]):
     # TODO: Maybe enforce this as a tuple?
-    ACTIVATORS: List[str] = field(default_factory=list)
+    ACTIVATORS: list[str] = field(default_factory=list)
     OP: bool = False
 
     async def execute(self, ctx: Player, *args, **kwargs):
@@ -156,9 +156,9 @@ class _CommandManager(AbstractManager):
         super().__init__("Command", AbstractCommand)
 
         # Creates List Of Commands That Has The Command Name As Keys
-        self._command_dict: Dict[str, AbstractCommand] = dict()
+        self._command_dict: dict[str, AbstractCommand] = dict()
         # Create Cache Of Activator to Obj
-        self._activators: Dict[str, AbstractCommand] = dict()
+        self._activators: dict[str, AbstractCommand] = dict()
 
     # Registration. Called by Command Decorator
     def register(self, commandClass: Type[AbstractCommand], module: AbstractModule):

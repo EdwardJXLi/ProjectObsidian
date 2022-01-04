@@ -6,7 +6,7 @@ import traceback
 import datetime
 import sys
 
-from typing import Optional, List
+from typing import Optional
 from obsidian.constants import Colour, SERVERPATH
 
 
@@ -32,7 +32,7 @@ class Logger:
         cls.LOGFILE = open(logPath, "a")
 
     @classmethod
-    def log(cls, message: str, tags: List[str] = [], colour: str = Colour.NONE, textColour: str = Colour.NONE):
+    def log(cls, message: str, tags: list[str] = [], colour: str = Colour.NONE, textColour: str = Colour.NONE):
         # Generating Message (Add Tags, Message, Format, Etc)
         output = ""
         # Adding Tags

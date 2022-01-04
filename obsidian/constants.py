@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import os
 import asyncio
-import typing
-import re
 
 # Server Version
 __version__ = "1.0.0"
@@ -33,80 +31,9 @@ CSI = "\u001b["  # ANSI Colour Header
 MODULESFOLDER = "modules"
 MODULESIMPORT = "obsidian.modules."
 
-# Temporary Types
-T = typing.TypeVar("T")
-
 # Managers
 # Dynamically generated list of registered managers.
 managers_list = []
-
-# Regex for a valid IP
-validIp = re.compile("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
-
-
-# Custom Errors
-class InitRegisterError(Exception):
-    pass
-
-
-class ModuleError(Exception):
-    pass
-
-
-class DependencyError(Exception):
-    pass
-
-
-class InitError(Exception):
-    pass
-
-
-class PostInitError(Exception):
-    pass
-
-
-class PacketError(Exception):
-    pass
-
-
-class CommandError(Exception):
-    pass
-
-
-class BlockError(Exception):
-    pass
-
-
-class MapGenerationError(Exception):
-    pass
-
-
-class ServerError(Exception):
-    pass
-
-
-class WorldError(Exception):
-    pass
-
-
-class WorldFormatError(Exception):
-    pass
-
-
-class WorldSaveError(Exception):
-    pass
-
-
-class NetworkError(Exception):
-    pass
-
-
-class ClientError(Exception):
-    pass
-
-
-class FatalError(Exception):
-    pass
 
 
 # Colour handler

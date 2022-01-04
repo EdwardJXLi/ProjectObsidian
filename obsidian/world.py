@@ -3,35 +3,35 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
 
-from typing import Dict, List, Optional
+from typing import Optional
 from pathlib import Path
 import io
 import gzip
 import struct
 
-from obsidian.module import format_name
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
 from obsidian.blocks import BlockManager, Blocks
 from obsidian.worldformat import WorldFormats, AbstractWorldFormat
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
 from obsidian.packet import Packets
-from obsidian.constants import (
+from obsidian.constants import SERVERPATH
+from obsidian.types import format_name
+from obsidian.errors import (
     FatalError,
     MapGenerationError,
     BlockError,
     WorldError,
     ClientError,
-    SERVERPATH,
     WorldSaveError
 )
 
 
 class WorldManager:
-    def __init__(self, server: Server, ignorelist: List[str] = []):
+    def __init__(self, server: Server, ignorelist: list[str] = []):
         self.server: Server = server
-        self.worlds: Dict[str, World] = dict()
-        self.ignorelist: List[str] = ignorelist
+        self.worlds: dict[str, World] = dict()
+        self.ignorelist: list[str] = ignorelist
         self.persistant: bool = True
         # Defined Later In Init
         # self.worldFormat: AbstractWorldFormat

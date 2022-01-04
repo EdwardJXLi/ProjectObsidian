@@ -1,5 +1,7 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
-from obsidian.constants import MAX_MESSAGE_LENGTH, ClientError, ServerError, WorldFormatError, CommandError, validIp, __version__
+from obsidian.constants import MAX_MESSAGE_LENGTH, __version__
+from obsidian.errors import ClientError, ServerError, WorldFormatError, CommandError
+from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
@@ -1463,18 +1465,21 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["op", "operator"], OP=True)
 
-        async def execute(self, ctx: Player, player_name: str):
+        async def execute(self, ctx: Player, name: str):
+            # Parse Name Into Username
+            username = _formatUsername(name)
+
             # Check if user is already operator
             serverConfig = ctx.playerManager.server.config
-            if player_name in serverConfig.operatorsList:
-                raise CommandError(f"Player {player_name} is already an operator!")
+            if username in serverConfig.operatorsList:
+                raise CommandError(f"Player {username} is already an operator!")
 
             # Add Player To Operators List
-            serverConfig.operatorsList.append(player_name.lower())
+            serverConfig.operatorsList.append(username)
             serverConfig.save()
 
             # Send Response Back
-            await ctx.sendMessage(f"&aPlayer {player_name} Added To Operators List")
+            await ctx.sendMessage(f"&aPlayer {username} Added To Operators List")
 
     @Command(
         "DeOperator",
@@ -1485,17 +1490,20 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["deop", "deoperator"], OP=True)
 
-        async def execute(self, ctx: Player, player_name: str):
+        async def execute(self, ctx: Player, name: str):
+            # Parse Name Into Username
+            username = _formatUsername(name)
+
             # Remove Player From Operators List
             serverConfig = ctx.playerManager.server.config
-            if player_name not in serverConfig.operatorsList:
-                raise CommandError(f"Player {player_name} is not an operator!")
+            if username not in serverConfig.operatorsList:
+                raise CommandError(f"Player {username} is not an operator!")
 
-            serverConfig.operatorsList.remove(player_name.lower())
+            serverConfig.operatorsList.remove(username)
             serverConfig.save()
 
             # Send Response Back
-            await ctx.sendMessage(f"&aPlayer {player_name} Removed From Operators List")
+            await ctx.sendMessage(f"&aPlayer {username} Removed From Operators List")
 
     @Command(
         "ListOperators",
@@ -1525,18 +1533,19 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["kick", "kickuser"], OP=True)
 
-        async def execute(self, ctx: Player, player_name: str, reason: str = "Kicked By Operator"):
-            # Lower Player Name
-            player_name = player_name.lower()
+        async def execute(self, ctx: Player, name: str, reason: str = "Kicked By Operator"):
+            # Parse Name Into Username
+            username = _formatUsername(name)
+
             # Check if user is in list of players
-            if not ctx.playerManager.players.get(player_name, None):
-                raise CommandError(f"Player {player_name} is not online!")
+            if not ctx.playerManager.players.get(username, None):
+                raise CommandError(f"Player {username} is not online!")
 
             # Kick Player
-            await ctx.playerManager.kickPlayer(player_name, reason=reason)
+            await ctx.playerManager.kickPlayer(username, reason=reason)
 
             # Send Response Back
-            await ctx.sendMessage(f"&aPlayer {player_name} Kicked!")
+            await ctx.sendMessage(f"&aPlayer {username} Kicked!")
 
     @Command(
         "KickIp",
@@ -1549,7 +1558,9 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player, ip: str, reason: str = "Kicked By Operator"):
             # Check if IP is valid
-            if not validIp.match(ip):
+            try:
+                ip = _formatIp(ip)
+            except TypeError:
                 raise CommandError(f"Ip {ip} is not a valid Ip!")
 
             # Check if user with ip is connected
@@ -1571,24 +1582,25 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["ban", "banuser"], OP=True)
 
-        async def execute(self, ctx: Player, player_name: str, *, reason: str = "Banned By Operator"):
-            # Lower Player Name
-            player_name = player_name.lower()
+        async def execute(self, ctx: Player, name: str, *, reason: str = "Banned By Operator"):
+            # Parse Name Into Username
+            username = _formatUsername(name)
+
             # Check if user is already banned
             serverConfig = ctx.playerManager.server.config
-            if player_name in serverConfig.bannedPlayers:
-                raise CommandError(f"Player {player_name} is already banned!")
+            if username in serverConfig.bannedPlayers:
+                raise CommandError(f"Player {username} is already banned!")
 
             # Add Player To Banned Users List
-            serverConfig.bannedPlayers.append(player_name.lower())
+            serverConfig.bannedPlayers.append(username)
             serverConfig.save()
 
             # If Player Is Connected, Kick Player
-            if ctx.playerManager.players.get(player_name, None):
-                await ctx.playerManager.kickPlayer(player_name, reason=reason)
+            if ctx.playerManager.players.get(username, None):
+                await ctx.playerManager.kickPlayer(username, reason=reason)
 
             # Send Response Back
-            await ctx.sendMessage(f"&aPlayer {player_name} Banned!")
+            await ctx.sendMessage(f"&aPlayer {username} Banned!")
 
     @Command(
         "Unban",
@@ -1599,19 +1611,20 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["unban", "unbanuser"], OP=True)
 
-        async def execute(self, ctx: Player, player_name: str):
-            # Lower Player Name
-            player_name = player_name.lower()
+        async def execute(self, ctx: Player, name: str):
+            # Parse Name Into Username
+            username = _formatUsername(name)
+
             # Remove Player From Banned List
             serverConfig = ctx.playerManager.server.config
-            if player_name not in serverConfig.bannedPlayers:
-                raise CommandError(f"Player {player_name} is not banned!")
+            if username not in serverConfig.bannedPlayers:
+                raise CommandError(f"Player {username} is not banned!")
 
-            serverConfig.bannedPlayers.remove(player_name.lower())
+            serverConfig.bannedPlayers.remove(username)
             serverConfig.save()
 
             # Send Response Back
-            await ctx.sendMessage(f"&aPlayer {player_name} Unbanned!")
+            await ctx.sendMessage(f"&aPlayer {username} Unbanned!")
 
     @Command(
         "BanIp",
@@ -1624,7 +1637,9 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player, ip: str, *, reason: str = "Banned By Operator"):
             # Check if IP is valid
-            if not validIp.match(ip):
+            try:
+                ip = _formatIp(ip)
+            except TypeError:
                 raise CommandError(f"Ip {ip} is not a valid Ip!")
 
             # Check if Ip is already banned
@@ -1654,7 +1669,9 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player, ip: str):
             # Check if IP is valid
-            if not validIp.match(ip):
+            try:
+                ip = _formatIp(ip)
+            except TypeError:
                 raise CommandError(f"Ip {ip} is not a valid Ip!")
 
             # Remove Player From Banned Ips List

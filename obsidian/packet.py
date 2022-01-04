@@ -10,14 +10,10 @@ from dataclasses import dataclass
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
 # from obsidian.network import *
-from obsidian.constants import (
-    InitRegisterError,
-    PacketError,
-    FatalError,
-    T
-)
+from obsidian.errors import InitRegisterError, PacketError, FatalError
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
+from obsidian.types import T
 
 
 # Enums

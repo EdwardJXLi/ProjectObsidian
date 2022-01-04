@@ -8,6 +8,7 @@ import json
 import copy
 
 from obsidian.constants import SERVERPATH
+from obsidian.types import UsernameType, IpType
 from obsidian.log import Logger
 
 
@@ -142,9 +143,9 @@ class ServerConfig(AbstractConfig):
     # Module Configuration
     moduleIgnorelist: List[str] = field(default_factory=list)  # Module Init Ignore List
     # Server Configuration
-    operatorsList: List[str] = field(default_factory=list)  # List Of Operators
-    bannedIps: List[str] = field(default_factory=list)  # List Of Ips that are banned (Reject Connection)
-    bannedPlayers: List[str] = field(default_factory=list)  # List Of Usernames that are banned (Reject Connection)
+    operatorsList: List[UsernameType] = field(default_factory=list)  # List Of Operators
+    bannedIps: List[IpType] = field(default_factory=list)  # List Of Ips that are banned (Reject Connection)
+    bannedPlayers: List[UsernameType] = field(default_factory=list)  # List Of Usernames that are banned (Reject Connection)
     disabledCommands: List[str] = field(default_factory=list)  # List Of Disabled Commands
     # Chat Configuration
     playerChatColor: str = "&a"
