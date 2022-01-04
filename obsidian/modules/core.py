@@ -15,8 +15,7 @@ from obsidian.packet import (
     AbstractRequestPacket,
     AbstractResponsePacket,
     unpackageString,
-    packageString,
-    Packets
+    packageString
 )
 
 from typing import Optional, Iterable, Callable, Any
@@ -1138,9 +1137,9 @@ class CoreModule(AbstractModule):
             page = int(page_or_command)
             # Generate and Parse list of commands
             cmd_list = CommandManager._command_dict
-            # If user is not OP, filter out those commands
-            if ctx.opStatus is False:
-                cmd_list = {k: v for k, v in cmd_list.items() if v.OP is False}
+            # If user is not OP, filter out OP and Disabled commands
+            if not ctx.opStatus:
+                cmd_list = {k: v for k, v in cmd_list.items() if (not v.OP) and (v.NAME not in ctx.playerManager.server.config.disabledCommands)}
 
             # Get information on the number of commands, pages, and commands per page
             num_commands = len(cmd_list)  # This should never be zero as it should always count itself!
@@ -1170,6 +1169,8 @@ class CoreModule(AbstractModule):
                 help_message = f"&d[{cmd_name}] &e/{cmd.ACTIVATORS[0]}"
                 if cmd.OP:
                     help_message = "&4[OP] " + help_message
+                if cmd.NAME in ctx.playerManager.server.config.disabledCommands:
+                    help_message = "&4[DISABLED] " + help_message
                 if len(cmd.ACTIVATORS) > 1:
                     help_message += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS][1:])})"
                 help_message += "&f"
@@ -1268,6 +1269,10 @@ class CoreModule(AbstractModule):
             if cmd.OP:
                 output.append("&4[NOTICE] &fThis Command Is For Operators and Admins Only!")
 
+            # If command is disabled only, add a warning
+            if cmd.NAME in ctx.playerManager.server.config.disabledCommands:
+                output.append("&4[NOTICE] &fThis Command Is DISABLED!")
+
             output.append(CommandHelper.generateCenteredMessage(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
 
             # Send Message
@@ -1357,7 +1362,7 @@ class CoreModule(AbstractModule):
                 output.append("&d[Dependencies]")
                 output += CommandHelper.format_list(
                     plugin.DEPENDENCIES,
-                    parse_input=lambda d: f"&b[{d.NAME} &7| v.{d.VERSION}&b]" if d.VERSION else f"&b[{d.NAME} &7| Any&b]",
+                    process_input=lambda d: f"&b[{d.NAME} &7| v.{d.VERSION}&b]" if d.VERSION else f"&b[{d.NAME} &7| Any&b]",
                     seperator=", ",
                     line_start="")
 
@@ -1395,7 +1400,7 @@ class CoreModule(AbstractModule):
             output.append(CommandHelper.generateCenteredMessage(f"&ePlayers Online: {len(players_list)}/{ctx.worldPlayerManager.world.maxPlayers}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.format_list(players_list, parse_input=lambda p: str(p.name), initial_message="&e", seperator=", ")
+            output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&e", seperator=", ")
 
             # Add Footer
             output.append(CommandHelper.generateCenteredMessage(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
@@ -1426,13 +1431,13 @@ class CoreModule(AbstractModule):
             output = []
 
             # Filter List to Staff Only
-            players_list = [player for player in players_list if player.opStatus is True]
+            players_list = [player for player in players_list if player.opStatus]
 
             # Add Header
             output.append(CommandHelper.generateCenteredMessage(f"&eStaff Online: {len(players_list)}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.format_list(players_list, parse_input=lambda p: str(p.name), initial_message="&4", seperator=", ")
+            output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&4", seperator=", ")
 
             # Add Footer
             output.append(CommandHelper.generateCenteredMessage(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
@@ -1478,6 +1483,10 @@ class CoreModule(AbstractModule):
             serverConfig.operatorsList.append(username)
             serverConfig.save()
 
+            # Update User On Its OP Status
+            if(player := ctx.playerManager.players.get(username, None)):
+                await player.updateOperatorStatus()
+
             # Send Response Back
             await ctx.sendMessage(f"&aPlayer {username} Added To Operators List")
 
@@ -1494,13 +1503,18 @@ class CoreModule(AbstractModule):
             # Parse Name Into Username
             username = _formatUsername(name)
 
-            # Remove Player From Operators List
+            # Check if player is operator
             serverConfig = ctx.playerManager.server.config
             if username not in serverConfig.operatorsList:
                 raise CommandError(f"Player {username} is not an operator!")
 
+            # Remove Player From Operators List
             serverConfig.operatorsList.remove(username)
             serverConfig.save()
+
+            # Update User On Its OP Status
+            if(player := ctx.playerManager.players.get(username, None)):
+                await player.updateOperatorStatus()
 
             # Send Response Back
             await ctx.sendMessage(f"&aPlayer {username} Removed From Operators List")
@@ -1615,11 +1629,12 @@ class CoreModule(AbstractModule):
             # Parse Name Into Username
             username = _formatUsername(name)
 
-            # Remove Player From Banned List
+            # Check if player is banned
             serverConfig = ctx.playerManager.server.config
             if username not in serverConfig.bannedPlayers:
                 raise CommandError(f"Player {username} is not banned!")
 
+            # Remove Player From Banned List
             serverConfig.bannedPlayers.remove(username)
             serverConfig.save()
 
@@ -1711,11 +1726,12 @@ class CoreModule(AbstractModule):
             except TypeError:
                 raise CommandError(f"Ip {ip} is not a valid Ip!")
 
-            # Remove Player From Banned Ips List
+            # Check if Ip is Banned
             serverConfig = ctx.playerManager.server.config
             if ip not in serverConfig.bannedIps:
                 raise CommandError(f"Ip {ip} is not banned!")
 
+            # Remove Ip From Banned Ips List
             serverConfig.bannedIps.remove(ip)
             serverConfig.save()
 
@@ -1749,6 +1765,91 @@ class CoreModule(AbstractModule):
             )
 
     @Command(
+        "DisableCommand",
+        description="Disables a command",
+        version="v1.0.0"
+    )
+    class DisableCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["disable", "disablecommand", "disablecmd"], OP=True)
+
+        async def execute(self, ctx: Player, cmd_name: str):
+            # Get the command in question
+            if cmd_name in CommandManager._command_dict:
+                # User is passing by command name
+                cmd = CommandManager._command_dict[cmd_name]
+            elif cmd_name in CommandManager._activators:
+                # User is passing by activator
+                cmd = CommandManager._activators[cmd_name.lower()]
+            else:
+                # Command doesnt exist!
+                raise CommandError(f"&cCommand {cmd_name} not found!&f")
+
+            # Check if Command is already banned
+            serverConfig = ctx.playerManager.server.config
+            if cmd.NAME in serverConfig.disabledCommands:
+                raise CommandError(f"Command {cmd.NAME} is already disabled!")
+
+            # Add Ip To Banned Ips List
+            serverConfig.disabledCommands.append(cmd.NAME)
+            serverConfig.save()
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aCommand {cmd.NAME} Disabled!")
+
+    @Command(
+        "EnableCommand",
+        description="Enables a command",
+        version="v1.0.0"
+    )
+    class EnableCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["enable", "enablecommand", "enablecmd"], OP=True)
+
+        async def execute(self, ctx: Player, cmd_name: str):
+            # Get the command in question
+            if cmd_name in CommandManager._command_dict:
+                # User is passing by command name
+                cmd = CommandManager._command_dict[cmd_name]
+            elif cmd_name in CommandManager._activators:
+                # User is passing by activator
+                cmd = CommandManager._activators[cmd_name.lower()]
+            else:
+                # Command doesnt exist!
+                raise CommandError(f"&cCommand {cmd_name} not found!&f")
+
+            # Check if command is disabled
+            serverConfig = ctx.playerManager.server.config
+            if cmd.NAME not in serverConfig.disabledCommands:
+                raise CommandError(f"Command {cmd.NAME} is already enabled!")
+
+            # Remove Command from Disabled Commands List
+            serverConfig.disabledCommands.remove(cmd.NAME)
+            serverConfig.save()
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aCommand {cmd.NAME} Enabled!")
+
+    @Command(
+        "DisabledCommandsList",
+        description="List all disabled commands",
+        version="v1.0.0"
+    )
+    class DisabledCommandsListCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["disabled", "disabledcommands", "listdisabled"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Send formatted disabled list
+            await ctx.sendMessage(
+                CommandHelper.format_list(
+                    ctx.playerManager.server.config.disabledCommands,
+                    initial_message="&4[Disabled Commands] &e",
+                    line_start="&e", seperator=", "
+                )
+            )
+
+    @Command(
         "ReloadConfig",
         description="Forces a reload of the config",
         version="v1.0.0"
@@ -1764,38 +1865,6 @@ class CoreModule(AbstractModule):
 
             # Send Response Back
             await ctx.sendMessage("&aConfig Reloaded!")
-
-    @Command(
-        "ReloadOperators",
-        description="Repropagate Operator Status Across All Worlds",
-        version="v1.0.0"
-    )
-    class ReloadOperatorsCommand(AbstractCommand["CoreModule"]):
-        def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["reloadops"], OP=True)
-
-        async def execute(self, ctx: Player):
-            # Propagate Operator Status
-            # Loop Through All Players
-            for player in ctx.playerManager.players.values():
-                # Check if player is an operator
-                if (not player.opStatus) and (player.username in ctx.playerManager.server.config.operatorsList):
-                    # Send Packet To Player
-                    await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
-                    # Set Player Operator Status
-                    player.opStatus = True
-                    # Send Message to Player
-                    await player.sendMessage("You Are Now An Operator")
-                elif (player.opStatus) and (player.username not in ctx.playerManager.server.config.operatorsList):
-                    # Send Packet To Player
-                    await player.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, False)
-                    # Set Player Operator Status
-                    player.opStatus = False
-                    # Send Message to Player
-                    await player.sendMessage("You Are No Longer An Operator")
-
-            # Send Response Back
-            await ctx.sendMessage("&aOperators Reloaded!")
 
     @Command(
         "StopServer",
@@ -1830,7 +1899,7 @@ class CommandHelper():
     @staticmethod
     def format_list(
         values: Iterable[Any],
-        parse_input: Callable[[Any], str] = lambda s: str(s),
+        process_input: Callable[[Any], str] = lambda s: str(s),
         initial_message: str = "",
         seperator: str = "",
         line_start: str = "",
@@ -1846,7 +1915,7 @@ class CommandHelper():
         while (val := next(i, None)):
             isEmpty = False
             # Format Val
-            val = prefix + parse_input(val) + postfix + seperator
+            val = prefix + process_input(val) + postfix + seperator
 
             # Check if adding the player name will overflow the max message length
             if len(output[-1]) + len(line_end) + len(val) > MAX_MESSAGE_LENGTH:

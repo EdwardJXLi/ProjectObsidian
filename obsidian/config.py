@@ -111,6 +111,7 @@ class AbstractConfig:
                 setattr(self, configKey, configValue)
             else:
                 Logger.warn(f"Ignoring Unknown Config Attribute {configKey}", "config-load")
+        Logger.verbose(f"Config Loaded With: {self.to_dict()}", "config-load")
 
     def _save(self, fileIO: io.TextIOWrapper):
         Logger.debug(f"Saving Config With FileIO {fileIO}", "config-save")
@@ -132,6 +133,7 @@ class AbstractConfig:
         Logger.debug("Writing Formatted Config To File", "config-save")
         Logger.verbose(f"Formatted Config Is {configData}", "config-save")
         json.dump(configData, fileIO, indent=4)
+        Logger.verbose(f"Config Saved With: {self.to_dict()}", "config-load")
 
     def to_dict(self):
         # Converts the config to a dict.

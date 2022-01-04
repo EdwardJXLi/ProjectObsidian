@@ -41,18 +41,16 @@ class PlayerManager:
         if username in self.server.config.bannedPlayers:
             raise ClientError("You are banned.")
 
-        # Check if user is an operator
-        opStatus = False
-        if username in self.server.config.operatorsList:
-            opStatus = True
-            await network.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
-
         # Checking if server is full
         if len(self.players) >= self.maxSize:
             raise ClientError("Server Is Full!")
 
         # Creating Player Class
-        player = Player(self, network, username, displayName, verificationKey, opStatus=opStatus)
+        player = Player(self, network, username, displayName, verificationKey)
+
+        # Check if user is an operator and set their status
+        await player.updateOperatorStatus(sendMessage=False)
+
         # Adding Player Class
         self.players[username] = player
         return player
@@ -385,7 +383,7 @@ class WorldPlayerManager:
 
 
 class Player:
-    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, username: UsernameType, displayName: str, key: str, opStatus: bool = False):
+    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, username: UsernameType, displayName: str, key: str):
         self.username: UsernameType = username
         self.name: str = displayName
         self.posX: int = 0
@@ -394,11 +392,29 @@ class Player:
         self.posYaw: int = 0
         self.posPitch: int = 0
         self.verificationKey: str = key
-        self.opStatus: bool = opStatus
         self.playerManager: PlayerManager = playerManager
         self.networkHandler: NetworkHandler = networkHandler
         self.worldPlayerManager: Optional[WorldPlayerManager] = None
         self.playerId: Optional[int] = None
+
+    @property
+    def opStatus(self):
+        return self.username in self.playerManager.server.config.operatorsList
+
+    async def updateOperatorStatus(self, sendMessage: bool = True):
+        # Check if player is an operator
+        if self.opStatus:
+            # Send Packet To Player
+            await self.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
+            # Send Message to Player (If Requested)
+            if sendMessage:
+                await self.sendMessage("You Are Now An Operator")
+        elif not self.opStatus:
+            # Send Packet To Player
+            await self.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, False)
+            # Send Message to Player (If Requested)
+            if sendMessage:
+                await self.sendMessage("You Are No Longer An Operator")
 
     async def joinWorld(self, world: World):
         Logger.debug(f"Player {self.name} (With Displayname {self.name}) Joining World {world.name}", module="player")
@@ -545,6 +561,15 @@ class Player:
 
         # Get Command Object
         command = Commands.getCommandFromName(cmdName)
+
+        # Check if command is disabled
+        if command.NAME in self.playerManager.server.config.disabledCommands:
+            # If user is op, allow run but give warning
+            # Else, disallow run
+            if self.opStatus:
+                await self.sendMessage("&4[WARNING] &fThis Command Is Disabled, But You Are an OP!")
+            else:
+                raise CommandError("This Command Is Disabled!")
 
         # Check if user is allowed to run this command
         if command.OP and not self.opStatus:
