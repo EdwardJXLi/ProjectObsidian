@@ -86,9 +86,13 @@ class NetworkHandler:
 
         # Checking Client Protocol Version
         if protocolVersion > self.server.protocolVersion:
-            raise ClientError(f"Server Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion:})")
+            raise ClientError(f"Server Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion})")
         elif protocolVersion < self.server.protocolVersion:
-            raise ClientError(f"Client Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion:})")
+            raise ClientError(f"Client Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion})")
+
+        # Create Player
+        Logger.debug(f"{self.conninfo} | Creating Player {username}", module="network")
+        self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
 
         # Send Server Information Packet
         Logger.debug(f"{self.conninfo} | Sending Initial Server Information Packet", module="network")
@@ -98,10 +102,6 @@ class NetworkHandler:
         defaultWorld = self.server.worldManager.worlds[self.server.config.defaultWorld]
         Logger.debug(f"{self.conninfo} | Preparing To Send World {defaultWorld.name}", module="network")
         await self.sendWorldData(defaultWorld)
-
-        # Create Player
-        Logger.debug(f"{self.conninfo} | Creating Player {username}", module="network")
-        self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
 
         # Join Default World
         Logger.debug(f"{self.conninfo} | Joining Default World {defaultWorld.name}", module="network")
@@ -132,6 +132,7 @@ class NetworkHandler:
             await self.dispacher.listenForPackets(packetDict=PacketManager.Request.loopPackets)
 
     async def sendWorldData(self, world: World):
+        import time
         # Send Level Initialize Packet
         Logger.debug(f"{self.conninfo} | Sending Level Initialize Packet", module="network")
         await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
@@ -145,6 +146,7 @@ class NetworkHandler:
         # Looping Through All Chunks And Sending Data
         Logger.debug(f"{self.conninfo} | Sending Chunk Data", module="network")
         for chunkCount, chunk in enumerate(chunks):
+            time.sleep(0.1)
             # Sending Chunk Data
             Logger.verbose(f"{self.conninfo} | Sending Chunk Data {chunkCount + 1} of {len(chunks)}", module="network")
             await self.dispacher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))

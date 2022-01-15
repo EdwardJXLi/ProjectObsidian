@@ -45,6 +45,10 @@ class PlayerManager:
         if len(self.players) >= self.maxSize:
             raise ClientError("Server Is Full!")
 
+        # Check if username is taken
+        if username in self.players:
+            raise ClientError("This Username Is Taken!")
+
         # Creating Player Class
         player = Player(self, network, username, displayName, verificationKey)
 
@@ -391,6 +395,7 @@ class Player:
         self.posZ: int = 0
         self.posYaw: int = 0
         self.posPitch: int = 0
+        self.server: Server = playerManager.server
         self.verificationKey: str = key
         self.playerManager: PlayerManager = playerManager
         self.networkHandler: NetworkHandler = networkHandler
@@ -417,11 +422,60 @@ class Player:
                 await self.sendMessage("You Are No Longer An Operator")
 
     async def joinWorld(self, world: World):
-        Logger.debug(f"Player {self.name} (With Displayname {self.name}) Joining World {world.name}", module="player")
+        Logger.info(f"Player {self.name} Joining World {world.name}", module="player")
+        # Check if playser is already joined in a world
+        if self.worldPlayerManager is not None:
+            raise ServerError(f"Player {self.name} Already In World")
         # Setting Self World Player Manager
         self.worldPlayerManager = world.playerManager
         # Attaching Player Onto World Player Manager
         await self.worldPlayerManager.joinPlayer(self)
+
+    async def changeWorld(self, world: World, updateServerInfoWhileSwitching: bool = True):
+        # TODO: updateServerInfoWhileSwitching is included because IDK if clients would like it.
+        # Its an undocumented feature, so look into if its part of the defacto standard
+        # This is use changable in config
+
+        # Check if player is joined in a world in the first place
+        if self.worldPlayerManager is None:
+            raise ServerError(f"Player {self.name} Already In World")
+        Logger.info(f"Player {self.name} Changing World from {self.worldPlayerManager.world.name} tp {world.name}", module="change-world")
+
+        # Change Server Information To Include "Switching Server..."
+        if updateServerInfoWhileSwitching:
+            Logger.debug(f"{self.networkHandler.conninfo} | Changing Server Information Packet", module="change-world")
+            await self.networkHandler.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, f"Joining {world.name}...", 0x00)
+
+        # Disconnect Player from Current World Manager and Remove worldPlayerManager from user
+        Logger.debug(f"{self.networkHandler.conninfo} | Removing Player From Current World {self.worldPlayerManager.world.name}", module="change-world")
+        await self.worldPlayerManager.removePlayer(self)
+        self.worldPlayerManager = None
+
+        # Sending World Data Of Default World
+        Logger.debug(f"{self.networkHandler.conninfo} | Preparing To Send World {world.name}", module="change-world")
+        await self.networkHandler.sendWorldData(world)
+
+        # Join Default World
+        Logger.debug(f"{self.networkHandler.conninfo} | Joining New World {world.name}", module="change-world")
+        await self.joinWorld(world)
+
+        # Player Spawn Packet
+        Logger.debug(f"{self.networkHandler.conninfo} | Preparing To Send Spawn Player Information", module="change-world")
+        await self.networkHandler.dispacher.sendPacket(
+            Packets.Response.SpawnPlayer,
+            255,
+            self.username,
+            world.spawnX,
+            world.spawnY,
+            world.spawnZ,
+            world.spawnYaw,
+            world.spawnPitch
+        )
+
+        # Change Server Information Back To Original
+        if updateServerInfoWhileSwitching:
+            Logger.debug(f"{self.networkHandler.conninfo} | Changing Server Information Packet Back To Original", module="change-world")
+            await self.networkHandler.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
     async def setLocation(self, posX: int, posY: int, posZ: int, posYaw: int = 0, posPitch: int = 0, notifyPlayers: bool = True):
         Logger.debug(f"Setting New Player Location for Player {self.name} (X: {posX}, Y: {posY}, Z: {posZ}, Yaw: {posYaw}, Pitch: {posPitch})", module="player")

@@ -167,4 +167,5 @@ class ServerConfig(AbstractConfig):
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     worldIgnorelist: list[str] = field(default_factory=list)  # Worlds to ignore
+    loginMessage: str = "Testing Server"  # Message Displayed When A Player Joins The Server
     defaultMOTD: list[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
