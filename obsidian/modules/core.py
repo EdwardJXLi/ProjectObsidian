@@ -1871,13 +1871,23 @@ class CoreModule(AbstractModule):
         description="Stops the server",
         version="v1.0.0"
     )
-    class StopServerCommand(AbstractCommand["CoreModule"]):
+    class StopCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["stop"], OP=True)
 
         async def execute(self, ctx: Player):
             await ctx.sendMessage("&4Stopping Server")
-            await ctx.playerManager.server.stop()
+            # await ctx.playerManager.server.stop()
+
+            # Server doesnt like it when it sys.exit()s mid await
+            # So as a workaround, we disconnect the calling user first then stop the server using asyncstop
+            # Which should launch the stop script on another event loop.
+            # TODO: This works fine for now, but might cause issues later...
+            await ctx.networkHandler.closeConnection("Server Shutting Down", notifyPlayer=True)
+
+            # Server doesnt like it if
+            ctx.playerManager.server.asyncstop()
+
 
 
 # Helper functions for the command generation
