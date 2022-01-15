@@ -32,7 +32,7 @@ class Logger:
         cls.LOGFILE = open(logPath, "a")
 
     @classmethod
-    def log(cls, message: str, tags: list[str] = [], colour: str = Colour.NONE, textColour: str = Colour.NONE):
+    def log(cls, message: str, tags: tuple[str, ...] = tuple(), colour: str = Colour.NONE, textColour: str = Colour.NONE):
         # Generating Message (Add Tags, Message, Format, Etc)
         output = ""
         # Adding Tags
@@ -87,7 +87,7 @@ class Logger:
     def info(cls, message: str, module: str = "unknown"):
         cls.log(
             str(message),
-            tags=[cls._getTimestamp(), "log", module],
+            tags=(cls._getTimestamp(), "log", module),
             colour=Colour.GREEN,
             textColour=Colour.WHITE
         )
@@ -96,7 +96,7 @@ class Logger:
     def warn(cls, message: str, module: str = "unknown"):
         cls.log(
             str(message),
-            tags=[cls._getTimestamp(), "warn", module],
+            tags=(cls._getTimestamp(), "warn", module),
             colour=Colour.YELLOW,
             textColour=Colour.WHITE
         )
@@ -107,7 +107,7 @@ class Logger:
             cls.log(f"{traceback.format_exc()}")
         cls.log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
-            tags=[cls._getTimestamp(), "error", module],
+            tags=(cls._getTimestamp(), "error", module),
             colour=Colour.RED,
             textColour=Colour.WHITE
         )
@@ -118,7 +118,7 @@ class Logger:
             cls.log(f"{traceback.format_exc()}")
         cls.log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
-            tags=[cls._getTimestamp(), "fatal", module],
+            tags=(cls._getTimestamp(), "fatal", module),
             colour=Colour.BLACK + Colour.BACK_RED,
             textColour=Colour.WHITE
         )
@@ -128,7 +128,7 @@ class Logger:
         if cls.DEBUG:
             cls.log(
                 str(message),
-                tags=[cls._getTimestamp(), "debug", module],
+                tags=(cls._getTimestamp(), "debug", module),
                 colour=Colour.CYAN,
                 textColour=Colour.WHITE
             )
@@ -138,7 +138,7 @@ class Logger:
         if cls.DEBUG and cls.VERBOSE:
             cls.log(
                 str(message),
-                tags=[cls._getTimestamp(), "verbose", module],
+                tags=(cls._getTimestamp(), "verbose", module),
                 colour=Colour.MAGENTA,
                 textColour=Colour.WHITE
             )

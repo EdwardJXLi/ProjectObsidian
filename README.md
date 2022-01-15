@@ -10,7 +10,9 @@ A fully featured Minecraft Classic Server fully reimplemented in Python!
 - Full [Clean-Room Reimplementation](https://en.wikipedia.org/wiki/Clean_room_design) of the Minecraft Classic Protocol
 - Asynchronous & Multithreaded
 - Highly Customizable and Modular
-- Supports up to 200+ clients
+- Supports up to 200+ concurrent clients
+- Multi-World Support
+- Supports Multiple World Formats (Raw, ClassicWorld)
 - Fully featured plugin support
 
 # Instructions
@@ -47,7 +49,7 @@ For information regarding plugin development, refer to the Plugin Development Gu
 - Server Map Format (.dat) Support
 - Command Line Console
 - Better Chat Colour Support
-- Better Module Log and Config Handling
+- Multi-lingual Support
 
 # Updates
 Coming Soon...

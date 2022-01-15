@@ -19,7 +19,7 @@ from obsidian.log import Logger
 async def main():
     # Initiate Argument Parser
     parser = argparse.ArgumentParser(description="Project Obsidian - Open Source Minecraft Classic Server Reverse Engineer And Reimplementation Project")
-    # parser.add_argument('--TEMPLATE', type=int, nargs='?', help='TEMPLATE', default=TEMPLATE)
+    # parser.add_argument('-x', "--TEMPLATE", type=int, nargs='?', help="TEMPLATE", default=TEMPLATE)
     parser.add_argument('-a', "--address", type=str, nargs='?', help="The Address The Minecraft Server Would Bind To.", default="0.0.0.0")
     parser.add_argument('-p', "--port", type=int, nargs='?', help="The Port The Minecraft Server Would Bind To.", default=25565)
     parser.add_argument('-n', "--name", type=str, nargs='?', help="The Name Of The Minecraft Server", default="Minecraft Server")
@@ -57,7 +57,7 @@ async def main():
 
 
 # Make sure main gets asynced when run
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:

@@ -9,12 +9,6 @@ import sys
 from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager, Packets
 from obsidian.errors import InitError, ServerError, FatalError
-from obsidian.constants import (
-    managers_list,
-    Colour,
-    MODULESFOLDER,
-    SERVERPATH
-)
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
@@ -24,6 +18,12 @@ from obsidian.mapgen import MapGeneratorManager
 from obsidian.commands import CommandManager
 from obsidian.blocks import BlockManager
 from obsidian.player import PlayerManager
+from obsidian.constants import (
+    managers_list,
+    Colour,
+    MODULESFOLDER,
+    SERVERPATH
+)
 
 
 class Server:
@@ -47,7 +47,6 @@ class Server:
         self.server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object (initialized later)
         self.worldManager: Optional[WorldManager] = None  # World Manager Class (initialized later)
         self.playerManager: Optional[PlayerManager] = None  # Player Manager Class (initialized later)
-        self.ensureFiles: list[str] = []  # List of folders to ensure they exist
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized: bool = False  # Flag Set When Everything Is Fully Loaded
         self.stopping: bool = False  # Flag To Prevent Crl-C Spamming

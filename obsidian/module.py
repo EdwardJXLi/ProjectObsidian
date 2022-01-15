@@ -264,7 +264,7 @@ class _ModuleManager(AbstractManager):
     # Intermediate Function to Resolve Circular Dependencies
     def _resolveDependencyCycles(self):
         # Helper Function To Run Down Module Dependency Tree To Check For Cycles
-        def _ensureNoCycles(current: Type[AbstractModule], previous: list[str]):
+        def _ensureNoCycles(current: Type[AbstractModule], previous: tuple[str, ...] = tuple()):
             Logger.verbose(f"Travelling Down Dependency Tree. CUR: {current} PREV: {previous}", module="cycle-check")
             # If Current Name Appears In Any Previous Dependency, There Is An Infinite Cycle
             if current.NAME in previous:
@@ -273,13 +273,13 @@ class _ModuleManager(AbstractManager):
             Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES}", module="cycle-check")
             # Run DFS through All Dependencies
             for dependency in current.DEPENDENCIES:
-                _ensureNoCycles(dependency.MODULE, [*previous, current.NAME])
+                _ensureNoCycles(dependency.MODULE, (*previous, current.NAME))
 
         for module_name, module_obj in list(self._module_dict.items()):
             try:
                 Logger.debug(f"Ensuring No Circular Dependencies For Module {module_name}", module="module-verify")
                 # Run DFS Through All Decencies To Check If Cycle Exists
-                _ensureNoCycles(module_obj, [])
+                _ensureNoCycles(module_obj)
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e

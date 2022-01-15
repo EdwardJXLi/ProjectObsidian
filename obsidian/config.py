@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict, InitVar
-from typing import List, Optional, Tuple
+from typing import Optional
 from pathlib import Path
 import io
 import json
@@ -17,18 +17,18 @@ class AbstractConfig:
     name: str  # Name of the config (for debugging)
     configPath: Path = Path()  # Path Location Of Config File (Used for reloads)
     saveAfterConfigLoad: bool = True  # Override Flag To Enable/Disable Config Saving After Load
-    configOverrides: List[str] = field(default_factory=list)  # List of configs to ignore while loading and writing configs
+    configOverrides: list[str] = field(default_factory=list)  # List of configs to ignore while loading and writing configs
     # autoSave: bool = True  # Not Implemented
     # Init Vars (Temporary and will not be duplicated)
     rootPath: InitVar[Path] = Path("configs")
-    ignoreValues: InitVar[tuple] = tuple()
+    ignoreValues: InitVar[list] = list()
     autoInit: InitVar[bool] = False
     hideWarning: InitVar[bool] = False
 
     def __post_init__(
         self,
         rootPath: Path,
-        ignoreValues: Tuple[str],
+        ignoreValues: list[str],
         autoInit: bool,
         hideWarning: bool
     ):
@@ -42,7 +42,7 @@ class AbstractConfig:
         Logger.debug(f"Config {self.name} has save path {self.configPath}", module="Config")
 
         # Load Other Variables
-        self.configOverrides: List[str] = [
+        self.configOverrides: list[str] = [
             "name",
             "configPath",
             "saveAfterConfigLoad",
@@ -143,12 +143,12 @@ class AbstractConfig:
 @dataclass
 class ServerConfig(AbstractConfig):
     # Module Configuration
-    moduleIgnorelist: List[str] = field(default_factory=list)  # Module Init Ignore List
+    moduleIgnorelist: list[str] = field(default_factory=list)  # Module Init Ignore List
     # Server Configuration
-    operatorsList: List[UsernameType] = field(default_factory=list)  # List Of Operators
-    bannedIps: List[IpType] = field(default_factory=list)  # List Of Ips that are banned (Reject Connection)
-    bannedPlayers: List[UsernameType] = field(default_factory=list)  # List Of Usernames that are banned (Reject Connection)
-    disabledCommands: List[str] = field(default_factory=list)  # List Of Disabled Commands
+    operatorsList: list[UsernameType] = field(default_factory=list)  # List Of Operators
+    bannedIps: list[IpType] = field(default_factory=list)  # List Of Ips that are banned (Reject Connection)
+    bannedPlayers: list[UsernameType] = field(default_factory=list)  # List Of Usernames that are banned (Reject Connection)
+    disabledCommands: list[str] = field(default_factory=list)  # List Of Disabled Commands
     # Chat Configuration
     playerChatColor: str = "&a"
     operatorChatColor: str = "&4"
@@ -166,5 +166,5 @@ class ServerConfig(AbstractConfig):
     defaultSaveFormat: str = "raw"  # Name Of Default World Save Format
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
-    worldIgnorelist: List[str] = field(default_factory=list)  # Worlds to ignore
-    defaultMOTD: List[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
+    worldIgnorelist: list[str] = field(default_factory=list)  # Worlds to ignore
+    defaultMOTD: list[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
