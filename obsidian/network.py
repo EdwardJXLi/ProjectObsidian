@@ -132,7 +132,6 @@ class NetworkHandler:
             await self.dispacher.listenForPackets(packetDict=PacketManager.Request.loopPackets)
 
     async def sendWorldData(self, world: World):
-        import time
         # Send Level Initialize Packet
         Logger.debug(f"{self.conninfo} | Sending Level Initialize Packet", module="network")
         await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
@@ -146,7 +145,6 @@ class NetworkHandler:
         # Looping Through All Chunks And Sending Data
         Logger.debug(f"{self.conninfo} | Sending Chunk Data", module="network")
         for chunkCount, chunk in enumerate(chunks):
-            time.sleep(0.1)
             # Sending Chunk Data
             Logger.verbose(f"{self.conninfo} | Sending Chunk Data {chunkCount + 1} of {len(chunks)}", module="network")
             await self.dispacher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
