@@ -120,6 +120,10 @@ class NetworkHandler:
             defaultWorld.spawnPitch
         )
 
+        # Send MOTD to user
+        Logger.debug(f"{self.conninfo} | Sending MOTD", module="network")
+        await self.player.sendMOTD()
+
         # Setup And Begin Player Loop
         Logger.debug(f"{self.conninfo} | Starting Player Loop", module="network")
         await self._beginPlayerLoop()
@@ -130,6 +134,53 @@ class NetworkHandler:
         while self.isConnected:
             # Listen and Handle Incoming Packets
             await self.dispacher.listenForPackets(packetDict=PacketManager.Request.loopPackets)
+
+    async def _processWorldChange(self, world: World, previousWorld: World, updateServerInfo: bool = True):
+        # TODO: updateServerInfoWhileSwitching is included because IDK if clients would like it.
+        # Its an undocumented feature, so look into if its part of the defacto standard
+        # This is use changable in config
+
+        # Check if player is joined in a world in the first place
+        if self.player is None:
+            raise ServerError("Trying To Change World When NetworkHandler Has No Player...")
+        if self.player.worldPlayerManager is None:
+            raise ServerError(f"Player {self.player.name} Not In World")
+
+        # Change Server Information To Include "Switching Server..."
+        if updateServerInfo:
+            Logger.debug(f"{self.conninfo} | Changing Server Information Packet", module="change-world")
+            await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, f"Joining {world.name}...", 0x00)
+
+        # Disconnect Player from Current World Manager and Remove worldPlayerManager from user
+        Logger.debug(f"{self.conninfo} | Removing Player From Current World {previousWorld.name}", module="change-world")
+        await self.player.worldPlayerManager.removePlayer(self.player)
+        self.player.worldPlayerManager = None
+
+        # Sending World Data Of Default World
+        Logger.debug(f"{self.conninfo} | Preparing To Send World {world.name}", module="change-world")
+        await self.sendWorldData(world)
+
+        # Join Default World
+        Logger.debug(f"{self.conninfo} | Joining New World {world.name}", module="change-world")
+        await self.player.joinWorld(world)
+
+        # Player Spawn Packet
+        Logger.debug(f"{self.conninfo} | Preparing To Send Spawn Player Information", module="change-world")
+        await self.dispacher.sendPacket(
+            Packets.Response.SpawnPlayer,
+            255,
+            self.player.username,
+            world.spawnX,
+            world.spawnY,
+            world.spawnZ,
+            world.spawnYaw,
+            world.spawnPitch
+        )
+
+        # Change Server Information Back To Original
+        if updateServerInfo:
+            Logger.debug(f"{self.conninfo} | Changing Server Information Packet Back To Original", module="change-world")
+            await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
     async def sendWorldData(self, world: World):
         # Send Level Initialize Packet
@@ -300,6 +351,10 @@ class NetworkDispacher:
                     return packetHeader, packet.onError(e)
 
         except asyncio.TimeoutError:
-            raise ClientError("Did Not Receive Packet In Time!")
+            # Some clients don't send info when not moving
+            # Send Ping Packet (Make sure client is still connected)
+            Logger.debug(f"{self.handler.conninfo} | Sending Connection Ping", module="network")
+            await self.handler.dispacher.sendPacket(Packets.Response.Ping)
+            # raise ClientError("Did Not Receive Packet In Time!")
         except Exception as e:
             raise e  # Pass Down Exception To Lower Layer

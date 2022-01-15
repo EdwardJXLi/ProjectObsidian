@@ -10,7 +10,7 @@ __version__ = "1.0.0"
 SERVERPATH = os.path.dirname(os.path.abspath(__file__))
 
 # Networking Constants
-NET_TIMEOUT = 15
+NET_TIMEOUT = 5
 CRITICAL_REQUEST_ERRORS = [
     # These errors will bypass the packet.onError() handler and get forced raised
 ]

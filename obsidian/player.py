@@ -233,9 +233,6 @@ class WorldPlayerManager:
 
         Logger.debug(f"Finished Handling Player Join For {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
-        # Send MOTD to user
-        await player.sendMOTD()
-
         # Sending Join Chat Message
         await self.sendWorldMessage(f"&e{player.name} Joined The World &9(ID {player.playerId})&f")
 
@@ -431,51 +428,16 @@ class Player:
         # Attaching Player Onto World Player Manager
         await self.worldPlayerManager.joinPlayer(self)
 
-    async def changeWorld(self, world: World, updateServerInfoWhileSwitching: bool = True):
-        # TODO: updateServerInfoWhileSwitching is included because IDK if clients would like it.
-        # Its an undocumented feature, so look into if its part of the defacto standard
-        # This is use changable in config
-
-        # Check if player is joined in a world in the first place
+    async def changeWorld(self, world: World, updateServerInfo: bool = True, sendMessage: bool = True):
+        Logger.info(f"Player {self.name} Changing World to {world.name}", module="change-world")
+        # Check if player is in a world
         if self.worldPlayerManager is None:
-            raise ServerError(f"Player {self.name} Already In World")
-        Logger.info(f"Player {self.name} Changing World from {self.worldPlayerManager.world.name} tp {world.name}", module="change-world")
-
-        # Change Server Information To Include "Switching Server..."
-        if updateServerInfoWhileSwitching:
-            Logger.debug(f"{self.networkHandler.conninfo} | Changing Server Information Packet", module="change-world")
-            await self.networkHandler.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, f"Joining {world.name}...", 0x00)
-
-        # Disconnect Player from Current World Manager and Remove worldPlayerManager from user
-        Logger.debug(f"{self.networkHandler.conninfo} | Removing Player From Current World {self.worldPlayerManager.world.name}", module="change-world")
-        await self.worldPlayerManager.removePlayer(self)
-        self.worldPlayerManager = None
-
-        # Sending World Data Of Default World
-        Logger.debug(f"{self.networkHandler.conninfo} | Preparing To Send World {world.name}", module="change-world")
-        await self.networkHandler.sendWorldData(world)
-
-        # Join Default World
-        Logger.debug(f"{self.networkHandler.conninfo} | Joining New World {world.name}", module="change-world")
-        await self.joinWorld(world)
-
-        # Player Spawn Packet
-        Logger.debug(f"{self.networkHandler.conninfo} | Preparing To Send Spawn Player Information", module="change-world")
-        await self.networkHandler.dispacher.sendPacket(
-            Packets.Response.SpawnPlayer,
-            255,
-            self.username,
-            world.spawnX,
-            world.spawnY,
-            world.spawnZ,
-            world.spawnYaw,
-            world.spawnPitch
-        )
-
-        # Change Server Information Back To Original
-        if updateServerInfoWhileSwitching:
-            Logger.debug(f"{self.networkHandler.conninfo} | Changing Server Information Packet Back To Original", module="change-world")
-            await self.networkHandler.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
+            raise ServerError(f"Player {self.name} Not In World")
+        # Send Joining Message
+        if sendMessage:
+            await self.sendMessage(f"&eSending You To World &b{world.name}&e...")
+        # Handle the world change
+        await self.networkHandler._processWorldChange(world, self.worldPlayerManager.world, updateServerInfo=updateServerInfo)
 
     async def setLocation(self, posX: int, posY: int, posZ: int, posYaw: int = 0, posPitch: int = 0, notifyPlayers: bool = True):
         Logger.debug(f"Setting New Player Location for Player {self.name} (X: {posX}, Y: {posY}, Z: {posZ}, Yaw: {posYaw}, Pitch: {posPitch})", module="player")
