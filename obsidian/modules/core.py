@@ -708,7 +708,7 @@ class CoreModule(AbstractModule):
             for x in range(sizeX):
                 for y in range(sizeY):
                     for z in range(sizeZ):
-                        mapData[x + sizeX * (z + sizeZ * y)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
+                        mapData[x + sizeX * (sizeZ * y + z)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
             return mapData
 
     #
@@ -1158,7 +1158,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.generateCenteredMessage(f"&eHelp Page {page}/{num_pages}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eHelp Page {page}/{num_pages}", colour="&2"))
 
             # Add some additional tips to help command
             output.append("&7Use /help [n] to get the nth page of help.&f")
@@ -1178,7 +1178,7 @@ class CoreModule(AbstractModule):
                 output.append(f"{cmd.DESCRIPTION}")
 
             # Add Footer
-            output.append(CommandHelper.generateCenteredMessage(f"&eTotal Commands: {num_commands}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eTotal Commands: {num_commands}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1212,7 +1212,7 @@ class CoreModule(AbstractModule):
                 raise CommandError(f"&cCommand {cmd_name} not found!&f")  # Fake "Not Found" Error
 
             # Add Header
-            output.append(CommandHelper.generateCenteredMessage(f"&eCommand Information: {cmd.NAME}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eCommand Information: {cmd.NAME}", colour="&2"))
 
             # Add Command Description
             if cmd.DESCRIPTION:
@@ -1273,7 +1273,7 @@ class CoreModule(AbstractModule):
             if cmd.NAME in ctx.playerManager.server.config.disabledCommands:
                 output.append("&4[NOTICE] &fThis Command Is DISABLED!")
 
-            output.append(CommandHelper.generateCenteredMessage(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1305,14 +1305,14 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.generateCenteredMessage(f"&eHelp Page {page}/{num_pages}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eHelp Page {page}/{num_pages}", colour="&2"))
 
             # Add command information
             for module_name, module in modules[current_page * modules_per_page:current_page * modules_per_page + modules_per_page]:
                 output.append(f"&e{module_name}: &f{module.DESCRIPTION}")
 
             # Add Footer
-            output.append(CommandHelper.generateCenteredMessage(f"&eTotal Modules: {num_modules}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eTotal Modules: {num_modules}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1338,7 +1338,7 @@ class CoreModule(AbstractModule):
                 raise CommandError(f"&cPlugin {module_name} not found!&f")
 
             # Add Header
-            output.append(CommandHelper.generateCenteredMessage(f"&ePlugin Information: {plugin.NAME}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&ePlugin Information: {plugin.NAME}", colour="&2"))
 
             # Add Plugin Description
             if plugin.DESCRIPTION:
@@ -1369,7 +1369,7 @@ class CoreModule(AbstractModule):
             # Add # of Submodules
             output.append(f"&d[Submodules] &f{len(plugin.SUBMODULES)}")
 
-            output.append(CommandHelper.generateCenteredMessage(f"&ePlugins Installed: {len(ModuleManager._module_dict)}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&ePlugins Installed: {len(ModuleManager._module_dict)}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1397,13 +1397,13 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.generateCenteredMessage(f"&ePlayers Online: {len(players_list)}/{ctx.worldPlayerManager.world.maxPlayers}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&ePlayers Online: {len(players_list)}/{ctx.worldPlayerManager.world.maxPlayers}", colour="&2"))
 
             # Generate Player List Output
             output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&e", seperator=", ")
 
             # Add Footer
-            output.append(CommandHelper.generateCenteredMessage(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1434,13 +1434,13 @@ class CoreModule(AbstractModule):
             players_list = [player for player in players_list if player.opStatus]
 
             # Add Header
-            output.append(CommandHelper.generateCenteredMessage(f"&eStaff Online: {len(players_list)}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eStaff Online: {len(players_list)}", colour="&2"))
 
             # Generate Player List Output
             output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&4", seperator=", ")
 
             # Add Footer
-            output.append(CommandHelper.generateCenteredMessage(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1889,11 +1889,10 @@ class CoreModule(AbstractModule):
             ctx.playerManager.server.asyncstop()
 
 
-
 # Helper functions for the command generation
 class CommandHelper():
     @staticmethod
-    def generateCenteredMessage(message: str, colour: str = "", padCharacter: str = "=") -> str:
+    def center_message(message: str, colour: str = "", padCharacter: str = "=") -> str:
         # Calculate the number of padding to add
         max_message_length = 64
         pad_space = max(
