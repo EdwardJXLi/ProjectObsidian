@@ -1169,7 +1169,7 @@ class CoreModule(AbstractModule):
                 help_message = f"&d[{cmd_name}] &e/{cmd.ACTIVATORS[0]}"
                 if cmd.OP:
                     help_message = "&4[OP] " + help_message
-                if cmd.NAME in ctx.playerManager.server.config.disabledCommands:
+                if cmd.NAME in ctx.server.config.disabledCommands:
                     help_message = "&4[DISABLED] " + help_message
                 if len(cmd.ACTIVATORS) > 1:
                     help_message += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS][1:])})"
@@ -1270,7 +1270,7 @@ class CoreModule(AbstractModule):
                 output.append("&4[NOTICE] &fThis Command Is For Operators and Admins Only!")
 
             # If command is disabled only, add a warning
-            if cmd.NAME in ctx.playerManager.server.config.disabledCommands:
+            if cmd.NAME in ctx.server.config.disabledCommands:
                 output.append("&4[NOTICE] &fThis Command Is DISABLED!")
 
             output.append(CommandHelper.center_message(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
@@ -1376,34 +1376,97 @@ class CoreModule(AbstractModule):
 
     @Command(
         "ListPlayers",
-        description="Lists all online players",
+        description="Lists all players in specific world",
         version="v1.0.0"
     )
     class ListPlayersCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["list", "players", "online"])
+            super().__init__(*args, ACTIVATORS=["list", "players", "listplayers"])
 
-        async def execute(self, ctx: Player):
+        async def execute(self, ctx: Player, world: Optional[str] = None):
+            # Check if necessary variables are initialized.
+            if ctx.server.worldManager is None:
+                raise ServerError("ctx.server.worldManager Is Accessed Without WorldManager Initialized! This should not happen!")
             if ctx.worldPlayerManager is None:
                 raise CommandError("&cYou are not in a world!&f")
 
-            players_list = ctx.worldPlayerManager.getPlayers()
+            # Get what the user wants
+            if world is None:
+                manager = ctx.worldPlayerManager
+            else:
+                try:
+                    manager = ctx.server.worldManager.getWorld(world).playerManager
+                except NameError:
+                    raise CommandError(f"World {world} not found!")
 
-            # If the list is empty, something un oh happened
-            if len(players_list) == 0:
-                raise ServerError("&cSomething went wrong while getting the list of players!&f")
+            # Get a list of players
+            players_list = manager.getPlayers()
 
             # Generate command output
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&ePlayers Online: {len(players_list)}/{ctx.worldPlayerManager.world.maxPlayers}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&ePlayers Online: {len(players_list)}/{manager.world.maxPlayers}", colour="&2"))
 
             # Generate Player List Output
             output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&e", seperator=", ")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
+            output.append("&7To see players in all worlds, use /listall")
+            output.append(CommandHelper.center_message(f"&eWorld Name: {manager.world.name}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "ListAllPlayers",
+        description="Lists all players in all worlds",
+        version="v1.0.0"
+    )
+    class ListAllPlayersCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["listall", "allplayers", "online"])
+
+        async def execute(self, ctx: Player):
+            # Check if server is initialized
+            if ctx.server.worldManager is None:
+                raise ServerError("ctx.server.worldManager Is Accessed Without WorldManager Initialized! This should not happen!")
+            if ctx.server.playerManager is None:
+                raise ServerError("ctx.server.playerManager Is Accessed Without PlayerManager Initialized! This should not happen!")
+
+            # Generate command output
+            output = []
+
+            # Add Header (Different depending on if server max size is set)
+            if ctx.server.playerManager.maxSize is not None:
+                output.append(CommandHelper.center_message(f"&ePlayers Online: {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
+            else:
+                output.append(CommandHelper.center_message(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
+
+            # Keep track of the number of worlds that were hidden
+            num_hidden = 0
+
+            # Loop through all worlds and print their players
+            for world in ctx.server.worldManager.worlds.values():
+                # Get the worlds player list
+                players_list = world.playerManager.getPlayers()
+
+                # If there are no players, hide this server from the list
+                if len(players_list) == 0:
+                    num_hidden += 1
+                    continue
+
+                # Generate Player List Output
+
+                output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message=f"&d[{world.name}] &e", seperator=", ")
+
+            # If any words were hidden, print notice
+            if num_hidden > 0:
+                output.append(f"&7{num_hidden} worlds were hidden due to having no players online.")
+                output.append("&7Use /worlds to see all worlds.")
+
+            # Add Footer
+            output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1415,23 +1478,19 @@ class CoreModule(AbstractModule):
     )
     class ListStaffCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["liststaff", "staff"])
+            super().__init__(*args, ACTIVATORS=["liststaff", "staff", "listallstaff", "allstaff"])
 
-        async def execute(self, ctx: Player):
-            if ctx.worldPlayerManager is None:
-                raise CommandError("&cYou are not in a world!&f")
+        async def execute(self, ctx: Player, world: Optional[str] = None):
+            if ctx.server.playerManager is None:
+                raise ServerError("ctx.server.playerManager Is Accessed Without PlayerManager Initialized! This should not happen!")
 
-            players_list = ctx.worldPlayerManager.getPlayers()
-
-            # If the list is empty, something un oh happened
-            if len(players_list) == 0:
-                raise ServerError("&cSomething went wrong while getting the list of players!&f")
+            staff_list = list(ctx.server.playerManager.players.values())
 
             # Generate command output
             output = []
 
             # Filter List to Staff Only
-            players_list = [player for player in players_list if player.opStatus]
+            players_list = [player for player in staff_list if player.opStatus]
 
             # Add Header
             output.append(CommandHelper.center_message(f"&eStaff Online: {len(players_list)}", colour="&2"))
@@ -1440,7 +1499,7 @@ class CoreModule(AbstractModule):
             output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&4", seperator=", ")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eWorld Name: {ctx.worldPlayerManager.world.name}", colour="&2"))
+            output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1532,7 +1591,7 @@ class CoreModule(AbstractModule):
             # Send formatted operators list
             await ctx.sendMessage(
                 CommandHelper.format_list(
-                    ctx.playerManager.server.config.operatorsList,
+                    ctx.server.config.operatorsList,
                     initial_message="&4[Operators] &e",
                     line_start="&e", seperator=", "
                 )
@@ -1601,7 +1660,7 @@ class CoreModule(AbstractModule):
             username = _formatUsername(name)
 
             # Check if user is already banned
-            serverConfig = ctx.playerManager.server.config
+            serverConfig = ctx.server.config
             if username in serverConfig.bannedPlayers:
                 raise CommandError(f"Player {username} is already banned!")
 
@@ -1630,7 +1689,7 @@ class CoreModule(AbstractModule):
             username = _formatUsername(name)
 
             # Check if player is banned
-            serverConfig = ctx.playerManager.server.config
+            serverConfig = ctx.server.config
             if username not in serverConfig.bannedPlayers:
                 raise CommandError(f"Player {username} is not banned!")
 
@@ -1662,7 +1721,7 @@ class CoreModule(AbstractModule):
                 raise CommandError(f"Player {username} is not online!")
 
             # Check if player ip is already banned.
-            serverConfig = ctx.playerManager.server.config
+            serverConfig = ctx.server.config
             ip = player.networkHandler.ip
             if ip in serverConfig.bannedIps:
                 await ctx.sendMessage(f"Player Ip {ip} is already banned! Kicking All Players With IP.")
@@ -1695,7 +1754,7 @@ class CoreModule(AbstractModule):
                 raise CommandError(f"Ip {ip} is not a valid Ip!")
 
             # Check if Ip is already banned
-            serverConfig = ctx.playerManager.server.config
+            serverConfig = ctx.server.config
             if ip in serverConfig.bannedIps:
                 raise CommandError(f"Ip {ip} is already banned!")
 
@@ -1727,7 +1786,7 @@ class CoreModule(AbstractModule):
                 raise CommandError(f"Ip {ip} is not a valid Ip!")
 
             # Check if Ip is Banned
-            serverConfig = ctx.playerManager.server.config
+            serverConfig = ctx.server.config
             if ip not in serverConfig.bannedIps:
                 raise CommandError(f"Ip {ip} is not banned!")
 
@@ -1751,14 +1810,14 @@ class CoreModule(AbstractModule):
             # Send formatted banned list
             await ctx.sendMessage(
                 CommandHelper.format_list(
-                    ctx.playerManager.server.config.bannedPlayers,
+                    ctx.server.config.bannedPlayers,
                     initial_message="&4[Banned Players] &e",
                     line_start="&e", seperator=", "
                 )
             )
             await ctx.sendMessage(
                 CommandHelper.format_list(
-                    ctx.playerManager.server.config.bannedIps,
+                    ctx.server.config.bannedIps,
                     initial_message="&4[Banned Ips] &e",
                     line_start="&e", seperator=", "
                 )
@@ -1786,7 +1845,7 @@ class CoreModule(AbstractModule):
                 raise CommandError(f"&cCommand {cmd_name} not found!&f")
 
             # Check if Command is already banned
-            serverConfig = ctx.playerManager.server.config
+            serverConfig = ctx.server.config
             if cmd.NAME in serverConfig.disabledCommands:
                 raise CommandError(f"Command {cmd.NAME} is already disabled!")
 
@@ -1819,7 +1878,7 @@ class CoreModule(AbstractModule):
                 raise CommandError(f"&cCommand {cmd_name} not found!&f")
 
             # Check if command is disabled
-            serverConfig = ctx.playerManager.server.config
+            serverConfig = ctx.server.config
             if cmd.NAME not in serverConfig.disabledCommands:
                 raise CommandError(f"Command {cmd.NAME} is already enabled!")
 
@@ -1843,7 +1902,7 @@ class CoreModule(AbstractModule):
             # Send formatted disabled list
             await ctx.sendMessage(
                 CommandHelper.format_list(
-                    ctx.playerManager.server.config.disabledCommands,
+                    ctx.server.config.disabledCommands,
                     initial_message="&4[Disabled Commands] &e",
                     line_start="&e", seperator=", "
                 )
@@ -1860,7 +1919,7 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player):
             # Reload Config
-            serverConfig = ctx.playerManager.server.config
+            serverConfig = ctx.server.config
             serverConfig.reload()
 
             # Send Response Back
@@ -1886,7 +1945,7 @@ class CoreModule(AbstractModule):
             await ctx.networkHandler.closeConnection("Server Shutting Down", notifyPlayer=True)
 
             # Server doesnt like it if
-            ctx.playerManager.server.asyncstop()
+            ctx.server.asyncstop()
 
 
 # Helper functions for the command generation

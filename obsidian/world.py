@@ -55,6 +55,17 @@ class WorldManager:
             Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
             self.persistant = False
 
+    def getWorld(self, worldName, lowerName=True) -> World:
+        Logger.debug(f"Getting World {worldName} By Name", module="player")
+        # If lowerName is set, automatically lower the world name
+        if lowerName:
+            worldName = lowerName.lower()
+        # Check if world is in the server
+        if worldName in self.worlds:
+            return self.worlds[worldName]
+        else:
+            raise NameError("World Does Not Exist!")
+
     def createWorld(
         self,
         worldName,

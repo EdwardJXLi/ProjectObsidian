@@ -23,10 +23,14 @@ from obsidian.errors import (
 
 # The Overall Server Player Manager
 class PlayerManager:
-    def __init__(self, server: Server, maxSize: int = 1024):
+    def __init__(self, server: Server, maxSize: Optional[int]):
         self.server: Server = server
         self.players: dict[UsernameType, Player] = {}  # Dict of Players with Usernames as Keys
-        self.maxSize: int = maxSize
+        # If maxSize is not specified, use server config
+        if maxSize is None:
+            self.maxSize: Optional[int] = server.config.serverMaxPlayers
+        else:
+            self.maxSize: Optional[int] = maxSize
 
     async def createPlayer(self, network: NetworkHandler, displayName: str, verificationKey: str):
         Logger.debug(f"Creating Player For Ip {network.conninfo}", module="player-manager")
@@ -42,7 +46,7 @@ class PlayerManager:
             raise ClientError("You are banned.")
 
         # Checking if server is full
-        if len(self.players) >= self.maxSize:
+        if self.maxSize is not None and len(self.players) >= self.maxSize:
             raise ClientError("Server Is Full!")
 
         # Check if username is taken
@@ -50,7 +54,7 @@ class PlayerManager:
             raise ClientError("This Username Is Taken!")
 
         # Creating Player Class
-        player = Player(self, network, username, displayName, verificationKey)
+        player = Player(self, network, self.server, username, displayName, verificationKey)
 
         # Check if user is an operator and set their status
         await player.updateOperatorStatus(sendMessage=False)
@@ -384,7 +388,8 @@ class WorldPlayerManager:
 
 
 class Player:
-    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, username: UsernameType, displayName: str, key: str):
+    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, server: Server, username: UsernameType, displayName: str, key: str):
+        self.server: Server = server
         self.username: UsernameType = username
         self.name: str = displayName
         self.posX: int = 0

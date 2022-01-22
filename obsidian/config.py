@@ -157,8 +157,8 @@ class ServerConfig(AbstractConfig):
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     automaticallyDetermineSpawn: bool = False  # Reset Spawn Location for Every Player
     defaultWorld: str = "default"  # Name Of Default World
-    serverMaxPlayers: int = 128  # Number Of Players Max Allowed On The Entire Server
-    worldMaxPlayers: int = 128  # Number Of Players Max Allowed In One World
+    serverMaxPlayers: int = 127  # Number Of Players Max Allowed On The Entire Server
+    worldMaxPlayers: Optional[int] = None  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
     defaultWorldSizeX: int = 256  # Default Size X
     defaultWorldSizeY: int = 256  # Default Size Y
