@@ -1505,6 +1505,60 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
+        "JoinWorld",
+        description="Joins another world",
+        version="v1.0.0"
+    )
+    class JoinWorldCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["join", "joinworld", "jw"])
+
+        async def execute(self, ctx: Player, world: str):
+            # Check if server is initialized
+            if ctx.server.worldManager is None:
+                raise ServerError("ctx.server.worldManager Is Accessed Without WorldManager Initialized! This should not happen!")
+
+            # Get World To Join
+            try:
+                join_world = ctx.server.worldManager.getWorld(world)
+            except NameError:
+                raise CommandError(f"World {world} not found!")
+
+            await ctx.changeWorld(join_world)
+
+    @Command(
+        "ListWorlds",
+        description="Lists All Loaded Worlds",
+        version="v1.0.0"
+    )
+    class ListWorldsCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["listworlds", "worlds", "lw"])
+
+        async def execute(self, ctx: Player):
+            # Check if server is initialized
+            if ctx.server.worldManager is None:
+                raise ServerError("ctx.server.worldManager Is Accessed Without WorldManager Initialized! This should not happen!")
+
+            # Get list of worlds
+            world_list = list(ctx.server.worldManager.worlds.values())
+
+            # Generate command output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.center_message(f"&eWorlds Loaded: {len(world_list)}", colour="&2"))
+
+            # Generate Player List Output
+            output += CommandHelper.format_list(world_list, process_input=lambda p: str(p.name), initial_message="&e", seperator=", ")
+
+            # Add Footer
+            output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
         "MOTD",
         description="Prints Message of the Day",
         version="v1.0.0"
