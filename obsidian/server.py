@@ -44,12 +44,13 @@ class Server:
         self.port: int = port  # Port Number Of Server
         self.name: str = name  # Name Of Server
         self.motd: str = motd  # Message Of The Day
-        self.server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object (initialized later)
-        self.worldManager: Optional[WorldManager] = None  # World Manager Class (initialized later)
-        self.playerManager: Optional[PlayerManager] = None  # Player Manager Class (initialized later)
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized: bool = False  # Flag Set When Everything Is Fully Loaded
         self.stopping: bool = False  # Flag To Prevent Crl-C Spamming
+        # These Values Have Getters
+        self._server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object (initialized later)
+        self._worldManager: Optional[WorldManager] = None  # World Manager Class (initialized later)
+        self._playerManager: Optional[PlayerManager] = None  # Player Manager Class (initialized later)
 
         # Init Colour
         if colour:
@@ -137,18 +138,18 @@ class Server:
 
         # Initialize WorldManager
         Logger.info("Initializing World Manager", module="init")
-        self.worldManager = WorldManager(self, ignorelist=self.config.worldIgnorelist)
+        self._worldManager = WorldManager(self, ignorelist=self.config.worldIgnorelist)
         Logger.info("Loading Worlds", module="init")
         self.worldManager.loadWorlds()
 
         # Initialize PlayerManager
         Logger.info("Initializing Player Manager", module="init")
-        self.playerManager = PlayerManager(self, maxSize=self.config.serverMaxPlayers)
+        self._playerManager = PlayerManager(self, maxSize=self.config.serverMaxPlayers)
 
         # Create Asyncio Socket Server
         # When new connection occurs, run callback _getConnHandler
         Logger.info(f"Setting Up Server {self.name}", module="init")
-        self.server = await asyncio.start_server(self._getConnHandler(), self.address, self.port)
+        self._server = await asyncio.start_server(self._getConnHandler(), self.address, self.port)
 
         self.initialized = True
 
@@ -178,6 +179,25 @@ class Server:
                 writer.close()
 
         return handler
+
+    # Getters for server, worldManager, and playerManager
+    @property
+    def server(self) -> asyncio.AbstractServer:
+        if self._server is None:
+            raise ServerError("Server is not initialized! This May Be Because server.init() Was Never Called Or An Error Occurred While Initializing")
+        return self._server
+
+    @property
+    def worldManager(self) -> WorldManager:
+        if self._worldManager is None:
+            raise ServerError("worldManager is not initialized! This May Be Because server.init() Was Never Called Or An Error Occurred While Initializing")
+        return self._worldManager
+
+    @property
+    def playerManager(self) -> PlayerManager:
+        if self._playerManager is None:
+            raise ServerError("playerManager is not initialized! This May Be Because server.init() Was Never Called Or An Error Occurred While Initializing")
+        return self._playerManager
 
     # Quick hack to run function in async mode no matter what
     def asyncstop(self, *args, **kwargs):

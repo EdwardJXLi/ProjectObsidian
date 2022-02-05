@@ -1384,9 +1384,6 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["list", "players", "listplayers"])
 
         async def execute(self, ctx: Player, world: Optional[str] = None):
-            # Check if necessary variables are initialized.
-            if ctx.server.worldManager is None:
-                raise ServerError("ctx.server.worldManager Is Accessed Without WorldManager Initialized! This should not happen!")
             if ctx.worldPlayerManager is None:
                 raise CommandError("&cYou are not in a world!&f")
 
@@ -1428,12 +1425,6 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["listall", "allplayers", "online"])
 
         async def execute(self, ctx: Player):
-            # Check if server is initialized
-            if ctx.server.worldManager is None:
-                raise ServerError("ctx.server.worldManager Is Accessed Without WorldManager Initialized! This should not happen!")
-            if ctx.server.playerManager is None:
-                raise ServerError("ctx.server.playerManager Is Accessed Without PlayerManager Initialized! This should not happen!")
-
             # Generate command output
             output = []
 
@@ -1481,9 +1472,6 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["liststaff", "staff", "listallstaff", "allstaff"])
 
         async def execute(self, ctx: Player, world: Optional[str] = None):
-            if ctx.server.playerManager is None:
-                raise ServerError("ctx.server.playerManager Is Accessed Without PlayerManager Initialized! This should not happen!")
-
             staff_list = list(ctx.server.playerManager.players.values())
 
             # Generate command output
@@ -1514,10 +1502,6 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["join", "joinworld", "jw"])
 
         async def execute(self, ctx: Player, world: str):
-            # Check if server is initialized
-            if ctx.server.worldManager is None:
-                raise ServerError("ctx.server.worldManager Is Accessed Without WorldManager Initialized! This should not happen!")
-
             # Get World To Join
             try:
                 join_world = ctx.server.worldManager.getWorld(world)
@@ -1536,10 +1520,6 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["listworlds", "worlds", "lw"])
 
         async def execute(self, ctx: Player):
-            # Check if server is initialized
-            if ctx.server.worldManager is None:
-                raise ServerError("ctx.server.worldManager Is Accessed Without WorldManager Initialized! This should not happen!")
-
             # Get list of worlds
             world_list = list(ctx.server.worldManager.worlds.values())
 
