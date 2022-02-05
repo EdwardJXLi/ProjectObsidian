@@ -34,7 +34,7 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
         persistant: bool = True,
         *args,
         **kwargs
-    ):
+    ) -> World:
         raise NotImplementedError("World Loading Not Implemented")
 
     def saveWorld(
@@ -58,7 +58,7 @@ class _WorldFormatManager(AbstractManager):
         self._format_dict: dict[str, AbstractWorldFormat] = dict()
 
     # Registration. Called by World Format Decorator
-    def register(self, worldFormatClass: Type[AbstractWorldFormat], module: AbstractModule):
+    def register(self, worldFormatClass: Type[AbstractWorldFormat], module: AbstractModule) -> AbstractWorldFormat:
         Logger.debug(f"Registering World Format {worldFormatClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         worldFormat: AbstractWorldFormat = super()._initSubmodule(worldFormatClass, module)
 
@@ -83,6 +83,8 @@ class _WorldFormatManager(AbstractManager):
         # Add World Format to World Formats List
         self._format_dict[worldFormat.NAME] = worldFormat
 
+        return worldFormat
+
     # Generate a Pretty List of World Formats
     def generateTable(self):
         try:
@@ -102,15 +104,15 @@ class _WorldFormatManager(AbstractManager):
 
     # Property Method To Get Number Of World Formats
     @property
-    def numWorldFormats(self):
+    def numWorldFormats(self) -> int:
         return len(self._format_dict)
 
     # Handles _WorldFormatManager["item"]
-    def __getitem__(self, format: str):
+    def __getitem__(self, format: str) -> AbstractWorldFormat:
         return self._format_dict[format]
 
     # Handles _WorldFormatManager.item
-    def __getattr__(self, *args, **kwargs):
+    def __getattr__(self, *args, **kwargs) -> AbstractWorldFormat:
         return self.__getitem__(*args, **kwargs)
 
 

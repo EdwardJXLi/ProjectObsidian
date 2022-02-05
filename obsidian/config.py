@@ -135,7 +135,7 @@ class AbstractConfig:
         json.dump(configData, fileIO, indent=4)
         Logger.verbose(f"Config Saved With: {self.to_dict()}", "config-load")
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         # Converts the config to a dict.
         return asdict(self)
 

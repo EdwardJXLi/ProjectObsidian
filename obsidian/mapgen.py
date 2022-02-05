@@ -19,7 +19,7 @@ def MapGenerator(*args, **kwargs):
 # Map Generator Skeleton
 @dataclass
 class AbstractMapGenerator(AbstractSubmodule[T], Generic[T]):
-    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, *args, **kwargs):
+    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, *args, **kwargs) -> bytearray:
         raise NotImplementedError("Map Generation Not Implemented")
 
 
@@ -33,7 +33,7 @@ class _MapGeneratorManager(AbstractManager):
         self._generator_dict: dict[str, AbstractMapGenerator] = dict()
 
     # Registration. Called by Map Generator Decorator
-    def register(self, mapGenClass: Type[AbstractMapGenerator], module: AbstractModule):
+    def register(self, mapGenClass: Type[AbstractMapGenerator], module: AbstractModule) -> AbstractMapGenerator:
         Logger.debug(f"Registering Map Generator {mapGenClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         mapGen: AbstractMapGenerator = super()._initSubmodule(mapGenClass, module)
 
@@ -58,6 +58,8 @@ class _MapGeneratorManager(AbstractManager):
         # Add Map Generator to Map Generators List
         self._generator_dict[mapGen.NAME] = mapGen
 
+        return mapGen
+
     # Generate a Pretty List of Map Generators
     def generateTable(self):
         try:
@@ -81,15 +83,15 @@ class _MapGeneratorManager(AbstractManager):
 
     # Property Method To Get Number Of Map Generators
     @property
-    def numMapGenerators(self):
+    def numMapGenerators(self) -> int:
         return len(self._generator_dict)
 
     # Handles _MapGeneratorManager["item"]
-    def __getitem__(self, mapGenerator: str):
+    def __getitem__(self, mapGenerator: str) -> AbstractMapGenerator:
         return self._generator_dict[mapGenerator]
 
     # Handles _MapGeneratorManager.item
-    def __getattr__(self, *args, **kwargs):
+    def __getattr__(self, *args, **kwargs) -> AbstractMapGenerator:
         return self.__getitem__(*args, **kwargs)
 
 

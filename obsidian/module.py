@@ -17,6 +17,7 @@ from obsidian.constants import (
     SERVERPATH
 )
 from obsidian.errors import (
+    ModuleError,
     InitRegisterError,
     DependencyError,
     InitError,
@@ -437,7 +438,7 @@ class _ModuleManager(AbstractManager):
         version: str,
         dependencies: Optional[list],
         module: Type[AbstractModule]
-    ):
+    ) -> Type[AbstractModule]:
         Logger.info(f"Discovered Module {name}.", module="module-import")
         Logger.debug(f"Registering Module {name}", module="module-import")
 
@@ -448,7 +449,7 @@ class _ModuleManager(AbstractManager):
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
         # Check If Module Is Ignored
         if name in self._module_ignorelist:
-            return  # Skip
+            raise ModuleError("Module Is Ignored!")
         # Format Empty Dependencies
         if dependencies is None:
             dependencies = []
@@ -464,6 +465,8 @@ class _ModuleManager(AbstractManager):
         module.VERSION = version
         module.DEPENDENCIES = dependencies
         self._module_dict[name] = module
+
+        return module
 
     # Generate a Pretty List of Modules
     def generateTable(self):
@@ -490,15 +493,15 @@ class _ModuleManager(AbstractManager):
 
     # Property Method To Get Number Of Modules
     @property
-    def numModules(self):
+    def numModules(self) -> int:
         return len(self._module_dict)
 
     # Handles _ModuleManager["item"]
-    def __getitem__(self, module: str):
+    def __getitem__(self, module: str) -> AbstractModule:
         return self._module_dict[module]
 
     # Handles _ModuleManager.item
-    def __getattr__(self, *args, **kwargs):
+    def __getattr__(self, *args, **kwargs) -> AbstractModule:
         return self.__getitem__(*args, **kwargs)
 
 
@@ -517,11 +520,11 @@ class Dependency:
         return iter((self.NAME, self.VERSION))
 
     # Format String
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<Name: {self.NAME}, Version: {self.VERSION}>"
 
     # Actions when Printing Class
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 

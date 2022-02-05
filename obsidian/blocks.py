@@ -52,7 +52,7 @@ class _BlockManager(AbstractManager):
         self._block_ids: dict[int, AbstractBlock] = dict()
 
     # Registration. Called by Block Decorator
-    def register(self, blockClass: Type[AbstractBlock], module: AbstractModule):
+    def register(self, blockClass: Type[AbstractBlock], module: AbstractModule) -> AbstractBlock:
         Logger.debug(f"Registering Block {blockClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         block: AbstractBlock = super()._initSubmodule(blockClass, module)
 
@@ -86,6 +86,8 @@ class _BlockManager(AbstractManager):
         # Add Block to Blocks List
         self._block_dict[block.NAME] = block
 
+        return block
+
     # Generate a Pretty List of Blocks
     def generateTable(self):
         try:
@@ -105,26 +107,26 @@ class _BlockManager(AbstractManager):
 
     # Property Method To Get Number Of Blocks
     @property
-    def numBlocks(self):
+    def numBlocks(self) -> int:
         return len(self._block_dict)
 
     # Generate a List of All Block Ids
-    def getAllBlockIds(self):
+    def getAllBlockIds(self) -> list[int]:
         return list(self._block_ids.keys())
 
     # Function To Get Block Object From BlockId
-    def getBlockById(self, blockId: int):
+    def getBlockById(self, blockId: int) -> AbstractBlock:
         if blockId in self._block_ids.keys():
             return self._block_ids[blockId]
         else:
             raise BlockError(f"Block with BlockID {blockId} Not Found.")
 
     # Handles _BlockManager["item"]
-    def __getitem__(self, block: str):
+    def __getitem__(self, block: str) -> AbstractBlock:
         return self._block_dict[block]
 
     # Handles _BlockManager.item
-    def __getattr__(self, *args, **kwargs):
+    def __getattr__(self, *args, **kwargs) -> AbstractBlock:
         return self.__getitem__(*args, **kwargs)
 
 

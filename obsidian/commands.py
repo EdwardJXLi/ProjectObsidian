@@ -38,7 +38,7 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
 
 # == Command Utils ==
 
-def _typeToString(annotation):
+def _typeToString(annotation) -> str:
     if annotation == inspect._empty:
         return "None"
     elif isinstance(annotation, str):
@@ -161,7 +161,7 @@ class _CommandManager(AbstractManager):
         self._activators: dict[str, AbstractCommand] = dict()
 
     # Registration. Called by Command Decorator
-    def register(self, commandClass: Type[AbstractCommand], module: AbstractModule):
+    def register(self, commandClass: Type[AbstractCommand], module: AbstractModule) -> AbstractCommand:
         Logger.debug(f"Registering Command {commandClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         command: AbstractCommand = super()._initSubmodule(commandClass, module)
 
@@ -217,6 +217,8 @@ class _CommandManager(AbstractManager):
         # Add Command to Commands List
         self._command_dict[command.NAME] = command
 
+        return command
+
     # Generate a Pretty List of Commands
     def generateTable(self):
         try:
@@ -235,7 +237,7 @@ class _CommandManager(AbstractManager):
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
     # FUnction To Get Command Object From Command Name
-    def getCommandFromName(self, name: str):
+    def getCommandFromName(self, name: str) -> AbstractCommand:
         if name in self._activators.keys():
             return self._activators[name]
         else:
@@ -243,15 +245,15 @@ class _CommandManager(AbstractManager):
 
     # Property Method To Get Number Of Commands
     @property
-    def numCommands(self):
+    def numCommands(self) -> int:
         return len(self._command_dict)
 
     # Handles _CommandManager["item"]
-    def __getitem__(self, command: str):
+    def __getitem__(self, command: str) -> AbstractCommand:
         return self._command_dict[command]
 
     # Handles _CommandManager.item
-    def __getattr__(self, *args, **kwargs):
+    def __getattr__(self, *args, **kwargs) -> AbstractCommand:
         return self.__getitem__(*args, **kwargs)
 
 

@@ -11,7 +11,7 @@ import struct
 
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
-from obsidian.blocks import BlockManager, Blocks
+from obsidian.blocks import BlockManager, Blocks, AbstractBlock
 from obsidian.worldformat import WorldFormats, AbstractWorldFormat
 from obsidian.mapgen import MapGenerators, AbstractMapGenerator
 from obsidian.packet import Packets
@@ -55,11 +55,11 @@ class WorldManager:
             Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
             self.persistant = False
 
-    def getWorld(self, worldName, lowerName=True) -> World:
+    def getWorld(self, worldName: str, lowerName: bool = True) -> World:
         Logger.debug(f"Getting World {worldName} By Name", module="player")
         # If lowerName is set, automatically lower the world name
         if lowerName:
-            worldName = lowerName.lower()
+            worldName = worldName.lower()
         # Check if world is in the server
         if worldName in self.worlds:
             return self.worlds[worldName]
@@ -81,7 +81,7 @@ class WorldManager:
         spawnPitch: Optional[int] = None,
         spawnYaw: Optional[int] = None,
         **kwargs  # Keyword Arguments To Be Passed To World Generator
-    ):
+    ) -> World:
         Logger.info(f"Creating New World {worldName}...", module="world-create")
         # Check If World Already Exists
         if worldName in self.worlds.keys():
@@ -89,7 +89,7 @@ class WorldManager:
 
         # Creating Save File If World Is Persistant
         Logger.debug("Creating Save File If World Is Persistant", module="world-create")
-        if self.persistant:
+        if self.persistant and self.server.config.worldSaveLocation:
             fileIO = self.createWorldFile(self.server.config.worldSaveLocation, worldName)
             Logger.debug(f"World Is Persistant! Created New FileIO {fileIO}", module="world-create")
             pass
@@ -118,8 +118,9 @@ class WorldManager:
         # Saving World
         Logger.info(f"Saving World {worldName}", module="world-create")
         self.worlds[worldName].saveMap()
+        return self.worlds[worldName]
 
-    def generateMap(self, sizeX, sizeY, sizeZ, generator: AbstractMapGenerator, *args, **kwargs):
+    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, generator: AbstractMapGenerator, *args, **kwargs) -> bytearray:
         Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
         # Call Generate Map Function From Generator
         generatedMap = generator.generateMap(sizeX, sizeY, sizeZ, *args, **kwargs)
@@ -133,7 +134,7 @@ class WorldManager:
         # Return Generated Map Bytesarray
         return generatedMap
 
-    def loadWorlds(self):
+    def loadWorlds(self) -> bool:
         Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
         if self.persistant and (self.server.config.worldSaveLocation is not None):
             Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
@@ -203,8 +204,9 @@ class WorldManager:
                 maxPlayers=self.server.config.worldMaxPlayers,
                 grassHeight=self.server.config.defaultWorldSizeY // 2
             )
+        return True  # Returning true to indicate that all worlds were loaded successfully.
 
-    def saveWorlds(self):
+    def saveWorlds(self) -> bool:
         Logger.debug("Starting Attempt to Save All Worlds", module="world-save")
         if self.persistant and (self.server.config.worldSaveLocation is not None):
             Logger.info("Saving All Worlds...", module="world-save")
@@ -223,8 +225,9 @@ class WorldManager:
                     Logger.warn(f"World {worldName} Is Non Persistant! Skipping World Save!", module="world-save")
         else:
             Logger.warn("World Manager Is Non Persistant! Skipping World Save!", module="world-save")
+        return True  # Return True to indicate that world save was successful.
 
-    def closeWorlds(self):
+    def closeWorlds(self) -> bool:
         Logger.debug("Starting Attempt to Close All Worlds", module="world-close")
         # Loop through all worlds and attempt to close
         for worldName in list(self.worlds.keys()):  # Setting as list so dict size can change mid execution
@@ -244,8 +247,9 @@ class WorldManager:
                     world.fileIO.close()
             except Exception as e:
                 Logger.error(f"Error While Closing World {worldName} - {type(e).__name__}: {e}", module="world-close")
+        return True  # Returning True to indicate all worlds were closed
 
-    def createWorldFile(self, savePath, worldName, worldFormat: AbstractWorldFormat = None):
+    def createWorldFile(self, savePath: str, worldName: str, worldFormat: AbstractWorldFormat = None) -> io.BufferedRandom:
         Logger.debug(f"Attempting to create world file with name {worldName}", module="world-gen")
         # Checking if World is Persistant
         if self.server.config.worldSaveLocation is None or not self.persistant:
@@ -336,7 +340,7 @@ class World:
         forceSpawnZ: bool = False,
         forceSpawnYaw: bool = False,
         forceSpawnPitch: bool = False
-    ):
+    ) -> None:
         # Generate spawn coords using an iterative system
         # Set spawnX
         if self.spawnX is None or forceSpawnX:
@@ -368,7 +372,7 @@ class World:
             self.spawnPitch = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
 
-    def canEditBlock(self, player, block):
+    def canEditBlock(self, player: Player, block: AbstractBlock) -> bool:
         # Checking If User Can Set Blocks
         if not self.canEdit:  # Checking If World Is Read-Only
             if not player.opStatus:  # Checking If Player Is Not OP
@@ -383,7 +387,7 @@ class World:
         # else, everything is ay okay
         return True
 
-    def getBlock(self, blockX: int, blockY: int, blockZ: int):
+    def getBlock(self, blockX: int, blockY: int, blockZ: int) -> AbstractBlock:
         # Gets Block Obj Of Requested Block
         Logger.verbose(f"Getting World Block {blockX}, {blockY}, {blockZ}", module="world")
 
@@ -392,7 +396,7 @@ class World:
             raise BlockError(f"Requested Block Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
 
-    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Player = None, sendPacket: bool = True, updateSelf: bool = False):
+    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Player = None, sendPacket: bool = True, updateSelf: bool = False) -> bool:
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
         Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockId}", module="world")
 
@@ -415,7 +419,10 @@ class World:
                 ignoreList=[player] if player is not None and not updateSelf else []
             )
 
-    def getHighestBlock(self, blockX: int, blockZ: int, start: Optional[int] = None):
+        # Setblock Successful!
+        return True
+
+    def getHighestBlock(self, blockX: int, blockZ: int, start: Optional[int] = None) -> int:
         # Returns the highest block
         # Set and Verify Scan Start Value
         if start is None:
@@ -436,14 +443,16 @@ class World:
 
         return scanY
 
-    def saveMap(self):
+    def saveMap(self) -> bool:
         if self.persistant and self.fileIO:
             Logger.info(f"Attempting To Save World {self.name}", module="world-save")
             self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
+            return True
         else:
             Logger.warn(f"World {self.name} Is Not Persistant! Not Saving.", module="world-save")
+            return False
 
-    def gzipMap(self, compressionLevel: int = -1, includeSizeHeader: bool = False):
+    def gzipMap(self, compressionLevel: int = -1, includeSizeHeader: bool = False) -> bytes:
         # If Gzip Compression Level Is -1, Use Default!
         # includeSizeHeader Dictates If Output Should Include Map Size Header Used For Level Init
 

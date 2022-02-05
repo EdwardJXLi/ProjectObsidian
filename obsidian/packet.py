@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 import enum
 import struct
-from typing import Type, Optional, Generic
+from typing import Any, Type, Optional, Generic
 from dataclasses import dataclass
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
@@ -24,14 +24,14 @@ class PacketDirections(enum.Enum):
 
 
 # Packet Utils
-def unpackageString(data, encoding: str = "ascii"):
+def unpackageString(data, encoding: str = "ascii") -> str:
     Logger.verbose(f"Unpacking String {data}", module="packet")
     # Decode Data From Bytes To String
     # Remove Excess Zeros
     return data.decode(encoding).strip()
 
 
-def packageString(data: str, maxSize: int = 64, encoding: str = "ascii"):
+def packageString(data: str, maxSize: int = 64, encoding: str = "ascii") -> bytearray:
     Logger.verbose(f"Packing String {data}", module="packet")
     # Trim Text Down To maxSize
     # Fill Blank Space With Spaces Using ljust
@@ -62,7 +62,7 @@ class AbstractRequestPacket(AbstractPacket[T], Generic[T]):
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
-    async def deserialize(self, ctx: Optional[Player], *args, **kwargs):
+    async def deserialize(self, ctx: Optional[Player], *args, **kwargs) -> Any:
         raise NotImplementedError("Deserialization For This Packet Is Not Implemented")
 
 
@@ -71,7 +71,7 @@ class AbstractResponsePacket(AbstractPacket[T], Generic[T]):
     # Mandatory Values Defined In Packet Init
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
 
-    async def serialize(self, *args, **kwargs):
+    async def serialize(self, *args, **kwargs) -> bytearray:
         return bytearray()
 
 
@@ -101,7 +101,7 @@ class _DirectionalPacketManager(AbstractManager):
             self.loopPackets = {}  # Fast Cache Of Packet Ids to Packet Objects That Are Used During PlayerLoop
 
     # Registration. Called by (Directional) Packet Decorator
-    def register(self, packetClass: Type[AbstractPacket], module: AbstractModule):
+    def register(self, packetClass: Type[AbstractPacket], module: AbstractModule) -> AbstractPacket:
         Logger.debug(f"Registering Packet {packetClass.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
         packet: AbstractPacket = super()._initSubmodule(packetClass, module)
 
@@ -135,7 +135,9 @@ class _DirectionalPacketManager(AbstractManager):
         # Add Packet to Packets List
         self._packet_dict[packet.NAME] = packet
 
-    def getAllPacketIds(self):
+        return packet
+
+    def getAllPacketIds(self) -> list[int]:
         return [obj.ID for obj in self._packet_dict.values()]
 
     def getPacketById(self, packetId: int):
@@ -189,7 +191,7 @@ class _PacketManager:
 
     # Property Method To Get Number Of Packets
     @property
-    def numPackets(self):
+    def numPackets(self) -> int:
         return len(self.RequestManager._packet_dict) + len(self.ResponseManager._packet_dict)
 
 
