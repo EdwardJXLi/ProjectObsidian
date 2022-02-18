@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from obsidian.server import Server
 
 import asyncio
-from typing import Type, Optional
+from typing import Type, Optional, Callable
 
 from obsidian.log import Logger
 from obsidian.world import World
@@ -38,6 +38,7 @@ class NetworkHandler:
         self.port: int = self.conninfo[1]
         self.dispacher: NetworkDispacher = NetworkDispacher(self)
         self.isConnected: bool = True  # Connected Flag So Outbound Queue Buffer Can Stop
+        self.inLoop: bool = False  # In Loop Flag so that functions know when to use a different implementation
         self.player: Optional[Player] = None
 
     async def initConnection(self, *args, **kwargs):
@@ -129,6 +130,8 @@ class NetworkHandler:
         await self._beginPlayerLoop()
 
     async def _beginPlayerLoop(self):
+        # Set the in_loop flag
+        self.in_loop = True
         # Called to handle Player Loop Packets
         # (Packets Sent During Normal Player Gameplay)
         while self.isConnected:
@@ -237,13 +240,15 @@ class NetworkHandler:
 class NetworkDispacher:
     def __init__(self, handler: NetworkHandler):
         self.handler: NetworkHandler = handler
+        # Dictionary: {(Key)<Type of AbstractRequestPacket> : (Values)list[tuple[<Future Event>, <Check Function>, <Should Continue Handling>]]}
+        self._listeners: dict[Type[AbstractRequestPacket], list[tuple[asyncio.Future, Callable[..., bool], bool]]] = {}
 
     # NOTE: or call receivePacket
     # Used when exact packet is expected
     async def readPacket(
         self,
         packet: AbstractRequestPacket,
-        timeout: int = NET_TIMEOUT,
+        timeout: float = NET_TIMEOUT,
         critical: bool = False,  # Hacky critical flag to please type checker
         checkId=True
     ):
@@ -275,38 +280,13 @@ class NetworkDispacher:
                 packet.onError(e)
                 raise e
 
-    async def sendPacket(
-        self,
-        packet: Type[AbstractResponsePacket],
-        *args,
-        timeout: int = NET_TIMEOUT,
-        **kwargs
-    ):
-        try:
-            # Generate Packet
-            rawData = await packet.serialize(*args, **kwargs)
-
-            # Send Packet
-            Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.conninfo} | ID: {packet.ID} {packet.NAME} | SIZE: {packet.SIZE} | DATA: {rawData}", module="network")
-            if self.handler.isConnected:
-                self.handler.writer.write(bytes(rawData))
-                await self.handler.writer.drain()
-            else:
-                Logger.debug(f"Packet {packet.NAME} Skipped Due To Closed Connection!", module="network")
-        except Exception as e:
-            # Making Sure These Errors Always Gets Raised (Ignore onError)
-            if packet.CRITICAL or type(e) in CRITICAL_RESPONSE_ERRORS:
-                raise e  # Pass Down Exception To Lower Layer
-            else:
-                return packet.onError(e)
-
     # Used in main listen loop; expect multiple types of packets!
     async def listenForPackets(
         self,
         packetDict: dict = {},
         headerSize: int = 1,
         ignoreUnknownPackets: bool = False,
-        timeout: int = NET_TIMEOUT
+        timeout: float = NET_TIMEOUT
     ):
         try:
             # Reading First Byte For Packet Header
@@ -338,6 +318,51 @@ class NetworkDispacher:
             )
             Logger.verbose(f"CLIENT -> SERVER | CLIENT: {self.handler.conninfo} | DATA: {rawData}", module="network")
 
+            # Check if packet is being listened to
+            if type(packet) in self._listeners:
+                Logger.verbose(f"Checking Listeners For Packet {packet.NAME}", module="network")
+                # Keep track on whether packet should continue to be processed after being handled
+                continueProcessing = True
+                # Get all the listeners
+                listeners = self._listeners.get(type(packet), list())
+                # Create a hacky "check failed" list to store unmatched listeners to be put back into the dict
+                checkFailed = []
+                for future, check, shouldContinue in listeners:
+                    Logger.verbose(f"({packet.NAME}) Checking Listener {check}", module="network")
+                    # If future is cancelled, remove listener
+                    if future.cancelled():
+                        Logger.verbose(f"({check}) Listener Cancelled", module="network")
+                        continue
+
+                    # Check if check function returns true
+                    try:
+                        checkResult = check(self.handler.player, rawData)
+                    except Exception as e:
+                        Logger.verbose(f"({check}) Listener Error", module="network")
+                        Logger.error("Error occurred while processing listener check function", module="network", printTb=False)
+                        future.set_exception(e)
+                        continue
+                    else:
+                        if checkResult:
+                            future.set_result(rawData)
+                            # As soon as one check sets continueProcessing to false, we should stop processing the packet
+                            if continueProcessing and not shouldContinue:
+                                continueProcessing = False
+                            continue
+
+                    # This check did not pass. Add to checkFailed list
+                    if not future.done():
+                        Logger.verbose(f"({check}) Listener Condition Failed", module="network")
+                        checkFailed.append((future, check, shouldContinue))
+
+                # Set the listeners list to the new list of failed listeners
+                self._listeners[type(packet)] = checkFailed
+
+                # If packet should not continue to be processed, return
+                if not continueProcessing:
+                    Logger.verbose("Packet Processing Skipped", module="network")
+                    return packetHeader, None
+
             # Attempting to Deserialize Packets
             try:
                 # Deserialize Packet
@@ -358,3 +383,46 @@ class NetworkDispacher:
             # raise ClientError("Did Not Receive Packet In Time!")
         except Exception as e:
             raise e  # Pass Down Exception To Lower Layer
+
+    async def sendPacket(
+        self,
+        packet: Type[AbstractResponsePacket],
+        *args,
+        timeout: float = NET_TIMEOUT,
+        **kwargs
+    ):
+        try:
+            # Generate Packet
+            rawData = await packet.serialize(*args, **kwargs)
+
+            # Send Packet
+            Logger.verbose(f"SERVER -> CLIENT | CLIENT: {self.handler.conninfo} | ID: {packet.ID} {packet.NAME} | SIZE: {packet.SIZE} | DATA: {rawData}", module="network")
+            if self.handler.isConnected:
+                self.handler.writer.write(bytes(rawData))
+                await self.handler.writer.drain()
+            else:
+                Logger.debug(f"Packet {packet.NAME} Skipped Due To Closed Connection!", module="network")
+        except Exception as e:
+            # Making Sure These Errors Always Gets Raised (Ignore onError)
+            if packet.CRITICAL or type(e) in CRITICAL_RESPONSE_ERRORS:
+                raise e  # Pass Down Exception To Lower Layer
+            else:
+                return packet.onError(e)
+
+    # Create Dispatch Listener to capture incoming packets
+    def wait_for(
+        self,
+        packet: AbstractRequestPacket,
+        *,
+        check: Callable[..., bool] = lambda *args, **kwargs: True,
+        timeout: Optional[float] = 600.0,  # Default 10 minute timeout
+        shouldContinue: bool = False
+    ):
+        # Create Future Event
+        future = asyncio.get_event_loop().create_future()
+
+        # Add Future Event to Listeners
+        self._listeners.setdefault(type(packet), list()).append((future, check, shouldContinue))
+
+        # Return Future
+        return asyncio.wait_for(future, timeout)

@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from obsidian.blocks import AbstractBlock
 
 from typing import Optional, Type
+import asyncio
 
 from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
@@ -565,7 +566,7 @@ class Player:
         # Checking If Message Is A Command
         if message[0] == "/":
             try:
-                await self.handlePlayerCommand(message[1:])
+                asyncio.create_task(self.handlePlayerCommand(message[1:]))
             except CommandError as e:
                 Logger.warn(f"Command From Player {self.name} Failed With {str(e)}", module="command")
                 await self.sendMessage(f"&cInvalid Command: {str(e)}")
