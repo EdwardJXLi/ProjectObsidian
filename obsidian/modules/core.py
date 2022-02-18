@@ -1,7 +1,7 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
 from obsidian.constants import MAX_MESSAGE_LENGTH, __version__
 from obsidian.errors import ClientError, ServerError, WorldFormatError, CommandError
-from obsidian.types import _formatUsername, _formatIp
+from obsidian.types import _formatUsername, _formatIp, format_name
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
@@ -1135,13 +1135,34 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["help", "commands", "cmds"])
 
-        async def execute(self, ctx: Player, page_or_command: int | str = 1):
+        async def execute(self, ctx: Player, *, page_or_query: int | str = 1):
             # If command is not an int, assume its a command name and print help for that
-            if isinstance(page_or_command, str) and not page_or_command.isnumeric():
-                return await Commands.HelpCmd.execute(ctx, cmd_name=page_or_command)
+            if isinstance(page_or_query, str) and not page_or_query.isnumeric():
+                # Check if rightmost value is part of the plugin/command name or a page number
+                # This will cause some edge cases where it will fail, but its better than nothing
+                if page_or_query.rsplit(" ", 1)[-1].isnumeric():
+                    query = page_or_query.rsplit(" ", 1)[0]
+                    page_num = int(page_or_query.rsplit(" ", 1)[1])
+                else:
+                    query = page_or_query
+                    page_num = 1
+                # Get type of command
+                isPlugin = format_name(query) in ModuleManager._module_dict
+                isCommand = (query in CommandManager._command_dict) or (query.lower() in CommandManager._activators)
+                # If both conditions match, raise a warning
+                if isPlugin and isCommand:
+                    await ctx.sendMessage(f"&9[NOTICE] &f{query} is both a plugin name and a module name.")
+                    await ctx.sendMessage("&9[NOTICE] &fTo get help as a command, please use &e/helpcmd")
+                # Process First as a plugin
+                if isPlugin:
+                    return await Commands.HelpPlugin.execute(ctx, plugin_name=query, page=page_num)
+                elif isCommand:
+                    return await Commands.HelpCmd.execute(ctx, cmd_name=query)
+                else:
+                    raise CommandError(f"{query} is not a plugin or a command.")
 
             # Alias & Convert
-            page = int(page_or_command)
+            page = int(page_or_query)
             # Generate and Parse list of commands
             cmd_list = CommandManager._command_dict
             # If user is not OP, filter out OP and Disabled commands
@@ -1156,7 +1177,7 @@ class CoreModule(AbstractModule):
 
             # Check if user input was valid
             if page > num_pages or page <= 0:
-                raise CommandError(f"&cThere are only {num_pages} pages of commands!&f")
+                raise CommandError(f"There are only {num_pages} pages of commands!")
 
             # Get a list of commands registed
             commands = tuple(cmd_list.items())
@@ -1167,9 +1188,11 @@ class CoreModule(AbstractModule):
             # Add Header
             output.append(CommandHelper.center_message(f"&eHelp Page {page}/{num_pages}", colour="&2"))
 
-            # Add some additional tips to help command
-            output.append("&7Use /help [n] to get the nth page of help.&f")
-            output.append("&7Use /help or /helpcmd [name] to get more info on a command&f")
+            # Add some additional tips to help command (Only if first page)
+            if current_page == 0:
+                output.append("&7Use /help [n] to get the nth page of help.&f")
+                output.append("&7Use /help [plugin] to get commands from a specific plugin.&f")
+                output.append("&7Use /help [cmd] to get help on a specific command.&f")
 
             # Add command information
             for cmd_name, cmd in commands[current_page * commands_per_page:current_page * commands_per_page + commands_per_page]:
@@ -1186,6 +1209,73 @@ class CoreModule(AbstractModule):
 
             # Add Footer
             output.append(CommandHelper.center_message(f"&eTotal Commands: {num_commands}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "HelpPlugin",
+        description="Gets help for commands from plugin",
+        version="v1.0.0"
+    )
+    class HelpPluginCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["helpplugin", "pluginhelp"])
+
+        async def execute(self, ctx: Player, plugin_name: str, page: int = 1):
+            # Check if plugin exists
+            if format_name(plugin_name) in ModuleManager._module_dict:
+                module = ModuleManager._module_dict[format_name(plugin_name)]
+            else:
+                raise CommandError(f"Plugin {plugin_name} Not Found!")
+
+            # Generate and Parse list of commands
+            cmd_list = CommandManager._command_dict
+            # Filter to commands from only one plugin
+            cmd_list = {k: v for k, v in cmd_list.items() if v.MODULE == module}
+            # If user is not OP, filter out OP and Disabled commands
+            if not ctx.opStatus:
+                cmd_list = {k: v for k, v in cmd_list.items() if (not v.OP) and (v.NAME not in ctx.playerManager.server.config.disabledCommands)}
+
+            # Get information on the number of commands, pages, and commands per page
+            num_commands = len(cmd_list)
+            commands_per_page = 4
+            num_pages = math.ceil(num_commands / commands_per_page)
+            current_page = page - 1
+
+            # If there are no commands, return error
+            if num_commands == 0:
+                raise CommandError(f"Plugin {plugin_name} has no commands!")
+
+            # Check if user input was valid
+            if page > num_pages or page <= 0:
+                raise CommandError(f"There are only {num_pages} pages of commands!")
+
+            # Get a list of commands registed
+            commands = tuple(cmd_list.items())
+
+            # Generate command output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.center_message(f"&eHelp Page {page}/{num_pages}", colour="&2"))
+            output.append(f"&d > Commands From {module.NAME}")
+
+            # Add command information
+            for cmd_name, cmd in commands[current_page * commands_per_page:current_page * commands_per_page + commands_per_page]:
+                help_message = f"&d[{cmd_name}] &e/{cmd.ACTIVATORS[0]}"
+                if cmd.OP:
+                    help_message = "&4[OP] " + help_message
+                if cmd.NAME in ctx.server.config.disabledCommands:
+                    help_message = "&4[DISABLED] " + help_message
+                if len(cmd.ACTIVATORS) > 1:
+                    help_message += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS][1:])})"
+                help_message += "&f"
+                output.append(help_message)
+                output.append(f"{cmd.DESCRIPTION}")
+
+            # Add Footer
+            output.append(CommandHelper.center_message(f"&e{module.NAME} Commands: {num_commands}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1212,11 +1302,11 @@ class CoreModule(AbstractModule):
                 cmd = CommandManager._activators[cmd_name.lower()]
             else:
                 # Command doesnt exist!
-                raise CommandError(f"&cCommand {cmd_name} not found!&f")
+                raise CommandError(f"Command {cmd_name} not found!")
 
             # If command is an operator-only command and if user is not operator, return error
             if cmd.OP and not ctx.opStatus:
-                raise CommandError(f"&cCommand {cmd_name} not found!&f")  # Fake "Not Found" Error
+                raise CommandError(f"Command {cmd_name} not found!")  # Fake "Not Found" Error
 
             # Add Header
             output.append(CommandHelper.center_message(f"&eCommand Information: {cmd.NAME}", colour="&2"))
@@ -1303,7 +1393,7 @@ class CoreModule(AbstractModule):
 
             # Check if user input was valid
             if page > num_pages or page <= 0:
-                raise CommandError(f"&cThere are only {num_pages} pages of modules!&f")
+                raise CommandError(f"There are only {num_pages} pages of modules!")
 
             # Get a list of modules registed
             modules = tuple(ModuleManager._module_dict.items())
@@ -1342,7 +1432,7 @@ class CoreModule(AbstractModule):
                 plugin = ModuleManager._module_dict[module_name]
             else:
                 # Plugin doesnt exist!
-                raise CommandError(f"&cPlugin {module_name} not found!&f")
+                raise CommandError(f"Plugin {module_name} not found!")
 
             # Add Header
             output.append(CommandHelper.center_message(f"&ePlugin Information: {plugin.NAME}", colour="&2"))
@@ -1392,7 +1482,7 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player, world: Optional[str] = None):
             if ctx.worldPlayerManager is None:
-                raise CommandError("&cYou are not in a world!&f")
+                raise CommandError("You are not in a world!")
 
             # Get what the user wants
             if world is None:
@@ -1883,7 +1973,7 @@ class CoreModule(AbstractModule):
                 cmd = CommandManager._activators[cmd_name.lower()]
             else:
                 # Command doesnt exist!
-                raise CommandError(f"&cCommand {cmd_name} not found!&f")
+                raise CommandError(f"Command {cmd_name} not found!")
 
             # Check if Command is already banned
             serverConfig = ctx.server.config
@@ -1916,7 +2006,7 @@ class CoreModule(AbstractModule):
                 cmd = CommandManager._activators[cmd_name.lower()]
             else:
                 # Command doesnt exist!
-                raise CommandError(f"&cCommand {cmd_name} not found!&f")
+                raise CommandError(f"Command {cmd_name} not found!")
 
             # Check if command is disabled
             serverConfig = ctx.server.config

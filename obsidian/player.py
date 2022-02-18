@@ -613,6 +613,8 @@ class Player:
             # Try the Command
             try:
                 await command.execute(self, *parsedArguments, **parsedKwArgs)
+            except CommandError as e:
+                raise e  # Pass Down Exception To Lower Layer
             except Exception as e:
                 Logger.error(f"Command {command.NAME} Raised Error {str(e)}", module="command")
                 await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
