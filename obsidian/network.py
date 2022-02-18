@@ -418,6 +418,7 @@ class NetworkDispacher:
         timeout: Optional[float] = 600.0,  # Default 10 minute timeout
         shouldContinue: bool = False
     ):
+        Logger.debug(f"Creating New Listener For Packet {type(packet)}", module="network")
         # Create Future Event
         future = asyncio.get_event_loop().create_future()
 

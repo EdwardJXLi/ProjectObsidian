@@ -500,6 +500,17 @@ class Player:
         # Send message packet to user
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
 
+    async def getNextMessage(self, *args, **kwargs) -> str:
+        Logger.debug(f"Getting Next Message From Player {self.name}", module="player")
+        # Create a listener for the next message packet sent from player
+        response = await self.networkHandler.dispacher.wait_for(Packets.Request.PlayerMessage, *args, **kwargs)
+        # Parse raw packet into a usable string
+        message = await Packets.Request.PlayerMessage.deserialize(self, response, handleUpdate=False)
+
+        # Return processed message back to user
+        Logger.debug(f"Got Message From Player! Message: {message}", module="player")
+        return message
+
     async def handleBlockUpdate(self, blockX: int, blockY: int, blockZ: int, blockType: AbstractBlock):
         # Format, Process, and Handle incoming block update requests.
         Logger.debug(f"Handling Block Placement From Player {self.name}", module="player")
@@ -565,12 +576,7 @@ class Player:
 
         # Checking If Message Is A Command
         if message[0] == "/":
-            try:
-                asyncio.create_task(self.handlePlayerCommand(message[1:]))
-            except CommandError as e:
-                Logger.warn(f"Command From Player {self.name} Failed With {str(e)}", module="command")
-                await self.sendMessage(f"&cInvalid Command: {str(e)}")
-            return None  # Skip Rest
+            return asyncio.create_task(self.handlePlayerCommand(message[1:]))
 
         # Check If Last Character Is '&' (Crashes Older Minecraft Clients)
         if len(message) > 0 and message[-1:] == "&":
@@ -585,43 +591,45 @@ class Player:
             await self.worldPlayerManager.sendWorldMessage(message, author=self)
 
     async def handlePlayerCommand(self, cmdMessage: str):
-        # Format, Process, and Handle incoming player commands.
-        Logger.debug(f"Handling Command From Player {self.name}", module="command")
-
-        # Splitting Command Data
-        cmdName, *cmdArgs = cmdMessage.split(" ")
-        # Format cmdName
-        cmdName = cmdName.lower()
-        Logger.info(f"Command {cmdName} Received From Player {self.name}", module="command")
-        Logger.debug(f"Handling Command {cmdName} With Arguments {cmdArgs}", module="command")
-
-        # Get Command Object
-        command = Commands.getCommandFromName(cmdName)
-
-        # Check if command is disabled
-        if command.NAME in self.playerManager.server.config.disabledCommands:
-            # If user is op, allow run but give warning
-            # Else, disallow run
-            if self.opStatus:
-                await self.sendMessage("&4[WARNING] &fThis Command Is Disabled, But You Are an OP!")
-            else:
-                raise CommandError("This Command Is Disabled!")
-
-        # Check if user is allowed to run this command
-        if command.OP and not self.opStatus:
-            raise CommandError("You Are Not An Operator!")
-
-        # Parse Command Arguments
-        parsedArguments, parsedKwArgs = _parseArgs(command, cmdArgs)
-
-        # Run Command
         try:
-            await command.execute(self, *parsedArguments, **parsedKwArgs)
+            # Format, Process, and Handle incoming player commands.
+            Logger.debug(f"Handling Command From Player {self.name}", module="command")
+
+            # Splitting Command Data
+            cmdName, *cmdArgs = cmdMessage.split(" ")
+            # Format cmdName
+            cmdName = cmdName.lower()
+            Logger.info(f"Command {cmdName} Received From Player {self.name}", module="command")
+            Logger.debug(f"Handling Command {cmdName} With Arguments {cmdArgs}", module="command")
+
+            # Get Command Object
+            command = Commands.getCommandFromName(cmdName)
+
+            # Check if command is disabled
+            if command.NAME in self.playerManager.server.config.disabledCommands:
+                # If user is op, allow run but give warning
+                # Else, disallow run
+                if self.opStatus:
+                    await self.sendMessage("&4[WARNING] &fThis Command Is Disabled, But You Are an OP!")
+                else:
+                    raise CommandError("This Command Is Disabled!")
+
+            # Check if user is allowed to run this command
+            if command.OP and not self.opStatus:
+                raise CommandError("You Are Not An Operator!")
+
+            # Parse Command Arguments
+            parsedArguments, parsedKwArgs = _parseArgs(command, cmdArgs)
+
+            # Try the Command
+            try:
+                await command.execute(self, *parsedArguments, **parsedKwArgs)
+            except Exception as e:
+                Logger.error(f"Command {command.NAME} Raised Error {str(e)}", module="command")
+                await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
         except CommandError as e:
-            raise e  # Pass error down
-        except Exception as e:
-            Logger.error(f"Command {command.NAME} Raised Error {str(e)}", module="command")
-            await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
+            Logger.warn(f"Command From Player {self.name} Failed With {str(e)}", module="command")
+            await self.sendMessage(f"&cInvalid Command: {str(e)}")
 
     async def sendMOTD(self, motdMessage: Optional[list[str]] = None):
         # If motdMessage was not passed, use default one in config
