@@ -500,6 +500,26 @@ class Player:
         # Send message packet to user
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
 
+    async def checkBlockPlacement(self, blockX: int, blockY: int, blockZ: int, blockType: AbstractBlock) -> bool:
+        Logger.debug(f"Checking If Player Can Place Block {blockType.NAME} at ({blockX}, {blockY}, {blockZ})", module="player")
+        # Create an easily-overridable method to check if user is allowed to place a block here
+        # Users can either return a clienterror or return false
+        # Check if this block is disabled
+        if blockType.ID in self.server.config.disallowedBlocks:
+            Logger.debug(f"Player {self.name} Trying To Place A Disabled Block", module="player")
+            if self.opStatus:
+                await self.sendMessage("&4[WARNING] &fThis Block Is Disabled, But You Are an OP!")
+            else:
+                raise ClientError("You Cannot Place This Block")
+        # Check if this block is a liquid (or bedrock for the matter).
+        if (not self.server.config.allowLiquidPlacement) and (blockType.ID in [7, 8, 9, 10, 11]):
+            Logger.debug(f"Player {self.name} Trying To Place A Liquid", module="player")
+            if self.opStatus:
+                await self.sendMessage("&4[WARNING] &fPlayers Cannot Place Liquids, But You Are an OP!")
+            else:
+                raise ClientError("You Cannot Place Liquids")
+        return True
+
     async def handleBlockUpdate(self, blockX: int, blockY: int, blockZ: int, blockType: AbstractBlock):
         # Format, Process, and Handle incoming block update requests.
         Logger.debug(f"Handling Block Placement From Player {self.name}", module="player")
@@ -511,6 +531,8 @@ class Player:
 
         # Trying To Update Block On Player World
         try:
+            if not await self.checkBlockPlacement(blockX, blockY, blockZ, blockType):
+                raise ClientError("You Cannot Place This Block Here")
             await blockType.placeBlock(self, blockX, blockY, blockZ)
         except ClientError as e:
             # Setting Player-Attempted Block Back To Original

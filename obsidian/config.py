@@ -153,8 +153,12 @@ class ServerConfig(AbstractConfig):
     playerChatColor: str = "&a"
     operatorChatColor: str = "&4"
     allowPlayerColor: bool = True
+    # Block Configuration
+    disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks
+    allowLiquidPlacement: bool = False
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
+    worldIgnorelist: list[str] = field(default_factory=list)  # Worlds to ignore
     automaticallyDetermineSpawn: bool = False  # Reset Spawn Location for Every Player
     defaultWorld: str = "default"  # Name Of Default World
     serverMaxPlayers: int = 127  # Number Of Players Max Allowed On The Entire Server
@@ -166,6 +170,5 @@ class ServerConfig(AbstractConfig):
     defaultSaveFormat: str = "raw"  # Name Of Default World Save Format
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
-    worldIgnorelist: list[str] = field(default_factory=list)  # Worlds to ignore
     loginMessage: str = "Testing Server"  # Message Displayed When A Player Joins The Server
     defaultMOTD: list[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
