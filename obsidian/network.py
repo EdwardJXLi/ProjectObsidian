@@ -325,43 +325,45 @@ class NetworkDispacher:
                 continueProcessing = True
                 # Get all the listeners
                 listeners = self._listeners.get(type(packet), list())
-                # Create a hacky "check failed" list to store unmatched listeners to be put back into the dict
-                checkFailed = []
-                for future, check, shouldContinue in listeners:
-                    Logger.verbose(f"({packet.NAME}) Checking Listener {check}", module="network")
-                    # If future is cancelled, remove listener
-                    if future.cancelled():
-                        Logger.verbose(f"({check}) Listener Cancelled", module="network")
-                        continue
-
-                    # Check if check function returns true
-                    try:
-                        checkResult = check(self.handler.player, rawData)
-                    except Exception as e:
-                        Logger.verbose(f"({check}) Listener Error", module="network")
-                        Logger.error("Error occurred while processing listener check function", module="network", printTb=False)
-                        future.set_exception(e)
-                        continue
-                    else:
-                        if checkResult:
-                            future.set_result(rawData)
-                            # As soon as one check sets continueProcessing to false, we should stop processing the packet
-                            if continueProcessing and not shouldContinue:
-                                continueProcessing = False
+                # Check if there are listeners in the queue
+                if len(listeners) > 0:
+                    # Create a hacky "check failed" list to store unmatched listeners to be put back into the dict
+                    checkFailed = []
+                    for future, check, shouldContinue in listeners:
+                        Logger.verbose(f"({packet.NAME}) Checking Listener {check}", module="network")
+                        # If future is cancelled, remove listener
+                        if future.cancelled():
+                            Logger.verbose(f"({check}) Listener Cancelled", module="network")
                             continue
 
-                    # This check did not pass. Add to checkFailed list
-                    if not future.done():
-                        Logger.verbose(f"({check}) Listener Condition Failed", module="network")
-                        checkFailed.append((future, check, shouldContinue))
+                        # Check if check function returns true
+                        try:
+                            checkResult = check(self.handler.player, rawData)
+                        except Exception as e:
+                            Logger.verbose(f"({check}) Listener Error", module="network")
+                            Logger.error("Error occurred while processing listener check function", module="network", printTb=False)
+                            future.set_exception(e)
+                            continue
+                        else:
+                            if checkResult:
+                                future.set_result(rawData)
+                                # As soon as one check sets continueProcessing to false, we should stop processing the packet
+                                if continueProcessing and not shouldContinue:
+                                    continueProcessing = False
+                                continue
 
-                # Set the listeners list to the new list of failed listeners
-                self._listeners[type(packet)] = checkFailed
+                        # This check did not pass. Add to checkFailed list
+                        if not future.done():
+                            Logger.verbose(f"({check}) Listener Condition Failed", module="network")
+                            checkFailed.append((future, check, shouldContinue))
 
-                # If packet should not continue to be processed, return
-                if not continueProcessing:
-                    Logger.verbose("Packet Processing Skipped", module="network")
-                    return packetHeader, None
+                    # Set the listeners list to the new list of failed listeners
+                    self._listeners[type(packet)] = checkFailed
+
+                    # If packet should not continue to be processed, return
+                    if not continueProcessing:
+                        Logger.verbose("Packet Processing Skipped", module="network")
+                        return packetHeader, None
 
             # Attempting to Deserialize Packets
             try:
