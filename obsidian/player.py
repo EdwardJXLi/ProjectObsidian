@@ -500,17 +500,6 @@ class Player:
         # Send message packet to user
         await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
 
-    async def getNextMessage(self, *args, **kwargs) -> str:
-        Logger.debug(f"Getting Next Message From Player {self.name}", module="player")
-        # Create a listener for the next message packet sent from player
-        response = await self.networkHandler.dispacher.wait_for(Packets.Request.PlayerMessage, *args, **kwargs)
-        # Parse raw packet into a usable string
-        message = await Packets.Request.PlayerMessage.deserialize(self, response, handleUpdate=False)
-
-        # Return processed message back to user
-        Logger.debug(f"Got Message From Player! Message: {message}", module="player")
-        return message
-
     async def handleBlockUpdate(self, blockX: int, blockY: int, blockZ: int, blockType: AbstractBlock):
         # Format, Process, and Handle incoming block update requests.
         Logger.debug(f"Handling Block Placement From Player {self.name}", module="player")
@@ -630,6 +619,39 @@ class Player:
         except CommandError as e:
             Logger.warn(f"Command From Player {self.name} Failed With {str(e)}", module="command")
             await self.sendMessage(f"&cInvalid Command: {str(e)}")
+
+    async def getNextMessage(self, *args, **kwargs) -> str:
+        Logger.debug(f"Getting Next Message From Player {self.name}", module="player")
+        # Create a listener for the next message packet sent from player
+        response = await self.networkHandler.dispacher.wait_for(Packets.Request.PlayerMessage, *args, **kwargs)
+        # Parse raw packet into a usable string
+        message = await Packets.Request.PlayerMessage.deserialize(self, response, handleUpdate=False)
+
+        # Return processed message back to user
+        Logger.debug(f"Got Message From Player! {message=}", module="player")
+        return message
+
+    async def getNextPlayerMovement(self, *args, **kwargs) -> tuple[int, int, int, int, int]:
+        Logger.debug(f"Getting Next Movement From Player {self.name}", module="player")
+        # Create a listener for the next player movement packet sent from player
+        response = await self.networkHandler.dispacher.wait_for(Packets.Request.MovementUpdate, *args, **kwargs)
+        # Parse raw movement packet into coordinates
+        posX, posY, posZ, posYaw, posPitch = await Packets.Request.MovementUpdate.deserialize(self, response, handleUpdate=False)
+
+        # Return processed player movement
+        Logger.debug(f"Got Movement Data From Player! {posX=}, {posY=}, {posZ=}, {posYaw=}, {posPitch=}", module="player")
+        return posX, posY, posZ, posYaw, posPitch
+
+    async def getNextBlockUpdate(self, *args, **kwargs) -> tuple[int, int, int, int]:
+        Logger.debug(f"Getting Next Block Update From Player {self.name}", module="player")
+        # Create a listener for the next block update packet sent from player
+        response = await self.networkHandler.dispacher.wait_for(Packets.Request.UpdateBlock, *args, **kwargs)
+        # Parse raw packet into block data and coordinates
+        blockX, blockY, blockZ, blockId = await Packets.Request.UpdateBlock.deserialize(self, response, handleUpdate=False)
+
+        # Return processed block update back to user
+        Logger.debug(f"Got Block Update From Player! {blockX=}, {blockY=}, {blockZ=}, {blockId=}", module="player")
+        return blockX, blockY, blockZ, blockId
 
     async def sendMOTD(self, motdMessage: Optional[list[str]] = None):
         # If motdMessage was not passed, use default one in config

@@ -124,7 +124,7 @@ class CoreModule(AbstractModule):
                 await ctx.handleBlockUpdate(blockX, blockY, blockZ, blockType)
 
             # Return block placement information
-            return blockX, blockY, blockZ, updateMode, blockId
+            return blockX, blockY, blockZ, blockId
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
