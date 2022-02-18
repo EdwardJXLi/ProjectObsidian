@@ -589,6 +589,10 @@ class Player:
         if message[0] == "/":
             return asyncio.create_task(self.handlePlayerCommand(message[1:]))
 
+        # If color chat is enabled, replace '%' characters with '&'
+        if self.server.config.allowPlayerColor:
+            message = message.replace("%", "&")
+
         # Check If Last Character Is '&' (Crashes Older Minecraft Clients)
         if len(message) > 0 and message[-1:] == "&":
             message = message[:-1]  # Cut Last Character
