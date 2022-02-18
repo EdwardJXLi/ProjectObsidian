@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.errors import InitRegisterError, BlockError, FatalError, ClientError
+from obsidian.errors import InitRegisterError, BlockError, ClientError
 from obsidian.log import Logger
 from obsidian.types import T
 
@@ -99,9 +99,6 @@ class _BlockManager(AbstractManager):
                 # Add Row To Table
                 table.add_row([block.NAME, block.ID, block.MODULE.NAME])
             return table
-        except FatalError as e:
-            # Pass Down Fatal Error To Base Server
-            raise e
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
 # from obsidian.network import *
-from obsidian.errors import InitRegisterError, PacketError, FatalError
+from obsidian.errors import InitRegisterError, PacketError
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.types import T
@@ -183,9 +183,6 @@ class _PacketManager:
                 table.add_row(["Response", responsePacket.NAME, responsePacket.ID, "N/A", responsePacket.MODULE.NAME])
 
             return table
-        except FatalError as e:
-            # Pass Down Fatal Error To Base Server
-            raise e
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 

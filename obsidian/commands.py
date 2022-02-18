@@ -13,8 +13,7 @@ from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.errors import (
     InitRegisterError,
-    CommandError,
-    FatalError
+    CommandError
 )
 from obsidian.types import format_name, T
 
@@ -230,9 +229,6 @@ class _CommandManager(AbstractManager):
                 # Add Row To Table
                 table.add_row([command.NAME, command.ACTIVATORS, command.VERSION, command.MODULE.NAME])
             return table
-        except FatalError as e:
-            # Pass Down Fatal Error To Base Server
-            raise e
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 

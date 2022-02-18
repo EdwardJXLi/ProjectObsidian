@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.errors import InitRegisterError, FatalError
+from obsidian.errors import InitRegisterError
 from obsidian.types import T
 from obsidian.log import Logger
 
@@ -75,9 +75,6 @@ class _MapGeneratorManager(AbstractManager):
                 # Add Row To Table
                 table.add_row([generator.NAME, generator.VERSION, generator.MODULE.NAME])
             return table
-        except FatalError as e:
-            # Pass Down Fatal Error To Base Server
-            raise e
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
