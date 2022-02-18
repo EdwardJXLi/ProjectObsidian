@@ -78,6 +78,7 @@ class CoreModule(AbstractModule):
             if(len(username) > 16):
                 raise ClientError("Your Username Is Too Long (Max 16 Chars)")
 
+            # Return User Identification
             return protocolVersion, username, verificationKey
 
         def onError(self, *args, **kwargs):
@@ -97,7 +98,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray, handleUpdate: bool = True):
             # <Block Update Packet>
             # (Byte) Packet ID
             # (Short) X Position
@@ -119,9 +120,11 @@ class CoreModule(AbstractModule):
                 blockType = BlockManager.getBlockById(blockId)
 
             # Handle Block Update
-            await ctx.handleBlockUpdate(blockX, blockY, blockZ, blockType)
+            if handleUpdate:
+                await ctx.handleBlockUpdate(blockX, blockY, blockZ, blockType)
 
-            return None  # Nothing should be returned
+            # Return block placement information
+            return blockX, blockY, blockZ, updateMode, blockId
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
@@ -140,7 +143,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray, handleUpdate: bool = True):
             # <Player Movement Packet>
             # (Byte) Packet ID
             # (Byte) Player ID  <- Should Always Be 255
@@ -156,9 +159,11 @@ class CoreModule(AbstractModule):
                 raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
             # Handle Player Movement
-            await ctx.handlePlayerMovement(posX, posY, posZ, posYaw, posPitch)
+            if handleUpdate:
+                await ctx.handlePlayerMovement(posX, posY, posZ, posYaw, posPitch)
 
-            return None  # Nothing should be returned
+            # Return new positions
+            return posX, posY, posZ, posYaw, posPitch
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
@@ -177,7 +182,7 @@ class CoreModule(AbstractModule):
                 PLAYERLOOP=True
             )
 
-        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray, handleUpdate: bool = True):
             # <Player Message Packet>
             # (Byte) Packet ID
             # (Byte) Unused (Should Always Be 0xFF)
@@ -196,9 +201,11 @@ class CoreModule(AbstractModule):
                 return None  # Don't Complete Message Sending
 
             # Handle Player Message
-            await ctx.handlePlayerMessage(message)
+            if handleUpdate:
+                await ctx.handlePlayerMessage(message)
 
-            return None  # Nothing should be returned
+            # Return Parsed Message
+            return message
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
