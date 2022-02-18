@@ -642,12 +642,23 @@ class Player:
         Logger.debug(f"Got Movement Data From Player! {posX=}, {posY=}, {posZ=}, {posYaw=}, {posPitch=}", module="player")
         return posX, posY, posZ, posYaw, posPitch
 
-    async def getNextBlockUpdate(self, *args, **kwargs) -> tuple[int, int, int, int]:
+    async def getNextBlockUpdate(self, *args, revertBlockUpdate: bool = True, **kwargs) -> tuple[int, int, int, int]:
         Logger.debug(f"Getting Next Block Update From Player {self.name}", module="player")
         # Create a listener for the next block update packet sent from player
         response = await self.networkHandler.dispacher.wait_for(Packets.Request.UpdateBlock, *args, **kwargs)
         # Parse raw packet into block data and coordinates
         blockX, blockY, blockZ, blockId = await Packets.Request.UpdateBlock.deserialize(self, response, handleUpdate=False)
+
+        # Revert block update for client
+        if revertBlockUpdate and self.worldPlayerManager is not None:
+            originalBlock = self.worldPlayerManager.world.getBlock(blockX, blockY, blockZ)
+            await self.networkHandler.dispacher.sendPacket(
+                Packets.Response.SetBlock,
+                blockX,
+                blockY,
+                blockZ,
+                originalBlock.ID
+            )
 
         # Return processed block update back to user
         Logger.debug(f"Got Block Update From Player! {blockX=}, {blockY=}, {blockZ=}, {blockId=}", module="player")
