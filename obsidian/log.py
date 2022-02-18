@@ -15,10 +15,18 @@ class Logger:
     VERBOSE = False
     SERVERMODE = False
     LOGFILE = None
+    # These might be somewhat dangerous if the server crashes and stuff isnt logged.
+    # Either way, its an option for servers with slower RWs.
+    BUFFER_SIZE = 1
+    MESSAGES_LOGGED = 0
 
     @staticmethod
     def _getTimestamp():
         return time.strftime("%H:%M:%S", time.localtime())
+
+    @classmethod
+    def setBufferSize(cls, size: int):
+        cls.BUFFER_SIZE = size
 
     @classmethod
     def setupLogFile(cls, logPath: Optional[Path] = None):
@@ -33,6 +41,7 @@ class Logger:
 
     @classmethod
     def log(cls, message: str, tags: tuple[str, ...] = tuple(), colour: str = Colour.NONE, textColour: str = Colour.NONE):
+        cls.MESSAGES_LOGGED += 1
         # Generating Message (Add Tags, Message, Format, Etc)
         output = ""
         # Adding Tags
@@ -54,8 +63,9 @@ class Logger:
                     cls.LOGFILE.write(f": {message}\n")
                 else:
                     cls.LOGFILE.write(f"{message}\n")
-                # Save File
-                cls.LOGFILE.flush()
+                # Save File If Buffer Is Reached
+                if cls.MESSAGES_LOGGED % cls.BUFFER_SIZE == 0:
+                    cls.LOGFILE.flush()
             except Exception as e:
                 print(f"Error While Handing Log Message - {type(e).__name__}: {e}")
         # Print Final String

@@ -95,6 +95,11 @@ class Server:
         # Initing Config
         self.config.init()
 
+        # Set up logging with data from config
+        if self.config.logBuffer < 0:
+            raise FatalError("Log Buffer Size Cannot Be Negative")
+        Logger.setBufferSize(self.config.logBuffer)
+
         # Setting Up File Structure
         Logger.info("Setting Up File Structure", module="init")
         Path(SERVERPATH, MODULESFOLDER).mkdir(parents=True, exist_ok=True)
@@ -264,6 +269,10 @@ class Server:
                 self.worldManager.closeWorlds()
             else:
                 Logger.warn("Server Manager was not initialized properly. Skipping world save.")
+
+            # Flushing Log Buffer
+            if Logger.LOGFILE is not None:
+                Logger.LOGFILE.flush()
 
             # Closing Server
             Logger.info("Terminating Process", module="server-stop")
