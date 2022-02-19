@@ -74,11 +74,6 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
     if param.annotation == inspect._empty:
         return arg
 
-    print(arg, param, param.kind)
-    print(param, type(param), dir(param))
-    print(param.annotation, type(param.annotation), dir(param.annotation))
-    print(param.annotation)
-
     # Try to parse, if error, cancel
     try:
         # Check if the type has an custom arg converter
