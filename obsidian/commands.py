@@ -61,7 +61,11 @@ def _typeToString(annotation) -> str:
         return f"[{', '.join([_typeToString(x) for x in annotation])}]"
     elif get_origin(annotation):
         if get_origin(annotation) is Union or get_origin(annotation) is UnionType:
-            return ' | '.join([_typeToString(arg) for arg in get_args(annotation)])
+            args = get_args(annotation)
+            if NoneType in args:
+                return f"optional[{' | '.join([_typeToString(a) for a in args if a is not NoneType])}]"
+            else:
+                return f"{' | '.join([_typeToString(a) for a in args])}"
         return f"{_typeToString(get_origin(annotation))}[{', '.join([_typeToString(arg) for arg in get_args(annotation)])}]"
     elif hasattr(annotation, "__name__"):
         return annotation.__name__
@@ -92,13 +96,13 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
         # This supports execute(self, ctx: Player, *args: Tuple[int])
         if isinstance(param.annotation, GenericAlias) and param.kind == param.VAR_POSITIONAL:
             Logger.debug("Argument Type is part of a VAR_POSITIONAL iterable. Converting based on base type", module="converter")
-            nested_type = param.annotation.__args__[0]  # Getting the first type. This may cause issues, but oh well.
+            nested_type = get_args(param.annotation)[0]  # Getting the first type. This may cause issues, but oh well.
             return _convertArgs(ctx, name, inspect.Parameter(param.name, param.kind, annotation=nested_type), arg)
         # Check if type is a union (also encapsulates optional types). If so, loop through all types and try to convert to them.
         # This supports execute(self, ctx: Player, arg1: int | str, arg2: Optional[Player])
         if get_origin(param.annotation) is Union or get_origin(param.annotation) is UnionType:
             Logger.debug("Argument Type is part of a Union. Attempting to convert to each type", module="converter")
-            union_types = param.annotation.__args__  # Getting the different types.
+            union_types = get_args(param.annotation)  # Getting the different types.
             # Try every type in order and check if it works
             for annotation in union_types:
                 # If the type is a nontype, ignore for now...
