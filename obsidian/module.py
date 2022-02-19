@@ -19,6 +19,7 @@ from obsidian.constants import (
 from obsidian.errors import (
     ModuleError,
     InitRegisterError,
+    ConverterError,
     DependencyError,
     InitError,
     PostInitError,
@@ -86,6 +87,15 @@ class AbstractModule:
 
     def postInit(*args, **kwargs):
         pass
+
+    @staticmethod
+    def _convert_arg(_, argument: str) -> AbstractModule:
+        try:
+            # Try to grab the module from the modules list
+            return ModuleManager.getModule(format_name(argument))
+        except KeyError:
+            # Raise error if module not found
+            raise ConverterError(f"Module {argument} Not Found!")
 
 
 # Submodule Skeleton
@@ -496,13 +506,17 @@ class _ModuleManager(AbstractManager):
     def numModules(self) -> int:
         return len(self._module_dict)
 
-    # Handles _ModuleManager["item"]
-    def __getitem__(self, module: str) -> AbstractModule:
+    # Function To Get Module Object From Module Name
+    def getModule(self, module: str) -> AbstractModule:
         return self._module_dict[module]
+
+    # Handles _ModuleManager["item"]
+    def __getitem__(self, *args, **kwargs) -> AbstractModule:
+        return self.getModule(*args, **kwargs)
 
     # Handles _ModuleManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractModule:
-        return self.__getitem__(*args, **kwargs)
+        return self.getModule(*args, **kwargs)
 
 
 # Dependency Object

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
 # from obsidian.network import *
-from obsidian.errors import InitRegisterError, PacketError
+from obsidian.errors import InitRegisterError, PacketError, ConverterError
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.types import T
@@ -65,6 +65,15 @@ class AbstractRequestPacket(AbstractPacket[T], Generic[T]):
     async def deserialize(self, ctx: Optional[Player], *args, **kwargs) -> Any:
         raise NotImplementedError("Deserialization For This Packet Is Not Implemented")
 
+    @staticmethod
+    def _convert_arg(_, argument: str) -> AbstractRequestPacket:
+        try:
+            # Try to grab the request packet from the packets list
+            return PacketManager.RequestManager.getPacket(argument)
+        except KeyError:
+            # Raise error if request packet not found
+            raise ConverterError(f"Request Packet {argument} Not Found!")
+
 
 @dataclass
 class AbstractResponsePacket(AbstractPacket[T], Generic[T]):
@@ -73,6 +82,15 @@ class AbstractResponsePacket(AbstractPacket[T], Generic[T]):
 
     async def serialize(self, *args, **kwargs) -> bytearray:
         return bytearray()
+
+    @staticmethod
+    def _convert_arg(_, argument: str) -> AbstractResponsePacket:
+        try:
+            # Try to grab the response packet from the packet list
+            return PacketManager.ResponseManager.getPacket(argument)
+        except KeyError:
+            # Raise error if response packet not found
+            raise ConverterError(f"Response Packet {argument} Not Found!")
 
 
 # Request Packet Decorator
@@ -147,13 +165,17 @@ class _DirectionalPacketManager(AbstractManager):
                 return packet
         raise PacketError(f"Packet {packetId} Was Not Found")
 
-    # Handles _DirectionalPacketManager["item"]
-    def __getitem__(self, packet: str):
+    # Function To Get Packet Object From Packet Name
+    def getPacket(self, packet: str):
         return self._packet_dict[packet]
+
+    # Handles _DirectionalPacketManager["item"]
+    def __getitem__(self, *args, **kwargs):
+        return self.getPacket(*args, **kwargs)
 
     # Handles _DirectionalPacketManager.item
     def __getattr__(self, *args, **kwargs):
-        return self.__getitem__(*args, **kwargs)
+        return self.getPacket(*args, **kwargs)
 
 
 # Internal Packet Manager Singleton

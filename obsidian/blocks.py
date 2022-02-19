@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.errors import InitRegisterError, BlockError, ClientError
+from obsidian.errors import InitRegisterError, BlockError, ClientError, ConverterError
 from obsidian.log import Logger
 from obsidian.types import T
 
@@ -37,6 +37,15 @@ class AbstractBlock(AbstractSubmodule[T], Generic[T]):
 
         # Setting Block in World
         await ctx.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, self.ID, player=ctx)
+
+    @staticmethod
+    def _convert_arg(_, argument: str) -> AbstractBlock:
+        try:
+            # Try to grab the block from the blockslist
+            return BlockManager.getBlock(argument)
+        except KeyError:
+            # Raise error if block not found
+            raise ConverterError(f"Block {argument} Not Found!")
 
 
 # Internal Block Manager Singleton
@@ -118,13 +127,17 @@ class _BlockManager(AbstractManager):
         else:
             raise BlockError(f"Block with BlockID {blockId} Not Found.")
 
-    # Handles _BlockManager["item"]
-    def __getitem__(self, block: str) -> AbstractBlock:
+    # Function To Get Block Object From Block Name
+    def getBlock(self, block: str) -> AbstractBlock:
         return self._block_dict[block]
+
+    # Handles _BlockManager["item"]
+    def __getitem__(self, *args, **kwargs) -> AbstractBlock:
+        return self.getBlock(*args, **kwargs)
 
     # Handles _BlockManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractBlock:
-        return self.__getitem__(*args, **kwargs)
+        return self.getBlock(*args, **kwargs)
 
 
 # Creates Global BlockManager As Singleton

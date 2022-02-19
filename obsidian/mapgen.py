@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.errors import InitRegisterError
+from obsidian.errors import InitRegisterError, ConverterError
 from obsidian.types import T
 from obsidian.log import Logger
 
@@ -21,6 +21,15 @@ def MapGenerator(*args, **kwargs):
 class AbstractMapGenerator(AbstractSubmodule[T], Generic[T]):
     def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, *args, **kwargs) -> bytearray:
         raise NotImplementedError("Map Generation Not Implemented")
+
+    @staticmethod
+    def _convert_arg(_, argument: str) -> AbstractMapGenerator:
+        try:
+            # Try to grab the mag generator from the generators list
+            return MapGeneratorManager.getMapGenerator(argument)
+        except KeyError:
+            # Raise error if map generator not found
+            raise ConverterError(f"Map Generator {argument} Not Found!")
 
 
 # Internal Map Generator Manager Singleton
@@ -83,13 +92,17 @@ class _MapGeneratorManager(AbstractManager):
     def numMapGenerators(self) -> int:
         return len(self._generator_dict)
 
+    # Function To Get Map Generator Object From Generator Name
+    def getMapGenerator(self, generator: str) -> AbstractMapGenerator:
+        return self._generator_dict[generator]
+
     # Handles _MapGeneratorManager["item"]
-    def __getitem__(self, mapGenerator: str) -> AbstractMapGenerator:
-        return self._generator_dict[mapGenerator]
+    def __getitem__(self, *args, **kwargs) -> AbstractMapGenerator:
+        return self.getMapGenerator(*args, **kwargs)
 
     # Handles _MapGeneratorManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractMapGenerator:
-        return self.__getitem__(*args, **kwargs)
+        return self.getMapGenerator(*args, **kwargs)
 
 
 # Creates Global MapGeneratorManager As Singleton

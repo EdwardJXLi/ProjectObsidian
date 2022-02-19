@@ -18,7 +18,8 @@ from obsidian.errors import (
     ServerError,
     WorldError,
     ClientError,
-    CommandError
+    CommandError,
+    ConverterError
 )
 
 
@@ -634,7 +635,7 @@ class Player:
                 raise CommandError("You Are Not An Operator!")
 
             # Parse Command Arguments
-            parsedArguments, parsedKwArgs = _parseArgs(command, cmdArgs)
+            parsedArguments, parsedKwArgs = _parseArgs(self.server, command, cmdArgs)
 
             # Try the Command
             try:
@@ -642,11 +643,14 @@ class Player:
             except CommandError as e:
                 raise e  # Pass Down Exception To Lower Layer
             except Exception as e:
-                Logger.error(f"Command {command.NAME} Raised Error {str(e)}", module="command")
+                Logger.error(f"Command {command.NAME} Raised An Error! {str(e)}", module="command")
                 await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
         except CommandError as e:
-            Logger.warn(f"Command From Player {self.name} Failed With {str(e)}", module="command")
-            await self.sendMessage(f"&cInvalid Command: {str(e)}")
+            Logger.warn(f"Command From Player {self.name} {str(e)}", module="command")
+            await self.sendMessage(f"&cError: {str(e)}")
+        except Exception as e:
+            Logger.error(f"Error While Parsing Command! {str(e)}")
+            await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
 
     async def getNextMessage(self, *args, **kwargs) -> str:
         Logger.debug(f"Getting Next Message From Player {self.name}", module="player")
@@ -700,3 +704,13 @@ class Player:
         # Send MOTD To Player
         Logger.debug(f"Sending MOTD to Player {self.name}", module="command")
         await self.sendMessage(motdMessage)
+
+    @staticmethod
+    def _convert_arg(ctx: Server, argument: str) -> Player:
+        playerName = _formatUsername(argument)
+        if playerName in ctx.playerManager.players:
+            if player := ctx.playerManager.players.get(playerName):
+                return player
+
+        # Raise error if player not found
+        raise ConverterError(f"Player {playerName} Not Found!")

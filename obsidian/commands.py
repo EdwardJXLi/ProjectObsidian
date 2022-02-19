@@ -2,10 +2,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.player import Player
+    from obsidian.server import Server
 
-from typing import Union, Type, Generic, get_args, get_origin
+from typing import Any, Union, Type, Generic, get_args, get_origin
 from dataclasses import dataclass, field
-from types import UnionType
+from types import UnionType, GenericAlias, NoneType
 import inspect
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
@@ -13,7 +14,8 @@ from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.errors import (
     InitRegisterError,
-    CommandError
+    CommandError,
+    ConverterError,
 )
 from obsidian.types import format_name, T
 
@@ -33,6 +35,15 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
 
     async def execute(self, ctx: Player, *args, **kwargs):
         raise NotImplementedError("Command Hander Not Implemented")
+
+    @staticmethod
+    def _convert_arg(_, argument: str) -> AbstractCommand:
+        try:
+            # Try to grab the command from the commandslist
+            return CommandManager.getCommand(argument)
+        except KeyError:
+            # Raise error if command not found
+            raise ConverterError(f"Command {argument} Not Found!")
 
 
 # == Command Utils ==
@@ -56,25 +67,72 @@ def _typeToString(annotation) -> str:
 
 
 # Take Parameter Info + Argument Info To Automatically Convert Types
-def _convertArgs(name: str, param: inspect.Parameter, arg: str):
-    Logger.verbose(f"Transforming Argument Data For Argument {name}", module="command")
+def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
+    Logger.verbose(f"Transforming Argument Data For Argument {name}", module="converter")
 
     # If There Is No Type To Convert, Ignore
     if param.annotation == inspect._empty:
         return arg
 
+    print(arg, param, param.kind)
+    print(param, type(param), dir(param))
+    print(param.annotation, type(param.annotation), dir(param.annotation))
+    print(param.annotation)
+
     # Try to parse, if error, cancel
     try:
-        return param.annotation(arg)
+        # Check if the type has an custom arg converter
+        # This supports execute(self, ctx: Player, player2: Player)
+        if hasattr(param.annotation, "_convert_arg") and callable(param.annotation._convert_arg):
+            Logger.debug("Argument Type has _convert_arg. Using that to convert", module="converter")
+            try:
+                return param.annotation._convert_arg(ctx, arg)
+            except ConverterError as e:
+                raise CommandError(e)
+        # Check if type is a generic class and a var positional argument. Special considerations for those cases.
+        # This supports execute(self, ctx: Player, *args: Tuple[int])
+        if isinstance(param.annotation, GenericAlias) and param.kind == param.VAR_POSITIONAL:
+            Logger.debug("Argument Type is part of a VAR_POSITIONAL iterable. Converting based on base type", module="converter")
+            nested_type = param.annotation.__args__[0]  # Getting the first type. This may cause issues, but oh well.
+            return _convertArgs(ctx, name, inspect.Parameter(param.name, param.kind, annotation=nested_type), arg)
+        # Check if type is a union (also encapsulates optional types). If so, loop through all types and try to convert to them.
+        # This supports execute(self, ctx: Player, arg1: int | str, arg2: Optional[Player])
+        if get_origin(param.annotation) is Union or get_origin(param.annotation) is UnionType:
+            Logger.debug("Argument Type is part of a Union. Attempting to convert to each type", module="converter")
+            union_types = param.annotation.__args__  # Getting the different types.
+            # Try every type in order and check if it works
+            for annotation in union_types:
+                # If the type is a nontype, ignore for now...
+                # This fixes some unexpected behavior with Optional s
+                if annotation is NoneType:
+                    continue
+                # Attempting to convert...
+                try:
+                    return _convertArgs(ctx, name, inspect.Parameter(param.name, param.kind, annotation=annotation), arg)
+                except CommandError:
+                    pass
+            # If none of the types work, raise an error
+            raise CommandError(f"Arg '{name}' Expected {' or '.join([getattr(annotation, '__name__', 'Unknown') for annotation in union_types if annotation is not NoneType])} But Got '{type(arg).__name__}'")
+        # Check if type is an "ignore type" -> Types that are not supported by the converter
+        if param.annotation in [Any]:
+            Logger.debug("Argument Type is part of ignored types.", module="converter")
+            return arg
+        # Transform the argument
+        transformed = param.annotation(arg)
+        # Check if transformation is successful
+        if type(transformed) == param.annotation:
+            return transformed
+        else:
+            raise ConverterError(f"Unexpected Convertion. Expected {param.annotation} But Got {type(transformed)}")
     except ValueError:
-        raise CommandError(f"Argument '{name}' Expected {param.annotation.__name__} But Got '{type(arg).__name__}'")
+        raise CommandError(f"Arg '{name}' Expected {getattr(param.annotation, '__name__', 'Unknown')} But Got '{type(arg).__name__}'")
     except TypeError:
-        # Probs cant instantiate. Just pass it in and yolo
-        return arg
+        # Probably cant instantiate. Raise an error so it does not silently fail
+        raise ConverterError(f"Cant instantiate type. {getattr(param.annotation, '__name__', 'Unknown')} Cannot Convert Types. Try adding a _convert_arg method to add custom conversions.")
 
 
 # Parse Command Argument Into Args and KWArgs In Accordance To Command Information
-def _parseArgs(command: AbstractCommand, data: list):
+def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
     # This entire section is inspired by Discord.py 's Aprroach To Message Parsing and Handing
     # TODO: IGNORE_EXTRA, REST_IS_RAW, REQUIRE_VAR_POSITIONAL
     Logger.debug(f"Parsing Command Arguments {data} For Command {command.NAME}", module="command")
@@ -106,12 +164,12 @@ def _parseArgs(command: AbstractCommand, data: list):
             # Parse as Normal Keyword
             try:
                 # Convert Type
-                transformed = _convertArgs(name, param, next(dataIter))
+                transformed = _convertArgs(ctx, name, param, next(dataIter))
                 args.append(transformed)
             except StopIteration:
                 # Not Enough Data, Check If Error Or Use Default Value
                 if param.default == inspect._empty:
-                    raise CommandError(f"Command {command.NAME} Expected Field '{name}' But Got Nothing")
+                    raise CommandError(f"Expected Field '{name}' But Got Nothing")
                 else:
                     args.append(param.default)
 
@@ -124,20 +182,20 @@ def _parseArgs(command: AbstractCommand, data: list):
             # If Empty, Check If Default Value Was Requested
             if rest == []:
                 if param.default == inspect._empty:
-                    raise CommandError(f"Command {command.NAME} Expected Field '{name}' But Got Nothing")
+                    raise CommandError(f"Expected Field '{name}' But Got Nothing")
                 else:
                     kwargs[name] = param.default
             else:
                 # Join and Convert
                 joinedRest = " ".join(rest)
-                kwargs[name] = _convertArgs(name, param, joinedRest)
+                kwargs[name] = _convertArgs(ctx, name, param, joinedRest)
             # End of loop. Ignore rest
             break
 
         elif param.kind == param.VAR_POSITIONAL:
             # Var Positional means to just append all extra values to the end of the function
             for value in dataIter:
-                transformed = _convertArgs(name, param, value)
+                transformed = _convertArgs(ctx, name, param, value)
                 args.append(transformed)
 
     # At the end, if there were extra values, give error
@@ -244,13 +302,21 @@ class _CommandManager(AbstractManager):
     def numCommands(self) -> int:
         return len(self._command_dict)
 
-    # Handles _CommandManager["item"]
-    def __getitem__(self, command: str) -> AbstractCommand:
+    # Function To Get Command Object From Command Name
+    def getCommand(self, command: str) -> AbstractCommand:
         return self._command_dict[command]
+
+    # Function To Get Command Object From Command Name
+    def getCommandFromActivator(self, command: str) -> AbstractCommand:
+        return self._activators[command]
+
+    # Handles _CommandManager["item"]
+    def __getitem__(self, *args, **kwargs) -> AbstractCommand:
+        return self.getCommand(*args, **kwargs)
 
     # Handles _CommandManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractCommand:
-        return self.__getitem__(*args, **kwargs)
+        return self.getCommand(*args, **kwargs)
 
 
 # Creates Global CommandManager As Singleton

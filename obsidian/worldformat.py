@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
-from obsidian.errors import InitRegisterError
+from obsidian.errors import InitRegisterError, ConverterError
 from obsidian.log import Logger
 from obsidian.types import T
 
@@ -46,6 +46,15 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
         **kwargs
     ):
         raise NotImplementedError("World Saving Not Implemented")
+
+    @staticmethod
+    def _convert_arg(_, argument: str) -> AbstractWorldFormat:
+        try:
+            # Try to grab the world fromat from the formats list
+            return WorldFormatManager.getWorldFormat(argument)
+        except KeyError:
+            # Raise error if world format not found
+            raise ConverterError(f"World Format {argument} Not Found!")
 
 
 # Internal World Format Manager Singleton
@@ -104,13 +113,17 @@ class _WorldFormatManager(AbstractManager):
     def numWorldFormats(self) -> int:
         return len(self._format_dict)
 
-    # Handles _WorldFormatManager["item"]
-    def __getitem__(self, format: str) -> AbstractWorldFormat:
+    # Function To Get World Format Object From Format Name
+    def getWorldFormat(self, format: str) -> AbstractWorldFormat:
         return self._format_dict[format]
+
+    # Handles _WorldFormatManager["item"]
+    def __getitem__(self, *args, **kwargs) -> AbstractWorldFormat:
+        return self.getWorldFormat(*args, **kwargs)
 
     # Handles _WorldFormatManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractWorldFormat:
-        return self.__getitem__(*args, **kwargs)
+        return self.getWorldFormat(*args, **kwargs)
 
 
 # Creates Global WorldFormatManager As Singleton

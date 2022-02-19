@@ -27,6 +27,10 @@ class CommandError(Exception):
     pass
 
 
+class ConverterError(Exception):
+    pass
+
+
 class BlockError(Exception):
     pass
 
