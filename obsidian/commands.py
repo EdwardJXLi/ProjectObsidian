@@ -39,11 +39,15 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
     @staticmethod
     def _convert_arg(_, argument: str) -> AbstractCommand:
         try:
-            # Try to grab the command from the commandslist
+            # Try to grab the command as a name first
             return CommandManager.getCommand(argument)
         except KeyError:
-            # Raise error if command not found
-            raise ConverterError(f"Command {argument} Not Found!")
+            try:
+                # If failed, try to grab as an activator
+                return CommandManager.getCommandFromActivator(argument.lower())
+            except KeyError:
+                # Raise error if command not found
+                raise ConverterError(f"Command {argument} Not Found!")
 
 
 # == Command Utils ==

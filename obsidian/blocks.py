@@ -41,7 +41,7 @@ class AbstractBlock(AbstractSubmodule[T], Generic[T]):
     @staticmethod
     def _convert_arg(_, argument: str) -> AbstractBlock:
         try:
-            # Try to grab the block from the blockslist
+            # Try to grab the block from the blocks list
             return BlockManager.getBlock(argument)
         except KeyError:
             # Raise error if block not found

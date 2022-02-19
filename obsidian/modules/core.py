@@ -1,13 +1,13 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
 from obsidian.constants import MAX_MESSAGE_LENGTH, __version__
 from obsidian.errors import ClientError, ServerError, WorldFormatError, CommandError
-from obsidian.types import _formatUsername, _formatIp, format_name
+from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
 from obsidian.world import World, WorldManager
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator
-from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
+from obsidian.commands import AbstractCommand, Command, CommandManager, _typeToString
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.packet import (
     RequestPacket,
@@ -1138,6 +1138,8 @@ class CoreModule(AbstractModule):
         async def execute(self, ctx: Player, *, page_or_query: int | str = 1):
             # If command is not an int, assume its a command name and print help for that
             if isinstance(page_or_query, str) and not page_or_query.isnumeric():
+                raise CommandError("This Feature Is WIP")
+                '''
                 # Check if rightmost value is part of the plugin/command name or a page number
                 # This will cause some edge cases where it will fail, but its better than nothing
                 if page_or_query.rsplit(" ", 1)[-1].isnumeric():
@@ -1160,6 +1162,7 @@ class CoreModule(AbstractModule):
                     return await Commands.HelpCmd.execute(ctx, cmd_name=query)
                 else:
                     raise CommandError(f"{query} is not a plugin or a command.")
+                '''
 
             # Alias & Convert
             page = int(page_or_query)
@@ -1222,13 +1225,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["helpplugin", "pluginhelp"])
 
-        async def execute(self, ctx: Player, plugin_name: str, page: int = 1):
-            # Check if plugin exists
-            if format_name(plugin_name) in ModuleManager._module_dict:
-                module = ModuleManager._module_dict[format_name(plugin_name)]
-            else:
-                raise CommandError(f"Plugin {plugin_name} Not Found!")
-
+        async def execute(self, ctx: Player, module: AbstractModule, page: int = 1):
             # Generate and Parse list of commands
             cmd_list = CommandManager._command_dict
             # Filter to commands from only one plugin
@@ -1245,7 +1242,7 @@ class CoreModule(AbstractModule):
 
             # If there are no commands, return error
             if num_commands == 0:
-                raise CommandError(f"Plugin {plugin_name} has no commands!")
+                raise CommandError(f"Plugin {module.NAME} has no commands!")
 
             # Check if user input was valid
             if page > num_pages or page <= 0:
@@ -1289,24 +1286,13 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["helpcmd", "cmdhelp"])
 
-        async def execute(self, ctx: Player, cmd_name: str):
+        async def execute(self, ctx: Player, cmd: AbstractCommand):
             # Generate command output
             output = []
 
-            # Get the command in question
-            if cmd_name in CommandManager._command_dict:
-                # User is passing by command name
-                cmd = CommandManager._command_dict[cmd_name]
-            elif cmd_name in CommandManager._activators:
-                # User is passing by activator
-                cmd = CommandManager._activators[cmd_name.lower()]
-            else:
-                # Command doesnt exist!
-                raise CommandError(f"Command {cmd_name} not found!")
-
             # If command is an operator-only command and if user is not operator, return error
             if cmd.OP and not ctx.opStatus:
-                raise CommandError(f"Command {cmd_name} not found!")  # Fake "Not Found" Error
+                raise CommandError("You do not have permission to view this command!")
 
             # Add Header
             output.append(CommandHelper.center_message(f"&eCommand Information: {cmd.NAME}", colour="&2"))
@@ -1423,16 +1409,9 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["plugin", "module", "plugininfo", "moduleinfo"])
 
-        async def execute(self, ctx: Player, module_name: str):
+        async def execute(self, ctx: Player, plugin: AbstractModule):
             # Generate plugin output
             output = []
-
-            # Get the plugin in question
-            if module_name in ModuleManager._module_dict:
-                plugin = ModuleManager._module_dict[module_name]
-            else:
-                # Plugin doesnt exist!
-                raise CommandError(f"Plugin {module_name} not found!")
 
             # Add Header
             output.append(CommandHelper.center_message(f"&ePlugin Information: {plugin.NAME}", colour="&2"))
@@ -1480,18 +1459,15 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["list", "players", "listplayers"])
 
-        async def execute(self, ctx: Player, world: Optional[str] = None):
-            if ctx.worldPlayerManager is None:
-                raise CommandError("You are not in a world!")
-
-            # Get what the user wants
+        async def execute(self, ctx: Player, world: Optional[World] = None):
+            # If no world is passed, use players current world
             if world is None:
-                manager = ctx.worldPlayerManager
+                if ctx.worldPlayerManager is not None:
+                    manager = ctx.worldPlayerManager
+                else:
+                    raise CommandError("You are not in a world!")
             else:
-                try:
-                    manager = ctx.server.worldManager.getWorld(world).playerManager
-                except NameError:
-                    raise CommandError(f"World {world} not found!")
+                manager = world.playerManager
 
             # Get a list of players
             players_list = manager.getPlayers()
@@ -1568,7 +1544,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["liststaff", "staff", "listallstaff", "allstaff"])
 
-        async def execute(self, ctx: Player, world: Optional[str] = None):
+        async def execute(self, ctx: Player):
             staff_list = list(ctx.server.playerManager.players.values())
 
             # Generate command output
@@ -1598,14 +1574,8 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["join", "joinworld", "jw"])
 
-        async def execute(self, ctx: Player, world: str):
-            # Get World To Join
-            try:
-                join_world = ctx.server.worldManager.getWorld(world)
-            except NameError:
-                raise CommandError(f"World {world} not found!")
-
-            await ctx.changeWorld(join_world)
+        async def execute(self, ctx: Player, world: World):
+            await ctx.changeWorld(world)
 
     @Command(
         "ListWorlds",
@@ -1963,18 +1933,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["disable", "disablecommand", "disablecmd"], OP=True)
 
-        async def execute(self, ctx: Player, cmd_name: str):
-            # Get the command in question
-            if cmd_name in CommandManager._command_dict:
-                # User is passing by command name
-                cmd = CommandManager._command_dict[cmd_name]
-            elif cmd_name in CommandManager._activators:
-                # User is passing by activator
-                cmd = CommandManager._activators[cmd_name.lower()]
-            else:
-                # Command doesnt exist!
-                raise CommandError(f"Command {cmd_name} not found!")
-
+        async def execute(self, ctx: Player, cmd: AbstractCommand):
             # Check if Command is already banned
             serverConfig = ctx.server.config
             if cmd.NAME in serverConfig.disabledCommands:
@@ -1996,18 +1955,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["enable", "enablecommand", "enablecmd"], OP=True)
 
-        async def execute(self, ctx: Player, cmd_name: str):
-            # Get the command in question
-            if cmd_name in CommandManager._command_dict:
-                # User is passing by command name
-                cmd = CommandManager._command_dict[cmd_name]
-            elif cmd_name in CommandManager._activators:
-                # User is passing by activator
-                cmd = CommandManager._activators[cmd_name.lower()]
-            else:
-                # Command doesnt exist!
-                raise CommandError(f"Command {cmd_name} not found!")
-
+        async def execute(self, ctx: Player, cmd: AbstractCommand):
             # Check if command is disabled
             serverConfig = ctx.server.config
             if cmd.NAME not in serverConfig.disabledCommands:

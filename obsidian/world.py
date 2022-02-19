@@ -23,7 +23,8 @@ from obsidian.errors import (
     BlockError,
     WorldError,
     ClientError,
-    WorldSaveError
+    WorldSaveError,
+    ConverterError
 )
 
 
@@ -485,3 +486,13 @@ class World:
         gzipData = buf.getvalue()
         Logger.debug(f"GZipped Map! GZ SIZE: {len(gzipData)}", module="world")
         return gzipData
+
+    @staticmethod
+    def _convert_arg(ctx: Server, argument: str) -> World:
+        worldName = argument.lower()
+        if worldName in ctx.worldManager.worlds:
+            if world := ctx.worldManager.worlds.get(worldName):
+                return world
+
+        # Raise error if world not found
+        raise ConverterError(f"World {worldName} Not Found!")
