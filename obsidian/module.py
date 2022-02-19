@@ -399,8 +399,9 @@ class _ModuleManager(AbstractManager):
                         # Loop through all methods and check if they are registered
                         for method_name in base_methods:
                             if method_name not in submodule_methods:
-                                Logger.warn(f"{item.MANAGER.NAME} {item.NAME} Does Not Have Method {method_name} Registered!", module=f"{module.NAME}-submodule-init")
-                                Logger.warn("This could cause issues when overriding methods!", module=f"{module.NAME}-submodule-init")
+                                if not method_name.startswith("_"):
+                                    Logger.warn(f"{item.MANAGER.NAME} {item.NAME} Does Not Have Method {method_name} Registered!", module=f"{module.NAME}-submodule-init")
+                                    Logger.warn("This could cause issues when overriding methods!", module=f"{module.NAME}-submodule-init")
 
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
