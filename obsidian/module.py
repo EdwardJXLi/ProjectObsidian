@@ -1,4 +1,7 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from obsidian.server import Server
 
 from dataclasses import dataclass, field
 from typing import Any, Type, Optional, Callable, Generic
@@ -111,6 +114,10 @@ class AbstractSubmodule(Generic[T]):
     def __post_init__(self):
         # Create alias for module
         self.module = self.MODULE
+
+    @staticmethod
+    def _convert_arg(ctx: Server, argument: str):
+        return ConverterError(f"{T} Not Implemented")
 
 
 # Internal Module Manager Singleton

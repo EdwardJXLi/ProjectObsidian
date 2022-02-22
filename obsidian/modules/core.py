@@ -1,13 +1,13 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
 from obsidian.constants import MAX_MESSAGE_LENGTH, __version__
-from obsidian.errors import ClientError, ServerError, WorldFormatError, CommandError
+from obsidian.errors import ClientError, ServerError, WorldFormatError, CommandError, ConverterError
 from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
 from obsidian.world import World, WorldManager
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator
-from obsidian.commands import AbstractCommand, Command, CommandManager, _typeToString
+from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.packet import (
     RequestPacket,
@@ -1135,42 +1135,47 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["help", "commands", "cmds"])
 
-        async def execute(self, ctx: Player, *, page_or_query: int | str = 1):
+        async def execute(self, ctx: Player, *, page_num_or_query: int | str = 1):
             # If command is not an int, assume its a command name and print help for that
-            if isinstance(page_or_query, str) and not page_or_query.isnumeric():
-                raise CommandError("This Feature Is WIP")
-                '''
-                # Check if rightmost value is part of the plugin/command name or a page number
+            if isinstance(page_num_or_query, str):
+                # Check if rightmost value is part of the module/command name or a page number
                 # This will cause some edge cases where it will fail, but its better than nothing
-                if page_or_query.rsplit(" ", 1)[-1].isnumeric():
-                    query = page_or_query.rsplit(" ", 1)[0]
-                    page_num = int(page_or_query.rsplit(" ", 1)[1])
+                if page_num_or_query.rsplit(" ", 1)[-1].isnumeric():
+                    query = page_num_or_query.rsplit(" ", 1)[0]
+                    page_num = int(page_num_or_query.rsplit(" ", 1)[1])
                 else:
-                    query = page_or_query
+                    query = page_num_or_query
                     page_num = 1
-                # Get type of command
-                isPlugin = format_name(query) in ModuleManager._module_dict
-                isCommand = (query in CommandManager._command_dict) or (query.lower() in CommandManager._activators)
+                # Try to get query as a module
+                try:
+                    module = ModuleManager.SUBMODULE._convert_arg(ctx.server, query)
+                except ConverterError:
+                    module = None
+                # Try to get query as a command
+                try:
+                    command = CommandManager.SUBMODULE._convert_arg(ctx.server, query)
+                except ConverterError:
+                    command = None
                 # If both conditions match, raise a warning
-                if isPlugin and isCommand:
+                if module and command:
                     await ctx.sendMessage(f"&9[NOTICE] &f{query} is both a plugin name and a module name.")
                     await ctx.sendMessage("&9[NOTICE] &fTo get help as a command, please use &e/helpcmd")
                 # Process First as a plugin
-                if isPlugin:
-                    return await Commands.HelpPlugin.execute(ctx, plugin_name=query, page=page_num)
-                elif isCommand:
-                    return await Commands.HelpCmd.execute(ctx, cmd_name=query)
+                if module:
+                    return await Commands.HelpPlugin.execute(ctx, module=module, page=page_num)
+                elif command:
+                    return await Commands.HelpCmd.execute(ctx, cmd=command)
                 else:
                     raise CommandError(f"{query} is not a plugin or a command.")
-                '''
 
-            # Alias & Convert
-            page = int(page_or_query)
             # Generate and Parse list of commands
             cmd_list = CommandManager._command_dict
             # If user is not OP, filter out OP and Disabled commands
             if not ctx.opStatus:
                 cmd_list = {k: v for k, v in cmd_list.items() if (not v.OP) and (v.NAME not in ctx.playerManager.server.config.disabledCommands)}
+
+            # Alias page_or_query to just page
+            page = page_num_or_query
 
             # Get information on the number of commands, pages, and commands per page
             num_commands = len(cmd_list)  # This should never be zero as it should always count itself!
@@ -1194,8 +1199,7 @@ class CoreModule(AbstractModule):
             # Add some additional tips to help command (Only if first page)
             if current_page == 0:
                 output.append("&7Use /help [n] to get the nth page of help.&f")
-                output.append("&7Use /help [plugin] to get commands from a specific plugin.&f")
-                output.append("&7Use /help [cmd] to get help on a specific command.&f")
+                output.append("&7Use /help [query] for help on a plugin or command.&f")
 
             # Add command information
             for cmd_name, cmd in commands[current_page * commands_per_page:current_page * commands_per_page + commands_per_page]:
@@ -1314,7 +1318,7 @@ class CoreModule(AbstractModule):
             param_usages = []
             # Loop through all arguments ** except for first ** (that is the ctx)
             for name, param in list(inspect.signature(cmd.execute).parameters.items())[1:]:
-                param_str = " "
+                param_str = ""
                 # Code recycled from parseargs
                 # Normal Arguments (Nothing Special)
                 if param.kind == param.POSITIONAL_OR_KEYWORD:
@@ -1459,15 +1463,22 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["list", "players", "listplayers"])
 
-        async def execute(self, ctx: Player, world: Optional[World] = None):
+        async def execute(self, ctx: Player, world: Optional[World | Player] = None):
             # If no world is passed, use players current world
             if world is None:
                 if ctx.worldPlayerManager is not None:
                     manager = ctx.worldPlayerManager
                 else:
                     raise CommandError("You are not in a world!")
-            else:
+            elif isinstance(world, Player):
+                if world.worldPlayerManager is not None:
+                    manager = world.worldPlayerManager
+                else:
+                    raise CommandError("You are not in a world!")
+            elif isinstance(world, World):
                 manager = world.playerManager
+            else:
+                raise ServerError("bruh")
 
             # Get a list of players
             players_list = manager.getPlayers()

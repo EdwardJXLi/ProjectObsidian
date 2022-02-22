@@ -204,7 +204,7 @@ def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
     # At the end, if there were extra values, give error
     try:
         next(dataIter)
-        raise CommandError(f"Too Many Arguments Passed Into Command '{command.NAME}'")
+        raise CommandError(f"Too Many Arguments! Expected: {len(params)-1} Got: {len(data)}")
     except StopIteration:
         return args, kwargs
 
