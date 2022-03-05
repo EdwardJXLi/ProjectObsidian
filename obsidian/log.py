@@ -40,7 +40,7 @@ class Logger:
         cls.LOGFILE = open(logPath, "a")
 
     @classmethod
-    def log(cls, message: str, tags: tuple[str, ...] = tuple(), colour: str = Colour.NONE, textColour: str = Colour.NONE):
+    def _log(cls, message: str, tags: tuple[str, ...] = tuple(), colour: str = Colour.NONE, textColour: str = Colour.NONE):
         cls.MESSAGES_LOGGED += 1
         # Generating Message (Add Tags, Message, Format, Etc)
         output = ""
@@ -79,7 +79,7 @@ class Logger:
                 cls.warn(f"{message} (y/n)", module="confirmation")
                 userInput = input()
                 if userInput.lower() == "y" or userInput.lower() == "yes":
-                    cls.log("")
+                    cls._log("")
                     return True
                 elif userInput.lower() == "n" or userInput.lower() == "no":
                     if exit_on_no:
@@ -95,7 +95,7 @@ class Logger:
 
     @classmethod
     def info(cls, message: str, module: str = "unknown"):
-        cls.log(
+        cls._log(
             str(message),
             tags=(cls._getTimestamp(), "log", module),
             colour=Colour.GREEN,
@@ -104,7 +104,7 @@ class Logger:
 
     @classmethod
     def warn(cls, message: str, module: str = "unknown"):
-        cls.log(
+        cls._log(
             str(message),
             tags=(cls._getTimestamp(), "warn", module),
             colour=Colour.YELLOW,
@@ -114,8 +114,8 @@ class Logger:
     @classmethod
     def error(cls, message: str, module: str = "unknown", printTb: bool = True):
         if cls.DEBUG and printTb:
-            cls.log(f"{traceback.format_exc()}")
-        cls.log(
+            cls._log(f"{traceback.format_exc()}")
+        cls._log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
             tags=(cls._getTimestamp(), "error", module),
             colour=Colour.RED,
@@ -125,8 +125,8 @@ class Logger:
     @classmethod
     def fatal(cls, message: str, module: str = "unknown", printTb: bool = True):
         if cls.DEBUG and printTb:
-            cls.log(f"{traceback.format_exc()}")
-        cls.log(
+            cls._log(f"{traceback.format_exc()}")
+        cls._log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
             tags=(cls._getTimestamp(), "fatal", module),
             colour=Colour.BLACK + Colour.BACK_RED,
@@ -136,7 +136,7 @@ class Logger:
     @classmethod
     def debug(cls, message: str, module: str = "unknown"):
         if cls.DEBUG:
-            cls.log(
+            cls._log(
                 str(message),
                 tags=(cls._getTimestamp(), "debug", module),
                 colour=Colour.CYAN,
@@ -146,7 +146,7 @@ class Logger:
     @classmethod
     def verbose(cls, message: str, module: str = "unknown"):
         if cls.DEBUG and cls.VERBOSE:
-            cls.log(
+            cls._log(
                 str(message),
                 tags=(cls._getTimestamp(), "verbose", module),
                 colour=Colour.MAGENTA,

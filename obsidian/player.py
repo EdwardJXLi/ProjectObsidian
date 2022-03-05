@@ -178,7 +178,7 @@ class PlayerManager:
             message = f"[&7GLOBAL&f] {message}"
 
         # Finally, send formatted message
-        Logger.log(
+        Logger._log(
             str(message),
             tags=(Logger._getTimestamp(), "chat", "global"),
             colour=Colour.GREEN,
@@ -394,7 +394,7 @@ class WorldPlayerManager:
             message = f"[&7{self.world.name}&f] {message}"
 
         # Finally, send formatted message
-        Logger.log(
+        Logger._log(
             str(message),
             tags=(Logger._getTimestamp(), "chat", "world", self.world.name),
             colour=Colour.GREEN,
