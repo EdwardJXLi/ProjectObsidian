@@ -252,12 +252,6 @@ class Server:
             if self.server is not None:
                 self.server.close()
 
-            # Saving Config
-            Logger.info("Saving Config", module="server-stop")
-            if self.config is not None:
-                self.config.save()
-            # TODO: Autosave Module Configs
-
             # Managing worlds
             if self.worldManager:
                 # Saving Worlds
