@@ -250,7 +250,7 @@ class WorldManager:
                 Logger.error(f"Error While Closing World {worldName} - {type(e).__name__}: {e}", module="world-close")
         return True  # Returning True to indicate all worlds were closed
 
-    def createWorldFile(self, savePath: str, worldName: str, worldFormat: AbstractWorldFormat = None) -> io.BufferedRandom:
+    def createWorldFile(self, savePath: str, worldName: str, worldFormat: Optional[AbstractWorldFormat] = None) -> io.BufferedRandom:
         Logger.debug(f"Attempting to create world file with name {worldName}", module="world-gen")
         # Checking if World is Persistant
         if self.server.config.worldSaveLocation is None or not self.persistant:
@@ -289,13 +289,13 @@ class World:
         spawnZ: Optional[int] = None,
         spawnYaw: Optional[int] = None,
         spawnPitch: Optional[int] = None,
-        generator: AbstractMapGenerator = None,
+        generator: Optional[AbstractMapGenerator] = None,
         persistant: bool = False,
         fileIO: Optional[io.BufferedRandom] = None,
         canEdit: bool = True,
         maxPlayers: int = 250,
-        displayName: str = None,
-        uuid: str = None
+        displayName: Optional[str] = None,
+        uuid: Optional[str] = None
     ):
         # Y is the height
         self.worldManager = worldManager
@@ -397,7 +397,7 @@ class World:
             raise BlockError(f"Requested Block Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
 
-    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Player = None, sendPacket: bool = True, updateSelf: bool = False) -> bool:
+    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Optional[Player] = None, sendPacket: bool = True, updateSelf: bool = False) -> bool:
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
         Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockId}", module="world")
 
