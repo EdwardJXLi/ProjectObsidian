@@ -46,7 +46,7 @@ class Logger:
         output = ""
         # Adding Tags
         for tag in tags:
-            output += f"[{colour}{tag.upper()}{Colour.RESET}{Colour.BACK_RESET}]"
+            output += f"[{colour}{str(tag).upper()}{Colour.RESET}{Colour.BACK_RESET}]"
         # Add Message
         if len(tags) != 0:
             output += f": {textColour}{message}{Colour.BACK_RESET}"
@@ -57,7 +57,7 @@ class Logger:
             try:
                 # Write Tags
                 for tag in tags:
-                    cls.LOGFILE.write(f"[{tag.upper()}]")
+                    cls.LOGFILE.write(f"[{str(tag).upper()}]")
                 # Write Message
                 if len(tags) != 0:
                     cls.LOGFILE.write(f": {message}\n")

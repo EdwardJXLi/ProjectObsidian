@@ -13,7 +13,10 @@ from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
 from obsidian.blocks import BlockManager, Blocks, AbstractBlock
 from obsidian.worldformat import WorldFormats, AbstractWorldFormat
-from obsidian.mapgen import MapGenerators, AbstractMapGenerator
+from obsidian.mapgen import (
+    MapGenerators,
+    AbstractMapGenerator
+)
 from obsidian.packet import Packets
 from obsidian.constants import SERVERPATH
 from obsidian.types import format_name
@@ -69,19 +72,17 @@ class WorldManager:
 
     def createWorld(
         self,
-        worldName,
-        sizeX,
-        sizeY,
-        sizeZ,
+        worldName: str,
+        sizeX: int,
+        sizeY: int,
+        sizeZ: int,
         generator: AbstractMapGenerator,
-        *args,  # Arguments To Be Passed To World Generator
-        persistant=True,
+        persistant: bool = True,
         spawnX: Optional[int] = None,
         spawnY: Optional[int] = None,
         spawnZ: Optional[int] = None,
         spawnPitch: Optional[int] = None,
         spawnYaw: Optional[int] = None,
-        **kwargs  # Keyword Arguments To Be Passed To World Generator
     ) -> World:
         Logger.info(f"Creating New World {worldName}...", module="world-create")
         # Check If World Already Exists
@@ -103,7 +104,13 @@ class WorldManager:
             self,  # Pass In World Manager
             worldName,  # Pass In World Name
             sizeX, sizeY, sizeZ,  # Passing World X, Y, Z
-            self.generateMap(sizeX, sizeY, sizeZ, generator, *args, **kwargs),  # Generating Map Data
+            # Generate the actual map
+            self.generateMap(
+                sizeX,
+                sizeY,
+                sizeZ,
+                generator
+            ),  # Generating Map Data
             # Spawn Information
             spawnX=spawnX,
             spawnY=spawnY,
@@ -186,8 +193,7 @@ class WorldManager:
                     self.server.config.defaultWorldSizeY,
                     self.server.config.defaultWorldSizeZ,
                     defaultGenerator,
-                    persistant=self.persistant,
-                    grassHeight=self.server.config.defaultWorldSizeY // 2
+                    persistant=self.persistant
                 )
         else:
             Logger.debug("World Manager Is Non Persistant!", module="world-load")
@@ -202,8 +208,6 @@ class WorldManager:
                 self.server.config.defaultWorldSizeZ,
                 defaultGenerator,
                 persistant=False,
-                maxPlayers=self.server.config.worldMaxPlayers,
-                grassHeight=self.server.config.defaultWorldSizeY // 2
             )
         return True  # Returning true to indicate that all worlds were loaded successfully.
 
@@ -293,29 +297,25 @@ class World:
         persistant: bool = False,
         fileIO: Optional[io.BufferedRandom] = None,
         canEdit: bool = True,
-        maxPlayers: int = 250,
-        displayName: Optional[str] = None,
-        uuid: Optional[str] = None
+        maxPlayers: int = 250
     ):
         # Y is the height
-        self.worldManager = worldManager
-        self.name = name
-        self.generator = generator
-        self.sizeX = sizeX
-        self.sizeY = sizeY
-        self.sizeZ = sizeZ
-        self.spawnX = spawnX
-        self.spawnY = spawnY
-        self.spawnZ = spawnZ
-        self.spawnYaw = spawnYaw
-        self.spawnPitch = spawnPitch
-        self.mapArray = mapArray
-        self.persistant = persistant
-        self.fileIO = fileIO
-        self.canEdit = canEdit
-        self.maxPlayers = maxPlayers
-        self.displayName = displayName  # Displayname for CW Capability
-        self.uuid = uuid  # UUID for CW Capability
+        self.worldManager: WorldManager = worldManager
+        self.name: str = name
+        self.generator: Optional[AbstractMapGenerator] = generator
+        self.sizeX: int = sizeX
+        self.sizeY: int = sizeY
+        self.sizeZ: int = sizeZ
+        self.spawnX: Optional[int] = spawnX
+        self.spawnY: Optional[int] = spawnY
+        self.spawnZ: Optional[int] = spawnZ
+        self.spawnYaw: Optional[int] = spawnYaw
+        self.spawnPitch: Optional[int] = spawnPitch
+        self.mapArray: bytearray = mapArray
+        self.persistant: bool = persistant
+        self.fileIO: Optional[io.BufferedRandom] = fileIO
+        self.canEdit: bool = canEdit
+        self.maxPlayers: int = maxPlayers
 
         # Check if file IO was given if persistant
         if self.persistant:

@@ -710,12 +710,24 @@ class CoreModule(AbstractModule):
             super().__init__(*args)
 
         # Default Map Generator (Creates Flat Map Of Grass And Dirt)
-        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: int = 32):
-            mapData = bytearray(sizeX * sizeY * sizeZ)
-            for x in range(sizeX):
-                for y in range(sizeY):
-                    for z in range(sizeZ):
-                        mapData[x + sizeX * (sizeZ * y + z)] = Blocks.Air.ID if y > grassHeight else (Blocks.Grass.ID if y == grassHeight else Blocks.Dirt.ID)
+        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: Optional[int] = None):
+            # Generate the grass height if not passed in
+            if not grassHeight:
+                grassHeight = sizeY // 2
+            # Generate Map
+            mapData = bytearray(0)
+            # Pregen air, dirt, and grass layers
+            slice_air = bytearray([Blocks.Air.ID]) * (sizeX * sizeZ)
+            slice_dirt = bytearray([Blocks.Dirt.ID]) * (sizeX * sizeZ)
+            slice_grass = bytearray([Blocks.Grass.ID]) * (sizeX * sizeZ)
+            # Create World
+            for y in range(sizeY):
+                if y > grassHeight:
+                    mapData.extend(slice_air)
+                elif y == grassHeight:
+                    mapData.extend(slice_grass)
+                else:
+                    mapData.extend(slice_dirt)
             return mapData
 
     #
