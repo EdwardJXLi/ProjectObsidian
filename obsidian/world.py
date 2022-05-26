@@ -8,6 +8,7 @@ from pathlib import Path
 import io
 import gzip
 import struct
+import random
 
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
@@ -76,6 +77,7 @@ class WorldManager:
         sizeX: int,
         sizeY: int,
         sizeZ: int,
+        seed: Optional[int],
         generator: AbstractMapGenerator,
         persistant: bool = True,
         spawnX: Optional[int] = None,
@@ -99,16 +101,23 @@ class WorldManager:
             Logger.debug("World Is Not Persistant! Creating FileIO", module="world-create")
             fileIO = None
 
+        # Generate Seed if no seed was passed
+        Logger.debug("Generating Seed If No Seed Was Passed", module="world-create")
+        if seed is None:
+            seed = random.randint(0, 2**64)
+
         # Create World
         self.worlds[worldName] = World(
             self,  # Pass In World Manager
             worldName,  # Pass In World Name
             sizeX, sizeY, sizeZ,  # Passing World X, Y, Z
+            seed,  # Passing In World Seed
             # Generate the actual map
             self.generateMap(
                 sizeX,
                 sizeY,
                 sizeZ,
+                seed,
                 generator
             ),  # Generating Map Data
             # Spawn Information
@@ -128,10 +137,10 @@ class WorldManager:
         self.worlds[worldName].saveMap()
         return self.worlds[worldName]
 
-    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, generator: AbstractMapGenerator, *args, **kwargs) -> bytearray:
+    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int, generator: AbstractMapGenerator, *args, **kwargs) -> bytearray:
         Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
         # Call Generate Map Function From Generator
-        generatedMap = generator.generateMap(sizeX, sizeY, sizeZ, *args, **kwargs)
+        generatedMap = generator.generateMap(sizeX, sizeY, sizeZ, seed, *args, **kwargs)
 
         # Verify Map Data Size
         expectedSize = sizeX * sizeY * sizeZ
@@ -189,9 +198,10 @@ class WorldManager:
                 Logger.debug(f"Creating World {defaultWorldName}", module="world-load")
                 self.createWorld(
                     defaultWorldName,
-                    self.server.config.defaultWorldSizeX,
-                    self.server.config.defaultWorldSizeY,
-                    self.server.config.defaultWorldSizeZ,
+                    self.server.config.worldSizeX,
+                    self.server.config.worldSizeY,
+                    self.server.config.worldSizeZ,
+                    self.server.config.worldSeed,
                     defaultGenerator,
                     persistant=self.persistant
                 )
@@ -203,9 +213,10 @@ class WorldManager:
             Logger.debug(f"Creating Temporary World {defaultWorldName}", module="world-load")
             self.createWorld(
                 defaultWorldName,
-                self.server.config.defaultWorldSizeX,
-                self.server.config.defaultWorldSizeY,
-                self.server.config.defaultWorldSizeZ,
+                self.server.config.worldSizeX,
+                self.server.config.worldSizeY,
+                self.server.config.worldSizeZ,
+                self.server.config.worldSeed,
                 defaultGenerator,
                 persistant=False,
             )
@@ -287,6 +298,7 @@ class World:
         sizeX: int,
         sizeY: int,
         sizeZ: int,
+        seed: int,
         mapArray: bytearray,
         spawnX: Optional[int] = None,
         spawnY: Optional[int] = None,
@@ -306,6 +318,7 @@ class World:
         self.sizeX: int = sizeX
         self.sizeY: int = sizeY
         self.sizeZ: int = sizeZ
+        self.seed: int = seed
         self.spawnX: Optional[int] = spawnX
         self.spawnY: Optional[int] = spawnY
         self.spawnZ: Optional[int] = spawnZ

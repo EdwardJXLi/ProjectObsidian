@@ -70,7 +70,7 @@ class AbstractModule:
         self,
         config: Type[T],
         *args,
-        name: str = "config",
+        name: str = "config.json",
         overrideConfigPath: Optional[Path] = None,
         **kwargs
     ) -> T:

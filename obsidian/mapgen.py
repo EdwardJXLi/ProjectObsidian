@@ -19,7 +19,7 @@ def MapGenerator(*args, **kwargs):
 # Map Generator Skeleton
 @dataclass
 class AbstractMapGenerator(AbstractSubmodule[T], Generic[T]):
-    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, *args, **kwargs) -> bytearray:
+    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int, *args, **kwargs) -> bytearray:
         raise NotImplementedError("Map Generation Not Implemented")
 
     @staticmethod

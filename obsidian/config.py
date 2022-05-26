@@ -34,8 +34,11 @@ class AbstractConfig:
     ):
         Logger.debug(f"Setting Up Config With Name: {self.name}, Root Path: {rootPath}", module="Config")
 
-        # Generate Filename and Paths
-        fileName: str = self.name + ".json"
+        if ".json" not in self.name:
+            # Generate Filename and Paths
+            fileName: str = self.name + ".json"
+        else:
+            fileName: str = self.name
 
         # Generate Config Paths
         self.configPath: Path = Path(SERVERPATH, rootPath, fileName)
@@ -127,7 +130,7 @@ class AbstractConfig:
             if overrideKey in configData.keys():
                 del configData[overrideKey]
             else:
-                Logger.warn(f"Trying To Apply Non-Existant Config Override Key {overrideKey}", "config-save")
+                Logger.warn(f"Trying To Apply Non-Existent Config Override Key {overrideKey}", "config-save")
 
         # Writing Dict (as JSON) To File
         Logger.debug("Writing Formatted Config To File", "config-save")
@@ -156,6 +159,8 @@ class ServerConfig(AbstractConfig):
     # Block Configuration
     disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks
     allowLiquidPlacement: bool = False
+    # World Generator Config
+    defaultWorldGenConfig: str = "defaultworld.json"
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     worldIgnorelist: list[str] = field(default_factory=list)  # Worlds to ignore
@@ -164,9 +169,6 @@ class ServerConfig(AbstractConfig):
     serverMaxPlayers: int = 127  # Number Of Players Max Allowed On The Entire Server
     worldMaxPlayers: Optional[int] = None  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
-    defaultWorldSizeX: int = 256  # Default Size X
-    defaultWorldSizeY: int = 256  # Default Size Y
-    defaultWorldSizeZ: int = 256  # Default Size Z
     defaultSaveFormat: str = "raw"  # Name Of Default World Save Format
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
@@ -174,3 +176,8 @@ class ServerConfig(AbstractConfig):
     defaultMOTD: list[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
     # Logger Configuration
     logBuffer: int = 1  # Number of Log Messages to be buffered before flushed to file
+    # Default World Generation Config
+    worldSizeX: int = 256  # Default Size X
+    worldSizeY: int = 256  # Default Size Y
+    worldSizeZ: int = 256  # Default Size Z
+    worldSeed: Optional[int] = None

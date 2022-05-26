@@ -58,7 +58,7 @@ class Server:
 
         # Initialize Config, Depending On What Type It Is
         if config is None:
-            self.config: ServerConfig = ServerConfig("server", hideWarning=True)
+            self.config: ServerConfig = ServerConfig("server.json", hideWarning=True)
         elif isinstance(config, str):
             self.config: ServerConfig = ServerConfig(config)
         elif isinstance(config, ServerConfig):

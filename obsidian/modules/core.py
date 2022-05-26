@@ -675,6 +675,7 @@ class CoreModule(AbstractModule):
                 worldManager,  # Pass In World Manager
                 Path(fileIO.name).stem,  # Pass In World Name (Save File Name Without EXT)
                 256, 256, 256,  # Passing World X, Y, Z
+                0,  # World Seed (but ofc it doesnt exist)
                 bytearray(rawData),  # Generating Map Data
                 persistant=persistant,  # Pass In Persistant Flag
                 fileIO=fileIO  # Pass In File Reader/Writer
@@ -710,10 +711,8 @@ class CoreModule(AbstractModule):
             super().__init__(*args)
 
         # Default Map Generator (Creates Flat Map Of Grass And Dirt)
-        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, grassHeight: Optional[int] = None):
-            # Generate the grass height if not passed in
-            if not grassHeight:
-                grassHeight = sizeY // 2
+        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int):
+            grassHeight = sizeY // 2
             # Generate Map
             mapData = bytearray(0)
             # Pregen air, dirt, and grass layers
