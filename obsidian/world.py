@@ -98,7 +98,7 @@ class WorldManager:
             Logger.debug(f"World Is Persistant! Created New FileIO {fileIO}", module="world-create")
             pass
         else:
-            Logger.debug("World Is Not Persistant! Creating FileIO", module="world-create")
+            Logger.debug("World Is Not Persistant!", module="world-create")
             fileIO = None
 
         # Generate Seed if no seed was passed

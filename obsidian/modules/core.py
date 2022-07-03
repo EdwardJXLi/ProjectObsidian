@@ -657,6 +657,9 @@ class CoreModule(AbstractModule):
                 EXTENTIONS=["gz"]
             )
 
+            Logger.warn("The 'Raw Map' save file format is meant as a placeholder and is not meant to be used in production.", module="raw-map")
+            Logger.warn("Although it will probably work, please install a more robust save format.", module="raw-map")
+
         def loadWorld(
             self,
             fileIO: io.BufferedRandom,
