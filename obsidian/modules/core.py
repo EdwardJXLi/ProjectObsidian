@@ -22,6 +22,8 @@ from typing import Optional, Iterable, Callable, Any
 from pathlib import Path
 import inspect
 import struct
+import zipfile
+import json
 import gzip
 import math
 import io
@@ -699,6 +701,112 @@ class CoreModule(AbstractModule):
             fileIO.seek(0)
             # Saving Map To File
             fileIO.write(world.gzipMap())
+
+    @WorldFormat(
+        "Obsidian",
+        description="Obsidian Map Data File",
+        version="v1.0.0"
+    )
+    class ObsidianWorldFormat(AbstractWorldFormat["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                KEYS=["obsidian"],
+                EXTENTIONS=["obw", "zip"]
+            )
+
+        def loadWorld(
+            self,
+            fileIO: io.BufferedRandom,
+            worldManager: WorldManager,
+            persistant: bool = True
+        ):
+            # Open Zip File
+            zipFile = zipfile.ZipFile(fileIO)
+
+            # Load Metadata
+            worldMetadata = json.loads(zipFile.read("metadata").decode("utf-8"))
+
+            # Load Map Data
+            raw_data = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
+
+            # Raise Warning if Version Mismatch
+            if worldMetadata["version"] != self.VERSION:
+                Logger.warn("ObsidianWorldFormat Version Mismatch! Continuing Forward...", module="obsidian-map")
+
+            # Create World Data
+            return World(
+                worldManager,  # Pass In World Manager
+                Path(fileIO.name).stem,  # World Name (Save File Name Without EXT)
+                worldMetadata["sizeX"], worldMetadata["sizeY"], worldMetadata["sizeZ"],  # World X, Y, Z
+                worldMetadata["seed"],  # Seed
+                raw_data,  # Map Data
+                spawnX=worldMetadata["spawnX"],  # Spawn X
+                spawnY=worldMetadata["spawnY"],  # Spawn Y
+                spawnZ=worldMetadata["spawnZ"],  # Spawn Z
+                spawnPitch=worldMetadata["spawnPitch"],  # Spawn Pitch
+                spawnYaw=worldMetadata["spawnYaw"],  # Spawn Yaw
+                persistant=persistant,  # Pass In Persistent Flag
+                fileIO=fileIO  # Pass In File Reader/Writer
+            )
+
+            # def __init__(
+            #     self,
+            #     worldManager: WorldManager,
+            #     name: str,
+            #     sizeX: int,
+            #     sizeY: int,
+            #     sizeZ: int,
+            #     seed: int,
+            #     mapArray: bytearray,
+            #     spawnX: Optional[int] = None,
+            #     spawnY: Optional[int] = None,
+            #     spawnZ: Optional[int] = None,
+            #     spawnYaw: Optional[int] = None,
+            #     spawnPitch: Optional[int] = None,
+            #     generator: Optional[AbstractMapGenerator] = None,
+            #     persistant: bool = False,
+            #     fileIO: Optional[io.BufferedRandom] = None,
+            #     canEdit: bool = True,
+            #     maxPlayers: int = 250
+            # )
+
+        def saveWorld(
+            self,
+            world: World,
+            fileIO: io.BufferedRandom,
+            worldManager: WorldManager
+        ):
+            # Set up the metadata about the world
+            worldMetadata = {}
+
+            # World Format Info
+            worldMetadata["version"] = self.VERSION
+
+            # Set Basic Info
+            worldMetadata["size"] = []
+            worldMetadata["sizeX"] = world.sizeX
+            worldMetadata["sizeY"] = world.sizeY
+            worldMetadata["sizeZ"] = world.sizeZ
+            worldMetadata["seed"] = world.seed
+
+            # Set Spawn Info
+            worldMetadata["spawnX"] = world.spawnX
+            worldMetadata["spawnY"] = world.spawnY
+            worldMetadata["spawnZ"] = world.spawnZ
+            worldMetadata["spawnYaw"] = world.spawnYaw
+            worldMetadata["spawnPitch"] = world.spawnPitch
+
+            # Clearing Current Save File
+            fileIO.truncate(0)
+            fileIO.seek(0)
+
+            # Create zip file
+            with zipfile.ZipFile(fileIO, "w") as zip_file:
+                # Write the metadata file
+                zip_file.writestr("metadata", json.dumps(worldMetadata, indent=4))
+                # Write the map file
+                zip_file.writestr("map", world.gzipMap())
 
     #
     # MAP GENERATORS
