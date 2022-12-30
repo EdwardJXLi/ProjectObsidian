@@ -666,7 +666,7 @@ class CoreModule(AbstractModule):
             self,
             fileIO: io.BufferedRandom,
             worldManager: WorldManager,
-            persistant: bool = True
+            persistent: bool = True
         ):
             rawData = gzip.GzipFile(fileobj=fileIO).read()
             # Expected Map Size (MAX SIZE)
@@ -682,7 +682,7 @@ class CoreModule(AbstractModule):
                 256, 256, 256,  # Passing World X, Y, Z
                 0,  # World Seed (but ofc it doesnt exist)
                 bytearray(rawData),  # Generating Map Data
-                persistant=persistant,  # Pass In Persistant Flag
+                persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO  # Pass In File Reader/Writer
             )
 
@@ -719,7 +719,7 @@ class CoreModule(AbstractModule):
             self,
             fileIO: io.BufferedRandom,
             worldManager: WorldManager,
-            persistant: bool = True
+            persistent: bool = True
         ):
             # Open Zip File
             zipFile = zipfile.ZipFile(fileIO)
@@ -746,7 +746,7 @@ class CoreModule(AbstractModule):
                 spawnZ=worldMetadata["spawnZ"],  # Spawn Z
                 spawnPitch=worldMetadata["spawnPitch"],  # Spawn Pitch
                 spawnYaw=worldMetadata["spawnYaw"],  # Spawn Yaw
-                persistant=persistant,  # Pass In Persistent Flag
+                persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO  # Pass In File Reader/Writer
             )
 
@@ -765,7 +765,7 @@ class CoreModule(AbstractModule):
             #     spawnYaw: Optional[int] = None,
             #     spawnPitch: Optional[int] = None,
             #     generator: Optional[AbstractMapGenerator] = None,
-            #     persistant: bool = False,
+            #     persistent: bool = False,
             #     fileIO: Optional[io.BufferedRandom] = None,
             #     canEdit: bool = True,
             #     maxPlayers: int = 250
@@ -804,8 +804,10 @@ class CoreModule(AbstractModule):
             # Create zip file
             with zipfile.ZipFile(fileIO, "w") as zip_file:
                 # Write the metadata file
+                Logger.debug("Writing metadata file", module="obsidian-map")
                 zip_file.writestr("metadata", json.dumps(worldMetadata, indent=4))
                 # Write the map file
+                Logger.debug("Writing map file", module="obsidian-map")
                 zip_file.writestr("map", world.gzipMap())
 
     #

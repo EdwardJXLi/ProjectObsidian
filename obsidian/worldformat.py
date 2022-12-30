@@ -31,7 +31,7 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
         self,
         fileIO: io.BufferedRandom,
         worldManager: WorldManager,
-        persistant: bool = True,
+        persistent: bool = True,
         *args,
         **kwargs
     ) -> World:

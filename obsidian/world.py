@@ -37,7 +37,7 @@ class WorldManager:
         self.server: Server = server
         self.worlds: dict[str, World] = dict()
         self.ignorelist: list[str] = ignorelist
-        self.persistant: bool = True
+        self.persistent: bool = True
         # Defined Later In Init
         # self.worldFormat: AbstractWorldFormat
 
@@ -57,8 +57,8 @@ class WorldManager:
         # If World Location Was Not Given, Disable Persistance
         # (Don't Save / Load)
         if self.server.config.worldSaveLocation is None:
-            Logger.warn("World Save Location Was Not Defined. Creating Non-Persistant World!!!", module="init-world")
-            self.persistant = False
+            Logger.warn("World Save Location Was Not Defined. Creating Non-Persistent World!!!", module="init-world")
+            self.persistent = False
 
     def getWorld(self, worldName: str, lowerName: bool = True) -> World:
         Logger.debug(f"Getting World {worldName} By Name", module="player")
@@ -79,7 +79,7 @@ class WorldManager:
         sizeZ: int,
         seed: Optional[int],
         generator: AbstractMapGenerator,
-        persistant: bool = True,
+        persistent: bool = True,
         spawnX: Optional[int] = None,
         spawnY: Optional[int] = None,
         spawnZ: Optional[int] = None,
@@ -91,14 +91,14 @@ class WorldManager:
         if worldName in self.worlds.keys():
             raise WorldError(f"Trying To Generate World With Already Existing Name {worldName}!")
 
-        # Creating Save File If World Is Persistant
-        Logger.debug("Creating Save File If World Is Persistant", module="world-create")
-        if self.persistant and self.server.config.worldSaveLocation:
+        # Creating Save File If World Is Persistent
+        Logger.debug("Creating Save File If World Is Persistent", module="world-create")
+        if self.persistent and self.server.config.worldSaveLocation:
             fileIO = self.createWorldFile(self.server.config.worldSaveLocation, worldName)
-            Logger.debug(f"World Is Persistant! Created New FileIO {fileIO}", module="world-create")
+            Logger.debug(f"World Is Persistent! Created New FileIO {fileIO}", module="world-create")
             pass
         else:
-            Logger.debug("World Is Not Persistant!", module="world-create")
+            Logger.debug("World Is Not Persistent!", module="world-create")
             fileIO = None
 
         # Generate Seed if no seed was passed
@@ -128,8 +128,8 @@ class WorldManager:
             spawnYaw=spawnYaw,
             # World Config Info
             generator=generator,  # Pass In World Generator
-            persistant=persistant,  # Pass In Persistant Flag
-            fileIO=fileIO  # Pass In FileIO Object (if persistant set)
+            persistent=persistent,  # Pass In Persistent Flag
+            fileIO=fileIO  # Pass In FileIO Object (if persistent set)
         )
 
         # Saving World
@@ -153,7 +153,7 @@ class WorldManager:
 
     def loadWorlds(self) -> bool:
         Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
-        if self.persistant and (self.server.config.worldSaveLocation is not None):
+        if self.persistent and (self.server.config.worldSaveLocation is not None):
             Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
             # Loop Through All Files Given In World Folder
             for savefile in Path(SERVERPATH, self.server.config.worldSaveLocation).iterdir():
@@ -177,7 +177,7 @@ class WorldManager:
                     try:
                         Logger.info(f"Loading World {savename}", module="world-load")
                         fileIO = open(savefile, "rb+")
-                        self.worlds[savename] = self.worldFormat.loadWorld(fileIO, self, persistant=self.persistant)
+                        self.worlds[savename] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
                     except Exception as e:
                         Logger.error(f"Error While Loading World {savefile} - {type(e).__name__}: {e}", module="world-load")
                         Logger.askConfirmation()
@@ -203,11 +203,11 @@ class WorldManager:
                     self.server.config.worldSizeZ,
                     self.server.config.worldSeed,
                     defaultGenerator,
-                    persistant=self.persistant
+                    persistent=self.persistent
                 )
         else:
-            Logger.debug("World Manager Is Non Persistant!", module="world-load")
-            # Create Non-Persistant Temporary World
+            Logger.debug("World Manager Is Non Persistent!", module="world-load")
+            # Create Non-Persistent Temporary World
             defaultWorldName = self.server.config.defaultWorld
             defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
             Logger.debug(f"Creating Temporary World {defaultWorldName}", module="world-load")
@@ -218,19 +218,19 @@ class WorldManager:
                 self.server.config.worldSizeZ,
                 self.server.config.worldSeed,
                 defaultGenerator,
-                persistant=False,
+                persistent=False,
             )
         return True  # Returning true to indicate that all worlds were loaded successfully.
 
     def saveWorlds(self) -> bool:
         Logger.debug("Starting Attempt to Save All Worlds", module="world-save")
-        if self.persistant and (self.server.config.worldSaveLocation is not None):
+        if self.persistent and (self.server.config.worldSaveLocation is not None):
             Logger.info("Saving All Worlds...", module="world-save")
             # Loop through all worlds and attempt to save!
             for worldName, world in self.worlds.items():
                 Logger.debug(f"Trying To Save World {worldName}", module="world-save")
                 # Check persistance
-                if world.persistant:
+                if world.persistent:
                     try:
                         # Saving World
                         Logger.info(f"Saving World {worldName}", module="world-save")
@@ -238,9 +238,9 @@ class WorldManager:
                     except Exception as e:
                         Logger.error(f"Error While Saving World {worldName} - {type(e).__name__}: {e}", module="world-save")
                 else:
-                    Logger.warn(f"World {worldName} Is Non Persistant! Skipping World Save!", module="world-save")
+                    Logger.warn(f"World {worldName} Is Non Persistent! Skipping World Save!", module="world-save")
         else:
-            Logger.warn("World Manager Is Non Persistant! Skipping World Save!", module="world-save")
+            Logger.warn("World Manager Is Non Persistent! Skipping World Save!", module="world-save")
         return True  # Return True to indicate that world save was successful.
 
     def closeWorlds(self) -> bool:
@@ -256,8 +256,8 @@ class WorldManager:
                 Logger.debug("Removed world from dict", module="world-close")
                 del self.worlds[worldName]
 
-                # Checking if World and Server is Persistant
-                if self.persistant and (self.server.config.worldSaveLocation is not None) and world.persistant and world.fileIO:
+                # Checking if World and Server is Persistent
+                if self.persistent and (self.server.config.worldSaveLocation is not None) and world.persistent and world.fileIO:
                     # Closing worlds fileIO
                     Logger.debug("Closing World FileIO", module="world-close")
                     world.fileIO.close()
@@ -267,9 +267,9 @@ class WorldManager:
 
     def createWorldFile(self, savePath: str, worldName: str, worldFormat: Optional[AbstractWorldFormat] = None) -> io.BufferedRandom:
         Logger.debug(f"Attempting to create world file with name {worldName}", module="world-gen")
-        # Checking if World is Persistant
-        if self.server.config.worldSaveLocation is None or not self.persistant:
-            raise WorldSaveError("Trying To Create World File When Server Is Not Persistant")
+        # Checking if World is Persistent
+        if self.server.config.worldSaveLocation is None or not self.persistent:
+            raise WorldSaveError("Trying To Create World File When Server Is Not Persistent")
 
         # Checking if World Format was Passed In (Setting as default if not)
         if worldFormat is None:
@@ -306,7 +306,7 @@ class World:
         spawnYaw: Optional[int] = None,
         spawnPitch: Optional[int] = None,
         generator: Optional[AbstractMapGenerator] = None,
-        persistant: bool = False,
+        persistent: bool = False,
         fileIO: Optional[io.BufferedRandom] = None,
         canEdit: bool = True,
         maxPlayers: int = 250
@@ -325,20 +325,20 @@ class World:
         self.spawnYaw: Optional[int] = spawnYaw
         self.spawnPitch: Optional[int] = spawnPitch
         self.mapArray: bytearray = mapArray
-        self.persistant: bool = persistant
+        self.persistent: bool = persistent
         self.fileIO: Optional[io.BufferedRandom] = fileIO
         self.canEdit: bool = canEdit
         self.maxPlayers: int = maxPlayers
 
-        # Check if file IO was given if persistant
-        if self.persistant:
+        # Check if file IO was given if persistent
+        if self.persistent:
             if self.fileIO is None:
                 # Setting persistance to false because fileIO was not given
-                self.persistant = False
-                Logger.error(f"World Format {self.worldManager.worldFormat.NAME} Created Persistant World Without Providing FileIO! Please Report To Author! Setting World As Non-Persistant.", "world-load")
+                self.persistent = False
+                Logger.error(f"World Format {self.worldManager.worldFormat.NAME} Created Persistent World Without Providing FileIO! Please Report To Author! Setting World As Non-Persistent.", "world-load")
                 Logger.askConfirmation()
             else:
-                Logger.debug(f"Persistant World Has FileIO {self.fileIO}", "world-load")
+                Logger.debug(f"Persistent World Has FileIO {self.fileIO}", "world-load")
 
         # Generate/Set Spawn Coords
         self.generateSpawnCoords()
@@ -458,12 +458,12 @@ class World:
         return scanY
 
     def saveMap(self) -> bool:
-        if self.persistant and self.fileIO:
+        if self.persistent and self.fileIO:
             Logger.info(f"Attempting To Save World {self.name}", module="world-save")
             self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
             return True
         else:
-            Logger.warn(f"World {self.name} Is Not Persistant! Not Saving.", module="world-save")
+            Logger.warn(f"World {self.name} Is Not Persistent! Not Saving.", module="world-save")
             return False
 
     def gzipMap(self, compressionLevel: int = -1, includeSizeHeader: bool = False) -> bytes:

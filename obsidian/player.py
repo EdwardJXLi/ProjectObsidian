@@ -252,9 +252,9 @@ class WorldPlayerManager:
         # Sending Join Chat Message
         await self.sendWorldMessage(f"&e{player.name} Joined The World &9(ID {player.playerId})&f")
 
-        # Sending Warning If World Is Non-Persistant
-        if not self.world.persistant:
-            await player.sendMessage("&cWARNING: This world is Non-Persistant!&f")
+        # Sending Warning If World Is Non-Persistent
+        if not self.world.persistent:
+            await player.sendMessage("&cWARNING: This world is Non-Persistent!&f")
             await player.sendMessage("&cAny changes WILL NOT be saved!!&f")
 
     async def spawnCurrentPlayers(self, playerSelf: Player) -> None:  # Update Joining Players of The Currently In-Game Players
