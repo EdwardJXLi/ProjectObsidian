@@ -1,10 +1,10 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
-from obsidian.constants import MAX_MESSAGE_LENGTH, __version__
+from obsidian.constants import MAX_MESSAGE_LENGTH, SERVERPATH, __version__
 from obsidian.errors import ClientError, ServerError, WorldFormatError, CommandError, ConverterError
 from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
-from obsidian.worldformat import AbstractWorldFormat, WorldFormat
+from obsidian.worldformat import AbstractWorldFormat, WorldFormat, WorldFormats
 from obsidian.world import World, WorldManager
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator, MapGenerators
 from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
@@ -2388,6 +2388,142 @@ class CoreModule(AbstractModule):
 
             # Send Response Back
             await ctx.sendMessage("&aLast Logins Cleared!")
+
+    @Command(
+        "ConvertWorld",
+        description="Converts world from one format to another format.",
+        version="v1.0.0"
+    )
+    class ConvertWorldCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["convertworld"], OP=True)
+
+        async def execute(self, ctx: Player, world_file: str, format_name: Optional[str] = None):
+            # If no world format is passed, use current world format.
+            # Else, get the requested world format.
+            if format_name:
+                try:
+                    new_world_format = WorldFormats[format_name]
+                except KeyError:
+                    raise CommandError(f"&cWorld format '{format_name}' does not exist!")
+            else:
+                if ctx.worldPlayerManager is not None:
+                    new_world_format = ctx.worldPlayerManager.world.worldManager.worldFormat
+                else:
+                    raise CommandError("&cYou are not in a world!")
+
+            # Get world format extension
+            new_format_ext = "." + new_world_format.EXTENSIONS[0]
+
+            # Get the world to be converted
+            if ctx.server.config.worldSaveLocation:
+                old_world_path = Path(SERVERPATH, ctx.server.config.worldSaveLocation, world_file)
+                new_world_path = Path(SERVERPATH, ctx.server.config.worldSaveLocation, Path(world_file).stem + new_format_ext)
+            else:
+                raise CommandError("&cworldSaveLocation in server configuration is not set!")
+
+            # Check if world exists and if new world does not exist
+            if not old_world_path.exists():
+                raise CommandError(f"&cWorld '{old_world_path.name}' does not exist!")
+            if new_world_path.exists():
+                raise CommandError(f"&cWorld '{new_world_path.name}' already exists!")
+
+            # Detect type of old world format
+            old_world_format = WorldFormats.getWorldFormatFromExtension(old_world_path.suffix[1:])
+
+            # Send user warning converting
+            Logger.warn("User is about to convert world from one format to another!", module="format-convert")
+            Logger.warn("This is a risky procedure! Use with caution!", module="format-convert")
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.center_message("&e[WARNING]", colour="&4"))
+
+            # Add Warning
+            output.append("&c[WARNING]&f You are about to perform a conversion")
+            output.append("&c[WARNING]&f from one world format to another!")
+            output.append("&c[WARNING]&f Formats may not be compatible with each other,")
+            output.append("&c[WARNING]&f and &cDATA MAY BE LOST IN THE PROCESS&f!")
+            output.append("&c[WARNING]&f Always make backups before continuing!")
+            output.append("Type &aacknowledge &fto continue")
+
+            # Add Footer
+            output.append(CommandHelper.center_message("&e[WARNING]", colour="&4"))
+
+            # Send warning message
+            await ctx.sendMessage(output)
+
+            # Get next user input
+            resp = await ctx.getNextMessage()
+
+            # Check if user acknowledged
+            if resp != "acknowledge":
+                raise CommandError("&cWorld conversion cancelled!")
+
+            # Give information on world to be converted
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.center_message("&eWorld Format Conversion", colour="&2"))
+
+            # Add World Information
+            output.append(f"&3[Current World File]&f {old_world_path.name}")
+            output.append(f"&3[Current World Format]&f {old_world_format.NAME}")
+            output.append(f"&3[Current Format Adapter Version]&f {old_world_format.VERSION}")
+            output.append(f"&b[New World File]&f {new_world_path.name}")
+            output.append(f"&b[New World Format]&f {new_world_format.NAME}")
+            output.append(f"&b[New Format Adapter Version]&f {new_world_format.VERSION}")
+            output.append("&7World Path Location")
+            output.append(str(old_world_path.parent))
+            output.append("Type &aacknowledge &fto continue")
+
+            # Add Footer
+            output.append(CommandHelper.center_message(f"&eConverter Version: {self.VERSION}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+            # Get next user input
+            resp = await ctx.getNextMessage()
+
+            # Check if user acknowledged
+            if resp != "acknowledge":
+                raise CommandError("&cWorld conversion cancelled!")
+
+            # Start Conversion Process
+            await ctx.sendMessage("&aStarting World Conversion Process...")
+            old_world_file = open(old_world_path, "rb+")
+            new_world_file = open(new_world_path, "wb+")
+            old_world_file.seek(0)
+            new_world_file.seek(0)
+
+            # Wrap in try except to catch errors
+            try:
+                # Create a temporary world manager
+                await ctx.sendMessage("&aCreating Temporary World Manager...")
+                temp_world_manager = WorldManager(ctx.server)
+
+                # Load old world
+                await ctx.sendMessage("&aLoading World from Old Format...")
+                old_world = old_world_format.loadWorld(old_world_file, temp_world_manager)
+
+                # Save to new world
+                await ctx.sendMessage("&aSaving World to New Format...")
+                new_world_format.saveWorld(old_world, new_world_file, temp_world_manager)
+            except Exception as e:
+                # Handle error by printing to chat and returning to user
+                Logger.error(str(e), module="format-convert")
+                await ctx.sendMessage("&cSomething went wrong while converting the world!")
+                await ctx.sendMessage(f"&c{str(e)}")
+                await ctx.sendMessage("&cPlease check the console for more information!")
+
+            # Clean up open files
+            await ctx.sendMessage("&aCleaning Up...")
+            old_world_file.flush()
+            old_world_file.close()
+            new_world_file.flush()
+            new_world_file.close()
+
 
     @Command(
         "StopServer",

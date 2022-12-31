@@ -113,6 +113,13 @@ class _WorldFormatManager(AbstractManager):
     def numWorldFormats(self) -> int:
         return len(self._format_dict)
 
+    # Function To Get World Format Object From File Extension
+    def getWorldFormatFromExtension(self, ext: str) -> AbstractWorldFormat:
+        for format in self._format_dict.values():
+            if ext in format.EXTENSIONS:
+                return format
+        raise KeyError(f"World Format With Extension {ext} Not Found!")
+
     # Function To Get World Format Object From Format Name
     def getWorldFormat(self, format: str) -> AbstractWorldFormat:
         return self._format_dict[format]
