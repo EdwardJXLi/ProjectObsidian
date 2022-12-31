@@ -2315,6 +2315,81 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage("&aConfig Reloaded!")
 
     @Command(
+        "SetWorldSpawn",
+        description="Sets global default world spawn to current location.",
+        version="v1.0.0"
+    )
+    class SetWorldSpawnCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["setspawn", "setworldspawn"], OP=True)
+
+        async def execute(self, ctx: Player, world: Optional[World] = None):
+            # If no world is passed, use players current world
+            if world is None:
+                if ctx.worldPlayerManager is not None:
+                    world = ctx.worldPlayerManager.world
+                else:
+                    raise CommandError("You are not in a world!")
+
+            # Set the world spawn X, Y, Z, Yaw, and Pitch to current player
+            world.spawnX = ctx.posX
+            world.spawnY = ctx.posY
+            world.spawnZ = ctx.posZ
+            world.spawnYaw = ctx.posYaw
+            world.spawnPitch = ctx.posPitch
+
+            # Send Response Back
+            await ctx.sendMessage("&aWorld Spawn Set To:")
+            await ctx.sendMessage(f"&7x: &e{world.spawnX//32} &7y: &e{world.spawnY//32} &7z: &e{world.spawnZ//32} &7yaw: &e{world.spawnYaw} &7pitch: &e{world.spawnPitch}!")
+
+    @Command(
+        "ResetWorldSpawn",
+        description="Sets global default world spawn to defaults.",
+        version="v1.0.0"
+    )
+    class ResetWorldSpawnCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["resetspawn", "resetworldspawn"], OP=True)
+
+        async def execute(self, ctx: Player, world: Optional[World] = None):
+            # If no world is passed, use players current world
+            if world is None:
+                if ctx.worldPlayerManager is not None:
+                    world = ctx.worldPlayerManager.world
+                else:
+                    raise CommandError("You are not in a world!")
+
+            # Set the world spawn X, Y, Z, Yaw, and Pitch to current player
+            world.generateSpawnCoords(resetCoords=True)
+
+            # Send Response Back
+            await ctx.sendMessage("&aWorld Spawn Set To:")
+            await ctx.sendMessage(f"&7x: &e{world.spawnX//32} &7y: &e{world.spawnY//32} &7z: &e{world.spawnZ//32} &7yaw: &e{world.spawnYaw} &7pitch: &e{world.spawnPitch}!")
+
+    @Command(
+        "ClearPlayerLogouts",
+        description="Clears all last logout locations in world",
+        version="v1.0.0"
+    )
+    class ClearPlayerLogoutsCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["clearplayerlogouts", "clearlastlogouts"], OP=True)
+
+        async def execute(self, ctx: Player, world: Optional[World] = None):
+            # If no world is passed, use players current world
+            if world is None:
+                if ctx.worldPlayerManager is not None:
+                    world = ctx.worldPlayerManager.world
+                else:
+                    raise CommandError("You are not in a world!")
+
+            # Empty the dictionary for last login locations
+            world.logoutLocations = {}
+
+            # Send Response Back
+            await ctx.sendMessage("&aLast Logins Cleared!")
+
+    @Command(
         "StopServer",
         description="Stops the server",
         version="v1.0.0"

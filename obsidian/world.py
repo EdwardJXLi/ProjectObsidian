@@ -85,8 +85,8 @@ class WorldManager:
         spawnX: Optional[int] = None,
         spawnY: Optional[int] = None,
         spawnZ: Optional[int] = None,
-        spawnPitch: Optional[int] = None,
         spawnYaw: Optional[int] = None,
+        spawnPitch: Optional[int] = None,
         worldCreationPlayer: Optional[str] = None
     ) -> World:
         Logger.info(f"Creating New World {worldName}...", module="world-create")
@@ -127,8 +127,8 @@ class WorldManager:
             spawnX=spawnX,
             spawnY=spawnY,
             spawnZ=spawnZ,
-            spawnPitch=spawnPitch,
             spawnYaw=spawnYaw,
+            spawnPitch=spawnPitch,
             # World Config Info
             generator=generator,  # Pass In World Generator
             persistent=persistent,  # Pass In Persistent Flag
@@ -338,6 +338,13 @@ class World:
         self.sizeZ: int = sizeZ
         self.seed: int = seed
 
+        # Set rest of input arguments
+        self.mapArray: bytearray = mapArray
+        self.persistent: bool = persistent
+        self.fileIO: Optional[io.BufferedRandom] = fileIO
+        self.canEdit: bool = canEdit
+        self.maxPlayers: int = maxPlayers
+
         # Generate/Set Spawn Coords
         self.generateSpawnCoords(
             resetCoords=resetWorldSpawn,
@@ -348,11 +355,12 @@ class World:
             spawnPitch=spawnPitch,
             logoutLocations=logoutLocations)
 
-        self.mapArray: bytearray = mapArray
-        self.persistent: bool = persistent
-        self.fileIO: Optional[io.BufferedRandom] = fileIO
-        self.canEdit: bool = canEdit
-        self.maxPlayers: int = maxPlayers
+        # Set spawn locations
+        if logoutLocations is None:
+            Logger.verbose("Logout Location was not provided. Generating Empty List.", "world-load")
+            self.logoutLocations = dict()
+        else:
+            self.logoutLocations = logoutLocations
 
         # For the extra info that Obsidian does not use, generate with default ones
         self.worldUUID: uuid.UUID = worldUUID or uuid.uuid4()
@@ -423,16 +431,9 @@ class World:
         if spawnPitch is None or resetCoords:
             # Generate SpawnPitch (0)
             self.spawnPitch = 0
-            Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
+            Logger.verbose(f"spawnYaw was not provi ded. Generated to {self.spawnYaw}", "world-load")
         else:
             self.spawnPitch = spawnPitch
-
-        # Set spawn locations
-        if logoutLocations is None:
-            Logger.verbose("Logout Location was not provided. Generating Empty List.", "world-load")
-            self.logoutLocations = dict()
-        else:
-            self.logoutLocations = logoutLocations
 
     def canEditBlock(self, player: Player, block: AbstractBlock) -> bool:
         # Checking If User Can Set Blocks

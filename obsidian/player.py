@@ -216,8 +216,8 @@ class WorldPlayerManager:
             self.world.spawnX,
             self.world.spawnY,
             self.world.spawnZ,
-            self.world.spawnPitch,
-            self.world.spawnYaw
+            self.world.spawnYaw,
+            self.world.spawnPitch
         )
 
         # Get Player List Logout Location
