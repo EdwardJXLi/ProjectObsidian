@@ -164,6 +164,7 @@ class ServerConfig(AbstractConfig):
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     worldIgnoreList: list[str] = field(default_factory=list)  # Worlds to ignore
+    persistentWorlds: bool = True  # Override flag to turn off world persistance
     automaticallyDetermineSpawn: bool = False  # Reset Spawn Location for Every Player
     defaultWorld: str = "default"  # Name Of Default World
     serverMaxPlayers: int = 127  # Number Of Players Max Allowed On The Entire Server

@@ -39,7 +39,7 @@ class WorldManager:
         self.server: Server = server
         self.worlds: dict[str, World] = dict()
         self.ignorelist: list[str] = ignorelist
-        self.persistent: bool = True
+        self.persistent: bool = self.server.config.persistentWorlds
         # Defined Later In Init
         # self.worldFormat: AbstractWorldFormat
 
@@ -163,7 +163,7 @@ class WorldManager:
 
     def loadWorlds(self, reload: bool = False) -> bool:
         Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
-        if self.persistent and (self.server.config.worldSaveLocation is not None):
+        if self.server.config.worldSaveLocation is not None:
             Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
             # Loop Through All Files Given In World Folder
             for savefile in Path(SERVERPATH, self.server.config.worldSaveLocation).iterdir():
@@ -219,11 +219,11 @@ class WorldManager:
                     persistent=self.persistent
                 )
         else:
-            Logger.debug("World Manager Is Non Persistent!", module="world-load")
+            Logger.warn("World Manager does not have a world save location!", module="world-load")
             # Create Non-Persistent Temporary World
             defaultWorldName = self.server.config.defaultWorld
             defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
-            Logger.debug(f"Creating Temporary World {defaultWorldName}", module="world-load")
+            Logger.warn(f"Creating temporary world {defaultWorldName}", module="world-load")
             self.createWorld(
                 defaultWorldName,
                 self.server.config.worldSizeX,
