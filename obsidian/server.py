@@ -237,9 +237,18 @@ class Server:
             self.initialized = False
             self.stopping = True
 
-            # Sending Disconnect Packet To All Server Members
             if self.playerManager:
-                Logger.info("Sending Disconnect Packet To All Members", module="server-stop")
+                # Send message to all players
+                Logger.info("Sending Disconnect Message To All Players", module="server-stop")
+                await self.playerManager.sendGlobalMessage("&cServer Shutting Down")
+
+                # Kick All Logged On Players
+                Logger.info("Kicking All Logged On Players", module="server-stop")
+                for player in list(self.playerManager.players.values()):
+                    await player.networkHandler.closeConnection("Server Shutting Down", notifyPlayer=True)
+
+                # Sending Disconnect Packet To Remaining Server Members
+                Logger.info("Sending Disconnect Packet To Remaining Members", module="server-stop")
                 await self.playerManager.sendGlobalPacket(
                     Packets.Response.DisconnectPlayer,
                     "Disconnected: Server Shutting Down"
