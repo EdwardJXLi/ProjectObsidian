@@ -211,24 +211,14 @@ class WorldPlayerManager:
         if self.world.worldManager.server.config.automaticallyDetermineSpawn:
             self.world.generateSpawnCoords(resetCoords=True)
 
-        # Solve rare edge case where Spawn coords may not be set!
-        if (
-            self.world.spawnX is not None and
-            self.world.spawnY is not None and
-            self.world.spawnZ is not None and
-            self.world.spawnYaw is not None and
-            self.world.spawnPitch is not None
-        ):
-            # Get default spawn location
-            defaultSpawn = (
-                self.world.spawnX,
-                self.world.spawnY,
-                self.world.spawnZ,
-                self.world.spawnPitch,
-                self.world.spawnYaw
-            )
-        else:
-            raise ServerError("Attempted to spawn player to a location that did nto exist! This should not happen!")
+        # Get default spawn location
+        defaultSpawn = (
+            self.world.spawnX,
+            self.world.spawnY,
+            self.world.spawnZ,
+            self.world.spawnPitch,
+            self.world.spawnYaw
+        )
 
         # Get Player List Logout Location
         Logger.debug("Attempting to spawn player to last logout location.")

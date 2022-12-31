@@ -321,17 +321,22 @@ class World:
         self.sizeY: int = sizeY
         self.sizeZ: int = sizeZ
         self.seed: int = seed
-        self.spawnX: Optional[int] = spawnX
-        self.spawnY: Optional[int] = spawnY
-        self.spawnZ: Optional[int] = spawnZ
-        self.spawnYaw: Optional[int] = spawnYaw
-        self.spawnPitch: Optional[int] = spawnPitch
+
+        # Generate/Set Spawn Coords
+        self.generateSpawnCoords(
+            resetCoords=resetWorldSpawn,
+            spawnX=spawnX,
+            spawnY=spawnY,
+            spawnZ=spawnZ,
+            spawnYaw=spawnYaw,
+            spawnPitch=spawnPitch,
+            logoutLocations=logoutLocations)
+
         self.mapArray: bytearray = mapArray
         self.persistent: bool = persistent
         self.fileIO: Optional[io.BufferedRandom] = fileIO
         self.canEdit: bool = canEdit
         self.maxPlayers: int = maxPlayers
-        self.logoutLocations: Optional[dict[str, tuple[int, int, int, int, int]]] = logoutLocations
 
         # Check if file IO was given if persistent
         if self.persistent:
@@ -343,52 +348,67 @@ class World:
             else:
                 Logger.debug(f"Persistent World Has FileIO {self.fileIO}", "world-load")
 
-        # Generate/Set Spawn Coords
-        self.generateSpawnCoords(resetCoords=resetWorldSpawn)
-
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
         self.playerManager = WorldPlayerManager(self)
 
     def generateSpawnCoords(
         self,
-        resetCoords: bool = False
+        resetCoords: bool = False,
+        spawnX: Optional[int] = None,
+        spawnY: Optional[int] = None,
+        spawnZ: Optional[int] = None,
+        spawnYaw: Optional[int] = None,
+        spawnPitch: Optional[int] = None,
+        logoutLocations: Optional[dict[str, tuple[int, int, int, int, int]]] = None
     ) -> None:
         # Generate spawn coords using an iterative system
         # Set spawnX
-        if self.spawnX is None or resetCoords:
+        if spawnX is None or resetCoords:
             # Generate SpawnX (Set to middle of map)
             self.spawnX = (self.sizeX // 2) * 32 + 51
             Logger.verbose(f"spawnX was not provided. Generated to {self.spawnX}", "world-load")
+        else:
+            self.spawnX = spawnX
 
         # Set spawnZ
-        if self.spawnZ is None or resetCoords:
+        if spawnZ is None or resetCoords:
             # Generate SpawnZ (Set to middle of map)
             self.spawnZ = (self.sizeZ // 2) * 32 + 51
             Logger.verbose(f"spawnZ was not provided. Generated to {self.spawnZ}", "world-load")
+        else:
+            self.spawnZ = spawnZ
 
         # Set spawnY
-        if self.spawnY is None or resetCoords:
+        if spawnY is None or resetCoords:
             # Kinda hacky to get the block coords form the in-game coords
             self.spawnY = (self.getHighestBlock(round((self.spawnX - 51) / 32) + 1, round((self.spawnZ - 51) / 32) + 1) + 1) * 32 + 51
             Logger.verbose(f"spawnY was not provided. Generated to {self.spawnY}", "world-load")
+        else:
+            self.spawnY = spawnY
 
         # Set spawnYaw
-        if self.spawnYaw is None or resetCoords:
+        if spawnYaw is None or resetCoords:
             # Generate SpawnYaw (0)
             self.spawnYaw = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
+        else:
+            self.spawnYaw = spawnYaw
 
         # Set spawnPitch
-        if self.spawnPitch is None or resetCoords:
+        if spawnPitch is None or resetCoords:
             # Generate SpawnPitch (0)
             self.spawnPitch = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
+        else:
+            self.spawnPitch = spawnPitch
 
         # Set spawn locations
-        if self.logoutLocations is None:
+        if logoutLocations is None:
             Logger.verbose("Logout Location was not provided. Generating Empty List.", "world-load")
             self.logoutLocations = dict()
+        else:
+            self.logoutLocations = logoutLocations
 
     def canEditBlock(self, player: Player, block: AbstractBlock) -> bool:
         # Checking If User Can Set Blocks
