@@ -6,7 +6,7 @@ from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat
 from obsidian.world import World, WorldManager
-from obsidian.mapgen import AbstractMapGenerator, MapGenerator
+from obsidian.mapgen import AbstractMapGenerator, MapGenerator, MapGenerators
 from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.packet import (
@@ -21,8 +21,9 @@ from obsidian.packet import (
 from typing import Optional, Iterable, Callable, Any
 from pathlib import Path
 import inspect
-import struct
 import zipfile
+import struct
+import random
 import json
 import gzip
 import math
@@ -715,6 +716,13 @@ class CoreModule(AbstractModule):
                 EXTENTIONS=["obw", "zip"]
             )
 
+        criticalFields = {
+            "version",
+            "name",
+            "X",
+            "Y",
+            "Z"}
+
         def loadWorld(
             self,
             fileIO: io.BufferedRandom,
@@ -722,54 +730,96 @@ class CoreModule(AbstractModule):
             persistent: bool = True
         ):
             # Open Zip File
+            Logger.debug("Loading Zip File", module="obsidian-map")
             zipFile = zipfile.ZipFile(fileIO)
 
+            # Check validity of zip file
+            if "metadata" not in zipFile.namelist() or "map" not in zipFile.namelist():
+                raise WorldFormatError("ObsidianWorldFormat - Invalid Zip File! Missing Critical Data!")
+
             # Load Metadata
+            Logger.debug("Loading Metadata", module="obsidian-map")
             worldMetadata = json.loads(zipFile.read("metadata").decode("utf-8"))
 
-            # Load Map Data
-            raw_data = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
+            # Check if metadata is valid
+            if self.criticalFields.intersection(set(worldMetadata.keys())) != self.criticalFields:
+                raise WorldFormatError("ObsidianWorldFormat - Invalid Metadata! Missing Critical Data!")
 
-            # Raise Warning if Version Mismatch
-            if worldMetadata["version"] != self.VERSION:
-                Logger.warn("ObsidianWorldFormat Version Mismatch! Continuing Forward...", module="obsidian-map")
+            # Get information out of world metadata
+            # Critical Values
+            version = worldMetadata.get("version")
+            name = worldMetadata.get("name")
+            sizeX = worldMetadata.get("X")
+            sizeY = worldMetadata.get("Y")
+            sizeZ = worldMetadata.get("Z")
+            # Optional Values
+            seed = worldMetadata.get("seed", random.randint(0, 2**64))
+            spawnX = worldMetadata.get("spawnX", 0)
+            spawnY = worldMetadata.get("spawnY", 0)
+            spawnZ = worldMetadata.get("spawnZ", 0)
+            spawnPitch = worldMetadata.get("spawnPitch", 0)
+            spawnYaw = worldMetadata.get("spawnYaw", 0)
+            # Try parsing world generator
+            try:
+                generator = MapGenerators[worldMetadata.get("generator", None)]
+            except KeyError:
+                Logger.warn("ObsidianWorldFormat - Unknown World Generator.")
+                generator = None  # Continue with no generator
+
+            # Check if world spawn need to be regenerated
+            if (True and "spawnX" not in worldMetadata or
+                         "spawnY" not in worldMetadata or
+                         "spawnZ" not in worldMetadata or
+                         "spawnPitch" not in worldMetadata or
+                         "spawnYaw" not in worldMetadata):
+                Logger.warn("ObsidianWorldFormat - World Spawn Data Missing! Generating New World Spawn Location...")
+                resetWorldSpawn = True
+            else:
+                resetWorldSpawn = False
+
+            # Check if version is valid
+            if version != self.VERSION:
+                Logger.warn(f"ObsidianWorldFormat - World Version Mismatch! Expected: {self.VERSION} Got: {version}", module="obsidian-map")
+
+            # Check if world names are the same
+            if name != Path(fileIO.name).stem:
+                Logger.warn(f"ObsidianWorldFormat - World Name Mismatch! Expected: {Path(fileIO.name).stem} Got: {name}", module="obsidian-map")
+
+            # Load Logout Locations
+            Logger.debug("Loading Logout Locations", module="obsidian-map")
+            if "logouts" in zipFile.namelist():
+                logoutLocations = {}
+                for player, (logX, logY, logZ, logPitch, logYaw) in json.loads(zipFile.read("logouts").decode("utf-8")).items():
+                    logoutLocations[player] = (logX, logY, logZ, logPitch, logYaw)
+            else:
+                logoutLocations = {}
+                Logger.warn("ObsidianWorldFormat - Missing Logout Info.", module="obsidian-map")
+
+            # Load Map Data
+            Logger.debug("Loading Map Data", module="obsidian-map")
+            raw_data = bytearray(zipFile.read("map"))
+
+            # Close Zip File
+            zipFile.close()
 
             # Create World Data
             return World(
                 worldManager,  # Pass In World Manager
-                Path(fileIO.name).stem,  # World Name (Save File Name Without EXT)
-                worldMetadata["sizeX"], worldMetadata["sizeY"], worldMetadata["sizeZ"],  # World X, Y, Z
-                worldMetadata["seed"],  # Seed
-                raw_data,  # Map Data
-                spawnX=worldMetadata["spawnX"],  # Spawn X
-                spawnY=worldMetadata["spawnY"],  # Spawn Y
-                spawnZ=worldMetadata["spawnZ"],  # Spawn Z
-                spawnPitch=worldMetadata["spawnPitch"],  # Spawn Pitch
-                spawnYaw=worldMetadata["spawnYaw"],  # Spawn Yaw
+                name,
+                sizeX, sizeY, sizeZ,
+                seed,
+                raw_data,
+                spawnX=spawnX,
+                spawnY=spawnY,
+                spawnZ=spawnZ,
+                spawnPitch=spawnPitch,
+                spawnYaw=spawnYaw,
+                resetWorldSpawn=resetWorldSpawn,
+                generator=generator,
                 persistent=persistent,  # Pass In Persistent Flag
-                fileIO=fileIO  # Pass In File Reader/Writer
+                fileIO=fileIO,  # Pass In File Reader/Writer
+                logoutLocations=logoutLocations
             )
-
-            # def __init__(
-            #     self,
-            #     worldManager: WorldManager,
-            #     name: str,
-            #     sizeX: int,
-            #     sizeY: int,
-            #     sizeZ: int,
-            #     seed: int,
-            #     mapArray: bytearray,
-            #     spawnX: Optional[int] = None,
-            #     spawnY: Optional[int] = None,
-            #     spawnZ: Optional[int] = None,
-            #     spawnYaw: Optional[int] = None,
-            #     spawnPitch: Optional[int] = None,
-            #     generator: Optional[AbstractMapGenerator] = None,
-            #     persistent: bool = False,
-            #     fileIO: Optional[io.BufferedRandom] = None,
-            #     canEdit: bool = True,
-            #     maxPlayers: int = 250
-            # )
 
         def saveWorld(
             self,
@@ -780,15 +830,17 @@ class CoreModule(AbstractModule):
             # Set up the metadata about the world
             worldMetadata = {}
 
+            # This world format closely follows that of
+            # https://wiki.vg/ClassicWorld_file_format
+
             # World Format Info
             worldMetadata["version"] = self.VERSION
 
             # Set Basic Info
-            worldMetadata["size"] = []
-            worldMetadata["sizeX"] = world.sizeX
-            worldMetadata["sizeY"] = world.sizeY
-            worldMetadata["sizeZ"] = world.sizeZ
-            worldMetadata["seed"] = world.seed
+            worldMetadata["name"] = world.name
+            worldMetadata["X"] = world.sizeX
+            worldMetadata["Y"] = world.sizeY
+            worldMetadata["Z"] = world.sizeZ
 
             # Set Spawn Info
             worldMetadata["spawnX"] = world.spawnX
@@ -796,6 +848,28 @@ class CoreModule(AbstractModule):
             worldMetadata["spawnZ"] = world.spawnZ
             worldMetadata["spawnYaw"] = world.spawnYaw
             worldMetadata["spawnPitch"] = world.spawnPitch
+
+            # Set up logout location  metadata
+            if world.logoutLocations is not None:
+                logoutLocations = {}
+                for player, coord in world.logoutLocations.items():
+                    logX, logY, logZ, logPitch, logYaw = coord
+                    logoutLocations[player] = {}
+                    logoutLocations[player]["X"] = logX
+                    logoutLocations[player]["Y"] = logY
+                    logoutLocations[player]["Z"] = logZ
+                    logoutLocations[player]["Pitch"] = logPitch
+                    logoutLocations[player]["Yaw"] = logYaw
+            else:
+                logoutLocations = {}
+                Logger.error("Logout locations is None! This should not happen, but continuing anyway...", module="obsidian-map", printTb=False)
+
+            # Set Generator Info
+            if world.generator:
+                worldMetadata["generator"] = world.generator.NAME
+            else:
+                worldMetadata["generator"] = None
+            worldMetadata["seed"] = world.seed
 
             # Clearing Current Save File
             fileIO.truncate(0)
@@ -806,6 +880,9 @@ class CoreModule(AbstractModule):
                 # Write the metadata file
                 Logger.debug("Writing metadata file", module="obsidian-map")
                 zip_file.writestr("metadata", json.dumps(worldMetadata, indent=4))
+                # Write the logout location file
+                Logger.debug("Writing logout locations file", module="obsidian-map")
+                zip_file.writestr("logouts", json.dumps(logoutLocations, indent=4))
                 # Write the map file
                 Logger.debug("Writing map file", module="obsidian-map")
                 zip_file.writestr("map", world.gzipMap())

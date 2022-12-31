@@ -208,7 +208,7 @@ class WorldPlayerManager:
 
         # If automaticallyDetermineSpawn is enabled, determine new spawn point
         if self.world.worldManager.server.config.automaticallyDetermineSpawn:
-            self.world.generateSpawnCoords(forceSpawnX=True, forceSpawnZ=True, forceSpawnY=True, forceSpawnYaw=True, forceSpawnPitch=True)
+            self.world.generateSpawnCoords(resetCoords=True)
 
         # Solve rare edge case where Spawn coords may not be set!
         if (

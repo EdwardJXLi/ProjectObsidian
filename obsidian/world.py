@@ -305,11 +305,13 @@ class World:
         spawnZ: Optional[int] = None,
         spawnYaw: Optional[int] = None,
         spawnPitch: Optional[int] = None,
+        resetWorldSpawn: bool = False,
         generator: Optional[AbstractMapGenerator] = None,
         persistent: bool = False,
         fileIO: Optional[io.BufferedRandom] = None,
         canEdit: bool = True,
-        maxPlayers: int = 250
+        maxPlayers: int = 250,
+        logoutLocations: Optional[dict[str, tuple[int, int, int, int, int]]] = None
     ):
         # Y is the height
         self.worldManager: WorldManager = worldManager
@@ -329,6 +331,7 @@ class World:
         self.fileIO: Optional[io.BufferedRandom] = fileIO
         self.canEdit: bool = canEdit
         self.maxPlayers: int = maxPlayers
+        self.logoutLocations: Optional[dict[str, tuple[int, int, int, int, int]]] = logoutLocations
 
         # Check if file IO was given if persistent
         if self.persistent:
@@ -341,7 +344,7 @@ class World:
                 Logger.debug(f"Persistent World Has FileIO {self.fileIO}", "world-load")
 
         # Generate/Set Spawn Coords
-        self.generateSpawnCoords()
+        self.generateSpawnCoords(resetCoords=resetWorldSpawn)
 
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
@@ -349,42 +352,43 @@ class World:
 
     def generateSpawnCoords(
         self,
-        forceSpawnX: bool = False,
-        forceSpawnY: bool = False,
-        forceSpawnZ: bool = False,
-        forceSpawnYaw: bool = False,
-        forceSpawnPitch: bool = False
+        resetCoords: bool = False
     ) -> None:
         # Generate spawn coords using an iterative system
         # Set spawnX
-        if self.spawnX is None or forceSpawnX:
+        if self.spawnX is None or resetCoords:
             # Generate SpawnX (Set to middle of map)
             self.spawnX = (self.sizeX // 2) * 32 + 51
             Logger.verbose(f"spawnX was not provided. Generated to {self.spawnX}", "world-load")
 
         # Set spawnZ
-        if self.spawnZ is None or forceSpawnZ:
+        if self.spawnZ is None or resetCoords:
             # Generate SpawnZ (Set to middle of map)
             self.spawnZ = (self.sizeZ // 2) * 32 + 51
             Logger.verbose(f"spawnZ was not provided. Generated to {self.spawnZ}", "world-load")
 
         # Set spawnY
-        if self.spawnY is None or forceSpawnY:
+        if self.spawnY is None or resetCoords:
             # Kinda hacky to get the block coords form the in-game coords
             self.spawnY = (self.getHighestBlock(round((self.spawnX - 51) / 32) + 1, round((self.spawnZ - 51) / 32) + 1) + 1) * 32 + 51
             Logger.verbose(f"spawnY was not provided. Generated to {self.spawnY}", "world-load")
 
         # Set spawnYaw
-        if self.spawnYaw is None or forceSpawnYaw:
+        if self.spawnYaw is None or resetCoords:
             # Generate SpawnYaw (0)
             self.spawnYaw = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
 
         # Set spawnPitch
-        if self.spawnPitch is None or forceSpawnPitch:
+        if self.spawnPitch is None or resetCoords:
             # Generate SpawnPitch (0)
             self.spawnPitch = 0
             Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
+
+        # Set spawn locations
+        if self.logoutLocations is None:
+            Logger.verbose("Logout Location was not provided. Generating Empty List.", "world-load")
+            self.logoutLocations = dict()
 
     def canEditBlock(self, player: Player, block: AbstractBlock) -> bool:
         # Checking If User Can Set Blocks
