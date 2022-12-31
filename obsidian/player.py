@@ -515,8 +515,19 @@ class Player:
                 posY,
                 posZ,
                 posYaw,
+                posPitch,
+                ignoreList=[self]  # not sending to self as that is handled elsewhere
+            )
+
+            # Send location to self!
+            await self.networkHandler.dispatcher.sendPacket(
+                Packets.Response.PlayerPositionUpdate,
+                255,  # id of -1 refers to self
+                posX,
+                posY,
+                posZ,
+                posYaw,
                 posPitch
-                # Not ignoring self as we WANT to update player
             )
 
     async def sendMessage(self, message: str | list):

@@ -70,6 +70,11 @@ class CoreModule(AbstractModule):
             # (Byte) Unused
             _, protocolVersion, username, verificationKey, _ = struct.unpack(self.FORMAT, bytearray(rawData))
 
+            # Clean null terminators off strings
+            # Some clients send null terminators, cough CrossCraft
+            username = username
+            verificationKey = verificationKey
+
             # Unpack String
             # Username
             username = unpackString(username)
@@ -200,10 +205,14 @@ class CoreModule(AbstractModule):
                 raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
             # Unpack String
-            # Message
+            # Check if string is valid
             message = unpackString(message)
             if not message.isprintable():
                 await ctx.sendMessage("&4ERROR: Message Failed To Send - Invalid Character In Message&f")
+                return None  # Don't Complete Message Sending
+            # Check if string is empty
+            if len(message) == 0:
+                await ctx.sendMessage("&4ERROR: Message Failed To Send - Empty Message&f")
                 return None  # Don't Complete Message Sending
 
             # Handle Player Message
@@ -1813,6 +1822,31 @@ class CoreModule(AbstractModule):
 
             # Send Message
             await ctx.sendMessage(output)
+
+    @Command(
+        "Respawn",
+        description="Respawns Self to Spawnpoint",
+        version="v1.0.0"
+    )
+    class RespawnCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["respawn", "r"])
+
+        async def execute(self, ctx: Player):
+            # Check if player is in a world
+            if ctx.worldPlayerManager is None:
+                raise CommandError("You are not in a world!")
+
+            # Set players location to world spawnpoint
+            await ctx.setLocation(
+                ctx.worldPlayerManager.world.spawnX,
+                ctx.worldPlayerManager.world.spawnY,
+                ctx.worldPlayerManager.world.spawnZ,
+                ctx.worldPlayerManager.world.spawnYaw,
+                ctx.worldPlayerManager.world.spawnPitch
+            )
+
+            await ctx.sendMessage("&aRespawned!")
 
     @Command(
         "JoinWorld",
