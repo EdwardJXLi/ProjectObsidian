@@ -1855,6 +1855,67 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
+        "WorldInfo",
+        description="Detailed information for a specific world",
+        version="v1.0.0"
+    )
+    class WorldInfoCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["world", "worldinfo"])
+
+        async def execute(self, ctx: Player, world: Optional[World] = None):
+            # If no world is passed, use players current world
+            if world is None:
+                if ctx.worldPlayerManager is not None:
+                    world = ctx.worldPlayerManager.world
+                else:
+                    raise CommandError("You are not in a world!")
+
+            # Generate plugin output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.center_message(f"&eWorld Information: {world.name}", colour="&2"))
+
+            # Add World Information
+            output.append(f"&d[Seed]&f {world.seed}")
+            output.append(f"&d[World Size]&f &7x:&f{world.sizeX} &7y:&f{world.sizeY} &7z:&f{world.sizeZ}")
+            output.append(f"&d[World Spawn]&f &7x:&f{world.spawnX//32} &7y:&f{world.spawnY//32} &7z:&f{world.spawnZ//32}")
+            if world.generator:
+                output.append(f"&d[World Generator]&f {world.generator.NAME}")
+            output.append(f"&d[Persistent]&f {world.persistent}")
+            output.append(f"&d[Max Players]&f {world.maxPlayers}")
+            output.append(f"&d[UUID]&f {world.worldUUID}")
+            output.append(f"&d[Created ]&f {world.worldCreationPlayer} using {world.worldCreationService}")
+            output.append(f"&d[Time Created]&f {world.timeCreated}")
+
+            # Add Footer
+            output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "Seed",
+        description="Get the world seed",
+        version="v1.0.0"
+    )
+    class SeedCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["seed", "worldseed"])
+
+        async def execute(self, ctx: Player, world: Optional[World] = None):
+            # If no world is passed, use players current world
+            if world is None:
+                if ctx.worldPlayerManager is not None:
+                    world = ctx.worldPlayerManager.world
+                else:
+                    raise CommandError("You are not in a world!")
+
+            # Send Formatted World Seed
+            await ctx.sendMessage(f"Seed for &e{world.name}&f: [&a{world.seed}&f]")
+
+    @Command(
         "MOTD",
         description="Prints Message of the Day",
         version="v1.0.0"
