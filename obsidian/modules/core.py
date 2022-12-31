@@ -20,6 +20,7 @@ from obsidian.packet import (
 
 from typing import Optional, Iterable, Callable, Any
 from pathlib import Path
+import datetime
 import inspect
 import zipfile
 import struct
@@ -27,6 +28,8 @@ import random
 import json
 import gzip
 import math
+import time
+import uuid
 import io
 
 
@@ -754,12 +757,20 @@ class CoreModule(AbstractModule):
             sizeY = worldMetadata.get("Y")
             sizeZ = worldMetadata.get("Z")
             # Optional Values
-            seed = worldMetadata.get("seed", random.randint(0, 2**64))
             spawnX = worldMetadata.get("spawnX", 0)
             spawnY = worldMetadata.get("spawnY", 0)
             spawnZ = worldMetadata.get("spawnZ", 0)
             spawnYaw = worldMetadata.get("spawnYaw", 0)
             spawnPitch = worldMetadata.get("spawnPitch", 0)
+            # Misc Values
+            seed = worldMetadata.get("seed", random.randint(0, 2**64))
+            worldUUID = uuid.UUID(worldMetadata.get("worldUUID", str(uuid.uuid4())))
+            worldCreationService = worldMetadata.get("worldCreationService", "Obsidian")
+            worldCreationPlayer = worldMetadata.get("worldCreationPlayer", "ObsidianPlayer")
+            timeCreated = datetime.datetime.fromtimestamp(worldMetadata.get("timeCreated", int(time.time())))
+            lastModified = datetime.datetime.fromtimestamp(worldMetadata.get("lastModified", int(time.time())))
+            lastAccessed = datetime.datetime.fromtimestamp(worldMetadata.get("lastAccessed", int(time.time())))
+
             # Try parsing world generator
             try:
                 generator = MapGenerators[worldMetadata.get("generator", None)]
@@ -829,7 +840,13 @@ class CoreModule(AbstractModule):
                 generator=generator,
                 persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO,  # Pass In File Reader/Writer
-                logoutLocations=logoutLocations
+                logoutLocations=logoutLocations,
+                worldUUID=worldUUID,
+                worldCreationService=worldCreationService,
+                worldCreationPlayer=worldCreationPlayer,
+                timeCreated=timeCreated,
+                lastModified=lastModified,
+                lastAccessed=lastAccessed
             )
 
         def saveWorld(
@@ -859,6 +876,15 @@ class CoreModule(AbstractModule):
             worldMetadata["spawnZ"] = world.spawnZ
             worldMetadata["spawnYaw"] = world.spawnYaw
             worldMetadata["spawnPitch"] = world.spawnPitch
+
+            # Add Misc Data
+            worldMetadata["seed"] = world.seed
+            worldMetadata["worldUUID"] = str(world.worldUUID)
+            worldMetadata["worldCreationService"] = world.worldCreationService
+            worldMetadata["worldCreationPlayer"] = world.worldCreationPlayer
+            worldMetadata["timeCreated"] = int(time.mktime(world.timeCreated.timetuple()))
+            worldMetadata["lastModified"] = int(time.mktime(world.lastModified.timetuple()))
+            worldMetadata["lastAccessed"] = int(time.mktime(world.lastAccessed.timetuple()))
 
             # Set up logout location  metadata
             if world.logoutLocations is not None:

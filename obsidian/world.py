@@ -7,8 +7,10 @@ from typing import Optional
 from pathlib import Path
 import io
 import gzip
+import uuid
 import struct
 import random
+import datetime
 
 from obsidian.log import Logger
 from obsidian.player import WorldPlayerManager, Player
@@ -85,6 +87,7 @@ class WorldManager:
         spawnZ: Optional[int] = None,
         spawnPitch: Optional[int] = None,
         spawnYaw: Optional[int] = None,
+        worldCreationPlayer: Optional[str] = None
     ) -> World:
         Logger.info(f"Creating New World {worldName}...", module="world-create")
         # Check If World Already Exists
@@ -129,7 +132,14 @@ class WorldManager:
             # World Config Info
             generator=generator,  # Pass In World Generator
             persistent=persistent,  # Pass In Persistent Flag
-            fileIO=fileIO  # Pass In FileIO Object (if persistent set)
+            fileIO=fileIO,  # Pass In FileIO Object (if persistent set)
+            # Misc World Info
+            worldUUID=uuid.uuid4(),  # Generate World UUID
+            worldCreationService="Obsidian",  # Set World Creation Service
+            worldCreationPlayer=worldCreationPlayer or "ObsidianPlayer",  # Set World Creation Player
+            timeCreated=datetime.datetime.now(),  # Set World Creation Time
+            lastModified=datetime.datetime.now(),  # Set World Last Modified Time
+            lastAccessed=datetime.datetime.now()  # Set World Last Accessed Time
         )
 
         # Saving World
@@ -311,7 +321,13 @@ class World:
         fileIO: Optional[io.BufferedRandom] = None,
         canEdit: bool = True,
         maxPlayers: int = 250,
-        logoutLocations: Optional[dict[str, tuple[int, int, int, int, int]]] = None
+        logoutLocations: Optional[dict[str, tuple[int, int, int, int, int]]] = None,
+        worldUUID: Optional[uuid.UUID] = None,
+        worldCreationService: Optional[str] = None,
+        worldCreationPlayer: Optional[str] = None,
+        timeCreated: Optional[datetime.datetime] = None,
+        lastModified: Optional[datetime.datetime] = None,
+        lastAccessed: Optional[datetime.datetime] = None
     ):
         # Y is the height
         self.worldManager: WorldManager = worldManager
@@ -337,6 +353,14 @@ class World:
         self.fileIO: Optional[io.BufferedRandom] = fileIO
         self.canEdit: bool = canEdit
         self.maxPlayers: int = maxPlayers
+
+        # For the extra info that Obsidian does not use, generate with default ones
+        self.worldUUID: uuid.UUID = worldUUID or uuid.uuid4()
+        self.worldCreationService: str = worldCreationService or "Obsidian"
+        self.worldCreationPlayer: str = worldCreationPlayer or "ObsidianPlayer"
+        self.timeCreated = timeCreated or datetime.datetime.now()
+        self.lastModified = lastModified or datetime.datetime.now()
+        self.lastAccessed = lastAccessed or datetime.datetime.now()
 
         # Check if file IO was given if persistent
         if self.persistent:
