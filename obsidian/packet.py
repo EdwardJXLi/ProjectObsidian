@@ -24,7 +24,7 @@ class PacketDirections(enum.Enum):
 
 
 # Packet Utils
-def unpackageString(data, encoding: str = "ascii") -> str:
+def unpackString(data, encoding: str = "ascii") -> str:
     Logger.verbose(f"Unpacking String {data}", module="packet")
     # Decode Data From Bytes To String
     # Remove Excess Zeros
@@ -125,7 +125,7 @@ class _DirectionalPacketManager(AbstractManager):
 
         # Check if the name has a space. If so, raise warning
         if " " in packetClass.NAME:
-            Logger.warn(f"Packet '{packetClass.NAME}' has whitspace in its name!", module=f"{module.NAME}-submodule-init")
+            Logger.warn(f"Packet '{packetClass.NAME}' has white space in its name!", module=f"{module.NAME}-submodule-init")
 
         # Handling Special Cases if OVERRIDE is Set
         if packet.OVERRIDE:

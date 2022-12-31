@@ -112,7 +112,7 @@ class Server:
 
         # Load and Log Modules
         Logger.info("Starting Module Initialization", module="init")
-        ModuleManager.initModules(ignorelist=self.config.moduleIgnorelist, ensureCore=True)
+        ModuleManager.initModules(ignorelist=self.config.moduleIgnoreList, ensureCore=True)
         Logger.info("All Modules Initialized!!!", module="init")
 
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
@@ -143,7 +143,7 @@ class Server:
 
         # Initialize WorldManager
         Logger.info("Initializing World Manager", module="init")
-        self._worldManager = WorldManager(self, ignorelist=self.config.worldIgnorelist)
+        self._worldManager = WorldManager(self, ignorelist=self.config.worldIgnoreList)
         Logger.info("Loading Worlds", module="init")
         self.worldManager.loadWorlds()
 

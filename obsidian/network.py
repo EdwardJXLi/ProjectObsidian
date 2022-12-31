@@ -36,7 +36,7 @@ class NetworkHandler:
         self.conninfo: tuple[str, int] = self.writer.get_extra_info('peername')
         self.ip: IpType = IpType(self.conninfo[0])
         self.port: int = self.conninfo[1]
-        self.dispacher: NetworkDispacher = NetworkDispacher(self)
+        self.dispatcher: NetworkDispacher = NetworkDispacher(self)
         self.isConnected: bool = True  # Connected Flag So Outbound Queue Buffer Can Stop
         self.inLoop: bool = False  # In Loop Flag so that functions know when to use a different implementation
         self.player: Optional[Player] = None
@@ -83,7 +83,7 @@ class NetworkHandler:
 
         # Wait For Player Identification Packet
         Logger.debug(f"{self.conninfo} | Waiting For Initial Player Information Packet", module="network")
-        protocolVersion, username, verificationKey = await self.dispacher.readPacket(Packets.Request.PlayerIdentification)
+        protocolVersion, username, verificationKey = await self.dispatcher.readPacket(Packets.Request.PlayerIdentification)
 
         # Checking Client Protocol Version
         if protocolVersion > self.server.protocolVersion:
@@ -97,7 +97,7 @@ class NetworkHandler:
 
         # Send Server Information Packet
         Logger.debug(f"{self.conninfo} | Sending Initial Server Information Packet", module="network")
-        await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
+        await self.dispatcher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
         # Sending World Data Of Default World
         defaultWorld = self.server.worldManager.worlds[self.server.config.defaultWorld]
@@ -110,7 +110,7 @@ class NetworkHandler:
 
         # Player Spawn Packet
         Logger.debug(f"{self.conninfo} | Preparing To Send Spawn Player Information", module="network")
-        await self.dispacher.sendPacket(
+        await self.dispatcher.sendPacket(
             Packets.Response.SpawnPlayer,
             255,
             username,
@@ -136,7 +136,7 @@ class NetworkHandler:
         # (Packets Sent During Normal Player Gameplay)
         while self.isConnected:
             # Listen and Handle Incoming Packets
-            await self.dispacher.listenForPackets(packetDict=PacketManager.Request.loopPackets)
+            await self.dispatcher.listenForPackets(packetDict=PacketManager.Request.loopPackets)
 
     async def _processWorldChange(self, world: World, previousWorld: World, updateServerInfo: bool = True):
         # TODO: updateServerInfoWhileSwitching is included because IDK if clients would like it.
@@ -152,7 +152,7 @@ class NetworkHandler:
         # Change Server Information To Include "Switching Server..."
         if updateServerInfo:
             Logger.debug(f"{self.conninfo} | Changing Server Information Packet", module="change-world")
-            await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, f"Joining {world.name}...", 0x00)
+            await self.dispatcher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, f"Joining {world.name}...", 0x00)
 
         # Disconnect Player from Current World Manager and Remove worldPlayerManager from user
         Logger.debug(f"{self.conninfo} | Removing Player From Current World {previousWorld.name}", module="change-world")
@@ -169,7 +169,7 @@ class NetworkHandler:
 
         # Player Spawn Packet
         Logger.debug(f"{self.conninfo} | Preparing To Send Spawn Player Information", module="change-world")
-        await self.dispacher.sendPacket(
+        await self.dispatcher.sendPacket(
             Packets.Response.SpawnPlayer,
             255,
             self.player.username,
@@ -183,12 +183,12 @@ class NetworkHandler:
         # Change Server Information Back To Original
         if updateServerInfo:
             Logger.debug(f"{self.conninfo} | Changing Server Information Packet Back To Original", module="change-world")
-            await self.dispacher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
+            await self.dispatcher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
     async def sendWorldData(self, world: World):
         # Send Level Initialize Packet
         Logger.debug(f"{self.conninfo} | Sending Level Initialize Packet", module="network")
-        await self.dispacher.sendPacket(Packets.Response.LevelInitialize)
+        await self.dispatcher.sendPacket(Packets.Response.LevelInitialize)
 
         # Preparing To Send Map
         Logger.debug(f"{self.conninfo} | Preparing To Send Map", module="network")
@@ -201,11 +201,11 @@ class NetworkHandler:
         for chunkCount, chunk in enumerate(chunks):
             # Sending Chunk Data
             Logger.verbose(f"{self.conninfo} | Sending Chunk Data {chunkCount + 1} of {len(chunks)}", module="network")
-            await self.dispacher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
+            await self.dispatcher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
 
         # Send Level Finalize Packet
         Logger.debug(f"{self.conninfo} | Sending Level Finalize Packet", module="network")
-        await self.dispacher.sendPacket(
+        await self.dispatcher.sendPacket(
             Packets.Response.LevelFinalize,
             world.sizeX,
             world.sizeY,
@@ -230,7 +230,7 @@ class NetworkHandler:
         Logger.debug(f"Closing Connection {self.conninfo} For Reason {reason}", module="network")
         # Send Disconnect Message
         if notifyPlayer:
-            await self.dispacher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
+            await self.dispatcher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
 
         # Set Disconnect Flags
         self.isConnected = False
@@ -381,7 +381,7 @@ class NetworkDispacher:
             # Some clients don't send info when not moving
             # Send Ping Packet (Make sure client is still connected)
             Logger.debug(f"{self.handler.conninfo} | Sending Connection Ping", module="network")
-            await self.handler.dispacher.sendPacket(Packets.Response.Ping)
+            await self.handler.dispatcher.sendPacket(Packets.Response.Ping)
             # raise ClientError("Did Not Receive Packet In Time!")
         except Exception as e:
             raise e  # Pass Down Exception To Lower Layer

@@ -25,7 +25,7 @@ def WorldFormat(*args, **kwargs):
 class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
     # Mandatory Values Defined In Packet Init
     KEYS: list[str] = field(default_factory=list)        # List of "keys" that dictate this world format
-    EXTENTIONS: list[str] = field(default_factory=list)  # List of file extentions
+    EXTENSIONS: list[str] = field(default_factory=list)  # List of file extensions
 
     def loadWorld(
         self,
@@ -73,7 +73,7 @@ class _WorldFormatManager(AbstractManager):
 
         # Check if the name has a space. If so, raise warning
         if " " in worldFormatClass.NAME:
-            Logger.warn(f"World Format '{worldFormatClass.NAME}' has whitspace in its name!", module=f"{module.NAME}-submodule-init")
+            Logger.warn(f"World Format '{worldFormatClass.NAME}' has white space in its name!", module=f"{module.NAME}-submodule-init")
 
         # Handling Special Cases if OVERRIDE is Set
         if worldFormat.OVERRIDE:

@@ -67,7 +67,7 @@ class _BlockManager(AbstractManager):
 
         # Check if the name has a space. If so, raise warning
         if " " in block.NAME:
-            Logger.warn(f"Block '{block.NAME}' has whitspace in its name!", module=f"{module.NAME}-submodule-init")
+            Logger.warn(f"Block '{block.NAME}' has white space in its name!", module=f"{module.NAME}-submodule-init")
 
         # Handling Special Cases if OVERRIDE is Set
         if block.OVERRIDE:

@@ -227,7 +227,7 @@ class _CommandManager(AbstractManager):
 
         # Check if the name has a space. If so, raise warning
         if " " in commandClass.NAME:
-            Logger.warn(f"Command '{commandClass.NAME}' has whitspace in its name!", module=f"{module.NAME}-submodule-init")
+            Logger.warn(f"Command '{commandClass.NAME}' has white space in its name!", module=f"{module.NAME}-submodule-init")
 
         # Handling Special Cases if OVERRIDE is Set
         if command.OVERRIDE:

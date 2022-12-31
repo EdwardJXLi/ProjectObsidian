@@ -48,7 +48,7 @@ class _MapGeneratorManager(AbstractManager):
 
         # Check if the name has a space. If so, raise warning
         if " " in mapGenClass.NAME:
-            Logger.warn(f"Map Generator '{mapGenClass.NAME}' has whitspace in its name!", module=f"{module.NAME}-submodule-init")
+            Logger.warn(f"Map Generator '{mapGenClass.NAME}' has white space in its name!", module=f"{module.NAME}-submodule-init")
 
         # Handling Special Cases if OVERRIDE is Set
         if mapGen.OVERRIDE:

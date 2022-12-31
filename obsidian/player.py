@@ -68,12 +68,12 @@ class PlayerManager:
     def getPlayersByIp(self, ip: str) -> list[Player]:
         Logger.verbose(f"Getting Players With Ip {ip}", module="player-manager")
         # Loop through all players and find those who need to be kicked
-        mathching_players: list[Player] = []
+        matching_players: list[Player] = []
         for player in self.players.values():
             if player.networkHandler.ip == ip:
-                mathching_players.append(player)
-        Logger.verbose(f"Found Players: {mathching_players}", module="player-manager")
-        return mathching_players
+                matching_players.append(player)
+        Logger.verbose(f"Found Players: {matching_players}", module="player-manager")
+        return matching_players
 
     async def deletePlayer(self, player: Player) -> bool:
         Logger.debug(f"Removing Player {player.name}", module="player-manager")
@@ -138,7 +138,7 @@ class PlayerManager:
             if player not in ignoreList:
                 try:
                     # Sending Packet To Player
-                    await player.networkHandler.dispacher.sendPacket(packet, *args, **kwargs)
+                    await player.networkHandler.dispatcher.sendPacket(packet, *args, **kwargs)
                 except Exception as e:
                     if e not in CRITICAL_RESPONSE_ERRORS:
                         # Something Broke!
@@ -270,7 +270,7 @@ class WorldPlayerManager:
 
             # Attempting to Send Packet
             try:
-                await playerSelf.networkHandler.dispacher.sendPacket(
+                await playerSelf.networkHandler.dispatcher.sendPacket(
                     Packets.Response.SpawnPlayer,
                     player.playerId,
                     player.name,
@@ -353,7 +353,7 @@ class WorldPlayerManager:
 
             # Attempting to Send Packet
             try:
-                await player.networkHandler.dispacher.sendPacket(packet, *args, **kwargs)
+                await player.networkHandler.dispatcher.sendPacket(packet, *args, **kwargs)
             except Exception as e:
                 if e not in CRITICAL_RESPONSE_ERRORS:
                     # Something Broke!
@@ -428,20 +428,20 @@ class Player:
         # Check if player is an operator
         if self.opStatus:
             # Send Packet To Player
-            await self.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, True)
+            await self.networkHandler.dispatcher.sendPacket(Packets.Response.UpdateUserType, True)
             # Send Message to Player (If Requested)
             if sendMessage:
                 await self.sendMessage("You Are Now An Operator")
         elif not self.opStatus:
             # Send Packet To Player
-            await self.networkHandler.dispacher.sendPacket(Packets.Response.UpdateUserType, False)
+            await self.networkHandler.dispatcher.sendPacket(Packets.Response.UpdateUserType, False)
             # Send Message to Player (If Requested)
             if sendMessage:
                 await self.sendMessage("You Are No Longer An Operator")
 
     async def joinWorld(self, world: World):
         Logger.info(f"Player {self.name} Joining World {world.name}", module="player")
-        # Check if playser is already joined in a world
+        # Check if player is already joined in a world
         if self.worldPlayerManager is not None:
             raise ServerError(f"Player {self.name} Already In World")
         # Setting Self World Player Manager
@@ -499,7 +499,7 @@ class Player:
             return None  # Break Out of Function
 
         # Send message packet to user
-        await self.networkHandler.dispacher.sendPacket(Packets.Response.SendMessage, str(message))
+        await self.networkHandler.dispatcher.sendPacket(Packets.Response.SendMessage, str(message))
 
     async def checkBlockPlacement(self, blockX: int, blockY: int, blockZ: int, blockType: AbstractBlock) -> bool:
         Logger.debug(f"Checking If Player Can Place Block {blockType.NAME} at ({blockX}, {blockY}, {blockZ})", module="player")
@@ -538,7 +538,7 @@ class Player:
         except ClientError as e:
             # Setting Player-Attempted Block Back To Original
             originalBlock = self.worldPlayerManager.world.getBlock(blockX, blockY, blockZ)
-            await self.networkHandler.dispacher.sendPacket(
+            await self.networkHandler.dispatcher.sendPacket(
                 Packets.Response.SetBlock,
                 blockX,
                 blockY,
@@ -655,7 +655,7 @@ class Player:
     async def getNextMessage(self, *args, **kwargs) -> str:
         Logger.debug(f"Getting Next Message From Player {self.name}", module="player")
         # Create a listener for the next message packet sent from player
-        response = await self.networkHandler.dispacher.wait_for(Packets.Request.PlayerMessage, *args, **kwargs)
+        response = await self.networkHandler.dispatcher.wait_for(Packets.Request.PlayerMessage, *args, **kwargs)
         # Parse raw packet into a usable string
         message = await Packets.Request.PlayerMessage.deserialize(self, response, handleUpdate=False)
 
@@ -666,7 +666,7 @@ class Player:
     async def getNextPlayerMovement(self, *args, **kwargs) -> tuple[int, int, int, int, int]:
         Logger.debug(f"Getting Next Movement From Player {self.name}", module="player")
         # Create a listener for the next player movement packet sent from player
-        response = await self.networkHandler.dispacher.wait_for(Packets.Request.MovementUpdate, *args, **kwargs)
+        response = await self.networkHandler.dispatcher.wait_for(Packets.Request.MovementUpdate, *args, **kwargs)
         # Parse raw movement packet into coordinates
         posX, posY, posZ, posYaw, posPitch = await Packets.Request.MovementUpdate.deserialize(self, response, handleUpdate=False)
 
@@ -677,14 +677,14 @@ class Player:
     async def getNextBlockUpdate(self, *args, revertBlockUpdate: bool = True, **kwargs) -> tuple[int, int, int, int]:
         Logger.debug(f"Getting Next Block Update From Player {self.name}", module="player")
         # Create a listener for the next block update packet sent from player
-        response = await self.networkHandler.dispacher.wait_for(Packets.Request.UpdateBlock, *args, **kwargs)
+        response = await self.networkHandler.dispatcher.wait_for(Packets.Request.UpdateBlock, *args, **kwargs)
         # Parse raw packet into block data and coordinates
         blockX, blockY, blockZ, blockId = await Packets.Request.UpdateBlock.deserialize(self, response, handleUpdate=False)
 
         # Revert block update for client
         if revertBlockUpdate and self.worldPlayerManager is not None:
             originalBlock = self.worldPlayerManager.world.getBlock(blockX, blockY, blockZ)
-            await self.networkHandler.dispacher.sendPacket(
+            await self.networkHandler.dispatcher.sendPacket(
                 Packets.Response.SetBlock,
                 blockX,
                 blockY,

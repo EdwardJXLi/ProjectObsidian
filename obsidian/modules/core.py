@@ -14,7 +14,7 @@ from obsidian.packet import (
     ResponsePacket,
     AbstractRequestPacket,
     AbstractResponsePacket,
-    unpackageString,
+    unpackString,
     packageString
 )
 
@@ -67,13 +67,13 @@ class CoreModule(AbstractModule):
             # (Byte) Unused
             _, protocolVersion, username, verificationKey, _ = struct.unpack(self.FORMAT, bytearray(rawData))
 
-            # Unpackage String
+            # Unpack String
             # Username
-            username = unpackageString(username)
+            username = unpackString(username)
             if not username.isalnum():
                 raise ClientError("Invalid Character In Username")
             # Verification String
-            verificationKey = unpackageString(verificationKey)
+            verificationKey = unpackString(verificationKey)
             if not username.isprintable():
                 raise ClientError("Invalid Character In Verification Key")
 
@@ -134,7 +134,7 @@ class CoreModule(AbstractModule):
 
     @RequestPacket(
         "MovementUpdate",
-        description="Received When Player Position And Orentation Is Sent"
+        description="Received When Player Position And Orientation Is Sent"
     )
     class MovementUpdatePacket(AbstractRequestPacket["CoreModule"]):
         def __init__(self, *args):
@@ -196,9 +196,9 @@ class CoreModule(AbstractModule):
             if ctx is None:
                 raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
-            # Unpackage String
+            # Unpack String
             # Message
-            message = unpackageString(message)
+            message = unpackString(message)
             if not message.isprintable():
                 await ctx.sendMessage("&4ERROR: Message Failed To Send - Invalid Character In Message&f")
                 return None  # Don't Complete Message Sending
@@ -657,7 +657,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 KEYS=["raw"],
-                EXTENTIONS=["gz"]
+                EXTENSIONS=["gz"]
             )
 
             Logger.warn("The 'Raw Map' save file format is meant as a placeholder and is not meant to be used in production.", module="raw-map")
@@ -681,7 +681,7 @@ class CoreModule(AbstractModule):
                 worldManager,  # Pass In World Manager
                 Path(fileIO.name).stem,  # Pass In World Name (Save File Name Without EXT)
                 256, 256, 256,  # Passing World X, Y, Z
-                0,  # World Seed (but ofc it doesnt exist)
+                0,  # World Seed (but ofc it doesn't exist)
                 bytearray(rawData),  # Generating Map Data
                 persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO  # Pass In File Reader/Writer
@@ -713,7 +713,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 KEYS=["obsidian"],
-                EXTENTIONS=["obw", "zip"]
+                EXTENSIONS=["obw", "zip"]
             )
 
         criticalFields = {
@@ -797,7 +797,11 @@ class CoreModule(AbstractModule):
 
             # Load Map Data
             Logger.debug("Loading Map Data", module="obsidian-map")
-            raw_data = bytearray(zipFile.read("map"))
+            raw_data = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
+
+            # Sanity Check File Size
+            if (sizeX * sizeY * sizeZ) != len(raw_data):
+                raise WorldFormatError(f"ObsidianWorldFormat - Invalid Map Data! Expected: {sizeX * sizeY * sizeZ} Got: {len(raw_data)}")
 
             # Close Zip File
             zipFile.close()
@@ -905,7 +909,7 @@ class CoreModule(AbstractModule):
             grassHeight = sizeY // 2
             # Generate Map
             mapData = bytearray(0)
-            # Pregen air, dirt, and grass layers
+            # Pre-generate air, dirt, and grass layers
             slice_air = bytearray([Blocks.Air.ID]) * (sizeX * sizeZ)
             slice_dirt = bytearray([Blocks.Dirt.ID]) * (sizeX * sizeZ)
             slice_grass = bytearray([Blocks.Grass.ID]) * (sizeX * sizeZ)
@@ -1388,7 +1392,7 @@ class CoreModule(AbstractModule):
             if page > num_pages or page <= 0:
                 raise CommandError(f"There are only {num_pages} pages of commands!")
 
-            # Get a list of commands registed
+            # Get a list of commands registered
             commands = tuple(cmd_list.items())
 
             # Generate command output
@@ -1453,7 +1457,7 @@ class CoreModule(AbstractModule):
             if page > num_pages or page <= 0:
                 raise CommandError(f"There are only {num_pages} pages of commands!")
 
-            # Get a list of commands registed
+            # Get a list of commands registered
             commands = tuple(cmd_list.items())
 
             # Generate command output
@@ -1547,11 +1551,11 @@ class CoreModule(AbstractModule):
                 # Add the formatted text to the list of other formatted texts
                 param_usages.append(param_str)
 
-            output += CommandHelper.format_list(param_usages, initial_message=f"&d[Usage] &e/{cmd.ACTIVATORS[0]} ", seperator=" ", line_start="&d ->")
+            output += CommandHelper.format_list(param_usages, initial_message=f"&d[Usage] &e/{cmd.ACTIVATORS[0]} ", separator=" ", line_start="&d ->")
 
             # Append list of aliases (if they exist)
             if len(cmd.ACTIVATORS) > 1:
-                output += CommandHelper.format_list(cmd.ACTIVATORS[1:], initial_message="&d[Aliases] &e", seperator=", ", line_start="&e", prefix="/")
+                output += CommandHelper.format_list(cmd.ACTIVATORS[1:], initial_message="&d[Aliases] &e", separator=", ", line_start="&e", prefix="/")
 
             # If command is operator only, add a warning
             if cmd.OP:
@@ -1571,7 +1575,7 @@ class CoreModule(AbstractModule):
         description="Lists all plugins/modules installed",
         version="v1.0.0"
     )
-    class PulginsCommand(AbstractCommand["CoreModule"]):
+    class PluginsCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["plugins", "modules"])
 
@@ -1586,7 +1590,7 @@ class CoreModule(AbstractModule):
             if page > num_pages or page <= 0:
                 raise CommandError(f"There are only {num_pages} pages of modules!")
 
-            # Get a list of modules registed
+            # Get a list of modules registered
             modules = tuple(ModuleManager._module_dict.items())
 
             # Generate command output
@@ -1644,7 +1648,7 @@ class CoreModule(AbstractModule):
                 output += CommandHelper.format_list(
                     plugin.DEPENDENCIES,
                     process_input=lambda d: f"&b[{d.NAME} &7| v.{d.VERSION}&b]" if d.VERSION else f"&b[{d.NAME} &7| Any&b]",
-                    seperator=", ",
+                    separator=", ",
                     line_start="")
 
             # Add # of Submodules
@@ -1691,7 +1695,7 @@ class CoreModule(AbstractModule):
             output.append(CommandHelper.center_message(f"&ePlayers Online: {len(players_list)}/{manager.world.maxPlayers}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&e", seperator=", ")
+            output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&e", separator=", ")
 
             # Add Footer
             output.append("&7To see players in all worlds, use /listall")
@@ -1734,7 +1738,7 @@ class CoreModule(AbstractModule):
 
                 # Generate Player List Output
 
-                output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message=f"&d[{world.name}] &e", seperator=", ")
+                output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message=f"&d[{world.name}] &e", separator=", ")
 
             # If any words were hidden, print notice
             if num_hidden > 0:
@@ -1769,7 +1773,7 @@ class CoreModule(AbstractModule):
             output.append(CommandHelper.center_message(f"&eStaff Online: {len(players_list)}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&4", seperator=", ")
+            output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&4", separator=", ")
 
             # Add Footer
             output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
@@ -1809,7 +1813,7 @@ class CoreModule(AbstractModule):
             output.append(CommandHelper.center_message(f"&eWorlds Loaded: {len(world_list)}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.format_list(world_list, process_input=lambda p: str(p.name), initial_message="&e", seperator=", ")
+            output += CommandHelper.format_list(world_list, process_input=lambda p: str(p.name), initial_message="&e", separator=", ")
 
             # Add Footer
             output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
@@ -1906,7 +1910,7 @@ class CoreModule(AbstractModule):
                 CommandHelper.format_list(
                     ctx.server.config.operatorsList,
                     initial_message="&4[Operators] &e",
-                    line_start="&e", seperator=", "
+                    line_start="&e", separator=", "
                 )
             )
 
@@ -2125,14 +2129,14 @@ class CoreModule(AbstractModule):
                 CommandHelper.format_list(
                     ctx.server.config.bannedPlayers,
                     initial_message="&4[Banned Players] &e",
-                    line_start="&e", seperator=", "
+                    line_start="&e", separator=", "
                 )
             )
             await ctx.sendMessage(
                 CommandHelper.format_list(
                     ctx.server.config.bannedIps,
                     initial_message="&4[Banned Ips] &e",
-                    line_start="&e", seperator=", "
+                    line_start="&e", separator=", "
                 )
             )
 
@@ -2195,7 +2199,7 @@ class CoreModule(AbstractModule):
                 CommandHelper.format_list(
                     ctx.server.config.disabledCommands,
                     initial_message="&4[Disabled Commands] &e",
-                    line_start="&e", seperator=", "
+                    line_start="&e", separator=", "
                 )
             )
 
@@ -2229,13 +2233,13 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage("&4Stopping Server")
             # await ctx.playerManager.server.stop()
 
-            # Server doesnt like it when it sys.exit()s mid await
+            # Server doesn't like it when it sys.exit()s mid await
             # So as a workaround, we disconnect the calling user first then stop the server using asyncstop
             # Which should launch the stop script on another event loop.
             # TODO: This works fine for now, but might cause issues later...
             await ctx.networkHandler.closeConnection("Server Shutting Down", notifyPlayer=True)
 
-            # Server doesnt like it if
+            # Server doesn't like it if
             ctx.server.asyncstop()
 
 
@@ -2260,7 +2264,7 @@ class CommandHelper():
         values: Iterable[Any],
         process_input: Callable[[Any], str] = lambda s: str(s),
         initial_message: str = "",
-        seperator: str = "",
+        separator: str = "",
         line_start: str = "",
         line_end: str = "",
         prefix: str = "",
@@ -2274,7 +2278,7 @@ class CommandHelper():
         while (val := next(i, None)):
             isEmpty = False
             # Format Val
-            val = prefix + process_input(val) + postfix + seperator
+            val = prefix + process_input(val) + postfix + separator
 
             # Check if adding the player name will overflow the max message length
             if len(output[-1]) + len(line_end) + len(val) > MAX_MESSAGE_LENGTH:
@@ -2284,8 +2288,8 @@ class CommandHelper():
             # Add Player Name
             output[-1] += val
 
-        # Remove final seperator from the last line
-        if len(seperator) and not isEmpty:
-            output[-1] = output[-1][:-len(seperator)]
+        # Remove final separator from the last line
+        if len(separator) and not isEmpty:
+            output[-1] = output[-1][:-len(separator)]
 
         return output

@@ -146,7 +146,7 @@ class AbstractConfig:
 @dataclass
 class ServerConfig(AbstractConfig):
     # Module Configuration
-    moduleIgnorelist: list[str] = field(default_factory=list)  # Module Init Ignore List
+    moduleIgnoreList: list[str] = field(default_factory=list)  # Module Init Ignore List
     # Server Configuration
     operatorsList: list[UsernameType] = field(default_factory=list)  # List Of Operators
     bannedIps: list[IpType] = field(default_factory=list)  # List Of Ips that are banned (Reject Connection)
@@ -163,7 +163,7 @@ class ServerConfig(AbstractConfig):
     defaultWorldGenConfig: str = "defaultworld.json"
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
-    worldIgnorelist: list[str] = field(default_factory=list)  # Worlds to ignore
+    worldIgnoreList: list[str] = field(default_factory=list)  # Worlds to ignore
     automaticallyDetermineSpawn: bool = False  # Reset Spawn Location for Every Player
     defaultWorld: str = "default"  # Name Of Default World
     serverMaxPlayers: int = 127  # Number Of Players Max Allowed On The Entire Server

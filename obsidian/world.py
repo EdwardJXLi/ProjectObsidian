@@ -148,7 +148,7 @@ class WorldManager:
             raise MapGenerationError(f"Expected Map Size {expectedSize} While Generating World. Got {len(generatedMap)}")
 
         Logger.debug(f"Generated Map With Final Size Of {len(generatedMap)}", module="init-world")
-        # Return Generated Map Bytesarray
+        # Return Generated Map bytearray
         return generatedMap
 
     def loadWorlds(self) -> bool:
@@ -157,16 +157,16 @@ class WorldManager:
             Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
             # Loop Through All Files Given In World Folder
             for savefile in Path(SERVERPATH, self.server.config.worldSaveLocation).iterdir():
-                # Get Pure File Name (No Extentions)
+                # Get Pure File Name (No Extensions)
                 savename = savefile.stem
-                Logger.verbose(f"Checking Extention and Status of World File {savefile}", module="world-load")
-                # Check If File Type Matches With The Extentions Provided By worldFormat
-                if savefile.suffix[1:] not in self.worldFormat.EXTENTIONS:  # doing [1:] to remove the "."
-                    Logger.debug(f"Ignoring World File {savefile}. File Extention Not Known!", module="world-load")
+                Logger.verbose(f"Checking Extension and Status of World File {savefile}", module="world-load")
+                # Check If File Type Matches With The Extensions Provided By worldFormat
+                if savefile.suffix[1:] not in self.worldFormat.EXTENSIONS:  # doing [1:] to remove the "."
+                    Logger.debug(f"Ignoring World File {savefile}. File Extension Not Known!", module="world-load")
                 # Also Check If World Is Ignored
                 elif savename in self.ignorelist:
                     Logger.info(f"Ignoring World File {savefile}. World Name Is On Ignore List!", module="world-load")
-                # Also Check If World Name Is Already Loaded (Same File Names with Different Extentions)
+                # Also Check If World Name Is Already Loaded (Same File Names with Different Extensions)
                 elif savename in self.worlds.keys():
                     Logger.warn(f"Ignoring World File {savefile}. World With Similar Name Has Already Been Registered!", module="world-load")
                     Logger.warn(f"World File {self.worlds[savename].name} Conflicts With World File {savefile}!", module="world-load")
@@ -279,7 +279,7 @@ class WorldManager:
         worldPath = Path(
             SERVERPATH,
             savePath,
-            worldName + "." + worldFormat.EXTENTIONS[0]  # Gets the first value in the valid extentions list
+            worldName + "." + worldFormat.EXTENSIONS[0]  # Gets the first value in the valid extensions list
         )
         Logger.debug(f"File world path is {worldPath}", module="world-gen")
 
@@ -437,7 +437,7 @@ class World:
                 ignoreList=[player] if player is not None and not updateSelf else []
             )
 
-        # Setblock Successful!
+        # SetBlock Successful!
         return True
 
     def getHighestBlock(self, blockX: int, blockZ: int, start: Optional[int] = None) -> int:
@@ -447,12 +447,12 @@ class World:
             scanY = self.sizeY - 1
         else:
             if start > self.sizeY:
-                Logger.warn(f"Trying To Get Heighest Block From Location Greater Than Map Size (MapHeight: {self.sizeY}, Given: {start})")
+                Logger.warn(f"Trying To Get Highest Block From Location Greater Than Map Size (MapHeight: {self.sizeY}, Given: {start})")
                 scanY = self.sizeY - 1
             else:
                 scanY = start
 
-        # Scan Downwards To Get Heighest Block
+        # Scan Downwards To Get Highest Block
         while self.getBlock(blockX, scanY, blockZ) is Blocks.Air:
             if scanY == 0:
                 break
