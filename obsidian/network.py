@@ -114,11 +114,11 @@ class NetworkHandler:
             Packets.Response.SpawnPlayer,
             255,
             username,
-            defaultWorld.spawnX,
-            defaultWorld.spawnY,
-            defaultWorld.spawnZ,
-            defaultWorld.spawnYaw,
-            defaultWorld.spawnPitch
+            self.player.posX,
+            self.player.posY,
+            self.player.posZ,
+            self.player.posYaw,
+            self.player.posPitch
         )
 
         # Send MOTD to user
@@ -173,11 +173,11 @@ class NetworkHandler:
             Packets.Response.SpawnPlayer,
             255,
             self.player.username,
-            world.spawnX,
-            world.spawnY,
-            world.spawnZ,
-            world.spawnYaw,
-            world.spawnPitch
+            self.player.posX,
+            self.player.posY,
+            self.player.posZ,
+            self.player.posYaw,
+            self.player.posPitch
         )
 
         # Change Server Information Back To Original

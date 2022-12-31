@@ -18,6 +18,7 @@ from obsidian.errors import (
     ServerError,
     WorldError,
     ClientError,
+    BlockError,
     CommandError,
     ConverterError
 )
@@ -218,18 +219,53 @@ class WorldPlayerManager:
             self.world.spawnYaw is not None and
             self.world.spawnPitch is not None
         ):
-            # Set Player Location
-            # TODO saving player location
-            await player.setLocation(
+            # Get default spawn location
+            defaultSpawn = (
                 self.world.spawnX,
                 self.world.spawnY,
                 self.world.spawnZ,
-                self.world.spawnYaw,
                 self.world.spawnPitch,
-                notifyPlayers=False
+                self.world.spawnYaw
             )
         else:
-            raise ServerError("Attempted To Spawn Player to a Location That Is Not Set!")
+            raise ServerError("Attempted to spawn player to a location that did nto exist! This should not happen!")
+
+        # Get Player List Logout Location
+        Logger.debug("Attempting to spawn player to last logout location.")
+        if self.world.logoutLocations is not None:
+            lastLogoutLocation = self.world.logoutLocations.get(player.name, None)
+            if lastLogoutLocation is not None:
+                Logger.debug(f"Last Logout Location is: {lastLogoutLocation}")
+                posX, posY, posZ, yaw, pitch = lastLogoutLocation
+            else:
+                Logger.debug("Last Logout Location is None! Using default spawn position instead!")
+                posX, posY, posZ, yaw, pitch = defaultSpawn
+        else:
+            raise ServerError("lastLogoutLocation Is None! This should not happen!")
+
+        # Check if player yaw and pitch is valid
+        if not (0 <= yaw <= 255 and 0 <= pitch <= 255):
+            Logger.warn(f"Player Yaw and Pitch yaw:{yaw}, pitch:{pitch} is not valid! Using default spawn position instead!", module="world-player")
+            posX, posY, posZ, yaw, pitch = defaultSpawn
+
+        # Check if player position is valid
+        # NOTE: This is assuming that the default spawn position is always valid
+        try:
+            self.world.getBlock(posX // 32, posY // 32, posZ // 32)
+        except BlockError:
+            Logger.warn(f"Player Position x:{posX}, y:{posY}, z:{posZ} is not within the world! Using default spawn position instead!", module="world-player")
+            posX, posY, posZ, yaw, pitch = defaultSpawn
+
+        # Set the current player location
+        Logger.info(f"Spawning Player at x:{posX}, y:{posY}, z:{posZ}, yaw:{yaw}, pitch:{pitch}", module="world-player")
+        await player.setLocation(
+            posX,
+            posY,
+            posZ,
+            yaw,
+            pitch,
+            notifyPlayers=False
+        )
 
         # Send Player Join Packet To All Players (Except Joining User)
         await self.sendWorldPacket(
@@ -290,6 +326,10 @@ class WorldPlayerManager:
 
     async def removePlayer(self, player: Player) -> bool:
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
+        # Saving Player Location for Last Login
+        if self.world.logoutLocations is not None:
+            self.world.logoutLocations[player.name] = (player.posX, player.posY, player.posZ, player.posYaw, player.posPitch)
+
         # Delete User From Player List + Deallocate ID
         if player.playerId is not None:
             self.deallocateId(player.playerId)

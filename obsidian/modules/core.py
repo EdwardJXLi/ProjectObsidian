@@ -740,6 +740,7 @@ class CoreModule(AbstractModule):
             # Load Metadata
             Logger.debug("Loading Metadata", module="obsidian-map")
             worldMetadata = json.loads(zipFile.read("metadata").decode("utf-8"))
+            Logger.debug(f"Loaded Metadata: {worldMetadata}", module="obsidian-map")
 
             # Check if metadata is valid
             if self.criticalFields.intersection(set(worldMetadata.keys())) != self.criticalFields:
@@ -757,8 +758,8 @@ class CoreModule(AbstractModule):
             spawnX = worldMetadata.get("spawnX", 0)
             spawnY = worldMetadata.get("spawnY", 0)
             spawnZ = worldMetadata.get("spawnZ", 0)
-            spawnPitch = worldMetadata.get("spawnPitch", 0)
             spawnYaw = worldMetadata.get("spawnYaw", 0)
+            spawnPitch = worldMetadata.get("spawnPitch", 0)
             # Try parsing world generator
             try:
                 generator = MapGenerators[worldMetadata.get("generator", None)]
@@ -770,8 +771,8 @@ class CoreModule(AbstractModule):
             if (True and "spawnX" not in worldMetadata or
                          "spawnY" not in worldMetadata or
                          "spawnZ" not in worldMetadata or
-                         "spawnPitch" not in worldMetadata or
-                         "spawnYaw" not in worldMetadata):
+                         "spawnYaw" not in worldMetadata or
+                         "spawnPitch" not in worldMetadata):
                 Logger.warn("ObsidianWorldFormat - World Spawn Data Missing! Generating New World Spawn Location...")
                 resetWorldSpawn = True
             else:
@@ -789,8 +790,14 @@ class CoreModule(AbstractModule):
             Logger.debug("Loading Logout Locations", module="obsidian-map")
             if "logouts" in zipFile.namelist():
                 logoutLocations = {}
-                for player, (logX, logY, logZ, logPitch, logYaw) in json.loads(zipFile.read("logouts").decode("utf-8")).items():
-                    logoutLocations[player] = (logX, logY, logZ, logPitch, logYaw)
+                for player, coords in json.loads(zipFile.read("logouts").decode("utf-8")).items():
+                    logX = coords["X"]
+                    logY = coords["Y"]
+                    logZ = coords["Z"]
+                    logYaw = coords["Yaw"]
+                    logPitch = coords["Pitch"]
+                    logoutLocations[player] = (logX, logY, logZ, logYaw, logPitch)
+                    Logger.debug(f"Loaded Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="obsidian-map")
             else:
                 logoutLocations = {}
                 Logger.warn("ObsidianWorldFormat - Missing Logout Info.", module="obsidian-map")
@@ -816,8 +823,8 @@ class CoreModule(AbstractModule):
                 spawnX=spawnX,
                 spawnY=spawnY,
                 spawnZ=spawnZ,
-                spawnPitch=spawnPitch,
                 spawnYaw=spawnYaw,
+                spawnPitch=spawnPitch,
                 resetWorldSpawn=resetWorldSpawn,
                 generator=generator,
                 persistent=persistent,  # Pass In Persistent Flag
@@ -857,13 +864,13 @@ class CoreModule(AbstractModule):
             if world.logoutLocations is not None:
                 logoutLocations = {}
                 for player, coord in world.logoutLocations.items():
-                    logX, logY, logZ, logPitch, logYaw = coord
+                    logX, logY, logZ, logYaw, logPitch = coord
                     logoutLocations[player] = {}
                     logoutLocations[player]["X"] = logX
                     logoutLocations[player]["Y"] = logY
                     logoutLocations[player]["Z"] = logZ
-                    logoutLocations[player]["Pitch"] = logPitch
                     logoutLocations[player]["Yaw"] = logYaw
+                    logoutLocations[player]["Pitch"] = logPitch
             else:
                 logoutLocations = {}
                 Logger.error("Logout locations is None! This should not happen, but continuing anyway...", module="obsidian-map", printTb=False)
