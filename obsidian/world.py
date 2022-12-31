@@ -161,7 +161,7 @@ class WorldManager:
         # Return Generated Map bytearray
         return generatedMap
 
-    def loadWorlds(self) -> bool:
+    def loadWorlds(self, reload: bool = False) -> bool:
         Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
         if self.persistent and (self.server.config.worldSaveLocation is not None):
             Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
@@ -178,9 +178,12 @@ class WorldManager:
                     Logger.info(f"Ignoring World File {savefile}. World Name Is On Ignore List!", module="world-load")
                 # Also Check If World Name Is Already Loaded (Same File Names with Different Extensions)
                 elif savename in self.worlds.keys():
-                    Logger.warn(f"Ignoring World File {savefile}. World With Similar Name Has Already Been Registered!", module="world-load")
-                    Logger.warn(f"World File {self.worlds[savename].name} Conflicts With World File {savefile}!", module="world-load")
-                    Logger.askConfirmation()
+                    if not reload:
+                        Logger.warn(f"Ignoring World File {savefile}. World With Similar Name Has Already Been Registered!", module="world-load")
+                        Logger.warn(f"World File {self.worlds[savename].name} Conflicts With World File {savefile}!", module="world-load")
+                        Logger.askConfirmation()
+                    else:
+                        Logger.warn(f"Ignoring World File {savefile}. World Already Loaded!", module="world-load")
                 else:
                     Logger.debug(f"Detected World File {savefile}. Attempting To Load World", module="world-load")
                     # (Attempt) To Load Up World

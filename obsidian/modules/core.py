@@ -2390,6 +2390,25 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage("&aLast Logins Cleared!")
 
     @Command(
+        "ReloadWorlds",
+        description="Scans world folder and reloads all worlds",
+        version="v1.0.0"
+    )
+    class ReloadWorldsCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["reloadworlds"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Reload Worlds
+            if ctx.worldPlayerManager is not None:
+                ctx.worldPlayerManager.world.worldManager.loadWorlds(reload=True)
+            else:
+                raise CommandError("You are not in a world!")
+
+            # Send Response Back
+            await ctx.sendMessage("&aWorlds Reloaded!")
+
+    @Command(
         "ConvertWorld",
         description="Converts world from one format to another format.",
         version="v1.0.0"
@@ -2519,11 +2538,14 @@ class CoreModule(AbstractModule):
 
             # Clean up open files
             await ctx.sendMessage("&aCleaning Up...")
-            old_world_file.flush()
             old_world_file.close()
             new_world_file.flush()
             new_world_file.close()
 
+            # Send Final Messages
+            await ctx.sendMessage("&aWorld Conversion Completed!")
+            await ctx.sendMessage(f"&d{old_world_path.name} &a-> &d{new_world_path.name}")
+            await ctx.sendMessage("Use &a/reloadworlds &fto add the new world to the server!")
 
     @Command(
         "StopServer",
