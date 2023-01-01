@@ -942,7 +942,7 @@ class CoreModule(AbstractModule):
         description="Default Map Generator. Just Flat.",
         version="v1.0.0"
     )
-    class FlatMapGenerator(AbstractMapGenerator["CoreModule"]):
+    class FlatGenerator(AbstractMapGenerator["CoreModule"]):
         def __init__(self, *args):
             super().__init__(*args)
 
@@ -963,6 +963,28 @@ class CoreModule(AbstractModule):
                     mapData.extend(slice_grass)
                 else:
                     mapData.extend(slice_dirt)
+            return mapData
+
+    @MapGenerator(
+        "Random",
+        description="Generates map out of random blocks",
+        version="v1.0.0"
+    )
+    class RandomGenerator(AbstractMapGenerator["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args)
+
+        # Generates a world of all random blocks
+        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int):
+            # Initialize helper variables
+            rand = random.Random(seed)
+            allBlocks = Blocks.getAllBlockIds()
+
+            # Generate Map
+            mapData = bytearray()
+            for i in range(sizeX * sizeY * sizeZ):
+                mapData.append(rand.choice(allBlocks))
+
             return mapData
 
     #
