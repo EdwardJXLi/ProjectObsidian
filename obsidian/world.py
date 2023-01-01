@@ -401,7 +401,7 @@ class World:
         # Set spawnX
         if spawnX is None or resetCoords:
             # Generate SpawnX (Set to middle of map)
-            self.spawnX = (self.sizeX // 2) * 32 + 51
+            self.spawnX = (self.sizeX // 2) * 32 + 16
             Logger.verbose(f"spawnX was not provided. Generated to {self.spawnX}", "world-load")
         else:
             self.spawnX = spawnX
@@ -409,7 +409,7 @@ class World:
         # Set spawnZ
         if spawnZ is None or resetCoords:
             # Generate SpawnZ (Set to middle of map)
-            self.spawnZ = (self.sizeZ // 2) * 32 + 51
+            self.spawnZ = (self.sizeZ // 2) * 32 + 16
             Logger.verbose(f"spawnZ was not provided. Generated to {self.spawnZ}", "world-load")
         else:
             self.spawnZ = spawnZ

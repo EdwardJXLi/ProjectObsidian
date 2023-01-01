@@ -1,6 +1,5 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
 from obsidian.constants import MAX_MESSAGE_LENGTH, SERVERPATH, __version__
-from obsidian.errors import ClientError, ServerError, WorldFormatError, CommandError, ConverterError
 from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
@@ -9,6 +8,14 @@ from obsidian.world import World, WorldManager
 from obsidian.mapgen import AbstractMapGenerator, MapGenerator, MapGenerators
 from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
+from obsidian.errors import (
+    ClientError,
+    ServerError,
+    WorldFormatError,
+    BlockError,
+    CommandError,
+    ConverterError
+)
 from obsidian.packet import (
     RequestPacket,
     ResponsePacket,
@@ -1846,6 +1853,100 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
+        "Message",
+        description="Sends a private message to another user",
+        version="v1.0.0"
+    )
+    class MessageCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["msg", "message", "tell", "whisper", "dm", "w"])
+
+        async def execute(self, ctx: Player, recipient: Player, *, message: str):
+            # Send Message
+            await recipient.sendMessage(f"&7[{ctx.name} -> You]: {message}")
+            await ctx.sendMessage(f"&7[You -> {recipient.name}]: {message}")
+
+    @Command(
+        "Teleport",
+        description="Teleports player to coordinates",
+        version="v1.0.0"
+    )
+    class TeleportCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["tp", "teleport"])
+
+        async def execute(self, ctx: Player, x: int, y: int, z: int, yaw: int = 0, pitch: int = 0):
+            # Check if player is in a world
+            if ctx.worldPlayerManager is None:
+                raise CommandError("You are not in a world!")
+
+            # Check if location is within world
+            try:
+                ctx.worldPlayerManager.world.getBlock(x, y, z)
+            except BlockError:
+                raise CommandError("Coordinates are outside of the world!")
+
+            # Set players location to world spawnpoint
+            await ctx.setLocation(
+                x * 32 + 16,
+                y * 32 + 51,
+                z * 32 + 16,
+                yaw,
+                pitch
+            )
+
+            await ctx.sendMessage("&aTeleported!")
+
+    @Command(
+        "TeleportPlayer",
+        description="Teleports player to another player",
+        version="v1.0.0"
+    )
+    class TeleportPlayerCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["tpp", "teleportplayer"])
+
+        async def execute(self, ctx: Player, player1: Player, player2: Optional[Player] = None):
+            # Check who to teleport to who!
+            if player2 is None:
+                teleport_who = ctx
+                teleport_to = player1
+            else:
+                teleport_who = player1
+                teleport_to = player2
+
+            # Check if both players are in the same world!
+            if ctx.worldPlayerManager is None:
+                raise CommandError("You are not in a world!")
+            elif teleport_who.worldPlayerManager is None:
+                raise CommandError(f"{teleport_who.name} is not in a world!")
+            elif teleport_to.worldPlayerManager is None:
+                raise CommandError(f"{teleport_to.name} is not in a world!")
+            elif teleport_who.worldPlayerManager.world != teleport_to.worldPlayerManager.world:
+                raise CommandError(f"{teleport_who.name} and {teleport_to.name} are not in the same world!")
+
+            # Check if the player teleporting to is within the world boundaries
+            try:
+                ctx.worldPlayerManager.world.getBlock(
+                    teleport_to.posX // 32,
+                    teleport_to.posY // 32,
+                    teleport_to.posZ // 32
+                )
+            except BlockError:
+                raise CommandError(f"{teleport_to.name} coordinates are outside the world!")
+
+            # Teleport User
+            await teleport_who.setLocation(
+                teleport_to.posX,
+                teleport_to.posY,
+                teleport_to.posZ,
+                teleport_to.posYaw,
+                teleport_to.posPitch
+            )
+
+            await ctx.sendMessage("&aTeleported!")
+
+    @Command(
         "Respawn",
         description="Respawns Self to Spawnpoint",
         version="v1.0.0"
@@ -2143,13 +2244,13 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(f"&aPlayer {username} Banned!")
 
     @Command(
-        "Unban",
-        description="Unbans a user by name",
+        "Pardon",
+        description="Pardons a user by name",
         version="v1.0.0"
     )
-    class UnbanCommand(AbstractCommand["CoreModule"]):
+    class PardonCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["unban", "unbanuser"], OP=True)
+            super().__init__(*args, ACTIVATORS=["pardon", "pardonuser"], OP=True)
 
         async def execute(self, ctx: Player, name: str):
             # Parse Name Into Username
@@ -2165,7 +2266,7 @@ class CoreModule(AbstractModule):
             serverConfig.save()
 
             # Send Response Back
-            await ctx.sendMessage(f"&aPlayer {username} Unbanned!")
+            await ctx.sendMessage(f"&aPlayer {username} Pardoned!")
 
     @Command(
         "IpBan",
@@ -2237,13 +2338,13 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(f"&aIp {ip} Banned!")
 
     @Command(
-        "UnbanIp",
-        description="Unbans an Ip",
+        "PardonIp",
+        description="Pardons an Ip",
         version="v1.0.0"
     )
-    class UnbanIpCommand(AbstractCommand["CoreModule"]):
+    class PardonIpCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["unbanip"], OP=True)
+            super().__init__(*args, ACTIVATORS=["pardonip"], OP=True)
 
         async def execute(self, ctx: Player, ip: str):
             # Check if IP is valid
@@ -2262,7 +2363,7 @@ class CoreModule(AbstractModule):
             serverConfig.save()
 
             # Send Response Back
-            await ctx.sendMessage(f"&aIp {ip} Unbanned!")
+            await ctx.sendMessage(f"&aIp {ip} Pardoned!")
 
     @Command(
         "BanList",
@@ -2289,6 +2390,49 @@ class CoreModule(AbstractModule):
                     line_start="&e", separator=", "
                 )
             )
+
+    @Command(
+        "Say",
+        description="Repeats message to all players in world",
+        version="v1.0.0"
+    )
+    class SayCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["say"], OP=True)
+
+        async def execute(self, ctx: Player, msg: str):
+            # Check if player is in a world
+            if ctx.worldPlayerManager is None:
+                raise CommandError("You are not in a world!")
+
+            # Send message
+            await ctx.worldPlayerManager.sendWorldMessage(msg)
+
+    @Command(
+        "SayAll",
+        description="Repeats message to all players in all worlds",
+        version="v1.0.0"
+    )
+    class SayAllCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["sayall"], OP=True)
+
+        async def execute(self, ctx: Player, msg: str):
+            # Send message
+            await ctx.playerManager.sendGlobalMessage(msg)
+
+    @Command(
+        "Broadcast",
+        description="Broadcasts message to all players in all worlds",
+        version="v1.0.0"
+    )
+    class BroadcastCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["broadcast"], OP=True)
+
+        async def execute(self, ctx: Player, msg: str):
+            # Send message
+            await ctx.playerManager.sendGlobalMessage(f"&4[Broadcast] &f{msg}")
 
     @Command(
         "DisableCommand",
