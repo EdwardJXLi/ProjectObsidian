@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Type, Generic, Optional
 from dataclasses import dataclass
-import asyncio
+import threading
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
@@ -39,7 +39,7 @@ class MapGeneratorStatus:
         self._map: Optional[bytearray] = None
 
         # Flow control helpers
-        self._event = asyncio.Event()
+        self._event = threading.Event()
 
         # Print intial status
         if self.printUpdates:
@@ -110,8 +110,8 @@ class MapGeneratorStatus:
             return self.done, self.progress, self.status
 
     # Waits for status to update
-    # TODO: Maybe make a non-async version of this?
-    async def waitForStatus(self):
+    # TODO: Maybe make an async version of this?
+    def getNextStatus(self):
         # Block thread until status updates
         if self.error:
             # Raise error if error is set
@@ -121,7 +121,7 @@ class MapGeneratorStatus:
             return self.done, self.progress, self.status
         else:
             # Else, wait for status to update
-            await self._event.wait()
+            self._event.wait()
             return self.done, self.progress, self.status
 
     # Sets the final map. Should be done

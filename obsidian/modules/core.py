@@ -999,8 +999,8 @@ class CoreModule(AbstractModule):
             for i in range(totalBlocks):
                 mapData.append(rand.choice(allBlocks))
 
-                # Update status every 250000 blocks
-                if i % 500000 == 0:
+                # Update status every 1000000 blocks
+                if i % 1000000 == 0:
                     generationStatus.setStatus(i / totalBlocks, f"Placed {i} blocks...")
 
             generationStatus.setDone()
