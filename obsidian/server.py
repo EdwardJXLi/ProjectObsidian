@@ -5,6 +5,9 @@ from typing import Optional, Any
 from pathlib import Path
 import traceback
 import sys
+import os
+import threading
+import time
 
 from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager, Packets
@@ -206,19 +209,31 @@ class Server:
 
     # Quick hack to run function in async mode no matter what
     def asyncstop(self, *args, **kwargs):
-        Logger.debug("Trying to launch stop procedure in async", "stop-helper")
+        Logger.debug("Trying to launch stop procedure in async", "server-stop")
         try:
+            # Inject the stop event into the existing event loop
             eventLoop = asyncio.get_running_loop()
-            Logger.debug("Existing Event Loop detected. Sending Stop Command!", "stop-helper")
+            Logger.debug("Existing Event Loop detected. Sending Stop Command!", "server-stop")
             asyncio.run_coroutine_threadsafe(
                 self.stop(),
                 eventLoop
             )
         except RuntimeError:
-            Logger.debug("No Running Event Loops Were Detected. Creating Stop Event Loop", "stop-helper")
+            Logger.debug("No Running Event Loops Were Detected. Creating Stop Event Loop", "server-stop")
             eventLoop = asyncio.new_event_loop()
             eventLoop.run_until_complete(self.stop())
             eventLoop.stop()
+
+        # Start a new thread with a dead mans switch to kill the server if it takes too long to stop
+        def deadMansProcess():
+            time.sleep(5)
+            Logger.warn("Stop procedure is taking a long time. For stopping in 10 seconds", "server-stop")
+            Logger.warn("DATA MAY BE LOST!", "server-stop")
+            time.sleep(10)
+            Logger.fatal("FORCE STOPPING SERVER!", "server-stop", printTb=False)
+            os._exit(-1)
+        Logger.debug("Starting Dead Mans Thread", "server-stop")
+        threading.Thread(target=deadMansProcess, daemon=True).start()
 
     async def stop(self):
         try:
