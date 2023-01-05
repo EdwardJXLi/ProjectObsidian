@@ -296,6 +296,10 @@ class Server:
             Logger.info("Terminating Process", module="server-stop")
             Logger._log("Goodbye!")
             sys.exit(0)
+
+            # If server fails to stop, force terminate
+            Logger.fatal("Server Failed To Terminate! Force Terminating Server", module="server-stop", printTb=False)
+            os._exit(-1)
         except Exception as e:
             # Server Stop Failed! Last Ditch Attempt To Clean Up
             # Not Using Logger Incase Thats What Breaks It
