@@ -27,7 +27,7 @@ class MapGeneratorStatus:
         # Initialize variables to default values
         self.done: bool = False
         self.status: str = "Starting Map Generation..."
-        self.progress: int = 0
+        self.progress: float = 0
 
         # Flag to dictate if status updates should be printed to term
         self.printUpdates = printUpdates
@@ -43,15 +43,15 @@ class MapGeneratorStatus:
 
         # Print intial status
         if self.printUpdates:
-            Logger.info(f"{self.generator.NAME}: {self.status} ({self.progress}%)", module="mapgen")
+            Logger.info(f"{self.generator.NAME}: {self.status} ({int(self.progress * 100)}%)", module="mapgen")
 
     # Sets generation status and progress, announces update to all waiting threads.
-    def setStatus(self, progress: int, status: str = "Generating Map...", announce: bool = True):
+    def setStatus(self, progress: float, status: str = "Generating Map...", announce: bool = True):
         # Sanity Check Input
-        if not 0 <= progress <= 100:
-            raise IndexError("Progress Must Be Between 0 and 100!")
-        if progress == 100:
-            Logger.warn("Progress should not be set to 100 directly. Use setDone() instead!", module="mapgen")
+        if not 0.00 <= progress <= 1.00:
+            raise IndexError("Progress must be a float between 0.00 (0%) and 1.00 (100%)!")
+        if progress == 1.00:
+            Logger.warn("Progress should not be set to 1.0 (100%) directly. Use setDone() instead!", module="mapgen")
 
         # Set Status and Progress
         self.status = status
@@ -59,7 +59,7 @@ class MapGeneratorStatus:
 
         # Print out map generation status
         if self.printUpdates:
-            Logger.info(f"{self.generator.NAME}: {self.status} ({self.progress}%)", module="mapgen")
+            Logger.info(f"{self.generator.NAME}: {self.status} ({int(self.progress * 100)}%)", module="mapgen")
 
         # Announce progress to all waiting listeners
         if announce:
@@ -74,11 +74,11 @@ class MapGeneratorStatus:
             # Set status and progress to done
             self.done = True
             self.status = status
-            self.progress = 100
+            self.progress = 1.00
 
             # Print out map generation status
             if self.printUpdates:
-                Logger.info(f"{self.generator.NAME}: {self.status} ({self.progress}%)", module="mapgen")
+                Logger.info(f"{self.generator.NAME}: {self.status} ({int(self.progress * 100)}%)", module="mapgen")
 
             # Announce progress to all waiting listeners
             self._event.set()

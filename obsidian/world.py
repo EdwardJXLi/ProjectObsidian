@@ -180,7 +180,7 @@ class WorldManager:
 
         # Check if generationStatus was even finalized
         if not generationStatus.done:
-            Logger.warn(f"Map Generator {generator.NAME} never set generationStatus.done() to True!")
+            Logger.warn(f"Map Generator {generator.NAME} never set generationStatus.done() to True!", module="init-world")
             # Announce to the status object that generation is done
             generationStatus.setDone()
 

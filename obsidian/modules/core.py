@@ -970,10 +970,12 @@ class CoreModule(AbstractModule):
                 if y > grassHeight:
                     mapData.extend(slice_air)
                 elif y == grassHeight:
-                    generationStatus.setStatus(int((y / sizeY) * 100), "Planting Grass....")
+                    generationStatus.setStatus(y / sizeY, "Planting Grass....")
                     mapData.extend(slice_grass)
                 else:
                     mapData.extend(slice_dirt)
+
+            generationStatus.setDone()
             return mapData
 
     @MapGenerator(
@@ -999,8 +1001,9 @@ class CoreModule(AbstractModule):
 
                 # Update status every 250000 blocks
                 if i % 500000 == 0:
-                    generationStatus.setStatus(int((i / totalBlocks) * 100), f"Placed {i} blocks...")
+                    generationStatus.setStatus(i / totalBlocks, f"Placed {i} blocks...")
 
+            generationStatus.setDone()
             return mapData
 
     #
