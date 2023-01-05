@@ -71,7 +71,7 @@ class MapGeneratorStatus:
     # Sets generation status to done.
     def setDone(self, status: str = "Map Generation Completed!"):
         if not self.done:
-            # Set status and progress to done
+            # Set status progress, and map to done
             self.done = True
             self.status = status
             self.progress = 1.00
@@ -91,12 +91,13 @@ class MapGeneratorStatus:
         self.error = error
         Logger.error(f"{self.generator.NAME}: Map Generation Failed! - {self.error}", module="mapgen")
 
-        # Disable printing of updates since it has now crashed.
-        # Prevents duplicate messages from setDone
-        self.printUpdates = False
+        # Sets the rest of the status to done with error status
+        self.done = True
+        self.status = "Map Generation Failed!"
+        self.progress = 0.00
 
-        # Set status to done with error status
-        self.setDone(status=f"Map Generation Failed: {str(error)}")
+        # Announce progress to all waiting listeners
+        self._event.set()
 
     # Gets generation progress
     def getStatus(self):
@@ -122,6 +123,24 @@ class MapGeneratorStatus:
             # Else, wait for status to update
             await self._event.wait()
             return self.done, self.progress, self.status
+
+    # Sets the final map. Should be done
+    # TODO: Make updates to map during generation?
+    # ^^^^  This could make some cool visualizations while the world is generating
+    def setFinalMap(self, finalMap: bytearray):
+        self._map = finalMap
+
+    # Get the current map. Only works when map generation is finalized
+    # TODO: This might change in the future!
+    def getFinalMap(self):
+        if not self.done:
+            raise RuntimeError("Map Generation Not Complete!")
+        elif self.error:
+            raise RuntimeError("Map Generation Failed!")
+        elif not self._map:
+            raise RuntimeError("Map Is Empty! setFinalMap() was never called!")
+        else:
+            return self._map
 
 
 # Map Generator Skeleton

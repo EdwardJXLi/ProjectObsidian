@@ -110,20 +110,22 @@ class WorldManager:
         if seed is None:
             seed = random.randint(0, 2**64)
 
+        # Generate the world map
+        worldMap = self.generateMap(
+            sizeX,
+            sizeY,
+            sizeZ,
+            seed,
+            generator
+        )
+
         # Create World
         self.worlds[worldName] = World(
             self,  # Pass In World Manager
             worldName,  # Pass In World Name
             sizeX, sizeY, sizeZ,  # Passing World X, Y, Z
             seed,  # Passing In World Seed
-            # Generate the actual map
-            self.generateMap(
-                sizeX,
-                sizeY,
-                sizeZ,
-                seed,
-                generator
-            ),  # Generating Map Data
+            worldMap,  # Passing In World Map
             # Spawn Information
             spawnX=spawnX,
             spawnY=spawnY,
@@ -178,6 +180,10 @@ class WorldManager:
             generationStatus.setError(e)
             raise e
 
+        # Set the final map for generationStatus
+        # Used if the map is needed anywhere else outside current thread
+        generationStatus.setFinalMap(generatedMap)
+
         # Check if generationStatus was even finalized
         if not generationStatus.done:
             Logger.warn(f"Map Generator {generator.NAME} never set generationStatus.done() to True!", module="init-world")
@@ -185,6 +191,7 @@ class WorldManager:
             generationStatus.setDone()
 
         Logger.debug(f"Generated Map With Final Size Of {len(generatedMap)}", module="init-world")
+
         # Return Generated Map bytearray
         return generatedMap
 
