@@ -18,7 +18,8 @@ from obsidian.blocks import BlockManager, Blocks, AbstractBlock
 from obsidian.worldformat import WorldFormats, AbstractWorldFormat
 from obsidian.mapgen import (
     MapGenerators,
-    AbstractMapGenerator
+    AbstractMapGenerator,
+    MapGeneratorStatus
 )
 from obsidian.packet import Packets
 from obsidian.constants import SERVERPATH
@@ -147,15 +148,41 @@ class WorldManager:
         self.worlds[worldName].saveMap()
         return self.worlds[worldName]
 
-    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int, generator: AbstractMapGenerator, *args, **kwargs) -> bytearray:
+    def generateMap(
+        self,
+        sizeX: int,
+        sizeY: int,
+        sizeZ: int,
+        seed: int,
+        generator: AbstractMapGenerator,
+        *args,
+        generationStatus: Optional[MapGeneratorStatus] = None,
+        **kwargs
+    ) -> bytearray:
         Logger.debug(f"Generating World With Size {sizeX}, {sizeY}, {sizeX} With Generator {generator.NAME}", module="init-world")
-        # Call Generate Map Function From Generator
-        generatedMap = generator.generateMap(sizeX, sizeY, sizeZ, seed, *args, **kwargs)
+        # Create a generation status object to pass around
+        if not generationStatus:
+            generationStatus = MapGeneratorStatus(generator)
 
-        # Verify Map Data Size
-        expectedSize = sizeX * sizeY * sizeZ
-        if len(generatedMap) != expectedSize:
-            raise MapGenerationError(f"Expected Map Size {expectedSize} While Generating World. Got {len(generatedMap)}")
+        # Call Generate Map Function From Generator
+        try:
+            # Generate Map
+            generatedMap = generator.generateMap(sizeX, sizeY, sizeZ, seed, generationStatus, *args, **kwargs)
+
+            # Verify Map Data Size
+            expectedSize = sizeX * sizeY * sizeZ
+            if len(generatedMap) != expectedSize:
+                raise MapGenerationError(f"Expected Map Size {expectedSize} While Generating World. Got {len(generatedMap)}")
+        except Exception as e:
+            # Announce to the status object that an error occurred, then raise same error
+            generationStatus.setError(e)
+            raise e
+
+        # Check if generationStatus was even finalized
+        if not generationStatus.done:
+            Logger.warn(f"Map Generator {generator.NAME} never set generationStatus.done() to True!")
+            # Announce to the status object that generation is done
+            generationStatus.setDone()
 
         Logger.debug(f"Generated Map With Final Size Of {len(generatedMap)}", module="init-world")
         # Return Generated Map bytearray

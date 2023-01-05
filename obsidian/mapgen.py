@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Type, Generic
+from typing import Type, Generic, Optional
 from dataclasses import dataclass
+import asyncio
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 from obsidian.utils.ptl import PrettyTableLite
@@ -16,10 +17,126 @@ def MapGenerator(*args, **kwargs):
     return Submodule(MapGeneratorManager, *args, **kwargs)
 
 
+# Map generation status
+# Used for live updates in multithreaded map generation
+class MapGeneratorStatus:
+    def __init__(self, generator, printUpdates: bool = True):
+        # Base level information on generators
+        self.generator = generator
+
+        # Initialize variables to default values
+        self.done: bool = False
+        self.status: str = "Starting Map Generation..."
+        self.progress: int = 0
+
+        # Flag to dictate if status updates should be printed to term
+        self.printUpdates = printUpdates
+
+        # Error Handling for Map Generation
+        self.error: Optional[Exception] = None
+
+        # Final Map Output for Listeners
+        self._map: Optional[bytearray] = None
+
+        # Flow control helpers
+        self._event = asyncio.Event()
+
+        # Print intial status
+        if self.printUpdates:
+            Logger.info(f"{self.generator.NAME}: {self.status} ({self.progress}%)", module="mapgen")
+
+    # Sets generation status and progress, announces update to all waiting threads.
+    def setStatus(self, progress: int, status: str = "Generating Map...", announce: bool = True):
+        # Sanity Check Input
+        if not 0 <= 100 <= progress:
+            raise IndexError("Progress Must Be Between 0 and 100!")
+        if progress == 100:
+            Logger.warn("Progress should not be set to 100 directly. Use setDone() instead!", module="mapgen")
+
+        # Set Status and Progress
+        self.status = status
+        self.progress = progress
+
+        # Print out map generation status
+        if self.printUpdates:
+            Logger.info(f"{self.generator.NAME}: {self.status} ({self.progress}%)", module="mapgen")
+
+        # Announce progress to all waiting listeners
+        if announce:
+            # Quickly set and clear event to announce update
+            # This should be fine, but if it causes issues, a sleep might be needed
+            self._event.set()
+            self._event.clear()
+
+    # Sets generation status to done.
+    def setDone(self, status: str = "Map Generation Completed!"):
+        if not self.done:
+            # Set status and progress to done
+            self.done = True
+            self.status = status
+            self.progress = 100
+
+            # Print out map generation status
+            if self.printUpdates:
+                Logger.info(f"{self.generator.NAME}: {self.status} ({self.progress}%)", module="mapgen")
+
+            # Announce progress to all waiting listeners
+            self._event.set()
+        else:
+            Logger.warn("Map Generation Already Completed!", module="mapgen")
+
+    # Sets error for when a map generation fails
+    def setError(self, error: Exception):
+        # Set the error to the error in question, so it can be thrown again
+        self.error = error
+        Logger.error(f"{self.generator.NAME}: Map Generation Failed! - {self.error}", module="mapgen")
+
+        # Disable printing of updates since it has now crashed.
+        # Prevents duplicate messages from setDone
+        self.printUpdates = False
+
+        # Set status to done with error status
+        self.setDone(status=f"Map Generation Failed: {str(error)}")
+
+    # Gets generation progress
+    def getStatus(self):
+        # Block thread until status updates
+        if self.error:
+            # Raise error if error is set
+            raise self.error
+        else:
+            # Else, return the current status
+            return self.done, self.progress, self.status
+
+    # Waits for status to update
+    # TODO: Maybe make a non-async version of this?
+    async def waitForStatus(self):
+        # Block thread until status updates
+        if self.error:
+            # Raise error if error is set
+            raise self.error
+        elif self.done:
+            # If done, no need to wait
+            return self.done, self.progress, self.status
+        else:
+            # Else, wait for status to update
+            await self._event.wait()
+            return self.done, self.progress, self.status
+
+
 # Map Generator Skeleton
 @dataclass
 class AbstractMapGenerator(AbstractSubmodule[T], Generic[T]):
-    def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int, *args, **kwargs) -> bytearray:
+    def generateMap(
+        self,
+        sizeX: int,
+        sizeY: int,
+        sizeZ: int,
+        seed: int,
+        generationStatus: MapGeneratorStatus,
+        *args,
+        **kwargs
+    ) -> bytearray:
         raise NotImplementedError("Map Generation Not Implemented")
 
     @staticmethod

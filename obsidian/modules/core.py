@@ -5,7 +5,7 @@ from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat, WorldFormats
 from obsidian.world import World, WorldManager
-from obsidian.mapgen import AbstractMapGenerator, MapGenerator, MapGenerators
+from obsidian.mapgen import AbstractMapGenerator, MapGeneratorStatus, MapGenerator, MapGenerators
 from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
 from obsidian.errors import (
@@ -954,7 +954,7 @@ class CoreModule(AbstractModule):
             super().__init__(*args)
 
         # Default Map Generator (Creates Flat Map Of Grass And Dirt)
-        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int):
+        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int, generationStatus: MapGeneratorStatus):
             grassHeight = sizeY // 2
             # Generate Map
             mapData = bytearray(0)
@@ -982,7 +982,7 @@ class CoreModule(AbstractModule):
             super().__init__(*args)
 
         # Generates a world of all random blocks
-        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int):
+        def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int, generationStatus: MapGeneratorStatus):
             # Initialize helper variables
             rand = random.Random(seed)
             allBlocks = Blocks.getAllBlockIds()
