@@ -48,7 +48,7 @@ class MapGeneratorStatus:
     # Sets generation status and progress, announces update to all waiting threads.
     def setStatus(self, progress: int, status: str = "Generating Map...", announce: bool = True):
         # Sanity Check Input
-        if not 0 <= 100 <= progress:
+        if not 0 <= progress <= 100:
             raise IndexError("Progress Must Be Between 0 and 100!")
         if progress == 100:
             Logger.warn("Progress should not be set to 100 directly. Use setDone() instead!", module="mapgen")

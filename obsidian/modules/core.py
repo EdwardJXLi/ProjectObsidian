@@ -955,18 +955,22 @@ class CoreModule(AbstractModule):
 
         # Default Map Generator (Creates Flat Map Of Grass And Dirt)
         def generateMap(self, sizeX: int, sizeY: int, sizeZ: int, seed: int, generationStatus: MapGeneratorStatus):
-            grassHeight = sizeY // 2
             # Generate Map
             mapData = bytearray(0)
+
             # Pre-generate air, dirt, and grass layers
             slice_air = bytearray([Blocks.Air.ID]) * (sizeX * sizeZ)
             slice_dirt = bytearray([Blocks.Dirt.ID]) * (sizeX * sizeZ)
             slice_grass = bytearray([Blocks.Grass.ID]) * (sizeX * sizeZ)
+
             # Create World
+            grassHeight = sizeY // 2
+            generationStatus.setStatus(0, "Placing Dirt....")
             for y in range(sizeY):
                 if y > grassHeight:
                     mapData.extend(slice_air)
                 elif y == grassHeight:
+                    generationStatus.setStatus(int((y / sizeY) * 100), "Planting Grass....")
                     mapData.extend(slice_grass)
                 else:
                     mapData.extend(slice_dirt)
@@ -989,8 +993,13 @@ class CoreModule(AbstractModule):
 
             # Generate Map
             mapData = bytearray()
-            for i in range(sizeX * sizeY * sizeZ):
+            totalBlocks = sizeX * sizeY * sizeZ
+            for i in range(totalBlocks):
                 mapData.append(rand.choice(allBlocks))
+
+                # Update status every 250000 blocks
+                if i % 500000 == 0:
+                    generationStatus.setStatus(int((i / totalBlocks) * 100), f"Placed {i} blocks...")
 
             return mapData
 
