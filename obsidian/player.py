@@ -17,6 +17,7 @@ from obsidian.types import UsernameType, _formatUsername
 from obsidian.errors import (
     ServerError,
     WorldError,
+    PacketError,
     ClientError,
     BlockError,
     CommandError,
@@ -570,6 +571,13 @@ class Player:
         if self.worldPlayerManager is None:
             Logger.error(f"Player {self.name} Trying To handleBlockUpdate When No World Is Joined", module="player")
             return None  # Skip Rest
+
+        # Check if block is within world boundaries
+        try:
+            self.worldPlayerManager.world.getBlock(blockX, blockY, blockZ)
+        except BlockError:
+            Logger.error(f"Player {self.name} Trying To Place Block Outside Of World Boundaries", module="player", printTb=False)
+            raise PacketError("Block Out Of Bounds")
 
         # Trying To Update Block On Player World
         try:

@@ -679,15 +679,15 @@ class CoreModule(AbstractModule):
                 EXTENSIONS=["gz"]
             )
 
-            Logger.warn("The 'Raw Map' save file format is meant as a placeholder and is not meant to be used in production.", module="raw-map")
-            Logger.warn("Although it will probably work, please install a more robust save format.", module="raw-map")
-
         def loadWorld(
             self,
             fileIO: io.BufferedRandom,
             worldManager: WorldManager,
             persistent: bool = True
         ):
+            Logger.warn("The 'Raw Map' save file format is meant as a placeholder and is not meant to be used in production.", module="raw-map")
+            Logger.warn("Although it will probably work, please install a more robust save format.", module="raw-map")
+
             rawData = gzip.GzipFile(fileobj=fileIO).read()
             # Expected Map Size (MAX SIZE)
             fileSize = 256 * 256 * 256
@@ -712,6 +712,9 @@ class CoreModule(AbstractModule):
             fileIO: io.BufferedRandom,
             worldManager: WorldManager
         ):
+            Logger.warn("The 'Raw Map' save file format is meant as a placeholder and is not meant to be used in production.", module="raw-map")
+            Logger.warn("Although it will probably work, please install a more robust save format.", module="raw-map")
+
             # Checking if file size matches!
             if not (world.sizeX == 256 and world.sizeY == 256 and world.sizeZ == 256):
                 raise WorldFormatError(f"RawWorldFormat - Trying to save world that has invalid world size! Expected: 256, 256, 256! Got: {world.sizeX}, {world.sizeY}, {world.sizeZ}!")
