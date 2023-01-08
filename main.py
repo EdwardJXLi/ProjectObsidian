@@ -1,5 +1,5 @@
 """
-Copyright (C) RadioactiveHydra (Edward) 2021
+Copyright (C) RadioactiveHydra (Edward) 2023
 """
 
 # Check python version to see if compatible
