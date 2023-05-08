@@ -93,7 +93,7 @@ class CoreModule(AbstractModule):
                 raise ClientError("Invalid Character In Verification Key")
 
             # Check Username Length (Hard Capped At 16 To Prevent Length Bugs)
-            if(len(username) > 16):
+            if (len(username) > 16):
                 raise ClientError("Your Username Is Too Long (Max 16 Chars)")
 
             # Return User Identification
@@ -798,11 +798,11 @@ class CoreModule(AbstractModule):
                 generator = None  # Continue with no generator
 
             # Check if world spawn need to be regenerated
-            if (True and "spawnX" not in worldMetadata or
-                         "spawnY" not in worldMetadata or
-                         "spawnZ" not in worldMetadata or
-                         "spawnYaw" not in worldMetadata or
-                         "spawnPitch" not in worldMetadata):
+            if (any(("spawnX" not in worldMetadata,
+                     "spawnY" not in worldMetadata,
+                     "spawnZ" not in worldMetadata,
+                     "spawnYaw" not in worldMetadata,
+                     "spawnPitch" not in worldMetadata))):
                 Logger.warn("ObsidianWorldFormat - World Spawn Data Missing! Generating New World Spawn Location...")
                 resetWorldSpawn = True
             else:
@@ -2126,7 +2126,7 @@ class CoreModule(AbstractModule):
             serverConfig.save()
 
             # Update User On Its OP Status
-            if(player := ctx.playerManager.players.get(username, None)):
+            if (player := ctx.playerManager.players.get(username, None)):
                 await player.updateOperatorStatus()
 
             # Send Response Back
@@ -2155,7 +2155,7 @@ class CoreModule(AbstractModule):
             serverConfig.save()
 
             # Update User On Its OP Status
-            if(player := ctx.playerManager.players.get(username, None)):
+            if (player := ctx.playerManager.players.get(username, None)):
                 await player.updateOperatorStatus()
 
             # Send Response Back

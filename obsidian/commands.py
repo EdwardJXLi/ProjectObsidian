@@ -121,7 +121,7 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
             Logger.debug("Argument Type is part of ignored types.", module="converter")
             return arg
         # Transform the argument
-        transformed = param.annotation(arg)
+        transformed = param.annotation.__call__(arg)
         # Check if transformation is successful
         if type(transformed) == param.annotation:
             return transformed
