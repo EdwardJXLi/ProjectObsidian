@@ -2633,31 +2633,29 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["save", "s", "saveall"], OP=True)
 
         async def execute(self, ctx: Player):
-            # Get list of worlds (should only be used to notify player)
-            world_list = list(ctx.server.worldManager.worlds.values())
-
-            await ctx.sendMessage("&aStarting World Save!")
-            await ctx.sendMessage(
-                CommandHelper.format_list(
-                    world_list,
-                    process_input=lambda p: str(p.name),
-                    initial_message="&eSaving These Worlds:",
-                    separator=", "
-                )
-            )
-
             # Save Worlds
             if ctx.worldPlayerManager is not None:
-                world = ctx.worldPlayerManager.world
-                if world.persistent:
-                    world.saveMap()
-                else:
-                    raise CommandError("World is not persistent. Cannot save!")
+                # Get list of worlds (should only be used to notify player)
+                world_list = list(ctx.server.worldManager.worlds.values())
+
+                # Send world save message to entire server
+                await ctx.playerManager.sendGlobalMessage("&aStarting Manual World Save!")
+                await ctx.playerManager.sendGlobalMessage("&eWarning: The server may lag while saving!")
+                await ctx.sendMessage(
+                    CommandHelper.format_list(
+                        world_list,
+                        process_input=lambda p: str(p.name),
+                        initial_message="&eSaving These Worlds: ",
+                        separator=", "
+                    )
+                )
+
+                ctx.worldPlayerManager.world.worldManager.saveWorlds()
+
+                # Update server members on save
+                await ctx.playerManager.sendGlobalMessage(f"&a{len(world_list)} Worlds Saved!")
             else:
                 raise CommandError("You are not in a world!")
-
-            # Send Response Back
-            await ctx.sendMessage("&aWorlds Saved!")
 
     @Command(
         "SaveWorld",
@@ -2666,19 +2664,24 @@ class CoreModule(AbstractModule):
     )
     class SaveWorldCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["saveworld", "sw"], OP=True)
+            super().__init__(*args, ACTIVATORS=["saveworld", "savemap", "sw", "sm"], OP=True)
 
         async def execute(self, ctx: Player):
-            await ctx.sendMessage("&aStarting World Save!")
-
-            # Save Worlds
+            # Save World
             if ctx.worldPlayerManager is not None:
-                ctx.worldPlayerManager.world.saveMap()
+                # Send world save message to entire world
+                await ctx.worldPlayerManager.sendWorldMessage("&aStarting Manual World Save!")
+
+                world = ctx.worldPlayerManager.world
+                if world.persistent:
+                    world.saveMap()
+                else:
+                    raise CommandError("World is not persistent. Cannot save!")
+
+                # Send Update to entire world
+                await ctx.worldPlayerManager.sendWorldMessage("&aWorld Saved!")
             else:
                 raise CommandError("You are not in a world!")
-
-            # Send Response Back
-            await ctx.sendMessage("&aWorlds Saved!")
 
     @Command(
         "ConvertWorld",
