@@ -567,8 +567,6 @@ class World:
                 if backupPath.exists():
                     Logger.warn(f"Backup File Already Exists For World {self.name}.", module="world-save")
                     Logger.warn("This usually means there was an unclean previous save.", module="world-save")
-                    if not Logger.askConfirmation("Do you want to continue saving?"):
-                        return False
 
                 # Create and Save Backup File
                 with open(backupPath, "wb+") as backupFile:
