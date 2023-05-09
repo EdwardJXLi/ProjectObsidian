@@ -39,6 +39,10 @@ class MapGenerationError(Exception):
     pass
 
 
+class MapSaveError(Exception):
+    pass
+
+
 class ServerError(Exception):
     pass
 

@@ -27,6 +27,7 @@ from obsidian.types import format_name
 from obsidian.errors import (
     FatalError,
     MapGenerationError,
+    MapSaveError,
     BlockError,
     WorldError,
     ClientError,
@@ -546,11 +547,58 @@ class World:
     def saveMap(self) -> bool:
         if self.persistent and self.fileIO:
             Logger.info(f"Attempting To Save World {self.name}", module="world-save")
+            savePath = Path(self.fileIO.name)
+            backupPath = savePath.with_suffix(savePath.suffix + ".bak")
+
+            # Make a backup of the current world
+            if self.worldManager.server.config.backupBeforeSave:
+                Logger.debug(f"Creating Temporary Backup Of World {self.name}", module="world-save")
+
+                # Check If Backup File Already Exists
+                if backupPath.exists():
+                    Logger.warn(f"Backup File Already Exists For World {self.name}.", module="world-save")
+                    Logger.warn("This usually means there was an unclean previous save.", module="world-save")
+                    if not Logger.askConfirmation("Do you want to continue saving?"):
+                        return False
+
+                # Create and Save Backup File
+                with open(backupPath, "wb+") as backupFile:
+                    self.worldManager.worldFormat.saveWorld(self, backupFile, self.worldManager)
+
+            # Save the world to file
             self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
+
+            # Check is save was successful
+            if self.worldManager.server.config.verifyMapAfterSave:
+                self.verifyWorldSave()
+                Logger.info("World Save Verification Successful!", module="world-save")
+
+            # If a backup file was deleted, remove it.
+            if self.worldManager.server.config.backupBeforeSave:
+                Logger.debug(f"Removing backup file for world {self.name}", module="world-save")
+                backupPath.unlink()
+
             return True
         else:
             Logger.warn(f"World {self.name} Is Not Persistent! Not Saving.", module="world-save")
             return False
+
+    def verifyWorldSave(self) -> None:
+        Logger.info(f"Verifying World Save For World {self.name}", module="world-save")
+
+        # Check if fileIO is still defined
+        if not self.fileIO:
+            raise MapSaveError("World Save Verification Failed! FileIO Is Not Defined! This Should Not Happen!")
+
+        # Try loading back the world file and check if any errors occurs.
+        try:
+            self.worldManager.worldFormat.loadWorld(self.fileIO, self.worldManager)
+
+            # TODO: we could do more sanity checks, like map content,
+            # but lets not do that for now as there is a lot of concurrency issues with that...
+        except Exception as e:
+            Logger.error(f"World Save Verification Failed! Error While Verifying World Save For World {self.name}!", module="world-save-verify")
+            raise MapSaveError(e)
 
     def gzipMap(self, compressionLevel: int = -1, includeSizeHeader: bool = False) -> bytes:
         # If Gzip Compression Level Is -1, Use Default!

@@ -171,6 +171,8 @@ class ServerConfig(AbstractConfig):
     worldMaxPlayers: Optional[int] = None  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
     defaultSaveFormat: str = "raw"  # Name Of Default World Save Format
+    backupBeforeSave: bool = True  # Whether to backup the map before saving
+    verifyMapAfterSave: bool = True  # Whether to try loading and verifying the map after saving.
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     loginMessage: str = "Testing Server"  # Message Displayed When A Player Joins The Server
