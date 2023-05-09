@@ -271,6 +271,9 @@ class WorldManager:
         return True  # Returning true to indicate that all worlds were loaded successfully.
 
     def saveWorlds(self) -> bool:
+        # Keep track on whether error occurs during save.
+        errorDuringSave = False
+
         Logger.debug("Starting Attempt to Save All Worlds", module="world-save")
         if self.persistent and (self.server.config.worldSaveLocation is not None):
             Logger.info("Saving All Worlds...", module="world-save")
@@ -285,10 +288,16 @@ class WorldManager:
                         world.saveMap()
                     except Exception as e:
                         Logger.error(f"Error While Saving World {worldName} - {type(e).__name__}: {e}", module="world-save")
+                        errorDuringSave = True
                 else:
                     Logger.warn(f"World {worldName} Is Non Persistent! Skipping World Save!", module="world-save")
         else:
             Logger.warn("World Manager Is Non Persistent! Skipping World Save!", module="world-save")
+
+        # If error occurred during save, raise an error indicating the world save failed
+        if errorDuringSave:
+            raise MapSaveError("Error Occurred During World Save! Check Logs For More Info!")
+
         return True  # Return True to indicate that world save was successful.
 
     def closeWorlds(self) -> bool:
@@ -571,6 +580,9 @@ class World:
             # Check is save was successful
             if self.worldManager.server.config.verifyMapAfterSave:
                 self.verifyWorldSave()
+                if "3" in self.fileIO.name:
+                    raise MapSaveError("BRUH")
+
                 Logger.info("World Save Verification Successful!", module="world-save")
 
             # If a backup file was deleted, remove it.

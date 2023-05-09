@@ -226,10 +226,10 @@ class Server:
 
         # Start a new thread with a dead mans switch to kill the server if it takes too long to stop
         def deadMansProcess():
-            time.sleep(5)
-            Logger.warn("Stop procedure is taking a long time. For stopping in 10 seconds", "server-stop")
+            time.sleep(30)
+            Logger.warn("Stop procedure is taking a long time. For stopping in 30 seconds", "server-stop")
             Logger.warn("DATA MAY BE LOST!", "server-stop")
-            time.sleep(10)
+            time.sleep(30)
             Logger.fatal("FORCE STOPPING SERVER!", "server-stop", printTb=False)
             os._exit(-1)
         Logger.debug("Starting Dead Mans Thread", "server-stop")
