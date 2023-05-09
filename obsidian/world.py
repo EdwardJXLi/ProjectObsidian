@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 
 from typing import Optional
 from pathlib import Path
+from threading import Lock
 import io
 import gzip
 import uuid
@@ -42,6 +43,7 @@ class WorldManager:
         self.worlds: dict[str, World] = dict()
         self.ignorelist: list[str] = ignorelist
         self.persistent: bool = self.server.config.persistentWorlds
+        self.lock: Lock = Lock()
         # Defined Later In Init
         # self.worldFormat: AbstractWorldFormat
 
@@ -197,53 +199,69 @@ class WorldManager:
         return generatedMap
 
     def loadWorlds(self, reload: bool = False) -> bool:
-        Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
-        if self.server.config.worldSaveLocation is not None:
-            Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
-            # Loop Through All Files Given In World Folder
-            for savefile in Path(SERVERPATH, self.server.config.worldSaveLocation).iterdir():
-                # Get Pure File Name (No Extensions)
-                savename = savefile.stem
-                Logger.verbose(f"Checking Extension and Status of World File {savefile}", module="world-load")
-                # Check If File Type Matches With The Extensions Provided By worldFormat
-                if savefile.suffix[1:] not in self.worldFormat.EXTENSIONS:  # doing [1:] to remove the "."
-                    Logger.debug(f"Ignoring World File {savefile}. File Extension Not Known!", module="world-load")
-                # Also Check If World Is Ignored
-                elif savename in self.ignorelist:
-                    Logger.info(f"Ignoring World File {savefile}. World Name Is On Ignore List!", module="world-load")
-                # Also Check If World Name Is Already Loaded (Same File Names with Different Extensions)
-                elif savename in self.worlds.keys():
-                    if not reload:
-                        Logger.warn(f"Ignoring World File {savefile}. World With Similar Name Has Already Been Registered!", module="world-load")
-                        Logger.warn(f"World File {self.worlds[savename].name} Conflicts With World File {savefile}!", module="world-load")
-                        Logger.askConfirmation()
+        with self.lock:
+            Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
+            if self.server.config.worldSaveLocation is not None:
+                Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
+                # Loop Through All Files Given In World Folder
+                for savefile in Path(SERVERPATH, self.server.config.worldSaveLocation).iterdir():
+                    # Get Pure File Name (No Extensions)
+                    savename = savefile.stem
+                    Logger.verbose(f"Checking Extension and Status of World File {savefile}", module="world-load")
+                    # Check If File Type Matches With The Extensions Provided By worldFormat
+                    if savefile.suffix[1:] not in self.worldFormat.EXTENSIONS:  # doing [1:] to remove the "."
+                        Logger.debug(f"Ignoring World File {savefile}. File Extension Not Known!", module="world-load")
+                    # Also Check If World Is Ignored
+                    elif savename in self.ignorelist:
+                        Logger.info(f"Ignoring World File {savefile}. World Name Is On Ignore List!", module="world-load")
+                    # Also Check If World Name Is Already Loaded (Same File Names with Different Extensions)
+                    elif savename in self.worlds.keys():
+                        if not reload:
+                            Logger.warn(f"Ignoring World File {savefile}. World With Similar Name Has Already Been Registered!", module="world-load")
+                            Logger.warn(f"World File {self.worlds[savename].name} Conflicts With World File {savefile}!", module="world-load")
+                            Logger.askConfirmation()
+                        else:
+                            Logger.warn(f"Ignoring World File {savefile}. World Already Loaded!", module="world-load")
                     else:
-                        Logger.warn(f"Ignoring World File {savefile}. World Already Loaded!", module="world-load")
-                else:
-                    Logger.debug(f"Detected World File {savefile}. Attempting To Load World", module="world-load")
-                    # (Attempt) To Load Up World
-                    try:
-                        Logger.info(f"Loading World {savename}", module="world-load")
-                        fileIO = open(savefile, "rb+")
-                        self.worlds[savename] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
-                    except Exception as e:
-                        Logger.error(f"Error While Loading World {savefile} - {type(e).__name__}: {e}", module="world-load")
-                        Logger.askConfirmation()
-            # Check If Default World Is Loaded
-            if self.server.config.defaultWorld not in self.worlds.keys():
-                # Check if other worlds were loaded as well
-                if len(self.worlds.keys()) > 0:
-                    Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
-                    Logger.warn("Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
-                    # Ask User If They Want To Continue With World Generation
-                    Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load")
-                    Logger.askConfirmation(message="Generate New World?")
-                else:
-                    Logger.warn("No Existing Worlds Were Detected. Generating New World!", module="world-load")
-                # Generate New World
+                        Logger.debug(f"Detected World File {savefile}. Attempting To Load World", module="world-load")
+                        # (Attempt) To Load Up World
+                        try:
+                            Logger.info(f"Loading World {savename}", module="world-load")
+                            fileIO = open(savefile, "rb+")
+                            self.worlds[savename] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
+                        except Exception as e:
+                            Logger.error(f"Error While Loading World {savefile} - {type(e).__name__}: {e}", module="world-load")
+                            Logger.askConfirmation()
+                # Check If Default World Is Loaded
+                if self.server.config.defaultWorld not in self.worlds.keys():
+                    # Check if other worlds were loaded as well
+                    if len(self.worlds.keys()) > 0:
+                        Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
+                        Logger.warn("Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
+                        # Ask User If They Want To Continue With World Generation
+                        Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load")
+                        Logger.askConfirmation(message="Generate New World?")
+                    else:
+                        Logger.warn("No Existing Worlds Were Detected. Generating New World!", module="world-load")
+                    # Generate New World
+                    defaultWorldName = self.server.config.defaultWorld
+                    defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
+                    Logger.debug(f"Creating World {defaultWorldName}", module="world-load")
+                    self.createWorld(
+                        defaultWorldName,
+                        self.server.config.worldSizeX,
+                        self.server.config.worldSizeY,
+                        self.server.config.worldSizeZ,
+                        self.server.config.worldSeed,
+                        defaultGenerator,
+                        persistent=self.persistent
+                    )
+            else:
+                Logger.warn("World Manager does not have a world save location!", module="world-load")
+                # Create Non-Persistent Temporary World
                 defaultWorldName = self.server.config.defaultWorld
                 defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
-                Logger.debug(f"Creating World {defaultWorldName}", module="world-load")
+                Logger.warn(f"Creating temporary world {defaultWorldName}", module="world-load")
                 self.createWorld(
                     defaultWorldName,
                     self.server.config.worldSizeX,
@@ -251,24 +269,9 @@ class WorldManager:
                     self.server.config.worldSizeZ,
                     self.server.config.worldSeed,
                     defaultGenerator,
-                    persistent=self.persistent
+                    persistent=False,
                 )
-        else:
-            Logger.warn("World Manager does not have a world save location!", module="world-load")
-            # Create Non-Persistent Temporary World
-            defaultWorldName = self.server.config.defaultWorld
-            defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
-            Logger.warn(f"Creating temporary world {defaultWorldName}", module="world-load")
-            self.createWorld(
-                defaultWorldName,
-                self.server.config.worldSizeX,
-                self.server.config.worldSizeY,
-                self.server.config.worldSizeZ,
-                self.server.config.worldSeed,
-                defaultGenerator,
-                persistent=False,
-            )
-        return True  # Returning true to indicate that all worlds were loaded successfully.
+            return True  # Returning true to indicate that all worlds were loaded successfully.
 
     def saveWorlds(self) -> bool:
         # Keep track on whether error occurs during save.
@@ -554,44 +557,43 @@ class World:
         return scanY
 
     def saveMap(self) -> bool:
-        if self.persistent and self.fileIO:
-            Logger.info(f"Attempting To Save World {self.name}", module="world-save")
-            savePath = Path(self.fileIO.name)
-            backupPath = savePath.with_suffix(savePath.suffix + ".bak")
+        with self.worldManager.lock:
+            if self.persistent and self.fileIO:
+                Logger.info(f"Attempting To Save World {self.name}", module="world-save")
+                savePath = Path(self.fileIO.name)
+                backupPath = savePath.with_suffix(savePath.suffix + ".bak")
 
-            # Make a backup of the current world
-            if self.worldManager.server.config.backupBeforeSave:
-                Logger.debug(f"Creating Temporary Backup Of World {self.name}", module="world-save")
+                # Make a backup of the current world
+                if self.worldManager.server.config.backupBeforeSave:
+                    Logger.debug(f"Creating Temporary Backup Of World {self.name}", module="world-save")
 
-                # Check If Backup File Already Exists
-                if backupPath.exists():
-                    Logger.warn(f"Backup File Already Exists For World {self.name}.", module="world-save")
-                    Logger.warn("This usually means there was an unclean previous save.", module="world-save")
+                    # Check If Backup File Already Exists
+                    if backupPath.exists():
+                        Logger.warn(f"Backup File Already Exists For World {self.name}.", module="world-save")
+                        Logger.warn("This usually means there was an unclean previous save.", module="world-save")
 
-                # Create and Save Backup File
-                with open(backupPath, "wb+") as backupFile:
-                    self.worldManager.worldFormat.saveWorld(self, backupFile, self.worldManager)
+                    # Create and Save Backup File
+                    with open(backupPath, "wb+") as backupFile:
+                        self.worldManager.worldFormat.saveWorld(self, backupFile, self.worldManager)
 
-            # Save the world to file
-            self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
+                # Save the world to file
+                self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
 
-            # Check is save was successful
-            if self.worldManager.server.config.verifyMapAfterSave:
-                self.verifyWorldSave()
-                if "3" in self.fileIO.name:
-                    raise MapSaveError("BRUH")
+                # Check is save was successful
+                if self.worldManager.server.config.verifyMapAfterSave:
+                    self.verifyWorldSave()
 
-                Logger.info("World Save Verification Successful!", module="world-save")
+                    Logger.info("World Save Verification Successful!", module="world-save")
 
-            # If a backup file was deleted, remove it.
-            if self.worldManager.server.config.backupBeforeSave:
-                Logger.debug(f"Removing backup file for world {self.name}", module="world-save")
-                backupPath.unlink()
+                # If a backup file was deleted, remove it.
+                if self.worldManager.server.config.backupBeforeSave:
+                    Logger.debug(f"Removing backup file for world {self.name}", module="world-save")
+                    backupPath.unlink()
 
-            return True
-        else:
-            Logger.warn(f"World {self.name} Is Not Persistent! Not Saving.", module="world-save")
-            return False
+                return True
+            else:
+                Logger.warn(f"World {self.name} Is Not Persistent! Not Saving.", module="world-save")
+                return False
 
     def verifyWorldSave(self) -> None:
         Logger.info(f"Verifying World Save For World {self.name}", module="world-save")
