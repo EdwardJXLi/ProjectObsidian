@@ -199,9 +199,10 @@ class WorldManager:
         return generatedMap
 
     def loadWorlds(self, reload: bool = False) -> bool:
-        with self.lock:
-            Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
-            if self.server.config.worldSaveLocation is not None:
+        Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
+        if self.server.config.worldSaveLocation is not None:
+            # Open Lock
+            with self.lock:
                 Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
                 # Loop Through All Files Given In World Folder
                 for savefile in Path(SERVERPATH, self.server.config.worldSaveLocation).iterdir():
@@ -232,36 +233,21 @@ class WorldManager:
                         except Exception as e:
                             Logger.error(f"Error While Loading World {savefile} - {type(e).__name__}: {e}", module="world-load")
                             Logger.askConfirmation()
-                # Check If Default World Is Loaded
-                if self.server.config.defaultWorld not in self.worlds.keys():
-                    # Check if other worlds were loaded as well
-                    if len(self.worlds.keys()) > 0:
-                        Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
-                        Logger.warn("Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
-                        # Ask User If They Want To Continue With World Generation
-                        Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load")
-                        Logger.askConfirmation(message="Generate New World?")
-                    else:
-                        Logger.warn("No Existing Worlds Were Detected. Generating New World!", module="world-load")
-                    # Generate New World
-                    defaultWorldName = self.server.config.defaultWorld
-                    defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
-                    Logger.debug(f"Creating World {defaultWorldName}", module="world-load")
-                    self.createWorld(
-                        defaultWorldName,
-                        self.server.config.worldSizeX,
-                        self.server.config.worldSizeY,
-                        self.server.config.worldSizeZ,
-                        self.server.config.worldSeed,
-                        defaultGenerator,
-                        persistent=self.persistent
-                    )
-            else:
-                Logger.warn("World Manager does not have a world save location!", module="world-load")
-                # Create Non-Persistent Temporary World
+            # Check If Default World Is Loaded
+            if self.server.config.defaultWorld not in self.worlds.keys():
+                # Check if other worlds were loaded as well
+                if len(self.worlds.keys()) > 0:
+                    Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
+                    Logger.warn("Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
+                    # Ask User If They Want To Continue With World Generation
+                    Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load")
+                    Logger.askConfirmation(message="Generate New World?")
+                else:
+                    Logger.warn("No Existing Worlds Were Detected. Generating New World!", module="world-load")
+                # Generate New World
                 defaultWorldName = self.server.config.defaultWorld
                 defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
-                Logger.warn(f"Creating temporary world {defaultWorldName}", module="world-load")
+                Logger.debug(f"Creating World {defaultWorldName}", module="world-load")
                 self.createWorld(
                     defaultWorldName,
                     self.server.config.worldSizeX,
@@ -269,9 +255,24 @@ class WorldManager:
                     self.server.config.worldSizeZ,
                     self.server.config.worldSeed,
                     defaultGenerator,
-                    persistent=False,
+                    persistent=self.persistent
                 )
-            return True  # Returning true to indicate that all worlds were loaded successfully.
+        else:
+            Logger.warn("World Manager does not have a world save location!", module="world-load")
+            # Create Non-Persistent Temporary World
+            defaultWorldName = self.server.config.defaultWorld
+            defaultGenerator = MapGenerators[self.server.config.defaultGenerator]
+            Logger.warn(f"Creating temporary world {defaultWorldName}", module="world-load")
+            self.createWorld(
+                defaultWorldName,
+                self.server.config.worldSizeX,
+                self.server.config.worldSizeY,
+                self.server.config.worldSizeZ,
+                self.server.config.worldSeed,
+                defaultGenerator,
+                persistent=False,
+            )
+        return True  # Returning true to indicate that all worlds were loaded successfully.
 
     def saveWorlds(self) -> bool:
         # Keep track on whether error occurs during save.
