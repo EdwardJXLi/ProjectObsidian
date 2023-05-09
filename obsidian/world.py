@@ -557,6 +557,10 @@ class World:
         return scanY
 
     def saveMap(self) -> bool:
+        # If World Is Not Persistent, Do Not Save and raise exception
+        if self.persistent is False:
+            raise MapSaveError("Cannot Save Non-Persistent World")
+
         with self.worldManager.lock:
             if self.persistent and self.fileIO:
                 Logger.info(f"Attempting To Save World {self.name}", module="world-save")

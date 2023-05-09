@@ -2624,6 +2624,63 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage("&aWorlds Reloaded!")
 
     @Command(
+        "SaveWorlds",
+        description="Saves all worlds to disk",
+        version="v1.0.0"
+    )
+    class SaveWorldsCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["save", "s", "saveall"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Get list of worlds (should only be used to notify player)
+            world_list = list(ctx.server.worldManager.worlds.values())
+
+            await ctx.sendMessage("&aStarting World Save!")
+            await ctx.sendMessage(
+                CommandHelper.format_list(
+                    world_list,
+                    process_input=lambda p: str(p.name),
+                    initial_message="&eSaving These Worlds:",
+                    separator=", "
+                )
+            )
+
+            # Save Worlds
+            if ctx.worldPlayerManager is not None:
+                world = ctx.worldPlayerManager.world
+                if world.persistent:
+                    world.saveMap()
+                else:
+                    raise CommandError("World is not persistent. Cannot save!")
+            else:
+                raise CommandError("You are not in a world!")
+
+            # Send Response Back
+            await ctx.sendMessage("&aWorlds Saved!")
+
+    @Command(
+        "SaveWorld",
+        description="Saves the current world to disk",
+        version="v1.0.0"
+    )
+    class SaveWorldCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["saveworld", "sw"], OP=True)
+
+        async def execute(self, ctx: Player):
+            await ctx.sendMessage("&aStarting World Save!")
+
+            # Save Worlds
+            if ctx.worldPlayerManager is not None:
+                ctx.worldPlayerManager.world.saveMap()
+            else:
+                raise CommandError("You are not in a world!")
+
+            # Send Response Back
+            await ctx.sendMessage("&aWorlds Saved!")
+
+    @Command(
         "ConvertWorld",
         description="Converts world from one format to another format.",
         version="v1.0.0"
