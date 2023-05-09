@@ -152,6 +152,8 @@ class ServerConfig(AbstractConfig):
     bannedIps: list[IpType] = field(default_factory=list)  # List Of Ips that are banned (Reject Connection)
     bannedPlayers: list[UsernameType] = field(default_factory=list)  # List Of Usernames that are banned (Reject Connection)
     disabledCommands: list[str] = field(default_factory=list)  # List Of Disabled Commands
+    # CPE (Classic Protocol Extension) Configuration
+    enableCPE: bool = True  # Enable CPE (Classic Protocol Extension)
     # Chat Configuration
     playerChatColor: str = "&a"
     operatorChatColor: str = "&4"

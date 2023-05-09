@@ -83,7 +83,13 @@ class NetworkHandler:
 
         # Wait For Player Identification Packet
         Logger.debug(f"{self.conninfo} | Waiting For Initial Player Information Packet", module="network")
-        protocolVersion, username, verificationKey = await self.dispatcher.readPacket(Packets.Request.PlayerIdentification)
+        protocolVersion, username, verificationKey, supportsCPE = await self.dispatcher.readPacket(Packets.Request.PlayerIdentification)
+
+        # If client supports CPE and if server enables CPE, start CPE negotiation
+        # CPE stands for Classic Protocol Extension, and is defined here: https://wiki.vg/Classic_Protocol_Extension
+        if supportsCPE and self.server.config.enableCPE:
+            Logger.info("Client Supports CPE, Starting CPE Negotiation", module="network")
+            await self._handleCPENegotiation()
 
         # Checking Client Protocol Version
         if protocolVersion > self.server.protocolVersion:
@@ -128,6 +134,26 @@ class NetworkHandler:
         # Setup And Begin Player Loop
         Logger.debug(f"{self.conninfo} | Starting Player Loop", module="network")
         await self._beginPlayerLoop()
+
+    async def _handleCPENegotiation(self):
+        # TODO: Implement this once modules support CPE
+
+        # Send Server ExtInfo Packet
+        Logger.debug(f"{self.conninfo} | Sending Server CPE ExtInfo (Extension Info) Packet", module="network")
+        await self.dispatcher.sendPacket(Packets.Response.ServerExtInfo, "Obsidian", 0)
+
+        # Receive Client ExtInfo Packet
+        Logger.debug(f"{self.conninfo} | Waiting For Player CPE ExtInfo (Extension Info) Packet", module="network")
+        clientApplicationName, extensionCount = await self.dispatcher.readPacket(Packets.Request.PlayerExtInfo)
+
+        print(extensionCount)
+
+        # TODO: temp
+        for i in range(extensionCount):
+            extensionName, extensionVersion = await self.dispatcher.readPacket(Packets.Request.PlayerExtEntry)
+            print(extensionName, extensionVersion)
+
+        raise NotImplementedError("CPE Not Implemented Yet")
 
     async def _beginPlayerLoop(self):
         # Set the in_loop flag

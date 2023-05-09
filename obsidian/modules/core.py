@@ -74,13 +74,11 @@ class CoreModule(AbstractModule):
             # (Byte) Protocol Version
             # (64String) Username
             # (64String) Verification Key
-            # (Byte) Unused
-            _, protocolVersion, username, verificationKey, _ = struct.unpack(self.FORMAT, bytearray(rawData))
+            # (Byte) Magic Byte (Used for CPE Negotiation. Could also be used to negotiate a 3rd party protocol)
+            _, protocolVersion, username, verificationKey, magicByte = struct.unpack(self.FORMAT, bytearray(rawData))
 
             # Clean null terminators off strings
-            # Some clients send null terminators, cough CrossCraft
-            username = username
-            verificationKey = verificationKey
+            # Some clients send null terminators, cough CrossCraft cough
 
             # Unpack String
             # Username
@@ -96,8 +94,14 @@ class CoreModule(AbstractModule):
             if (len(username) > 16):
                 raise ClientError("Your Username Is Too Long (Max 16 Chars)")
 
+            # Check if player supports CPE
+            if magicByte == 0x42:
+                supportsCPE = True
+            else:
+                supportsCPE = False
+
             # Return User Identification
-            return protocolVersion, username, verificationKey
+            return protocolVersion, username, verificationKey, supportsCPE
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
@@ -228,6 +232,68 @@ class CoreModule(AbstractModule):
 
             # Return Parsed Message
             return message
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
+    @RequestPacket(
+        "PlayerExtInfo",
+        description="Handle CPE ExtInfo Packet from Player"
+    )
+    class PlayerExtInfoPacket(AbstractRequestPacket["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ID=0x10,
+                FORMAT="!B64sh",
+                CRITICAL=True,
+                PLAYERLOOP=False
+            )
+
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+            # <Player ExtInfo Packet>
+            # (64String) Client Application Name
+            # (Byte) Client Extension Count
+            _, applicationName, extensionCount = struct.unpack(self.FORMAT, bytearray(rawData))
+
+            # Unpack Client Application Name
+            applicationName = unpackString(applicationName)
+            if not applicationName.isprintable():
+                raise ClientError("Invalid Character In Client Application Name.")
+
+            # Return ExtInfo Data
+            return applicationName, extensionCount
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
+    @RequestPacket(
+        "PlayerExtEntry",
+        description="Handle CPE ExtEntry Packet from Player"
+    )
+    class PlayerExtEntryPacket(AbstractRequestPacket["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ID=0x11,
+                FORMAT="!B64si",
+                CRITICAL=True,
+                PLAYERLOOP=False
+            )
+
+        async def deserialize(self, ctx: Optional[Player], rawData: bytearray):
+            # <Player ExtEntry Packet>
+            # (64String) Extension Name
+            # (Integer) Extension Version
+            _, extensionName, extensionVersion = struct.unpack(self.FORMAT, bytearray(rawData))
+
+            # Unpack Extension Name
+            extensionName = unpackString(extensionName)
+            if not extensionName.isprintable():
+                raise ClientError("Invalid Character In Client Extension Name.")
+
+            # Return ExtEntry Data
+            return extensionName, extensionVersion
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
@@ -656,6 +722,62 @@ class CoreModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 0x64 if isOperator else 0x00
+            )
+            return msg
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
+    @ResponsePacket(
+        "ServerExtInfo",
+        description="Response Packet To Initiate CPE Extension Negotiation"
+    )
+    class ServerExtInfoPacket(AbstractResponsePacket["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ID=0x10,
+                FORMAT="B64si",
+                CRITICAL=True
+            )
+
+        async def serialize(self, applicationName: str, extensionCount: int):
+            # <Server ExtInfo Packet>
+            # (64String) Server Application Name
+            # (Byte) Server Extension Count
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                bytearray(packageString(applicationName)),
+                int(extensionCount)
+            )
+            return msg
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
+    @ResponsePacket(
+        "ServerExtEntry",
+        description="Response Packet To Initiate CPE Negotiation"
+    )
+    class ServerExtEntryPacket(AbstractResponsePacket["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ID=0x11,
+                FORMAT="B64sh",
+                CRITICAL=True
+            )
+
+        async def serialize(self, extensionName: str, extensionVersion: int):
+            # <Server ExtEntry Packet>
+            # (64String) Extension Name
+            # (Integer) Extension Version
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                bytearray(packageString(extensionName)),
+                int(extensionVersion)
             )
             return msg
 
