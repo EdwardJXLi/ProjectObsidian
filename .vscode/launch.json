@@ -1,0 +1,35 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Start Obsidian",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "args": ["-q"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Start Obsidian with Debugging",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "args": ["-q", "-d"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Start Obsidian with Verbose Output",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "args": ["-q", "-d", "-v"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
