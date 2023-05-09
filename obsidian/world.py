@@ -201,6 +201,7 @@ class WorldManager:
     def loadWorlds(self, reload: bool = False) -> bool:
         Logger.debug("Starting Attempt to Load All Worlds", module="world-load")
         if self.server.config.worldSaveLocation is not None:
+
             # Open Lock
             with self.lock:
                 Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
@@ -215,6 +216,7 @@ class WorldManager:
                     # Also Check If World Is Ignored
                     elif savename in self.ignorelist:
                         Logger.info(f"Ignoring World File {savefile}. World Name Is On Ignore List!", module="world-load")
+
                     # Also Check If World Name Is Already Loaded (Same File Names with Different Extensions)
                     elif savename in self.worlds.keys():
                         if not reload:
@@ -225,6 +227,26 @@ class WorldManager:
                             Logger.warn(f"Ignoring World File {savefile}. World Already Loaded!", module="world-load")
                     else:
                         Logger.debug(f"Detected World File {savefile}. Attempting To Load World", module="world-load")
+
+                        # Checking if a backup world was made/
+                        # If so, that indicates an unclean shutdown
+                        backupfile = savefile.with_suffix(savefile.suffix + ".bak")
+                        if backupfile.exists():
+                            Logger.warn(f"Detected Backup File {backupfile}. This means that the world was not cleanly saved!", module="world-load")
+                            Logger.askConfirmation("Do you want to attempt to recover the world from the backup?")
+                            Logger.warn("Attempting To Recover World From Backup", module="world-load")
+                            # Attempting to recover world from backup
+                            try:
+                                Logger.info(f"Recovering World {savename} From Backup", module="world-load")
+                                # Replace the original file with the backup
+                                with open(savefile, "wb") as fileIO:
+                                    fileIO.write(backupfile.read_bytes())
+                                # Remove backup file
+                                backupfile.unlink()
+                            except Exception as e:
+                                Logger.error(f"Error While Recovering World {savename} From Backup - {type(e).__name__}: {e}", module="world-load")
+                                Logger.askConfirmation("Skipping world load. Keeping backup intact.")
+
                         # (Attempt) To Load Up World
                         try:
                             Logger.info(f"Loading World {savename}", module="world-load")
@@ -233,6 +255,7 @@ class WorldManager:
                         except Exception as e:
                             Logger.error(f"Error While Loading World {savefile} - {type(e).__name__}: {e}", module="world-load")
                             Logger.askConfirmation()
+
             # Check If Default World Is Loaded
             if self.server.config.defaultWorld not in self.worlds.keys():
                 # Check if other worlds were loaded as well
@@ -257,6 +280,7 @@ class WorldManager:
                     defaultGenerator,
                     persistent=self.persistent
                 )
+
         else:
             Logger.warn("World Manager does not have a world save location!", module="world-load")
             # Create Non-Persistent Temporary World
