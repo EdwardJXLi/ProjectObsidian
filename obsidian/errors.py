@@ -11,6 +11,10 @@ class DependencyError(Exception):
     pass
 
 
+class CPEError(Exception):
+    pass
+
+
 class InitError(Exception):
     pass
 

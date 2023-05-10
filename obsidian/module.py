@@ -10,6 +10,7 @@ import importlib
 import pkgutil
 import inspect
 
+from obsidian.cpe import CPEModuleManager
 from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.config import AbstractConfig
@@ -21,6 +22,7 @@ from obsidian.constants import (
 )
 from obsidian.errors import (
     ModuleError,
+    CPEError,
     InitRegisterError,
     ConverterError,
     DependencyError,
@@ -132,21 +134,27 @@ class _ModuleManager(AbstractManager):
         self._sorted_module_graph = []
         self._completed = False
         self._ensure_core = True
+        self._init_cpe = False
         self._error_list = []  # Logging Which Modules Encountered Errors While Loading Up
 
     # Function to libimport all modules
     # EnsureCore ensures core module is present
-    def initModules(self, ignorelist: list[str] = [], ensureCore: bool = True):
+    def initModules(self, ignorelist: list[str] = [], ensureCore: bool = True, initCPE: bool = False):
         # Setting Vars
         self._ensure_core = ensureCore
         self._module_ignorelist = ignorelist
+        self._init_cpe = initCPE
 
         # --- PreInitialization ---
         Logger.info("=== (1/6) PreInitializing Modules ===", module="init-modules")
 
-        # Initialization Step One => Scanning and Loading Modules using PkgUtils
+        # Initialization Part One => Scanning and Loading Modules using PkgUtils
         Logger.info(f"Scanning modules in {MODULESFOLDER}", module="module-import")
         self._importModules()
+
+        # Initialization Part One and a Half => Checking CPE Support
+        Logger.info("Checking for CPE Support", module="module-import")
+        self._verifyCpeSupport()
 
         # --- Dependency Resolving ---
         Logger.info("=== (2/6) Resolving Dependencies ===", module="init-modules")
@@ -237,6 +245,46 @@ class _ModuleManager(AbstractManager):
             if "core" not in self._module_dict.keys():
                 self._error_list.append(("core", "PreInit-EnsureCore"))  # Module Loaded WITH Errors
                 raise FatalError("Error While Loading Module core - Critical Module Not Found")
+
+    # Intermediate Function to Verify CPE Support
+    def _verifyCpeSupport(self):
+        # If CPE is supported by server, dont skip anything
+        if self._init_cpe:
+            Logger.debug("CPE Support Enabled", module="verify-cpe")
+            Logger.debug("Skipping CPE Support Check", module="verify-cpe")
+            return
+
+        # If CPE is not supported by server, check for CPE support in modules
+        Logger.debug("CPE Support Disabled. Verifying CPE support.", module="verify-cpe")
+        for module_name, module_obj in list(self._module_dict.items()):
+            try:
+                Logger.debug(f"Checking CPE Support for Module {module_name}", module="verify-cpe")
+                if CPEModuleManager.hasCPE(module_obj):
+                    Logger.debug(f"Module {module_name} Implements a CPE Extension.", module="verify-cpe")
+                    Logger.verbose(f"Checking whether CPE is enabled, and whether the {module_name} module should be skipped...", module="verify-cpe")
+                    if CPEModuleManager.shouldSkip(module_obj):
+                        Logger.verbose(f"Skipping Module {module_name} Due To CPE Settings", module="verify-cpe")
+                        # Remove Module
+                        Logger.debug(f"Removing Module {module_name} From Loader!", module="verify-cpe")
+                        del self._module_dict[module_name]
+                    else:
+                        Logger.verbose(f"Module {module_name} will not skipped.", module="verify-cpe")
+                else:
+                    Logger.verbose(f"Module {module_name} does not implement a CPE Extension. Skipping Check!", module="verify-cpe")
+            except FatalError as e:
+                # Pass Down Fatal Error To Base Server
+                raise e
+            except Exception as e:
+                # Handle Exception if Error Occurs
+                self._error_list.append((module_name, "PreInit-CPE-Check"))  # Module Loaded WITH Errors
+                # If the Error is a CPE Error (raised on purpose), Don't print out TB
+                Logger.error(f"Error While Verifying CPE Support For {module_name} - {type(e).__name__}: {e}\n", module="verify-cpe", printTb=not isinstance(e, CPEError))
+                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="verify-cpe")
+                Logger.warn(f"Skipping Module {module_name}?", module="verify-cpe")
+                Logger.askConfirmation()
+                # Remove Module
+                Logger.warn(f"Removing Module {module_name} From Loader!", module="verify-cpe")
+                del self._module_dict[module_name]
 
     # Intermediate Function to Check and Initialize Dependencies
     def _initDependencies(self):

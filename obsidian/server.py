@@ -20,6 +20,7 @@ from obsidian.worldformat import WorldFormatManager
 from obsidian.mapgen import MapGeneratorManager
 from obsidian.commands import CommandManager
 from obsidian.blocks import BlockManager
+from obsidian.cpe import CPEModuleManager
 from obsidian.player import PlayerManager
 from obsidian.constants import (
     managers_list,
@@ -48,6 +49,7 @@ class Server:
         self.name: str = name  # Name Of Server
         self.motd: str = motd  # Message Of The Day
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
+        self.supportsCPE: bool = False  # Whether Or Not The Server Supports CPE
         self.initialized: bool = False  # Flag Set When Everything Is Fully Loaded
         self.stopping: bool = False  # Flag To Prevent Crl-C Spamming
         # These Values Have Getters
@@ -109,13 +111,20 @@ class Server:
         if self.config.worldSaveLocation is not None:
             Path(SERVERPATH, self.config.worldSaveLocation).mkdir(parents=True, exist_ok=True)
 
+        # Set up CPE support
+        self.supportsCPE = self.config.enableCPE
+
         # Print out SubModule Managers
         Logger.info("SubModule Managers Initiated!", module="init")
         Logger.info(f"Submodules Intitiated: [{', '.join([m.NAME for m in managers_list])}]", module="init")
 
         # Load and Log Modules
         Logger.info("Starting Module Initialization", module="init")
-        ModuleManager.initModules(ignorelist=self.config.moduleIgnoreList, ensureCore=True)
+        ModuleManager.initModules(
+            ignorelist=self.config.moduleIgnoreList,
+            ensureCore=True,
+            initCPE=self.supportsCPE
+        )
         Logger.info("All Modules Initialized!!!", module="init")
 
         Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
@@ -124,8 +133,16 @@ class Server:
         Logger.info(f"{CommandManager.numCommands} Commands Initialized", module="init")
         Logger.info(f"{MapGeneratorManager.numMapGenerators} Map Generators Initialized", module="init")
 
+        if self.supportsCPE:
+            Logger.info(f"{CPEModuleManager.numCPE} Classic Protocol Extensions Initialized", module="init")
+
         # Print Pretty List of All Modules
         Logger.info(f"Module List:\n{ModuleManager.generateTable()}", module="init")
+
+        # Print Pretty List of All Classic Protocol Extensions:
+        if self.supportsCPE:
+            Logger.info(f"CPE (Classic Protocol Extension) List:\n{CPEModuleManager.generateTable()}", module="init")
+
         # Only Print Packet And World Generators List If Debug Enabled
         if Logger.DEBUG:
             Logger.debug(f"Packets List:\n{PacketManager.generateTable()}", module="init")

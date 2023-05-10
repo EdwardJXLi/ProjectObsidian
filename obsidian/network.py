@@ -153,7 +153,8 @@ class NetworkHandler:
             extensionName, extensionVersion = await self.dispatcher.readPacket(Packets.Request.PlayerExtEntry)
             print(extensionName, extensionVersion)
 
-        raise NotImplementedError("CPE Not Implemented Yet")
+        Logger.warn("CPE Negotiation Not Implemented Yet!", module="network")
+        Logger.warn("Continuing for now...", module="network")
 
     async def _beginPlayerLoop(self):
         # Set the in_loop flag
