@@ -113,7 +113,7 @@ class AbstractSubmodule(Generic[T]):
     MANAGER: AbstractManager
     MODULE: T
 
-    def __postInit__(self):
+    def __post_init__(self):
         # Create alias for module
         self.module = self.MODULE
 
