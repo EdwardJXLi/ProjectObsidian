@@ -7,7 +7,7 @@ import io
 import json
 import copy
 
-from obsidian.constants import SERVERPATH
+from obsidian.constants import SERVER_PATH
 from obsidian.types import UsernameType, IpType
 from obsidian.log import Logger
 
@@ -41,7 +41,7 @@ class AbstractConfig:
             fileName: str = self.name
 
         # Generate Config Paths
-        self.configPath: Path = Path(SERVERPATH, rootPath, fileName)
+        self.configPath: Path = Path(SERVER_PATH, rootPath, fileName)
         Logger.debug(f"Config {self.name} has save path {self.configPath}", module="Config")
 
         # Load Other Variables

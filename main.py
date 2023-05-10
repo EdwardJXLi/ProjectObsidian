@@ -33,7 +33,7 @@ async def main():
     # Set Logging Levels
     Logger.DEBUG = args.debug
     Logger.VERBOSE = args.verbose
-    Logger.SERVERMODE = args.server
+    Logger.SERVER_MODE = args.server
 
     # Set Up Logging File
     if not args.quiet:
@@ -47,7 +47,7 @@ async def main():
     # Capture and Handle Crl-C
     signal.signal(
         signal.SIGINT,
-        server.asyncstop  # Use this function to run async stop from outside async
+        server.asyncStop  # Use this function to run async stop from outside async
     )
 
     # Busy Operation To Keep Main Thread Alive

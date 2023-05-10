@@ -41,7 +41,7 @@ class MapGeneratorStatus:
         # Flow control helpers
         self._event = threading.Event()
 
-        # Print intial status
+        # Print initial status
         if self.printUpdates:
             Logger.info(f"{self.generator.NAME}: {self.status} ({int(self.progress * 100)}%)", module="mapgen")
 

@@ -23,7 +23,7 @@ from obsidian.mapgen import (
     MapGeneratorStatus
 )
 from obsidian.packet import Packets
-from obsidian.constants import SERVERPATH
+from obsidian.constants import SERVER_PATH
 from obsidian.types import formatName
 from obsidian.errors import (
     FatalError,
@@ -206,54 +206,54 @@ class WorldManager:
             with self.lock:
                 Logger.debug(f"Beginning To Scan Through {self.server.config.worldSaveLocation} Dir", module="world-load")
                 # Loop Through All Files Given In World Folder
-                for savefile in Path(SERVERPATH, self.server.config.worldSaveLocation).iterdir():
+                for saveFile in Path(SERVER_PATH, self.server.config.worldSaveLocation).iterdir():
                     # Get Pure File Name (No Extensions)
-                    savename = savefile.stem
-                    Logger.verbose(f"Checking Extension and Status of World File {savefile}", module="world-load")
+                    saveName = saveFile.stem
+                    Logger.verbose(f"Checking Extension and Status of World File {saveFile}", module="world-load")
                     # Check If File Type Matches With The Extensions Provided By worldFormat
-                    if savefile.suffix[1:] not in self.worldFormat.EXTENSIONS:  # doing [1:] to remove the "."
-                        Logger.debug(f"Ignoring World File {savefile}. File Extension Not Known!", module="world-load")
+                    if saveFile.suffix[1:] not in self.worldFormat.EXTENSIONS:  # doing [1:] to remove the "."
+                        Logger.debug(f"Ignoring World File {saveFile}. File Extension Not Known!", module="world-load")
                     # Also Check If World Is Ignored
-                    elif savename in self.ignorelist:
-                        Logger.info(f"Ignoring World File {savefile}. World Name Is On Ignore List!", module="world-load")
+                    elif saveName in self.ignorelist:
+                        Logger.info(f"Ignoring World File {saveFile}. World Name Is On Ignore List!", module="world-load")
 
                     # Also Check If World Name Is Already Loaded (Same File Names with Different Extensions)
-                    elif savename in self.worlds.keys():
+                    elif saveName in self.worlds.keys():
                         if not reload:
-                            Logger.warn(f"Ignoring World File {savefile}. World With Similar Name Has Already Been Registered!", module="world-load")
-                            Logger.warn(f"World File {self.worlds[savename].name} Conflicts With World File {savefile}!", module="world-load")
+                            Logger.warn(f"Ignoring World File {saveFile}. World With Similar Name Has Already Been Registered!", module="world-load")
+                            Logger.warn(f"World File {self.worlds[saveName].name} Conflicts With World File {saveFile}!", module="world-load")
                             Logger.askConfirmation()
                         else:
-                            Logger.warn(f"Ignoring World File {savefile}. World Already Loaded!", module="world-load")
+                            Logger.warn(f"Ignoring World File {saveFile}. World Already Loaded!", module="world-load")
                     else:
-                        Logger.debug(f"Detected World File {savefile}. Attempting To Load World", module="world-load")
+                        Logger.debug(f"Detected World File {saveFile}. Attempting To Load World", module="world-load")
 
                         # Checking if a backup world was made/
                         # If so, that indicates an unclean shutdown
-                        backupfile = savefile.with_suffix(savefile.suffix + ".bak")
-                        if backupfile.exists():
-                            Logger.warn(f"Detected Backup File {backupfile}. This means that the world was not cleanly saved!", module="world-load")
+                        backupFile = saveFile.with_suffix(saveFile.suffix + ".bak")
+                        if backupFile.exists():
+                            Logger.warn(f"Detected Backup File {backupFile}. This means that the world was not cleanly saved!", module="world-load")
                             Logger.askConfirmation("Do you want to attempt to recover the world from the backup?")
                             Logger.warn("Attempting To Recover World From Backup", module="world-load")
                             # Attempting to recover world from backup
                             try:
-                                Logger.info(f"Recovering World {savename} From Backup", module="world-load")
+                                Logger.info(f"Recovering World {saveName} From Backup", module="world-load")
                                 # Replace the original file with the backup
-                                with open(savefile, "wb") as fileIO:
-                                    fileIO.write(backupfile.read_bytes())
+                                with open(saveFile, "wb") as fileIO:
+                                    fileIO.write(backupFile.read_bytes())
                                 # Remove backup file
-                                backupfile.unlink()
+                                backupFile.unlink()
                             except Exception as e:
-                                Logger.error(f"Error While Recovering World {savename} From Backup - {type(e).__name__}: {e}", module="world-load")
+                                Logger.error(f"Error While Recovering World {saveName} From Backup - {type(e).__name__}: {e}", module="world-load")
                                 Logger.askConfirmation("Skipping world load. Keeping backup intact.")
 
                         # (Attempt) To Load Up World
                         try:
-                            Logger.info(f"Loading World {savename}", module="world-load")
-                            fileIO = open(savefile, "rb+")
-                            self.worlds[savename] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
+                            Logger.info(f"Loading World {saveName}", module="world-load")
+                            fileIO = open(saveFile, "rb+")
+                            self.worlds[saveName] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
                         except Exception as e:
-                            Logger.error(f"Error While Loading World {savefile} - {type(e).__name__}: {e}", module="world-load")
+                            Logger.error(f"Error While Loading World {saveFile} - {type(e).__name__}: {e}", module="world-load")
                             Logger.askConfirmation()
 
             # Check If Default World Is Loaded
@@ -362,7 +362,7 @@ class WorldManager:
 
         # Generating File Path
         worldPath = Path(
-            SERVERPATH,
+            SERVER_PATH,
             savePath,
             worldName + "." + worldFormat.EXTENSIONS[0]  # Gets the first value in the valid extensions list
         )
@@ -506,7 +506,7 @@ class World:
         if spawnPitch is None or resetCoords:
             # Generate SpawnPitch (0)
             self.spawnPitch = 0
-            Logger.verbose(f"spawnYaw was not provi ded. Generated to {self.spawnYaw}", "world-load")
+            Logger.verbose(f"spawnYaw was not provided. Generated to {self.spawnYaw}", "world-load")
         else:
             self.spawnPitch = spawnPitch
 

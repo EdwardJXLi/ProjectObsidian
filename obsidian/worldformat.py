@@ -50,7 +50,7 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractWorldFormat:
         try:
-            # Try to grab the world fromat from the formats list
+            # Try to grab the world format from the formats list
             return WorldFormatManager.getWorldFormat(argument)
         except KeyError:
             # Raise error if world format not found

@@ -36,7 +36,7 @@ class NetworkHandler:
         self.connectionInfo: tuple[str, int] = self.writer.get_extra_info('peername')
         self.ip: IpType = IpType(self.connectionInfo[0])
         self.port: int = self.connectionInfo[1]
-        self.dispatcher: NetworkDispacher = NetworkDispacher(self)
+        self.dispatcher: NetworkDispatcher = NetworkDispatcher(self)
         self.isConnected: bool = True  # Connected Flag So Outbound Queue Buffer Can Stop
         self.inLoop: bool = False  # In Loop Flag so that functions know when to use a different implementation
         self.player: Optional[Player] = None
@@ -168,7 +168,7 @@ class NetworkHandler:
     async def _processWorldChange(self, world: World, previousWorld: World, updateServerInfo: bool = True):
         # TODO: updateServerInfoWhileSwitching is included because IDK if clients would like it.
         # Its an undocumented feature, so look into if its part of the defacto standard
-        # This is use changable in config
+        # This is use changeable in config
 
         # Check if player is joined in a world in the first place
         if self.player is None:
@@ -264,7 +264,7 @@ class NetworkHandler:
         self.writer.close()
 
 
-class NetworkDispacher:
+class NetworkDispatcher:
     def __init__(self, handler: NetworkHandler):
         self.handler: NetworkHandler = handler
         # Dictionary: {(Key)<Type of AbstractRequestPacket> : (Values)list[tuple[<Future Event>, <Check Function>, <Should Continue Handling>]]}

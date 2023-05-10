@@ -25,8 +25,8 @@ from obsidian.player import PlayerManager
 from obsidian.constants import (
     MANAGERS_LIST,
     Colour,
-    MODULESFOLDER,
-    SERVERPATH
+    MODULES_FOLDER,
+    SERVER_PATH
 )
 
 
@@ -96,8 +96,8 @@ class Server:
         # Initializing Config
         Logger.info("Initializing Server Config", module="init")
         # Ensuring Config Path
-        Path(SERVERPATH, self.config.configPath).parent.mkdir(parents=True, exist_ok=True)
-        # Initing Config
+        Path(SERVER_PATH, self.config.configPath).parent.mkdir(parents=True, exist_ok=True)
+        # Initialize Config
         self.config.init()
 
         # Set up logging with data from config
@@ -107,16 +107,16 @@ class Server:
 
         # Setting Up File Structure
         Logger.info("Setting Up File Structure", module="init")
-        Path(SERVERPATH, MODULESFOLDER).mkdir(parents=True, exist_ok=True)
+        Path(SERVER_PATH, MODULES_FOLDER).mkdir(parents=True, exist_ok=True)
         if self.config.worldSaveLocation is not None:
-            Path(SERVERPATH, self.config.worldSaveLocation).mkdir(parents=True, exist_ok=True)
+            Path(SERVER_PATH, self.config.worldSaveLocation).mkdir(parents=True, exist_ok=True)
 
         # Set up CPE support
         self.supportsCPE = self.config.enableCPE
 
         # Print out SubModule Managers
-        Logger.info("SubModule Managers Initiated!", module="init")
-        Logger.info(f"Submodules Intitiated: [{', '.join([m.NAME for m in MANAGERS_LIST])}]", module="init")
+        Logger.info("SubModule Managers Initialized!", module="init")
+        Logger.info(f"Submodules Initialized: [{', '.join([m.NAME for m in MANAGERS_LIST])}]", module="init")
 
         # Load and Log Modules
         Logger.info("Starting Module Initialization", module="init")
@@ -225,7 +225,7 @@ class Server:
         return self._playerManager
 
     # Quick hack to run function in async mode no matter what
-    def asyncstop(self, *args, **kwargs):
+    def asyncStop(self, *args, **kwargs):
         Logger.debug("Trying to launch stop procedure in async", "server-stop")
         try:
             # Inject the stop event into the existing event loop

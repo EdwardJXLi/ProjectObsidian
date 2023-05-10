@@ -34,7 +34,7 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
     OP: bool = False
 
     async def execute(self, ctx: Player, *args, **kwargs):
-        raise NotImplementedError("Command Hander Not Implemented")
+        raise NotImplementedError("Command Handler Not Implemented")
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractCommand:
@@ -105,7 +105,7 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
             union_types = get_args(param.annotation)  # Getting the different types.
             # Try every type in order and check if it works
             for annotation in union_types:
-                # If the type is a nontype, ignore for now...
+                # If the type is a None type, ignore for now...
                 # This fixes some unexpected behavior with Optional s
                 if annotation is NoneType:
                     continue
@@ -126,7 +126,7 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
         if type(transformed) == param.annotation:
             return transformed
         else:
-            raise ConverterError(f"Unexpected Convertion. Expected {param.annotation} But Got {type(transformed)}")
+            raise ConverterError(f"Unexpected Conversion. Expected {param.annotation} But Got {type(transformed)}")
     except ValueError:
         raise CommandError(f"Arg '{name}' Expected {getattr(param.annotation, '__name__', 'Unknown')} But Got '{type(arg).__name__}'")
     except TypeError:
@@ -136,7 +136,7 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
 
 # Parse Command Argument Into Args and KWArgs In Accordance To Command Information
 def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
-    # This entire section is inspired by Discord.py 's Aprroach To Message Parsing and Handing
+    # This entire section is inspired by Discord.py 's Approach To Message Parsing and Handing
     # TODO: IGNORE_EXTRA, REST_IS_RAW, REQUIRE_VAR_POSITIONAL
     Logger.debug(f"Parsing Command Arguments {data} For Command {command.NAME}", module="command")
     # Define Important Vars
@@ -158,7 +158,7 @@ def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
     # Loop Through Rest Of Iterators To Parse Data
     for name, param in paramsIter:
         Logger.verbose(f"Parsing Parameter {name}", module="command")
-        # Check Parameter Type To Determing Parsing Method
+        # Check Parameter Type To Determining Parsing Method
         # -> Positional Methods (AKA POSITIONAL_OR_KEYWORD)
         # -> Keyword Only Methods (AKA KEYWORD_ONLY)
         # -> Positional "Rest" Methods (AKA VAR_POSITIONAL)

@@ -546,7 +546,7 @@ class Player:
     async def checkBlockPlacement(self, blockX: int, blockY: int, blockZ: int, blockType: AbstractBlock) -> bool:
         Logger.debug(f"Checking If Player Can Place Block {blockType.NAME} at ({blockX}, {blockY}, {blockZ})", module="player")
         # Create an easily-overridable method to check if user is allowed to place a block here
-        # Users can either return a clienterror or return false
+        # Users can either return a ClientError or return false
         # Check if this block is disabled
         if blockType.ID in self.server.config.disallowedBlocks:
             Logger.debug(f"Player {self.name} Trying To Place A Disabled Block", module="player")

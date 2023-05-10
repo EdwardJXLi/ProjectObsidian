@@ -26,7 +26,7 @@ class AbstractBlock(AbstractSubmodule[T], Generic[T]):
     ID: int = 0
 
     async def placeBlock(self, ctx: Player, blockX: int, blockY: int, blockZ: int):
-        # Check edgecase in which player is not connected to any world.
+        # Check edge case in which player is not connected to any world.
         if ctx.worldPlayerManager is None:
             Logger.warn("Player is trying to place blocks while not being connected to any world. Skipping block placement", module="abstract-block")
             return

@@ -1,5 +1,5 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
-from obsidian.constants import MAX_MESSAGE_LENGTH, SERVERPATH, __version__
+from obsidian.constants import MAX_MESSAGE_LENGTH, SERVER_PATH, __version__
 from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
@@ -1753,7 +1753,7 @@ class CoreModule(AbstractModule):
                         paramStr += f"&7({_typeToString(param.annotation)})"
                     paramStr += "&b}"
                 else:
-                    # This shouldnt really happen
+                    # This should not really happen
                     raise ServerError(f"Unknown argument type {param.kind} while generating help command")
 
                 # Add the formatted text to the list of other formatted texts
@@ -2833,8 +2833,8 @@ class CoreModule(AbstractModule):
 
             # Get the world to be converted
             if ctx.server.config.worldSaveLocation:
-                oldWorldPath = Path(SERVERPATH, ctx.server.config.worldSaveLocation, worldFile)
-                newWorldPath = Path(SERVERPATH, ctx.server.config.worldSaveLocation, Path(worldFile).stem + newFormatExt)
+                oldWorldPath = Path(SERVER_PATH, ctx.server.config.worldSaveLocation, worldFile)
+                newWorldPath = Path(SERVER_PATH, ctx.server.config.worldSaveLocation, Path(worldFile).stem + newFormatExt)
             else:
                 raise CommandError("&cworldSaveLocation in server configuration is not set!")
 
@@ -2964,7 +2964,7 @@ class CoreModule(AbstractModule):
             await ctx.networkHandler.closeConnection("Server Shutting Down", notifyPlayer=True)
 
             # Server doesn't like it if
-            ctx.server.asyncstop()
+            ctx.server.asyncStop()
 
 
 # Helper functions for the command generation

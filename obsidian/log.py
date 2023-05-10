@@ -7,15 +7,15 @@ import datetime
 import sys
 
 from typing import Optional
-from obsidian.constants import Colour, SERVERPATH
+from obsidian.constants import Colour, SERVER_PATH
 
 
 class Logger:
     DEBUG = False
     VERBOSE = False
-    SERVERMODE = False
+    SERVER_MODE = False
     LOGFILE = None
-    # These might be somewhat dangerous if the server crashes and stuff isnt logged.
+    # These might be somewhat dangerous if the server crashes and stuff isn't logged.
     # Either way, its an option for servers with slower RWs.
     BUFFER_SIZE = 1
     MESSAGES_LOGGED = 0
@@ -32,7 +32,7 @@ class Logger:
     def setupLogFile(cls, logPath: Optional[Path] = None):
         # Setup LogPath If Not Defined
         if logPath is None:
-            logPath = Path(SERVERPATH, "logs")
+            logPath = Path(SERVER_PATH, "logs")
         # Ensure File Exists
         logPath.mkdir(parents=True, exist_ok=True)
         # Open File
@@ -73,7 +73,7 @@ class Logger:
 
     @classmethod
     def askConfirmation(cls, message: str = "Do you want to continue?", exit_on_no: bool = True):
-        if not cls.SERVERMODE:
+        if not cls.SERVER_MODE:
             while True:
                 # Give user Warning, and ask them for further input
                 cls.warn(f"{message} (y/n)", module="confirmation")
@@ -87,7 +87,7 @@ class Logger:
                         sys.exit()
                     return False
         else:
-            cls.warn(f"{message} [SKIPPING (servermode enabled)]", module="confirmation")
+            cls.warn(f"{message} [SKIPPING (SERVER_MODE enabled)]", module="confirmation")
             if exit_on_no:
                 cls.warn("Stopping Server due to Unsafe Status", module="confirmation")
                 sys.exit()

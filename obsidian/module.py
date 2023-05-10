@@ -16,9 +16,9 @@ from obsidian.log import Logger
 from obsidian.config import AbstractConfig
 from obsidian.constants import (
     MANAGERS_LIST,
-    MODULESIMPORT,
-    MODULESFOLDER,
-    SERVERPATH
+    MODULES_IMPORT,
+    MODULES_FOLDER,
+    SERVER_PATH
 )
 from obsidian.errors import (
     ModuleError,
@@ -137,7 +137,7 @@ class _ModuleManager(AbstractManager):
         self._initCpe = False
         self._errorList = []  # Logging Which Modules Encountered Errors While Loading Up
 
-    # Function to libimport all modules
+    # Function to import all modules
     # EnsureCore ensures core module is present
     def initModules(self, ignorelist: list[str] = [], ensureCore: bool = True, initCPE: bool = False):
         # Setting Vars
@@ -149,7 +149,7 @@ class _ModuleManager(AbstractManager):
         Logger.info("=== (1/6) PreInitializing Modules ===", module="init-modules")
 
         # Initialization Part One => Scanning and Loading Modules using PkgUtils
-        Logger.info(f"Scanning modules in {MODULESFOLDER}", module="module-import")
+        Logger.info(f"Scanning modules in {MODULES_FOLDER}", module="module-import")
         self._importModules()
 
         # Initialization Part One and a Half => Checking CPE Support
@@ -215,14 +215,14 @@ class _ModuleManager(AbstractManager):
         # Initialize Temporary List of Files Imported
         _moduleFiles = []
         # Walk Through All Packages And Import Library
-        for _, moduleName, _ in pkgutil.walk_packages([str(Path(SERVERPATH, MODULESFOLDER))]):
+        for _, moduleName, _ in pkgutil.walk_packages([str(Path(SERVER_PATH, MODULES_FOLDER))]):
             # Load Modules
             Logger.debug(f"Detected Module {moduleName}", module="module-import")
             if moduleName not in self._moduleIgnorelist:
                 try:
                     Logger.verbose(f"Module {moduleName} Not In Ignore List. Adding!", module="module-import")
                     # Import Module
-                    _module = importlib.import_module(MODULESIMPORT + moduleName)
+                    _module = importlib.import_module(MODULES_IMPORT + moduleName)
                     # Appending To A List of Module Files to be Used Later
                     _moduleFiles.append(moduleName)
                     # Set the Imported Module into the Global Scope
@@ -331,7 +331,7 @@ class _ModuleManager(AbstractManager):
     def _resolveDependencyCycles(self):
         # Helper Function To Run Down Module Dependency Tree To Check For Cycles
         def _ensureNoCycles(current: Type[AbstractModule], previous: tuple[str, ...] = tuple()):
-            Logger.verbose(f"Travelling Down Dependency Tree. CUR: {current} PREV: {previous}", module="cycle-check")
+            Logger.verbose(f"Traveling Down Dependency Tree. CUR: {current} PREV: {previous}", module="cycle-check")
             # If Current Name Appears In Any Previous Dependency, There Is An Infinite Cycle
             if current.NAME in previous:
                 raise DependencyError(f"Circular dependency Detected: {' -> '.join([*previous, current.NAME])}")
@@ -582,7 +582,7 @@ class Dependency:
         # User Defined Values
         self.NAME = formatName(name)
         self.VERSION = version
-        # Reference To The Module Class - Handeled By Init Dependencies
+        # Reference To The Module Class - Handled By Init Dependencies
         self.MODULE = None
 
     # Implement Iter to Support Unpacking
