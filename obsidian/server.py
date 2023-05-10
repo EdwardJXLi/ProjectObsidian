@@ -23,7 +23,7 @@ from obsidian.blocks import BlockManager
 from obsidian.cpe import CPEModuleManager
 from obsidian.player import PlayerManager
 from obsidian.constants import (
-    managers_list,
+    MANAGERS_LIST,
     Colour,
     MODULESFOLDER,
     SERVERPATH
@@ -116,7 +116,7 @@ class Server:
 
         # Print out SubModule Managers
         Logger.info("SubModule Managers Initiated!", module="init")
-        Logger.info(f"Submodules Intitiated: [{', '.join([m.NAME for m in managers_list])}]", module="init")
+        Logger.info(f"Submodules Intitiated: [{', '.join([m.NAME for m in MANAGERS_LIST])}]", module="init")
 
         # Load and Log Modules
         Logger.info("Starting Module Initialization", module="init")
@@ -155,10 +155,10 @@ class Server:
             Logger.verbose(f"Blocks List:\n{BlockManager.generateTable()}", module="init")
 
         # Printing Error If Error Occurs During Init
-        if len(ModuleManager._error_list) != 0:
+        if len(ModuleManager._errorList) != 0:
             Logger.warn("Some Modules Files Failed To Load!\n", module="init")
             Logger.warn("!!! Failed Modules May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="init-module")
-            Logger.warn(f"Failed: {ModuleManager._error_list}\n", module="init")
+            Logger.warn(f"Failed: {ModuleManager._errorList}\n", module="init")
             Logger.askConfirmation()
 
         # Initialize WorldManager

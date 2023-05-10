@@ -956,11 +956,11 @@ class CoreModule(AbstractModule):
 
             # Load Map Data
             Logger.debug("Loading Map Data", module="obsidian-map")
-            raw_data = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
+            rawData = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
 
             # Sanity Check File Size
-            if (sizeX * sizeY * sizeZ) != len(raw_data):
-                raise WorldFormatError(f"ObsidianWorldFormat - Invalid Map Data! Expected: {sizeX * sizeY * sizeZ} Got: {len(raw_data)}")
+            if (sizeX * sizeY * sizeZ) != len(rawData):
+                raise WorldFormatError(f"ObsidianWorldFormat - Invalid Map Data! Expected: {sizeX * sizeY * sizeZ} Got: {len(rawData)}")
 
             # Close Zip File
             zipFile.close()
@@ -971,7 +971,7 @@ class CoreModule(AbstractModule):
                 name,
                 sizeX, sizeY, sizeZ,
                 seed,
-                raw_data,
+                rawData,
                 spawnX=spawnX,
                 spawnY=spawnY,
                 spawnZ=spawnZ,
@@ -1054,16 +1054,16 @@ class CoreModule(AbstractModule):
             fileIO.seek(0)
 
             # Create zip file
-            with zipfile.ZipFile(fileIO, "w") as zip_file:
+            with zipfile.ZipFile(fileIO, "w") as zipFile:
                 # Write the metadata file
                 Logger.debug("Writing metadata file", module="obsidian-map")
-                zip_file.writestr("metadata", json.dumps(worldMetadata, indent=4))
+                zipFile.writestr("metadata", json.dumps(worldMetadata, indent=4))
                 # Write the logout location file
                 Logger.debug("Writing logout locations file", module="obsidian-map")
-                zip_file.writestr("logouts", json.dumps(logoutLocations, indent=4))
+                zipFile.writestr("logouts", json.dumps(logoutLocations, indent=4))
                 # Write the map file
                 Logger.debug("Writing map file", module="obsidian-map")
-                zip_file.writestr("map", world.gzipMap())
+                zipFile.writestr("map", world.gzipMap())
 
     #
     # MAP GENERATORS
@@ -1084,21 +1084,21 @@ class CoreModule(AbstractModule):
             mapData = bytearray(0)
 
             # Pre-generate air, dirt, and grass layers
-            slice_air = bytearray([Blocks.Air.ID]) * (sizeX * sizeZ)
-            slice_dirt = bytearray([Blocks.Dirt.ID]) * (sizeX * sizeZ)
-            slice_grass = bytearray([Blocks.Grass.ID]) * (sizeX * sizeZ)
+            sliceAir = bytearray([Blocks.Air.ID]) * (sizeX * sizeZ)
+            sliceDirt = bytearray([Blocks.Dirt.ID]) * (sizeX * sizeZ)
+            sliceGrass = bytearray([Blocks.Grass.ID]) * (sizeX * sizeZ)
 
             # Create World
             grassHeight = sizeY // 2
             generationStatus.setStatus(0, "Placing Dirt....")
             for y in range(sizeY):
                 if y > grassHeight:
-                    mapData.extend(slice_air)
+                    mapData.extend(sliceAir)
                 elif y == grassHeight:
                     generationStatus.setStatus(y / sizeY, "Planting Grass....")
-                    mapData.extend(slice_grass)
+                    mapData.extend(sliceGrass)
                 else:
-                    mapData.extend(slice_dirt)
+                    mapData.extend(sliceDirt)
 
             generationStatus.setDone()
             return mapData
@@ -1548,25 +1548,25 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["help", "commands", "cmds"])
 
-        async def execute(self, ctx: Player, *, page_num_or_query: int | str = 1):
+        async def execute(self, ctx: Player, *, pageNumOrQuery: int | str = 1):
             # If command is not an int, assume its a command name and print help for that
-            if isinstance(page_num_or_query, str):
+            if isinstance(pageNumOrQuery, str):
                 # Check if rightmost value is part of the module/command name or a page number
                 # This will cause some edge cases where it will fail, but its better than nothing
-                if page_num_or_query.rsplit(" ", 1)[-1].isnumeric():
-                    query = page_num_or_query.rsplit(" ", 1)[0]
-                    page_num = int(page_num_or_query.rsplit(" ", 1)[1])
+                if pageNumOrQuery.rsplit(" ", 1)[-1].isnumeric():
+                    query = pageNumOrQuery.rsplit(" ", 1)[0]
+                    pageNum = int(pageNumOrQuery.rsplit(" ", 1)[1])
                 else:
-                    query = page_num_or_query
-                    page_num = 1
+                    query = pageNumOrQuery
+                    pageNum = 1
                 # Try to get query as a module
                 try:
-                    module = ModuleManager.SUBMODULE._convert_arg(ctx.server, query)
+                    module = ModuleManager.SUBMODULE._convertArgument(ctx.server, query)
                 except ConverterError:
                     module = None
                 # Try to get query as a command
                 try:
-                    command = CommandManager.SUBMODULE._convert_arg(ctx.server, query)
+                    command = CommandManager.SUBMODULE._convertArgument(ctx.server, query)
                 except ConverterError:
                     command = None
                 # If both conditions match, raise a warning
@@ -1575,60 +1575,60 @@ class CoreModule(AbstractModule):
                     await ctx.sendMessage("&9[NOTICE] &fTo get help as a command, please use &e/helpcmd")
                 # Process First as a plugin
                 if module:
-                    return await Commands.HelpPlugin.execute(ctx, module=module, page=page_num)
+                    return await Commands.HelpPlugin.execute(ctx, module=module, page=pageNum)
                 elif command:
                     return await Commands.HelpCmd.execute(ctx, cmd=command)
                 else:
                     raise CommandError(f"{query} is not a plugin or a command.")
 
             # Generate and Parse list of commands
-            cmd_list = CommandManager._command_dict
+            cmdList = CommandManager._commandDict
             # If user is not OP, filter out OP and Disabled commands
             if not ctx.opStatus:
-                cmd_list = {k: v for k, v in cmd_list.items() if (not v.OP) and (v.NAME not in ctx.playerManager.server.config.disabledCommands)}
+                cmdList = {k: v for k, v in cmdList.items() if (not v.OP) and (v.NAME not in ctx.playerManager.server.config.disabledCommands)}
 
-            # Alias page_or_query to just page
-            page = page_num_or_query
+            # Alias pageOrQuery to just page
+            page = pageNumOrQuery
 
             # Get information on the number of commands, pages, and commands per page
-            num_commands = len(cmd_list)  # This should never be zero as it should always count itself!
-            commands_per_page = 4
-            num_pages = math.ceil(num_commands / commands_per_page)
-            current_page = page - 1
+            numCommands = len(cmdList)  # This should never be zero as it should always count itself!
+            commandsPerPage = 4
+            numPages = math.ceil(numCommands / commandsPerPage)
+            currentPage = page - 1
 
             # Check if user input was valid
-            if page > num_pages or page <= 0:
-                raise CommandError(f"There are only {num_pages} pages of commands!")
+            if page > numPages or page <= 0:
+                raise CommandError(f"There are only {numPages} pages of commands!")
 
             # Get a list of commands registered
-            commands = tuple(cmd_list.items())
+            commands = tuple(cmdList.items())
 
             # Generate command output
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&eHelp Page {page}/{num_pages}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", colour="&2"))
 
             # Add some additional tips to help command (Only if first page)
-            if current_page == 0:
+            if currentPage == 0:
                 output.append("&7Use /help [n] to get the nth page of help.&f")
                 output.append("&7Use /help [query] for help on a plugin or command.&f")
 
             # Add command information
-            for cmd_name, cmd in commands[current_page * commands_per_page:current_page * commands_per_page + commands_per_page]:
-                help_message = f"&d[{cmd_name}] &e/{cmd.ACTIVATORS[0]}"
+            for cmdName, cmd in commands[currentPage * commandsPerPage:currentPage * commandsPerPage + commandsPerPage]:
+                helpMessage = f"&d[{cmdName}] &e/{cmd.ACTIVATORS[0]}"
                 if cmd.OP:
-                    help_message = "&4[OP] " + help_message
+                    helpMessage = "&4[OP] " + helpMessage
                 if cmd.NAME in ctx.server.config.disabledCommands:
-                    help_message = "&4[DISABLED] " + help_message
+                    helpMessage = "&4[DISABLED] " + helpMessage
                 if len(cmd.ACTIVATORS) > 1:
-                    help_message += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS][1:])})"
-                help_message += "&f"
-                output.append(help_message)
+                    helpMessage += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS][1:])})"
+                helpMessage += "&f"
+                output.append(helpMessage)
                 output.append(f"{cmd.DESCRIPTION}")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eTotal Commands: {num_commands}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eTotal Commands: {numCommands}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1644,52 +1644,52 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player, module: AbstractModule, page: int = 1):
             # Generate and Parse list of commands
-            cmd_list = CommandManager._command_dict
+            cmdList = CommandManager._commandDict
             # Filter to commands from only one plugin
-            cmd_list = {k: v for k, v in cmd_list.items() if v.MODULE == module}
+            cmdList = {k: v for k, v in cmdList.items() if v.MODULE == module}
             # If user is not OP, filter out OP and Disabled commands
             if not ctx.opStatus:
-                cmd_list = {k: v for k, v in cmd_list.items() if (not v.OP) and (v.NAME not in ctx.playerManager.server.config.disabledCommands)}
+                cmdList = {k: v for k, v in cmdList.items() if (not v.OP) and (v.NAME not in ctx.playerManager.server.config.disabledCommands)}
 
             # Get information on the number of commands, pages, and commands per page
-            num_commands = len(cmd_list)
-            commands_per_page = 4
-            num_pages = math.ceil(num_commands / commands_per_page)
-            current_page = page - 1
+            numCommands = len(cmdList)
+            commandsPerPage = 4
+            numPages = math.ceil(numCommands / commandsPerPage)
+            currentPage = page - 1
 
             # If there are no commands, return error
-            if num_commands == 0:
+            if numCommands == 0:
                 raise CommandError(f"Plugin {module.NAME} has no commands!")
 
             # Check if user input was valid
-            if page > num_pages or page <= 0:
-                raise CommandError(f"There are only {num_pages} pages of commands!")
+            if page > numPages or page <= 0:
+                raise CommandError(f"There are only {numPages} pages of commands!")
 
             # Get a list of commands registered
-            commands = tuple(cmd_list.items())
+            commands = tuple(cmdList.items())
 
             # Generate command output
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&eHelp Page {page}/{num_pages}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", colour="&2"))
             output.append(f"&d > Commands From {module.NAME}")
 
             # Add command information
-            for cmd_name, cmd in commands[current_page * commands_per_page:current_page * commands_per_page + commands_per_page]:
-                help_message = f"&d[{cmd_name}] &e/{cmd.ACTIVATORS[0]}"
+            for cmdName, cmd in commands[currentPage * commandsPerPage:currentPage * commandsPerPage + commandsPerPage]:
+                helpMessage = f"&d[{cmdName}] &e/{cmd.ACTIVATORS[0]}"
                 if cmd.OP:
-                    help_message = "&4[OP] " + help_message
+                    helpMessage = "&4[OP] " + helpMessage
                 if cmd.NAME in ctx.server.config.disabledCommands:
-                    help_message = "&4[DISABLED] " + help_message
+                    helpMessage = "&4[DISABLED] " + helpMessage
                 if len(cmd.ACTIVATORS) > 1:
-                    help_message += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS][1:])})"
-                help_message += "&f"
-                output.append(help_message)
+                    helpMessage += f" &7(Aliases: {', '.join(['/'+c for c in cmd.ACTIVATORS][1:])})"
+                helpMessage += "&f"
+                output.append(helpMessage)
                 output.append(f"{cmd.DESCRIPTION}")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&e{module.NAME} Commands: {num_commands}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&e{module.NAME} Commands: {numCommands}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1712,7 +1712,7 @@ class CoreModule(AbstractModule):
                 raise CommandError("You do not have permission to view this command!")
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&eCommand Information: {cmd.NAME}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eCommand Information: {cmd.NAME}", colour="&2"))
 
             # Add Command Description
             if cmd.DESCRIPTION:
@@ -1728,42 +1728,42 @@ class CoreModule(AbstractModule):
                 output += [line.strip() for line in cmd.__doc__.strip().splitlines()]
 
             # Generate Command Usage
-            param_usages = []
+            paramUsages = []
             # Loop through all arguments ** except for first ** (that is the ctx)
             for name, param in list(inspect.signature(cmd.execute).parameters.items())[1:]:
-                param_str = ""
+                paramStr = ""
                 # Code recycled from parseargs
                 # Normal Arguments (Nothing Special)
                 if param.kind == param.POSITIONAL_OR_KEYWORD:
                     # Required arguments use ""
                     if param.default == inspect._empty:
-                        param_str += f"&b{name}"
+                        paramStr += f"&b{name}"
                         if param.annotation != inspect._empty:
-                            param_str += f"&7({_typeToString(param.annotation)})"
+                            paramStr += f"&7({_typeToString(param.annotation)})"
                     # Optional arguments use []
                     else:
-                        param_str += f"&b[{name}"
+                        paramStr += f"&b[{name}"
                         if param.annotation != inspect._empty:
-                            param_str += f"&7({_typeToString(param.annotation)})"
-                        param_str += f"&b=&6{param.default}&b]"
+                            paramStr += f"&7({_typeToString(param.annotation)})"
+                        paramStr += f"&b=&6{param.default}&b]"
                 # Capture arguments use {}
                 elif param.kind == param.VAR_POSITIONAL or param.kind == param.KEYWORD_ONLY:
-                    param_str += f"&b{{{name}..."
+                    paramStr += f"&b{{{name}..."
                     if param.annotation != inspect._empty:
-                        param_str += f"&7({_typeToString(param.annotation)})"
-                    param_str += "&b}"
+                        paramStr += f"&7({_typeToString(param.annotation)})"
+                    paramStr += "&b}"
                 else:
                     # This shouldnt really happen
                     raise ServerError(f"Unknown argument type {param.kind} while generating help command")
 
                 # Add the formatted text to the list of other formatted texts
-                param_usages.append(param_str)
+                paramUsages.append(paramStr)
 
-            output += CommandHelper.format_list(param_usages, initial_message=f"&d[Usage] &e/{cmd.ACTIVATORS[0]} ", separator=" ", line_start="&d ->")
+            output += CommandHelper.formatList(paramUsages, initialMessage=f"&d[Usage] &e/{cmd.ACTIVATORS[0]} ", separator=" ", lineStart="&d ->")
 
             # Append list of aliases (if they exist)
             if len(cmd.ACTIVATORS) > 1:
-                output += CommandHelper.format_list(cmd.ACTIVATORS[1:], initial_message="&d[Aliases] &e", separator=", ", line_start="&e", prefix="/")
+                output += CommandHelper.formatList(cmd.ACTIVATORS[1:], initialMessage="&d[Aliases] &e", separator=", ", lineStart="&e", prefix="/")
 
             # If command is operator only, add a warning
             if cmd.OP:
@@ -1773,7 +1773,7 @@ class CoreModule(AbstractModule):
             if cmd.NAME in ctx.server.config.disabledCommands:
                 output.append("&4[NOTICE] &fThis Command Is DISABLED!")
 
-            output.append(CommandHelper.center_message(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1789,30 +1789,30 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player, page: int = 1):
             # Get information on the number of modules, pages, and modules per page
-            num_modules = len(ModuleManager._module_dict)  # This should never be zero as it should always count itself!
-            modules_per_page = 8
-            num_pages = math.ceil(num_modules / modules_per_page)
-            current_page = page - 1
+            numModules = len(ModuleManager._moduleDict)  # This should never be zero as it should always count itself!
+            modulesPerPage = 8
+            numPages = math.ceil(numModules / modulesPerPage)
+            currentPage = page - 1
 
             # Check if user input was valid
-            if page > num_pages or page <= 0:
-                raise CommandError(f"There are only {num_pages} pages of modules!")
+            if page > numPages or page <= 0:
+                raise CommandError(f"There are only {numPages} pages of modules!")
 
             # Get a list of modules registered
-            modules = tuple(ModuleManager._module_dict.items())
+            modules = tuple(ModuleManager._moduleDict.items())
 
             # Generate command output
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&eHelp Page {page}/{num_pages}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", colour="&2"))
 
             # Add command information
-            for module_name, module in modules[current_page * modules_per_page:current_page * modules_per_page + modules_per_page]:
-                output.append(f"&e{module_name}: &f{module.DESCRIPTION}")
+            for moduleName, module in modules[currentPage * modulesPerPage:currentPage * modulesPerPage + modulesPerPage]:
+                output.append(f"&e{moduleName}: &f{module.DESCRIPTION}")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eTotal Modules: {num_modules}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eTotal Modules: {numModules}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1831,7 +1831,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&ePlugin Information: {plugin.NAME}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlugin Information: {plugin.NAME}", colour="&2"))
 
             # Add Plugin Description
             if plugin.DESCRIPTION:
@@ -1853,16 +1853,16 @@ class CoreModule(AbstractModule):
             # If the plugin has dependencies, Add it on!
             if len(plugin.DEPENDENCIES):
                 output.append("&d[Dependencies]")
-                output += CommandHelper.format_list(
+                output += CommandHelper.formatList(
                     plugin.DEPENDENCIES,
-                    process_input=lambda d: f"&b[{d.NAME} &7| v.{d.VERSION}&b]" if d.VERSION else f"&b[{d.NAME} &7| Any&b]",
+                    processInput=lambda d: f"&b[{d.NAME} &7| v.{d.VERSION}&b]" if d.VERSION else f"&b[{d.NAME} &7| Any&b]",
                     separator=", ",
-                    line_start="")
+                    lineStart="")
 
             # Add # of Submodules
             output.append(f"&d[Submodules] &f{len(plugin.SUBMODULES)}")
 
-            output.append(CommandHelper.center_message(f"&ePlugins Installed: {len(ModuleManager._module_dict)}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlugins Installed: {len(ModuleManager._moduleDict)}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1894,20 +1894,20 @@ class CoreModule(AbstractModule):
                 raise ServerError("bruh")
 
             # Get a list of players
-            players_list = manager.getPlayers()
+            playersList = manager.getPlayers()
 
             # Generate command output
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&ePlayers Online: {len(players_list)}/{manager.world.maxPlayers}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(playersList)}/{manager.world.maxPlayers}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&e", separator=", ")
+            output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ")
 
             # Add Footer
             output.append("&7To see players in all worlds, use /listall")
-            output.append(CommandHelper.center_message(f"&eWorld Name: {manager.world.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eWorld Name: {manager.world.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1927,34 +1927,34 @@ class CoreModule(AbstractModule):
 
             # Add Header (Different depending on if server max size is set)
             if ctx.server.playerManager.maxSize is not None:
-                output.append(CommandHelper.center_message(f"&ePlayers Online: {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
+                output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
             else:
-                output.append(CommandHelper.center_message(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
+                output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
 
             # Keep track of the number of worlds that were hidden
-            num_hidden = 0
+            numHidden = 0
 
             # Loop through all worlds and print their players
             for world in ctx.server.worldManager.worlds.values():
                 # Get the worlds player list
-                players_list = world.playerManager.getPlayers()
+                playersList = world.playerManager.getPlayers()
 
                 # If there are no players, hide this server from the list
-                if len(players_list) == 0:
-                    num_hidden += 1
+                if len(playersList) == 0:
+                    numHidden += 1
                     continue
 
                 # Generate Player List Output
 
-                output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message=f"&d[{world.name}] &e", separator=", ")
+                output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage=f"&d[{world.name}] &e", separator=", ")
 
             # If any words were hidden, print notice
-            if num_hidden > 0:
-                output.append(f"&7{num_hidden} worlds were hidden due to having no players online.")
+            if numHidden > 0:
+                output.append(f"&7{numHidden} worlds were hidden due to having no players online.")
                 output.append("&7Use /worlds to see all worlds.")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1969,22 +1969,22 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["liststaff", "staff", "listallstaff", "allstaff"])
 
         async def execute(self, ctx: Player):
-            staff_list = list(ctx.server.playerManager.players.values())
+            staffList = list(ctx.server.playerManager.players.values())
 
             # Generate command output
             output = []
 
             # Filter List to Staff Only
-            players_list = [player for player in staff_list if player.opStatus]
+            playersList = [player for player in staffList if player.opStatus]
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&eStaff Online: {len(players_list)}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eStaff Online: {len(playersList)}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.format_list(players_list, process_input=lambda p: str(p.name), initial_message="&4", separator=", ")
+            output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&4", separator=", ")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2046,39 +2046,39 @@ class CoreModule(AbstractModule):
         async def execute(self, ctx: Player, player1: Player, player2: Optional[Player] = None):
             # Check who to teleport to who!
             if player2 is None:
-                teleport_who = ctx
-                teleport_to = player1
+                teleportWho = ctx
+                teleportTo = player1
             else:
-                teleport_who = player1
-                teleport_to = player2
+                teleportWho = player1
+                teleportTo = player2
 
             # Check if both players are in the same world!
             if ctx.worldPlayerManager is None:
                 raise CommandError("You are not in a world!")
-            elif teleport_who.worldPlayerManager is None:
-                raise CommandError(f"{teleport_who.name} is not in a world!")
-            elif teleport_to.worldPlayerManager is None:
-                raise CommandError(f"{teleport_to.name} is not in a world!")
-            elif teleport_who.worldPlayerManager.world != teleport_to.worldPlayerManager.world:
-                raise CommandError(f"{teleport_who.name} and {teleport_to.name} are not in the same world!")
+            elif teleportWho.worldPlayerManager is None:
+                raise CommandError(f"{teleportWho.name} is not in a world!")
+            elif teleportTo.worldPlayerManager is None:
+                raise CommandError(f"{teleportTo.name} is not in a world!")
+            elif teleportWho.worldPlayerManager.world != teleportTo.worldPlayerManager.world:
+                raise CommandError(f"{teleportWho.name} and {teleportTo.name} are not in the same world!")
 
             # Check if the player teleporting to is within the world boundaries
             try:
                 ctx.worldPlayerManager.world.getBlock(
-                    teleport_to.posX // 32,
-                    teleport_to.posY // 32,
-                    teleport_to.posZ // 32
+                    teleportTo.posX // 32,
+                    teleportTo.posY // 32,
+                    teleportTo.posZ // 32
                 )
             except BlockError:
-                raise CommandError(f"{teleport_to.name} coordinates are outside the world!")
+                raise CommandError(f"{teleportTo.name} coordinates are outside the world!")
 
             # Teleport User
-            await teleport_who.setLocation(
-                teleport_to.posX,
-                teleport_to.posY,
-                teleport_to.posZ,
-                teleport_to.posYaw,
-                teleport_to.posPitch
+            await teleportWho.setLocation(
+                teleportTo.posX,
+                teleportTo.posY,
+                teleportTo.posZ,
+                teleportTo.posYaw,
+                teleportTo.posPitch
             )
 
             await ctx.sendMessage("&aTeleported!")
@@ -2131,19 +2131,19 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player):
             # Get list of worlds
-            world_list = list(ctx.server.worldManager.worlds.values())
+            worldList = list(ctx.server.worldManager.worlds.values())
 
             # Generate command output
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&eWorlds Loaded: {len(world_list)}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eWorlds Loaded: {len(worldList)}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.format_list(world_list, process_input=lambda p: str(p.name), initial_message="&e", separator=", ")
+            output += CommandHelper.formatList(worldList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2169,7 +2169,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message(f"&eWorld Information: {world.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eWorld Information: {world.name}", colour="&2"))
 
             # Add World Information
             output.append(f"&d[Seed]&f {world.seed}")
@@ -2184,7 +2184,7 @@ class CoreModule(AbstractModule):
             output.append(f"&d[Time Created]&f {world.timeCreated}")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2295,10 +2295,10 @@ class CoreModule(AbstractModule):
         async def execute(self, ctx: Player):
             # Send formatted operators list
             await ctx.sendMessage(
-                CommandHelper.format_list(
+                CommandHelper.formatList(
                     ctx.server.config.operatorsList,
-                    initial_message="&4[Operators] &e",
-                    line_start="&e", separator=", "
+                    initialMessage="&4[Operators] &e",
+                    lineStart="&e", separator=", "
                 )
             )
 
@@ -2514,17 +2514,17 @@ class CoreModule(AbstractModule):
         async def execute(self, ctx: Player):
             # Send formatted banned list
             await ctx.sendMessage(
-                CommandHelper.format_list(
+                CommandHelper.formatList(
                     ctx.server.config.bannedPlayers,
-                    initial_message="&4[Banned Players] &e",
-                    line_start="&e", separator=", "
+                    initialMessage="&4[Banned Players] &e",
+                    lineStart="&e", separator=", "
                 )
             )
             await ctx.sendMessage(
-                CommandHelper.format_list(
+                CommandHelper.formatList(
                     ctx.server.config.bannedIps,
-                    initial_message="&4[Banned Ips] &e",
-                    line_start="&e", separator=", "
+                    initialMessage="&4[Banned Ips] &e",
+                    lineStart="&e", separator=", "
                 )
             )
 
@@ -2627,10 +2627,10 @@ class CoreModule(AbstractModule):
         async def execute(self, ctx: Player):
             # Send formatted disabled list
             await ctx.sendMessage(
-                CommandHelper.format_list(
+                CommandHelper.formatList(
                     ctx.server.config.disabledCommands,
-                    initial_message="&4[Disabled Commands] &e",
-                    line_start="&e", separator=", "
+                    initialMessage="&4[Disabled Commands] &e",
+                    lineStart="&e", separator=", "
                 )
             )
 
@@ -2758,16 +2758,16 @@ class CoreModule(AbstractModule):
             # Save Worlds
             if ctx.worldPlayerManager is not None:
                 # Get list of worlds (should only be used to notify player)
-                world_list = list(ctx.server.worldManager.worlds.values())
+                worldList = list(ctx.server.worldManager.worlds.values())
 
                 # Send world save message to entire server
                 await ctx.playerManager.sendGlobalMessage("&aStarting Manual World Save!")
                 await ctx.playerManager.sendGlobalMessage("&eWarning: The server may lag while saving!")
                 await ctx.sendMessage(
-                    CommandHelper.format_list(
-                        world_list,
-                        process_input=lambda p: str(p.name),
-                        initial_message="&eSaving These Worlds: ",
+                    CommandHelper.formatList(
+                        worldList,
+                        processInput=lambda p: str(p.name),
+                        initialMessage="&eSaving These Worlds: ",
                         separator=", "
                     )
                 )
@@ -2775,7 +2775,7 @@ class CoreModule(AbstractModule):
                 ctx.worldPlayerManager.world.worldManager.saveWorlds()
 
                 # Update server members on save
-                await ctx.playerManager.sendGlobalMessage(f"&a{len(world_list)} Worlds Saved!")
+                await ctx.playerManager.sendGlobalMessage(f"&a{len(worldList)} Worlds Saved!")
             else:
                 raise CommandError("You are not in a world!")
 
@@ -2814,38 +2814,38 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["convertworld"], OP=True)
 
-        async def execute(self, ctx: Player, world_file: str, format_name: Optional[str] = None):
+        async def execute(self, ctx: Player, worldFile: str, formatName: Optional[str] = None):
             # If no world format is passed, use current world format.
             # Else, get the requested world format.
-            if format_name:
+            if formatName:
                 try:
-                    new_world_format = WorldFormats[format_name]
+                    newWorldFormat = WorldFormats[formatName]
                 except KeyError:
-                    raise CommandError(f"&cWorld format '{format_name}' does not exist!")
+                    raise CommandError(f"&cWorld format '{formatName}' does not exist!")
             else:
                 if ctx.worldPlayerManager is not None:
-                    new_world_format = ctx.worldPlayerManager.world.worldManager.worldFormat
+                    newWorldFormat = ctx.worldPlayerManager.world.worldManager.worldFormat
                 else:
                     raise CommandError("&cYou are not in a world!")
 
             # Get world format extension
-            new_format_ext = "." + new_world_format.EXTENSIONS[0]
+            newFormatExt = "." + newWorldFormat.EXTENSIONS[0]
 
             # Get the world to be converted
             if ctx.server.config.worldSaveLocation:
-                old_world_path = Path(SERVERPATH, ctx.server.config.worldSaveLocation, world_file)
-                new_world_path = Path(SERVERPATH, ctx.server.config.worldSaveLocation, Path(world_file).stem + new_format_ext)
+                oldWorldPath = Path(SERVERPATH, ctx.server.config.worldSaveLocation, worldFile)
+                newWorldPath = Path(SERVERPATH, ctx.server.config.worldSaveLocation, Path(worldFile).stem + newFormatExt)
             else:
                 raise CommandError("&cworldSaveLocation in server configuration is not set!")
 
             # Check if world exists and if new world does not exist
-            if not old_world_path.exists():
-                raise CommandError(f"&cWorld '{old_world_path.name}' does not exist!")
-            if new_world_path.exists():
-                raise CommandError(f"&cWorld '{new_world_path.name}' already exists!")
+            if not oldWorldPath.exists():
+                raise CommandError(f"&cWorld '{oldWorldPath.name}' does not exist!")
+            if newWorldPath.exists():
+                raise CommandError(f"&cWorld '{newWorldPath.name}' already exists!")
 
             # Detect type of old world format
-            old_world_format = WorldFormats.getWorldFormatFromExtension(old_world_path.suffix[1:])
+            oldWorldFormat = WorldFormats.getWorldFormatFromExtension(oldWorldPath.suffix[1:])
 
             # Send user warning converting
             Logger.warn("User is about to convert world from one format to another!", module="format-convert")
@@ -2853,7 +2853,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message("&e[WARNING]", colour="&4"))
+            output.append(CommandHelper.centerMessage("&e[WARNING]", colour="&4"))
 
             # Add Warning
             output.append("&c[WARNING]&f You are about to perform a conversion")
@@ -2864,7 +2864,7 @@ class CoreModule(AbstractModule):
             output.append("Type &aacknowledge &fto continue")
 
             # Add Footer
-            output.append(CommandHelper.center_message("&e[WARNING]", colour="&4"))
+            output.append(CommandHelper.centerMessage("&e[WARNING]", colour="&4"))
 
             # Send warning message
             await ctx.sendMessage(output)
@@ -2880,21 +2880,21 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.center_message("&eWorld Format Conversion", colour="&2"))
+            output.append(CommandHelper.centerMessage("&eWorld Format Conversion", colour="&2"))
 
             # Add World Information
-            output.append(f"&3[Current World File]&f {old_world_path.name}")
-            output.append(f"&3[Current World Format]&f {old_world_format.NAME}")
-            output.append(f"&3[Current Format Adapter Version]&f {old_world_format.VERSION}")
-            output.append(f"&b[New World File]&f {new_world_path.name}")
-            output.append(f"&b[New World Format]&f {new_world_format.NAME}")
-            output.append(f"&b[New Format Adapter Version]&f {new_world_format.VERSION}")
+            output.append(f"&3[Current World File]&f {oldWorldPath.name}")
+            output.append(f"&3[Current World Format]&f {oldWorldFormat.NAME}")
+            output.append(f"&3[Current Format Adapter Version]&f {oldWorldFormat.VERSION}")
+            output.append(f"&b[New World File]&f {newWorldPath.name}")
+            output.append(f"&b[New World Format]&f {newWorldFormat.NAME}")
+            output.append(f"&b[New Format Adapter Version]&f {newWorldFormat.VERSION}")
             output.append("&7World Path Location")
-            output.append(str(old_world_path.parent))
+            output.append(str(oldWorldPath.parent))
             output.append("Type &aacknowledge &fto continue")
 
             # Add Footer
-            output.append(CommandHelper.center_message(f"&eConverter Version: {self.VERSION}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eConverter Version: {self.VERSION}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2908,24 +2908,24 @@ class CoreModule(AbstractModule):
 
             # Start Conversion Process
             await ctx.sendMessage("&aStarting World Conversion Process...")
-            old_world_file = open(old_world_path, "rb+")
-            new_world_file = open(new_world_path, "wb+")
-            old_world_file.seek(0)
-            new_world_file.seek(0)
+            oldWorldFile = open(oldWorldPath, "rb+")
+            newWorldFile = open(newWorldPath, "wb+")
+            oldWorldFile.seek(0)
+            newWorldFile.seek(0)
 
             # Wrap in try except to catch errors
             try:
                 # Create a temporary world manager
                 await ctx.sendMessage("&aCreating Temporary World Manager...")
-                temp_world_manager = WorldManager(ctx.server)
+                tempWorldManager = WorldManager(ctx.server)
 
                 # Load old world
                 await ctx.sendMessage("&aLoading World from Old Format...")
-                old_world = old_world_format.loadWorld(old_world_file, temp_world_manager)
+                oldWorld = oldWorldFormat.loadWorld(oldWorldFile, tempWorldManager)
 
                 # Save to new world
                 await ctx.sendMessage("&aSaving World to New Format...")
-                new_world_format.saveWorld(old_world, new_world_file, temp_world_manager)
+                newWorldFormat.saveWorld(oldWorld, newWorldFile, tempWorldManager)
             except Exception as e:
                 # Handle error by printing to chat and returning to user
                 Logger.error(str(e), module="format-convert")
@@ -2935,13 +2935,13 @@ class CoreModule(AbstractModule):
 
             # Clean up open files
             await ctx.sendMessage("&aCleaning Up...")
-            old_world_file.close()
-            new_world_file.flush()
-            new_world_file.close()
+            oldWorldFile.close()
+            newWorldFile.flush()
+            newWorldFile.close()
 
             # Send Final Messages
             await ctx.sendMessage("&aWorld Conversion Completed!")
-            await ctx.sendMessage(f"&d{old_world_path.name} &a-> &d{new_world_path.name}")
+            await ctx.sendMessage(f"&d{oldWorldPath.name} &a-> &d{newWorldPath.name}")
             await ctx.sendMessage("Use &a/reloadworlds &fto add the new world to the server!")
 
     @Command(
@@ -2970,44 +2970,44 @@ class CoreModule(AbstractModule):
 # Helper functions for the command generation
 class CommandHelper():
     @staticmethod
-    def center_message(message: str, colour: str = "", padCharacter: str = "=") -> str:
+    def centerMessage(message: str, colour: str = "", padCharacter: str = "=") -> str:
         # Calculate the number of padding to add
-        max_message_length = 64
-        pad_space = max(
-            max_message_length - len(message) - 2 * (len(colour) + 1) - 2,
+        maxMessageLength = 64
+        padSpace = max(
+            maxMessageLength - len(message) - 2 * (len(colour) + 1) - 2,
             0  # Maxing at zero in case the final output goes into the negatives
         )
-        pad_left = pad_space // 2
-        pad_right = pad_space - pad_left
+        padLeft = padSpace // 2
+        padRight = padSpace - padLeft
 
         # Generate and return padded message
-        return (colour + padCharacter * pad_left) + (" " + message + " ") + (colour + padCharacter * pad_right) + "&f"
+        return (colour + padCharacter * padLeft) + (" " + message + " ") + (colour + padCharacter * padRight) + "&f"
 
     @staticmethod
-    def format_list(
+    def formatList(
         values: Iterable[Any],
-        process_input: Callable[[Any], str] = lambda s: str(s),
-        initial_message: str = "",
+        processInput: Callable[[Any], str] = lambda s: str(s),
+        initialMessage: str = "",
         separator: str = "",
-        line_start: str = "",
-        line_end: str = "",
+        lineStart: str = "",
+        lineEnd: str = "",
         prefix: str = "",
         postfix: str = ""
     ) -> list[str]:
         output = []
-        output.append(initial_message)
+        output.append(initialMessage)
         isEmpty = True
 
         i = iter(values)  # Use an iterable to loop through values
         while (val := next(i, None)):
             isEmpty = False
             # Format Val
-            val = prefix + process_input(val) + postfix + separator
+            val = prefix + processInput(val) + postfix + separator
 
             # Check if adding the player name will overflow the max message length
-            if len(output[-1]) + len(line_end) + len(val) > MAX_MESSAGE_LENGTH:
-                output[-1] += line_end  # Add whatever postfix is needed
-                output.append(line_start)  # Add a new line for output (prefix)
+            if len(output[-1]) + len(lineEnd) + len(val) > MAX_MESSAGE_LENGTH:
+                output[-1] += lineEnd  # Add whatever postfix is needed
+                output.append(lineStart)  # Add a new line for output (prefix)
 
             # Add Player Name
             output[-1] += val

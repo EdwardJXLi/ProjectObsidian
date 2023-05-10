@@ -15,7 +15,7 @@ from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.config import AbstractConfig
 from obsidian.constants import (
-    managers_list,
+    MANAGERS_LIST,
     MODULESIMPORT,
     MODULESFOLDER,
     SERVERPATH
@@ -30,7 +30,7 @@ from obsidian.errors import (
     PostInitError,
     FatalError
 )
-from obsidian.types import format_name, T
+from obsidian.types import formatName, T
 
 
 # Manager Skeleton
@@ -38,7 +38,7 @@ class AbstractManager:
     def __init__(self, name: str, submodule: Type[AbstractSubmodule] | Type[AbstractModule]):
         self.NAME = name
         self.SUBMODULE = submodule
-        managers_list.append(self)
+        MANAGERS_LIST.append(self)
 
     def _initSubmodule(self, submodule: Any, module: AbstractModule):
         Logger.debug(f"Initializing {submodule.MANAGER.NAME} {submodule.NAME} From Module {module.NAME}", module=f"{module.NAME}-submodule-init")
@@ -85,7 +85,7 @@ class AbstractModule:
         if overrideConfigPath:
             rootPath = overrideConfigPath
         else:
-            rootPath = Path("configs", format_name(self.NAME))
+            rootPath = Path("configs", formatName(self.NAME))
 
         # Initialize and Return the config
         return config(name, *args, rootPath=rootPath, autoInit=True, hideWarning=True, **kwargs)
@@ -94,10 +94,10 @@ class AbstractModule:
         pass
 
     @staticmethod
-    def _convert_arg(_, argument: str) -> AbstractModule:
+    def _convertArgument(_, argument: str) -> AbstractModule:
         try:
             # Try to grab the module from the modules list
-            return ModuleManager.getModule(format_name(argument))
+            return ModuleManager.getModule(formatName(argument))
         except KeyError:
             # Raise error if module not found
             raise ConverterError(f"Module {argument} Not Found!")
@@ -113,12 +113,12 @@ class AbstractSubmodule(Generic[T]):
     MANAGER: AbstractManager
     MODULE: T
 
-    def __post_init__(self):
+    def __postInit__(self):
         # Create alias for module
         self.module = self.MODULE
 
     @staticmethod
-    def _convert_arg(ctx: Server, argument: str):
+    def _convertArgument(ctx: Server, argument: str):
         return ConverterError(f"{T} Not Implemented")
 
 
@@ -129,21 +129,21 @@ class _ModuleManager(AbstractManager):
         super().__init__("Module", AbstractModule)
 
         # Creates List Of Modules That Has The Module Name As Keys
-        self._module_dict = dict()
-        self._module_ignorelist = []
-        self._sorted_module_graph = []
+        self._moduleDict = dict()
+        self._moduleIgnorelist = []
+        self._sortedModuleGraph = []
         self._completed = False
-        self._ensure_core = True
-        self._init_cpe = False
-        self._error_list = []  # Logging Which Modules Encountered Errors While Loading Up
+        self._ensureCore = True
+        self._initCpe = False
+        self._errorList = []  # Logging Which Modules Encountered Errors While Loading Up
 
     # Function to libimport all modules
     # EnsureCore ensures core module is present
     def initModules(self, ignorelist: list[str] = [], ensureCore: bool = True, initCPE: bool = False):
         # Setting Vars
-        self._ensure_core = ensureCore
-        self._module_ignorelist = ignorelist
-        self._init_cpe = initCPE
+        self._ensureCore = ensureCore
+        self._moduleIgnorelist = ignorelist
+        self._initCpe = initCPE
 
         # --- PreInitialization ---
         Logger.info("=== (1/6) PreInitializing Modules ===", module="init-modules")
@@ -213,103 +213,103 @@ class _ModuleManager(AbstractManager):
     # Intermediate Function To Import All Modules
     def _importModules(self):
         # Initialize Temporary List of Files Imported
-        _module_files = []
+        _moduleFiles = []
         # Walk Through All Packages And Import Library
-        for _, module_name, _ in pkgutil.walk_packages([str(Path(SERVERPATH, MODULESFOLDER))]):
+        for _, moduleName, _ in pkgutil.walk_packages([str(Path(SERVERPATH, MODULESFOLDER))]):
             # Load Modules
-            Logger.debug(f"Detected Module {module_name}", module="module-import")
-            if module_name not in self._module_ignorelist:
+            Logger.debug(f"Detected Module {moduleName}", module="module-import")
+            if moduleName not in self._moduleIgnorelist:
                 try:
-                    Logger.verbose(f"Module {module_name} Not In Ignore List. Adding!", module="module-import")
+                    Logger.verbose(f"Module {moduleName} Not In Ignore List. Adding!", module="module-import")
                     # Import Module
-                    _module = importlib.import_module(MODULESIMPORT + module_name)
+                    _module = importlib.import_module(MODULESIMPORT + moduleName)
                     # Appending To A List of Module Files to be Used Later
-                    _module_files.append(module_name)
+                    _moduleFiles.append(moduleName)
                     # Set the Imported Module into the Global Scope
-                    globals()[module_name] = _module
+                    globals()[moduleName] = _module
                 except FatalError as e:
                     # Pass Down Fatal Error To Base Server
                     raise e
                 except Exception as e:
                     # Handle Exception if Error Occurs
-                    self._error_list.append((module_name, "PreInit-Import"))  # Module Loaded WITH Errors
+                    self._errorList.append((moduleName, "PreInit-Import"))  # Module Loaded WITH Errors
                     # If the Error is a Register Error (raised on purpose), Don't print out TB
-                    Logger.error(f"Error While Importing Module {module_name} - {type(e).__name__}: {e}\n", module="module-import", printTb=not isinstance(e, InitRegisterError))
+                    Logger.error(f"Error While Importing Module {moduleName} - {type(e).__name__}: {e}\n", module="module-import", printTb=not isinstance(e, InitRegisterError))
                     Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-import")
                     Logger.askConfirmation()
             else:
-                Logger.verbose(f"Skipping Module {module_name} Due To Ignore List", module="module-import")
-        Logger.verbose(f"Detected and Imported Module Files {_module_files}", module="module-import")
+                Logger.verbose(f"Skipping Module {moduleName} Due To Ignore List", module="module-import")
+        Logger.verbose(f"Detected and Imported Module Files {_moduleFiles}", module="module-import")
         # Check If Core Was Loaded
-        if self._ensure_core:
-            if "core" not in self._module_dict.keys():
-                self._error_list.append(("core", "PreInit-EnsureCore"))  # Module Loaded WITH Errors
+        if self._ensureCore:
+            if "core" not in self._moduleDict.keys():
+                self._errorList.append(("core", "PreInit-EnsureCore"))  # Module Loaded WITH Errors
                 raise FatalError("Error While Loading Module core - Critical Module Not Found")
 
     # Intermediate Function to Verify CPE Support
     def _verifyCpeSupport(self):
         # If CPE is supported by server, dont skip anything
-        if self._init_cpe:
+        if self._initCpe:
             Logger.debug("CPE Support Enabled", module="verify-cpe")
             Logger.debug("Skipping CPE Support Check", module="verify-cpe")
             return
 
         # If CPE is not supported by server, check for CPE support in modules
         Logger.debug("CPE Support Disabled. Verifying CPE support.", module="verify-cpe")
-        for module_name, module_obj in list(self._module_dict.items()):
+        for moduleName, moduleObj in list(self._moduleDict.items()):
             try:
-                Logger.debug(f"Checking CPE Support for Module {module_name}", module="verify-cpe")
-                if CPEModuleManager.hasCPE(module_obj):
-                    Logger.debug(f"Module {module_name} Implements a CPE Extension.", module="verify-cpe")
-                    Logger.verbose(f"Checking whether CPE is enabled, and whether the {module_name} module should be skipped...", module="verify-cpe")
-                    if CPEModuleManager.shouldSkip(module_obj):
-                        Logger.verbose(f"Skipping Module {module_name} Due To CPE Settings", module="verify-cpe")
+                Logger.debug(f"Checking CPE Support for Module {moduleName}", module="verify-cpe")
+                if CPEModuleManager.hasCPE(moduleObj):
+                    Logger.debug(f"Module {moduleName} Implements a CPE Extension.", module="verify-cpe")
+                    Logger.verbose(f"Checking whether CPE is enabled, and whether the {moduleName} module should be skipped...", module="verify-cpe")
+                    if CPEModuleManager.shouldSkip(moduleObj):
+                        Logger.verbose(f"Skipping Module {moduleName} Due To CPE Settings", module="verify-cpe")
                         # Remove Module
-                        Logger.debug(f"Removing Module {module_name} From Loader!", module="verify-cpe")
-                        del self._module_dict[module_name]
+                        Logger.debug(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
+                        del self._moduleDict[moduleName]
                     else:
-                        Logger.verbose(f"Module {module_name} will not skipped.", module="verify-cpe")
+                        Logger.verbose(f"Module {moduleName} will not skipped.", module="verify-cpe")
                 else:
-                    Logger.verbose(f"Module {module_name} does not implement a CPE Extension. Skipping Check!", module="verify-cpe")
+                    Logger.verbose(f"Module {moduleName} does not implement a CPE Extension. Skipping Check!", module="verify-cpe")
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._error_list.append((module_name, "PreInit-CPE-Check"))  # Module Loaded WITH Errors
+                self._errorList.append((moduleName, "PreInit-CPE-Check"))  # Module Loaded WITH Errors
                 # If the Error is a CPE Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Verifying CPE Support For {module_name} - {type(e).__name__}: {e}\n", module="verify-cpe", printTb=not isinstance(e, CPEError))
+                Logger.error(f"Error While Verifying CPE Support For {moduleName} - {type(e).__name__}: {e}\n", module="verify-cpe", printTb=not isinstance(e, CPEError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="verify-cpe")
-                Logger.warn(f"Skipping Module {module_name}?", module="verify-cpe")
+                Logger.warn(f"Skipping Module {moduleName}?", module="verify-cpe")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module_name} From Loader!", module="verify-cpe")
-                del self._module_dict[module_name]
+                Logger.warn(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
+                del self._moduleDict[moduleName]
 
     # Intermediate Function to Check and Initialize Dependencies
     def _initDependencies(self):
-        for module_name, module_obj in list(self._module_dict.items()):
+        for moduleName, moduleObj in list(self._moduleDict.items()):
             try:
-                Logger.debug(f"Checking Dependencies for Module {module_name}", module="module-resolve")
+                Logger.debug(f"Checking Dependencies for Module {moduleName}", module="module-resolve")
                 # Loop through all dependencies, check type, then check if exists
-                for dependency in module_obj.DEPENDENCIES:
+                for dependency in moduleObj.DEPENDENCIES:
                     # Get Variables
-                    dep_name = dependency.NAME
-                    dep_ver = dependency.VERSION
-                    Logger.verbose(f"Checking if Dependency {dep_name} Exists", module="module-resolve")
+                    depName = dependency.NAME
+                    depVer = dependency.VERSION
+                    Logger.verbose(f"Checking if Dependency {depName} Exists", module="module-resolve")
                     # Check if Dependency is "Loaded"
-                    if dep_name in self._module_dict.keys():
+                    if depName in self._moduleDict.keys():
                         # Check if Version should be checked
-                        if dep_ver is None:
+                        if depVer is None:
                             Logger.verbose(f"Skipping Version Check For Dependency {dependency}", module="module-resolve")
                             pass  # No Version Check Needed
-                        elif dep_ver == self._module_dict[dependency.NAME].VERSION:
+                        elif depVer == self._moduleDict[dependency.NAME].VERSION:
                             Logger.verbose(f"Dependencies {dependency} Satisfied!", module="module-resolve")
                             pass
                         else:
-                            raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {dep_ver} | Has: {self._module_dict[dependency.NAME].VERSION})")
+                            raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {depVer} | Has: {self._moduleDict[dependency.NAME].VERSION})")
                         # If All Passes, Link Module Class
-                        dependency.MODULE = self._module_dict[dependency.NAME]
+                        dependency.MODULE = self._moduleDict[dependency.NAME]
                     else:
                         raise DependencyError(f"Dependency '{dependency}' Not Found!")
             except FatalError as e:
@@ -317,15 +317,15 @@ class _ModuleManager(AbstractManager):
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._error_list.append((module_name, "PreInit-Dependency"))  # Module Loaded WITH Errors
+                self._errorList.append((moduleName, "PreInit-Dependency"))  # Module Loaded WITH Errors
                 # If the Error is a Dependency Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Initializing Dependencies For {module_name} - {type(e).__name__}: {e}\n", module="module-resolve", printTb=not isinstance(e, DependencyError))
+                Logger.error(f"Error While Initializing Dependencies For {moduleName} - {type(e).__name__}: {e}\n", module="module-resolve", printTb=not isinstance(e, DependencyError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-resolve")
-                Logger.warn(f"Skipping Module {module_name}?", module="module-resolve")
+                Logger.warn(f"Skipping Module {moduleName}?", module="module-resolve")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module_name} From Loader!", module="module-resolve")
-                del self._module_dict[module_name]
+                Logger.warn(f"Removing Module {moduleName} From Loader!", module="module-resolve")
+                del self._moduleDict[moduleName]
 
     # Intermediate Function to Resolve Circular Dependencies
     def _resolveDependencyCycles(self):
@@ -341,25 +341,25 @@ class _ModuleManager(AbstractManager):
             for dependency in current.DEPENDENCIES:
                 _ensureNoCycles(dependency.MODULE, (*previous, current.NAME))
 
-        for module_name, module_obj in list(self._module_dict.items()):
+        for moduleName, moduleObj in list(self._moduleDict.items()):
             try:
-                Logger.debug(f"Ensuring No Circular Dependencies For Module {module_name}", module="module-verify")
+                Logger.debug(f"Ensuring No Circular Dependencies For Module {moduleName}", module="module-verify")
                 # Run DFS Through All Decencies To Check If Cycle Exists
-                _ensureNoCycles(module_obj)
+                _ensureNoCycles(moduleObj)
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._error_list.append((module_name, "PreInit-Dependency"))  # Module Loaded WITH Errors
+                self._errorList.append((moduleName, "PreInit-Dependency"))  # Module Loaded WITH Errors
                 # If the Error is a Dependency Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Resolving Dependency Cycles For {module_name} - {type(e).__name__}: {e}\n", module="module-verify", printTb=not isinstance(e, DependencyError))
+                Logger.error(f"Error While Resolving Dependency Cycles For {moduleName} - {type(e).__name__}: {e}\n", module="module-verify", printTb=not isinstance(e, DependencyError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-verify")
-                Logger.warn(f"Skipping Module {module_name}?", module="module-verify")
+                Logger.warn(f"Skipping Module {moduleName}?", module="module-verify")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module_name} From Loader!", module="module-verify")
-                del self._module_dict[module_name]
+                Logger.warn(f"Removing Module {moduleName} From Loader!", module="module-verify")
+                del self._moduleDict[moduleName]
 
     # Intermediate Function to Build Dependency Graph
     def _buildDependencyGraph(self):
@@ -367,7 +367,7 @@ class _ModuleManager(AbstractManager):
         # Define Visited Set
         visited = set()
         # Reset and Clear Current Module Graph
-        self._sorted_module_graph = []
+        self._sortedModuleGraph = []
 
         # Helper Function to Run Topological Sort DFS
         def _topologicalSort(module):
@@ -382,21 +382,21 @@ class _ModuleManager(AbstractManager):
                     _topologicalSort(dependency.MODULE)
 
             # Current Module has No Further Dependencies. Adding To Graph!
-            self._sorted_module_graph.append(module)
-            Logger.verbose(f"Added {module.NAME} To Dependency Graph. DG Is Now {self._sorted_module_graph}", module="topological-sort")
+            self._sortedModuleGraph.append(module)
+            Logger.verbose(f"Added {module.NAME} To Dependency Graph. DG Is Now {self._sortedModuleGraph}", module="topological-sort")
 
         # Run Topological Sort on All Non-Visited Modules
-        for module_name in list(self._module_dict.keys()):
-            Logger.verbose(f"Attempting Topological Sort on {module_name}", module="module-prep")
-            if module_name not in visited:
-                _topologicalSort(self._module_dict[module_name])
+        for moduleName in list(self._moduleDict.keys()):
+            Logger.verbose(f"Attempting Topological Sort on {moduleName}", module="module-prep")
+            if moduleName not in visited:
+                _topologicalSort(self._moduleDict[moduleName])
 
         # Print Out Status
-        Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sorted_module_graph}", module="module-prep")
+        Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sortedModuleGraph}", module="module-prep")
 
     # Intermediate Function to Initialize Modules
     def _initModules(self):
-        for idx, module in enumerate(self._sorted_module_graph):
+        for idx, module in enumerate(self._sortedModuleGraph):
             try:
                 Logger.debug(f"Initializing Module {module.NAME}", module=f"{module.NAME}-init")
                 # Initialize Module
@@ -407,16 +407,16 @@ class _ModuleManager(AbstractManager):
                     module.VERSION,
                     module.DEPENDENCIES
                 )
-                # Replacing Item in _module_dict and _sorted_module_graph with the Initialized Version!
-                self._module_dict[module.NAME] = initializedModule
-                self._sorted_module_graph[idx] = initializedModule
+                # Replacing Item in _moduleDict and _sortedModuleGraph with the Initialized Version!
+                self._moduleDict[module.NAME] = initializedModule
+                self._sortedModuleGraph[idx] = initializedModule
                 Logger.info(f"Initialized Module {module.NAME}", module="init-module")
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._error_list.append((module.NAME, "Init-Module"))  # Module Loaded WITH Errors
+                self._errorList.append((module.NAME, "Init-Module"))  # Module Loaded WITH Errors
                 # If the Error is an Init Error (raised on purpose), Don't print out TB
                 Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init", printTb=not not isinstance(e, InitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-init")
@@ -424,12 +424,12 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {module.NAME} From Loader!", module="module-init")
-                del self._module_dict[module.NAME]
+                del self._moduleDict[module.NAME]
 
     # Intermediate Function to Initialize Submodules
     def _initSubmodules(self):
         # Loop through all the submodules in the order of the sorted graph
-        for module in self._sorted_module_graph:
+        for module in self._sortedModuleGraph:
             try:
                 # Loop Through All Items within Module
                 Logger.debug(f"Checking All Items in {module.NAME}", module=f"{module.NAME}-submodule-init")
@@ -445,17 +445,17 @@ class _ModuleManager(AbstractManager):
                         Logger.verbose(f"Checking if {item.MANAGER.NAME} {item.NAME} have all methods registered", module=f"{module.NAME}-submodule-init")
 
                         # Get list of base class methods
-                        base_methods = [name for name, val in item.MANAGER.SUBMODULE.__dict__.items() if callable(val) and not name.startswith("__")]
-                        Logger.verbose(f"{item.MANAGER.NAME} Base Class has methods: {base_methods}", module=f"{module.NAME}-submodule-init")
+                        baseMethods = [name for name, val in item.MANAGER.SUBMODULE.__dict__.items() if callable(val) and not name.startswith("__")]
+                        Logger.verbose(f"{item.MANAGER.NAME} Base Class has methods: {baseMethods}", module=f"{module.NAME}-submodule-init")
                         # Get list of currently registered methods
-                        submodule_methods = [name for name, val in item.__dict__.items() if callable(val) and not name.startswith("__")]
-                        Logger.verbose(f"{item.MANAGER.NAME} {item.NAME} has methods: {submodule_methods}", module=f"{module.NAME}-submodule-init")
+                        submoduleMethods = [name for name, val in item.__dict__.items() if callable(val) and not name.startswith("__")]
+                        Logger.verbose(f"{item.MANAGER.NAME} {item.NAME} has methods: {submoduleMethods}", module=f"{module.NAME}-submodule-init")
 
                         # Loop through all methods and check if they are registered
-                        for method_name in base_methods:
-                            if method_name not in submodule_methods:
-                                if not method_name.startswith("_"):
-                                    Logger.warn(f"{item.MANAGER.NAME} {item.NAME} Does Not Have Method {method_name} Registered!", module=f"{module.NAME}-submodule-init")
+                        for methodName in baseMethods:
+                            if methodName not in submoduleMethods:
+                                if not methodName.startswith("_"):
+                                    Logger.warn(f"{item.MANAGER.NAME} {item.NAME} Does Not Have Method {methodName} Registered!", module=f"{module.NAME}-submodule-init")
                                     Logger.warn("This could cause issues when overriding methods!", module=f"{module.NAME}-submodule-init")
 
             except FatalError as e:
@@ -463,7 +463,7 @@ class _ModuleManager(AbstractManager):
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._error_list.append((module.NAME, "Init-Submodule"))  # Module Loaded WITH Errors
+                self._errorList.append((module.NAME, "Init-Submodule"))  # Module Loaded WITH Errors
                 # If the Error is an Init Error (raised on purpose), Don't print out TB
                 Logger.error(f"Error While Initializing Submodules For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init", printTb=not isinstance(e, InitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="submodule-init")
@@ -471,11 +471,11 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {module.NAME} From Loader!", module="submodule-init")
-                del self._module_dict[module.NAME]
+                del self._moduleDict[module.NAME]
 
     # Intermediate Function to run Post-Initialization Scripts
     def _postInit(self):
-        for module in self._sorted_module_graph:
+        for module in self._sortedModuleGraph:
             try:
                 Logger.debug(f"Running Post-Initialization for Module {module.NAME}", module=f"{module.NAME}-postinit")
                 # Calling the Final Init function
@@ -485,7 +485,7 @@ class _ModuleManager(AbstractManager):
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._error_list.append((module.NAME, "Init-Final"))  # Module Loaded WITH Errors
+                self._errorList.append((module.NAME, "Init-Final"))  # Module Loaded WITH Errors
                 # If the Error is an Postinit Error (raised on purpose), Don't print out TB
                 Logger.error(f"Error While Running Post-Initialization For {module.NAME} - {type(e).__name__}: {e}\n", module="postinit", printTb=not isinstance(e, PostInitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="postinit")
@@ -493,7 +493,7 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {module.NAME} From Loader!", module="postinit")
-                del self._module_dict[module.NAME]
+                del self._moduleDict[module.NAME]
 
     # Registration. Called by Module Decorator
     def register(
@@ -509,18 +509,18 @@ class _ModuleManager(AbstractManager):
         Logger.debug(f"Registering Module {name}", module="module-import")
 
         # Format Name
-        name = format_name(name)
+        name = formatName(name)
         # Checking If Module Is Already In Modules List
-        if name in self._module_dict.keys():
+        if name in self._moduleDict.keys():
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
         # Check If Module Is Ignored
-        if name in self._module_ignorelist:
+        if name in self._moduleIgnorelist:
             raise ModuleError("Module Is Ignored!")
         # Format Empty Dependencies
         if dependencies is None:
             dependencies = []
         # Checking If Core Is Required
-        if self._ensure_core:
+        if self._ensureCore:
             if "core" not in [m.NAME for m in dependencies] and name != "core":
                 dependencies.append(Dependency("core"))
 
@@ -530,7 +530,7 @@ class _ModuleManager(AbstractManager):
         module.AUTHOR = author
         module.VERSION = version
         module.DEPENDENCIES = dependencies
-        self._module_dict[name] = module
+        self._moduleDict[name] = module
 
         return module
 
@@ -541,7 +541,7 @@ class _ModuleManager(AbstractManager):
 
             table.field_names = ["Module", "Author", "Version"]
             # Loop Through All Modules And Add Value
-            for _, module in self._module_dict.items():
+            for _, module in self._moduleDict.items():
                 # Adding Special Characters And Handlers
                 if module.VERSION is None:
                     module.VERSION = "Unknown"
@@ -560,11 +560,11 @@ class _ModuleManager(AbstractManager):
     # Property Method To Get Number Of Modules
     @property
     def numModules(self) -> int:
-        return len(self._module_dict)
+        return len(self._moduleDict)
 
     # Function To Get Module Object From Module Name
     def getModule(self, module: str) -> AbstractModule:
-        return self._module_dict[module]
+        return self._moduleDict[module]
 
     # Handles _ModuleManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractModule:
@@ -580,7 +580,7 @@ class Dependency:
     # Base Init - Main Data
     def __init__(self, name: str, version: Optional[str] = None):
         # User Defined Values
-        self.NAME = format_name(name)
+        self.NAME = formatName(name)
         self.VERSION = version
         # Reference To The Module Class - Handeled By Init Dependencies
         self.MODULE = None
@@ -652,38 +652,38 @@ def Override(
         if not hasattr(target, "_OBSIDIAN_OVERRIDE_CACHE"):
             Logger.debug("First time overriding method. Getting name and parent", module="dynamic-method-override")
             # Get the name and parent class of the function to override
-            func_name = target.__name__
-            parent_class = get_method_parent_class(target)
-            Logger.debug(f"Method {func_name} has Parent Class: {parent_class}", module="dynamic-method-override")
+            funcName = target.__name__
+            parentClass = getMethodParentClass(target)
+            Logger.debug(f"Method {funcName} has Parent Class: {parentClass}", module="dynamic-method-override")
 
             # If no parent class is found, return error
-            if not parent_class:
+            if not parentClass:
                 # Key Note: Overriding functions that are not in class
                 # are not supported because imports are absolute not relative,
                 # meaning any changes are not propagated to the original function.
-                raise InitError(f"Method {func_name} is not overridable. (No Parent Class Found!)")
+                raise InitError(f"Method {funcName} is not overridable. (No Parent Class Found!)")
 
             # Check if parent class is an abstract class (Ignore if abstract flag is set)
-            if parent_class in [m.SUBMODULE for m in managers_list] and not abstract:
-                Logger.warn(f"Caution! {destination.__name__} is trying to override an abstract module {parent_class}!", module="dynamic-method-override")
+            if parentClass in [m.SUBMODULE for m in MANAGERS_LIST] and not abstract:
+                Logger.warn(f"Caution! {destination.__name__} is trying to override an abstract module {parentClass}!", module="dynamic-method-override")
                 Logger.warn("This could cause unintended side effects!", module="dynamic-method-override")
                 Logger.askConfirmation()
         else:
             Logger.debug("Override Cache Found! Using Cached Information", module="dynamic-method-override")
             # Grab information out of cache
-            func_name, parent_class = target._OBSIDIAN_OVERRIDE_CACHE
-            Logger.debug(f"Method {func_name} has Parent Class: {parent_class}", module="dynamic-method-override")
+            funcName, parentClass = target._OBSIDIAN_OVERRIDE_CACHE
+            Logger.debug(f"Method {funcName} has Parent Class: {parentClass}", module="dynamic-method-override")
 
         # Define method to override
         # A lambda is created so that the old (target) method can be passed in
-        overridden_method: Callable[[Any, Any], Any] = lambda *args, **kwargs: destination(target, *args, **kwargs)
+        overriddenMethod: Callable[[Any, Any], Any] = lambda *args, **kwargs: destination(target, *args, **kwargs)
 
         # Save the new function name and parent class to Override Cache
-        overridden_method._OBSIDIAN_OVERRIDE_CACHE = (func_name, parent_class)
+        overriddenMethod._OBSIDIAN_OVERRIDE_CACHE = (funcName, parentClass)
 
         # Override method in parent class to the new method
-        setattr(parent_class, func_name, overridden_method)
-        Logger.debug(f"Saved {overridden_method} to {parent_class}", module="dynamic-method-override")
+        setattr(parentClass, funcName, overriddenMethod)
+        Logger.debug(f"Saved {overriddenMethod} to {parentClass}", module="dynamic-method-override")
 
         return destination
     return internal
@@ -696,22 +696,22 @@ def InjectMethod(
 ):
     def internal(destination: Callable):
         # Save name of target class and destination function
-        target_name = target.__name__
-        dest_name = destination.__name__
-        Logger.debug(f"Injecting Method {dest_name} into class {target_name} ({target})", module="dynamic-method-inject")
+        targetName = target.__name__
+        destName = destination.__name__
+        Logger.debug(f"Injecting Method {destName} into class {targetName} ({target})", module="dynamic-method-inject")
 
         # Check if if function of name target already exists
-        if hasattr(target, dest_name):
+        if hasattr(target, destName):
             # Method registered under the same name
-            conflict = getattr(target, dest_name)
+            conflict = getattr(target, destName)
             # Return error to user
-            Logger.error(f"Class {target_name} already contains method of name {dest_name} ({conflict})", module="dynamic-method-inject")
+            Logger.error(f"Class {targetName} already contains method of name {destName} ({conflict})", module="dynamic-method-inject")
             Logger.error("This could be because two modules are injecting a function of the same name or that the author meant to use @Override", module="dynamic-method-inject")
-            raise InitError(f"Method {dest_name} already exists in class {target_name}")
+            raise InitError(f"Method {destName} already exists in class {targetName}")
 
         # Adding method to destination class
-        setattr(target, dest_name, destination)
-        Logger.debug(f"Added {dest_name} to {target_name}", module="dynamic-method-inject")
+        setattr(target, destName, destination)
+        Logger.debug(f"Added {destName} to {targetName}", module="dynamic-method-inject")
 
     return internal
 
@@ -719,14 +719,14 @@ def InjectMethod(
 # Helper method to get parent class of method
 # Hybrid code by @Yoel http://stackoverflow.com/a/25959545 and @Stewori https://github.com/Stewori/pytypes
 # This code is heavily shaky, so expect some bugs! But it should work for most common use cases.
-def get_method_parent_class(function: Callable):
+def getMethodParentClass(function: Callable):
     Logger.verbose(f"Getting parent class for method {function}", module="get-method-parent-class")
     # After this point, I have little idea what it does...
     cls = getattr(inspect.getmodule(function), function.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0], None)
     if cls is None:
-        cls_names = function.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0].split('.')
+        clsNames = function.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0].split('.')
         cls = inspect.getmodule(function)
-        for cls_name in cls_names:
+        for cls_name in clsNames:
             cls = getattr(cls, cls_name)
     if isinstance(cls, type):
         return cls

@@ -159,7 +159,7 @@ class AbstractMapGenerator(AbstractSubmodule[T], Generic[T]):
         raise NotImplementedError("Map Generation Not Implemented")
 
     @staticmethod
-    def _convert_arg(_, argument: str) -> AbstractMapGenerator:
+    def _convertArgument(_, argument: str) -> AbstractMapGenerator:
         try:
             # Try to grab the mag generator from the generators list
             return MapGeneratorManager.getMapGenerator(argument)
@@ -175,7 +175,7 @@ class _MapGeneratorManager(AbstractManager):
         super().__init__("Map Generator", AbstractMapGenerator)
 
         # Creates List Of Map Generators That Has The Generator Name As Keys
-        self._generator_dict: dict[str, AbstractMapGenerator] = dict()
+        self._generatorDict: dict[str, AbstractMapGenerator] = dict()
 
     # Registration. Called by Map Generator Decorator
     def register(self, mapGenClass: Type[AbstractMapGenerator], module: AbstractModule) -> AbstractMapGenerator:
@@ -190,18 +190,18 @@ class _MapGeneratorManager(AbstractManager):
         if mapGen.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if mapGen.NAME not in self._generator_dict.keys():
+            if mapGen.NAME not in self._generatorDict.keys():
                 Logger.warn(f"Map Generator {mapGen.NAME} From Module {mapGen.MODULE.NAME} Is Trying To Override A Map Generator That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
-                Logger.debug(f"Map Generator {mapGen.NAME} Is Overriding Map Generator {self._generator_dict[mapGen.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Map Generator {mapGen.NAME} Is Overriding Map Generator {self._generatorDict[mapGen.NAME].NAME}", module=f"{module.NAME}-submodule-init")
 
         # Checking If Map Generator Name Is Already In Generators List
         # Ignoring if OVERRIDE is set
-        if mapGen.NAME in self._generator_dict.keys() and not mapGen.OVERRIDE:
+        if mapGen.NAME in self._generatorDict.keys() and not mapGen.OVERRIDE:
             raise InitRegisterError(f"Map Generator {mapGen.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Add Map Generator to Map Generators List
-        self._generator_dict[mapGen.NAME] = mapGen
+        self._generatorDict[mapGen.NAME] = mapGen
 
         return mapGen
 
@@ -212,7 +212,7 @@ class _MapGeneratorManager(AbstractManager):
 
             table.field_names = ["Map Generator", "Version", "Module"]
             # Loop Through All Map Generators And Add Value
-            for _, generator in self._generator_dict.items():
+            for _, generator in self._generatorDict.items():
                 # Adding Special Characters And Handlers
                 if generator.VERSION is None:
                     generator.VERSION = "Unknown"
@@ -226,11 +226,11 @@ class _MapGeneratorManager(AbstractManager):
     # Property Method To Get Number Of Map Generators
     @property
     def numMapGenerators(self) -> int:
-        return len(self._generator_dict)
+        return len(self._generatorDict)
 
     # Function To Get Map Generator Object From Generator Name
     def getMapGenerator(self, generator: str) -> AbstractMapGenerator:
-        return self._generator_dict[generator]
+        return self._generatorDict[generator]
 
     # Handles _MapGeneratorManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractMapGenerator:

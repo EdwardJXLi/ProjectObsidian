@@ -39,7 +39,7 @@ class AbstractBlock(AbstractSubmodule[T], Generic[T]):
         await ctx.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, self.ID, player=ctx)
 
     @staticmethod
-    def _convert_arg(_, argument: str) -> AbstractBlock:
+    def _convertArgument(_, argument: str) -> AbstractBlock:
         try:
             # Try to grab the block from the blocks list
             return BlockManager.getBlock(argument)
@@ -56,9 +56,9 @@ class _BlockManager(AbstractManager):
 
         # TODO Rename these!
         # Creates List Of Blocks That Has The Block Name As Keys
-        self._block_dict: dict[str, AbstractBlock] = dict()
+        self._blockDict: dict[str, AbstractBlock] = dict()
         # Create Cache Of Block Ids to Obj
-        self._block_ids: dict[int, AbstractBlock] = dict()
+        self._blockIds: dict[int, AbstractBlock] = dict()
 
     # Registration. Called by Block Decorator
     def register(self, blockClass: Type[AbstractBlock], module: AbstractModule) -> AbstractBlock:
@@ -73,27 +73,27 @@ class _BlockManager(AbstractManager):
         if block.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if (block.ID not in self._block_ids) and (block.NAME not in self._block_dict.keys()):
+            if (block.ID not in self._blockIds) and (block.NAME not in self._blockDict.keys()):
                 Logger.warn(f"Block {block.NAME} (ID: {block.ID}) From Module {block.MODULE.NAME} Is Trying To Override A Block That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
-                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._block_ids[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._blockIds[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
 
         # Checking If Block Name Is Already In Blocks List
         # Ignoring if OVERRIDE is set
-        if block.NAME in self._block_dict.keys() and not block.OVERRIDE:
+        if block.NAME in self._blockDict.keys() and not block.OVERRIDE:
             raise InitRegisterError(f"Block {block.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Add Block To Cache
         Logger.verbose(f"Adding BlockId {block.ID} To Block Cache", module=f"{module.NAME}-submodule-init")
         # If Block Id Already Registered, Error
         # Ignoring if OVERRIDE is set
-        if block.ID not in self._block_ids or block.OVERRIDE:
-            self._block_ids[block.ID] = block
+        if block.ID not in self._blockIds or block.OVERRIDE:
+            self._blockIds[block.ID] = block
         else:
-            raise InitRegisterError(f"Block Id {block.ID} Has Been Already Registered. Conflicting Blocks Are '{self._block_ids[block.ID].NAME} ({self._block_ids[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
+            raise InitRegisterError(f"Block Id {block.ID} Has Been Already Registered. Conflicting Blocks Are '{self._blockIds[block.ID].NAME} ({self._blockIds[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
 
         # Add Block to Blocks List
-        self._block_dict[block.NAME] = block
+        self._blockDict[block.NAME] = block
 
         return block
 
@@ -104,7 +104,7 @@ class _BlockManager(AbstractManager):
 
             table.field_names = ["Blocks", "BlockId", "Module"]
             # Loop Through All Blocks And Add Value
-            for _, block in self._block_dict.items():
+            for _, block in self._blockDict.items():
                 # Add Row To Table
                 table.add_row([block.NAME, block.ID, block.MODULE.NAME])
             return table
@@ -114,22 +114,22 @@ class _BlockManager(AbstractManager):
     # Property Method To Get Number Of Blocks
     @property
     def numBlocks(self) -> int:
-        return len(self._block_dict)
+        return len(self._blockDict)
 
     # Generate a List of All Block Ids
     def getAllBlockIds(self) -> list[int]:
-        return list(self._block_ids.keys())
+        return list(self._blockIds.keys())
 
     # Function To Get Block Object From BlockId
     def getBlockById(self, blockId: int) -> AbstractBlock:
-        if blockId in self._block_ids.keys():
-            return self._block_ids[blockId]
+        if blockId in self._blockIds.keys():
+            return self._blockIds[blockId]
         else:
             raise BlockError(f"Block with BlockID {blockId} Not Found.")
 
     # Function To Get Block Object From Block Name
     def getBlock(self, block: str) -> AbstractBlock:
-        return self._block_dict[block]
+        return self._blockDict[block]
 
     # Handles _BlockManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractBlock:

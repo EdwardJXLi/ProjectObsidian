@@ -33,7 +33,7 @@ MODULESIMPORT = "obsidian.modules."
 
 # Managers
 # Dynamically generated list of registered managers.
-managers_list = []
+MANAGERS_LIST = []
 
 
 # Colour handler

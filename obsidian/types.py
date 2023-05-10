@@ -23,5 +23,5 @@ def _formatIp(ip: str) -> IpType:
     return IpType(ip)
 
 
-def format_name(name):
+def formatName(name):
     return re.sub(r'\W+', '', name.replace(" ", "_").lower())

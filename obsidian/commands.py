@@ -17,7 +17,7 @@ from obsidian.errors import (
     CommandError,
     ConverterError,
 )
-from obsidian.types import format_name, T
+from obsidian.types import formatName, T
 
 
 # Command Decorator
@@ -37,7 +37,7 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
         raise NotImplementedError("Command Hander Not Implemented")
 
     @staticmethod
-    def _convert_arg(_, argument: str) -> AbstractCommand:
+    def _convertArgument(_, argument: str) -> AbstractCommand:
         try:
             # Try to grab the command as a name first
             return CommandManager.getCommand(argument)
@@ -86,10 +86,10 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
     try:
         # Check if the type has an custom arg converter
         # This supports execute(self, ctx: Player, player2: Player)
-        if hasattr(param.annotation, "_convert_arg") and callable(param.annotation._convert_arg):
-            Logger.debug("Argument Type has _convert_arg. Using that to convert", module="converter")
+        if hasattr(param.annotation, "_convertArgument") and callable(param.annotation._convertArgument):
+            Logger.debug("Argument Type has _convertArgument. Using that to convert", module="converter")
             try:
-                return param.annotation._convert_arg(ctx, arg)
+                return param.annotation._convertArgument(ctx, arg)
             except ConverterError as e:
                 raise CommandError(e)
         # Check if type is a generic class and a var positional argument. Special considerations for those cases.
@@ -131,7 +131,7 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
         raise CommandError(f"Arg '{name}' Expected {getattr(param.annotation, '__name__', 'Unknown')} But Got '{type(arg).__name__}'")
     except TypeError:
         # Probably cant instantiate. Raise an error so it does not silently fail
-        raise ConverterError(f"Cant instantiate type. {getattr(param.annotation, '__name__', 'Unknown')} Cannot Convert Types. Try adding a _convert_arg method to add custom conversions.")
+        raise ConverterError(f"Cant instantiate type. {getattr(param.annotation, '__name__', 'Unknown')} Cannot Convert Types. Try adding a _convertArgument method to add custom conversions.")
 
 
 # Parse Command Argument Into Args and KWArgs In Accordance To Command Information
@@ -216,7 +216,7 @@ class _CommandManager(AbstractManager):
         super().__init__("Command", AbstractCommand)
 
         # Creates List Of Commands That Has The Command Name As Keys
-        self._command_dict: dict[str, AbstractCommand] = dict()
+        self._commandDict: dict[str, AbstractCommand] = dict()
         # Create Cache Of Activator to Obj
         self._activators: dict[str, AbstractCommand] = dict()
 
@@ -233,19 +233,19 @@ class _CommandManager(AbstractManager):
         if command.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if command.NAME not in self._command_dict.keys():
+            if command.NAME not in self._commandDict.keys():
                 Logger.warn(f"Command {command.NAME}  From Module {command.MODULE.NAME} Is Trying To Override A Command That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
             else:
-                Logger.debug(f"Command {command.NAME} Is Overriding Command {self._command_dict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Command {command.NAME} Is Overriding Command {self._commandDict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
                 # Un-registering All Activators for the Command Being Overwritten. Prevents Issues!
-                Logger.debug(f"Un-registering Activators for Command {self._command_dict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
-                for activator in list(self._command_dict[command.NAME].ACTIVATORS):
+                Logger.debug(f"Un-registering Activators for Command {self._commandDict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                for activator in list(self._commandDict[command.NAME].ACTIVATORS):
                     # Deleting from Cache
                     del self._activators[activator]
 
         # Checking If Command Name Is Already In Commands List
         # Ignoring if OVERRIDE is set
-        if command.NAME in self._command_dict.keys() and not command.OVERRIDE:
+        if command.NAME in self._commandDict.keys() and not command.OVERRIDE:
             raise InitRegisterError(f"Command {command.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Setting Activators To Default If None
@@ -253,7 +253,7 @@ class _CommandManager(AbstractManager):
             command.ACTIVATORS = []
         if len(command.ACTIVATORS) <= 0:
             Logger.warn(f"Command {command.NAME} Was Registered Without Any Activators. Using Name As Command Activator.", module=f"{module.NAME}-submodule-init")
-            command.ACTIVATORS = [format_name(command.NAME)]
+            command.ACTIVATORS = [formatName(command.NAME)]
         # Add Activators To Command Cache
         Logger.debug(f"Adding Activators {command.ACTIVATORS} To Activator Cache", module=f"{module.NAME}-submodule-init")
         for activator in command.ACTIVATORS:
@@ -275,7 +275,7 @@ class _CommandManager(AbstractManager):
                 raise InitRegisterError(f"Another Command Has Already Registered Command Activator {activator}")
 
         # Add Command to Commands List
-        self._command_dict[command.NAME] = command
+        self._commandDict[command.NAME] = command
 
         return command
 
@@ -286,7 +286,7 @@ class _CommandManager(AbstractManager):
 
             table.field_names = ["Command", "Activators", "Version", "Module"]
             # Loop Through All Commands And Add Value
-            for _, command in self._command_dict.items():
+            for _, command in self._commandDict.items():
                 # Add Row To Table
                 table.add_row([command.NAME, command.ACTIVATORS, command.VERSION, command.MODULE.NAME])
             return table
@@ -303,11 +303,11 @@ class _CommandManager(AbstractManager):
     # Property Method To Get Number Of Commands
     @property
     def numCommands(self) -> int:
-        return len(self._command_dict)
+        return len(self._commandDict)
 
     # Function To Get Command Object From Command Name
     def getCommand(self, command: str) -> AbstractCommand:
-        return self._command_dict[command]
+        return self._commandDict[command]
 
     # Function To Get Command Object From Command Name
     def getCommandFromActivator(self, command: str) -> AbstractCommand:

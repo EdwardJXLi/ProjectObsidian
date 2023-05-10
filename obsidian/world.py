@@ -24,7 +24,7 @@ from obsidian.mapgen import (
 )
 from obsidian.packet import Packets
 from obsidian.constants import SERVERPATH
-from obsidian.types import format_name
+from obsidian.types import formatName
 from obsidian.errors import (
     FatalError,
     MapGenerationError,
@@ -49,9 +49,9 @@ class WorldManager:
 
         # Get worldFormat Using Given World Format Key
         # Loop Through All World Formats
-        for worldFormat in WorldFormats._format_dict.values():
+        for worldFormat in WorldFormats._formatDict.values():
             # Check If key Matches With Config Key List
-            if format_name(self.server.config.defaultSaveFormat) in worldFormat.KEYS:
+            if formatName(self.server.config.defaultSaveFormat) in worldFormat.KEYS:
                 # Set World Format
                 self.worldFormat: AbstractWorldFormat = worldFormat
                 break
@@ -515,7 +515,7 @@ class World:
         if not self.canEdit:  # Checking If World Is Read-Only
             if not player.opStatus:  # Checking If Player Is Not OP
                 # Check If Air Exists (Prevents Crash if Stuff Wacky)
-                if "Air" in Blocks._block_dict:
+                if "Air" in Blocks._blockDict:
                     if block.ID == Blocks.Air.ID:
                         raise ClientError("You Do Not Have Permission To Break This Block")
                     else:
@@ -676,7 +676,7 @@ class World:
         return gzipData
 
     @staticmethod
-    def _convert_arg(ctx: Server, argument: str) -> World:
+    def _convertArgument(ctx: Server, argument: str) -> World:
         worldName = argument.lower()
         if worldName in ctx.worldManager.worlds:
             if world := ctx.worldManager.worlds.get(worldName):

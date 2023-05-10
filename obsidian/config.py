@@ -25,7 +25,7 @@ class AbstractConfig:
     autoInit: InitVar[bool] = False
     hideWarning: InitVar[bool] = False
 
-    def __post_init__(
+    def __postInit__(
         self,
         rootPath: Path,
         ignoreValues: list[str],

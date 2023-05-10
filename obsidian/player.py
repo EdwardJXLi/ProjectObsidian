@@ -37,7 +37,7 @@ class PlayerManager:
             self.maxSize: Optional[int] = maxSize
 
     async def createPlayer(self, network: NetworkHandler, displayName: str, verificationKey: str) -> Player:
-        Logger.debug(f"Creating Player For Ip {network.conninfo}", module="player-manager")
+        Logger.debug(f"Creating Player For Ip {network.connectionInfo}", module="player-manager")
         # Check if name is alphanumeric
         if not displayName.isalnum():
             raise ClientError("Username Must Be Alphanumeric Only!")
@@ -70,12 +70,12 @@ class PlayerManager:
     def getPlayersByIp(self, ip: str) -> list[Player]:
         Logger.verbose(f"Getting Players With Ip {ip}", module="player-manager")
         # Loop through all players and find those who need to be kicked
-        matching_players: list[Player] = []
+        matchingPlayers: list[Player] = []
         for player in self.players.values():
             if player.networkHandler.ip == ip:
-                matching_players.append(player)
-        Logger.verbose(f"Found Players: {matching_players}", module="player-manager")
-        return matching_players
+                matchingPlayers.append(player)
+        Logger.verbose(f"Found Players: {matchingPlayers}", module="player-manager")
+        return matchingPlayers
 
     async def deletePlayer(self, player: Player) -> bool:
         Logger.debug(f"Removing Player {player.name}", module="player-manager")
@@ -144,10 +144,10 @@ class PlayerManager:
                 except Exception as e:
                     if e not in CRITICAL_RESPONSE_ERRORS:
                         # Something Broke!
-                        Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.conninfo} - {type(e).__name__}: {e}", module="global-packet-dispatcher")
+                        Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}", module="global-packet-dispatcher")
                     else:
                         # Bad Timing with Connection Closure. Ignoring
-                        Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.conninfo}", module="global-packet-dispatcher")
+                        Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="global-packet-dispatcher")
         return True  # Success!
 
     async def sendGlobalMessage(
@@ -193,7 +193,7 @@ class PlayerManager:
 class WorldPlayerManager:
     def __init__(self, world: World):
         self.world: World = world
-        self.player_slots: list[Optional[Player]] = [None] * world.maxPlayers
+        self.playerSlots: list[Optional[Player]] = [None] * world.maxPlayers
 
     async def joinPlayer(self, player: Player) -> None:
         # Trying To Allocate Id
@@ -204,9 +204,9 @@ class WorldPlayerManager:
             raise ClientError(f"World {self.world.name} Is Full")
 
         # Adding Player To Players List Using Id
-        Logger.debug(f"Player {player.networkHandler.conninfo} Username {player.name} Id {playerId} Is Joining World {self.world.name}", module="world-player")
+        Logger.debug(f"Player {player.networkHandler.connectionInfo} Username {player.name} Id {playerId} Is Joining World {self.world.name}", module="world-player")
         player.playerId = playerId
-        self.player_slots[playerId] = player
+        self.playerSlots[playerId] = player
 
         # If automaticallyDetermineSpawn is enabled, determine new spawn point
         if self.world.worldManager.server.config.automaticallyDetermineSpawn:
@@ -286,7 +286,7 @@ class WorldPlayerManager:
 
     async def spawnCurrentPlayers(self, playerSelf: Player) -> None:  # Update Joining Players of The Currently In-Game Players
         # Loop Through All Players
-        for player in self.player_slots:
+        for player in self.playerSlots:
             # Checking if Player Exists
             if player is None:
                 continue
@@ -310,10 +310,10 @@ class WorldPlayerManager:
             except Exception as e:
                 if e not in CRITICAL_RESPONSE_ERRORS:
                     # Something Broke!
-                    Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.conninfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
+                    Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
                 else:
                     # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.conninfo}", module="world-packet-dispatcher")
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
 
     async def removePlayer(self, player: Player) -> bool:
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
@@ -334,7 +334,7 @@ class WorldPlayerManager:
             ignoreList=[player]  # Don't send packet to self!
         )
 
-        Logger.debug(f"Removed Player {player.networkHandler.conninfo} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
+        Logger.debug(f"Removed Player {player.networkHandler.connectionInfo} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
         # Sending Leave Chat Message
         await self.sendWorldMessage(f"&e{player.name} Left The World &9(ID {player.playerId})&f")
@@ -345,7 +345,7 @@ class WorldPlayerManager:
     def allocateId(self) -> int:
         # Loop Through All Ids, Return Id That Is Not Free
         Logger.debug("Trying To Allocate Id", module="id-allocator")
-        for idIndex, playerObj in enumerate(self.player_slots):
+        for idIndex, playerObj in enumerate(self.playerSlots):
             if playerObj is None:
                 # Return Free ID
                 return idIndex
@@ -354,26 +354,26 @@ class WorldPlayerManager:
 
     def deallocateId(self, playerId: int) -> None:
         # Check If Id Is Already Deallocated
-        if self.player_slots[playerId] is None:
+        if self.playerSlots[playerId] is None:
             Logger.error(f"Trying To Deallocate Non Allocated Id {playerId}", module="id-allocator", printTb=False)
-        self.player_slots[playerId] = None
+        self.playerSlots[playerId] = None
 
         Logger.debug(f"Deallocated Id {playerId}", module="id-allocator")
 
     def getPlayers(self) -> list[Player]:
         # Loop through all players
-        players_list = []
-        for player in self.player_slots:
+        playersList = []
+        for player in self.playerSlots:
             if player is not None:
                 # If its not none, its a player!
-                players_list.append(player)
-        return players_list
+                playersList.append(player)
+        return playersList
 
     async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: list[Player] = [], **kwargs) -> bool:
         # Send packet to all members in world
         Logger.verbose(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="world-packet-dispatcher")
         # Loop Through All Players
-        for player in self.player_slots:
+        for player in self.playerSlots:
             # Checking if Player Exists
             if player is None:
                 continue
@@ -388,10 +388,10 @@ class WorldPlayerManager:
             except Exception as e:
                 if e not in CRITICAL_RESPONSE_ERRORS:
                     # Something Broke!
-                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.conninfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
+                    Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
                 else:
                     # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.conninfo}", module="world-packet-dispatcher")
+                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
         return True  # Success!
 
     async def sendWorldMessage(
@@ -704,7 +704,7 @@ class Player:
     async def getNextMessage(self, *args, **kwargs) -> str:
         Logger.debug(f"Getting Next Message From Player {self.name}", module="player")
         # Create a listener for the next message packet sent from player
-        response = await self.networkHandler.dispatcher.wait_for(Packets.Request.PlayerMessage, *args, **kwargs)
+        response = await self.networkHandler.dispatcher.waitFor(Packets.Request.PlayerMessage, *args, **kwargs)
         # Parse raw packet into a usable string
         message = await Packets.Request.PlayerMessage.deserialize(self, response, handleUpdate=False)
 
@@ -715,7 +715,7 @@ class Player:
     async def getNextPlayerMovement(self, *args, **kwargs) -> tuple[int, int, int, int, int]:
         Logger.debug(f"Getting Next Movement From Player {self.name}", module="player")
         # Create a listener for the next player movement packet sent from player
-        response = await self.networkHandler.dispatcher.wait_for(Packets.Request.MovementUpdate, *args, **kwargs)
+        response = await self.networkHandler.dispatcher.waitFor(Packets.Request.MovementUpdate, *args, **kwargs)
         # Parse raw movement packet into coordinates
         posX, posY, posZ, posYaw, posPitch = await Packets.Request.MovementUpdate.deserialize(self, response, handleUpdate=False)
 
@@ -726,7 +726,7 @@ class Player:
     async def getNextBlockUpdate(self, *args, revertBlockUpdate: bool = True, **kwargs) -> tuple[int, int, int, int]:
         Logger.debug(f"Getting Next Block Update From Player {self.name}", module="player")
         # Create a listener for the next block update packet sent from player
-        response = await self.networkHandler.dispatcher.wait_for(Packets.Request.UpdateBlock, *args, **kwargs)
+        response = await self.networkHandler.dispatcher.waitFor(Packets.Request.UpdateBlock, *args, **kwargs)
         # Parse raw packet into block data and coordinates
         blockX, blockY, blockZ, blockId = await Packets.Request.UpdateBlock.deserialize(self, response, handleUpdate=False)
 
@@ -755,7 +755,7 @@ class Player:
         await self.sendMessage(motdMessage)
 
     @staticmethod
-    def _convert_arg(ctx: Server, argument: str) -> Player:
+    def _convertArgument(ctx: Server, argument: str) -> Player:
         playerName = _formatUsername(argument)
         if playerName in ctx.playerManager.players:
             if player := ctx.playerManager.players.get(playerName):
