@@ -63,7 +63,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x00,
-                FORMAT="BB64s64sB",
+                FORMAT="!BB64s64sB",
                 CRITICAL=True,
                 PLAYERLOOP=False
             )
@@ -199,7 +199,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x0d,
-                FORMAT="BB64s",
+                FORMAT="!BB64s",
                 CRITICAL=False,
                 PLAYERLOOP=True
             )
@@ -311,7 +311,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x00,
-                FORMAT="BB64s64sB",
+                FORMAT="!BB64s64sB",
                 CRITICAL=True
             )
 
@@ -344,7 +344,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x01,
-                FORMAT="B",
+                FORMAT="!B",
                 CRITICAL=False
             )
 
@@ -366,7 +366,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x02,
-                FORMAT="B",
+                FORMAT="!B",
                 CRITICAL=True
             )
 
@@ -620,7 +620,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x0c,
-                FORMAT="BB",
+                FORMAT="!BB",
                 CRITICAL=True
             )
 
@@ -647,7 +647,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x0d,
-                FORMAT="BB64s",
+                FORMAT="!BB64s",
                 CRITICAL=False
             )
 
@@ -686,7 +686,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x0e,
-                FORMAT="B64s",
+                FORMAT="!B64s",
                 CRITICAL=True
             )
 
@@ -713,7 +713,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x0f,
-                FORMAT="BB",
+                FORMAT="!BB",
                 CRITICAL=False
             )
 
@@ -737,7 +737,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x10,
-                FORMAT="B64si",
+                FORMAT="!B64sh",
                 CRITICAL=True
             )
 
@@ -765,7 +765,7 @@ class CoreModule(AbstractModule):
             super().__init__(
                 *args,
                 ID=0x11,
-                FORMAT="B64sh",
+                FORMAT="!B64si",
                 CRITICAL=True
             )
 
