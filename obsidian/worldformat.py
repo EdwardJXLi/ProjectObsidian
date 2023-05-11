@@ -49,10 +49,10 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractWorldFormat:
-        try:
+        if argument in WorldFormatManager:
             # Try to grab the world format from the formats list
             return WorldFormatManager.getWorldFormat(argument)
-        except KeyError:
+        else:
             # Raise error if world format not found
             raise ConverterError(f"World Format {argument} Not Found!")
 
@@ -108,11 +108,6 @@ class _WorldFormatManager(AbstractManager):
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
-    # Property Method To Get Number Of World Formats
-    @property
-    def numWorldFormats(self) -> int:
-        return len(self._formatDict)
-
     # Function To Get World Format Object From File Extension
     def getWorldFormatFromExtension(self, ext: str) -> AbstractWorldFormat:
         for format in self._formatDict.values():
@@ -131,6 +126,14 @@ class _WorldFormatManager(AbstractManager):
     # Handles _WorldFormatManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractWorldFormat:
         return self.getWorldFormat(*args, **kwargs)
+
+    # Get Number Of World Formats
+    def __len__(self) -> int:
+        return len(self._formatDict)
+
+    # Check if world format exists
+    def __contains__(self, format: str) -> bool:
+        return format in self._formatDict
 
 
 # Creates Global WorldFormatManager As Singleton

@@ -38,10 +38,10 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractCommand:
-        try:
+        if argument in CommandManager:
             # Try to grab the command as a name first
             return CommandManager.getCommand(argument)
-        except KeyError:
+        else:
             try:
                 # If failed, try to grab as an activator
                 return CommandManager.getCommandFromActivator(argument.lower())
@@ -300,11 +300,6 @@ class _CommandManager(AbstractManager):
         else:
             raise CommandError(f"Unknown Command '{name}'")
 
-    # Property Method To Get Number Of Commands
-    @property
-    def numCommands(self) -> int:
-        return len(self._commandDict)
-
     # Function To Get Command Object From Command Name
     def getCommand(self, command: str) -> AbstractCommand:
         return self._commandDict[command]
@@ -320,6 +315,14 @@ class _CommandManager(AbstractManager):
     # Handles _CommandManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractCommand:
         return self.getCommand(*args, **kwargs)
+
+    # Get Number Of Commands
+    def __len__(self) -> int:
+        return len(self._commandDict)
+
+    # Check if command exists
+    def __contains__(self, command: str) -> bool:
+        return command in self._commandDict
 
 
 # Creates Global CommandManager As Singleton

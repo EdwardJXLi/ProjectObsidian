@@ -96,10 +96,10 @@ class AbstractModule(ABC):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractModule:
-        try:
+        if argument in ModuleManager:
             # Try to grab the module from the modules list
             return ModuleManager.getModule(formatName(argument))
-        except KeyError:
+        else:
             # Raise error if module not found
             raise ConverterError(f"Module {argument} Not Found!")
 
@@ -587,11 +587,6 @@ class _ModuleManager(AbstractManager):
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
-    # Property Method To Get Number Of Modules
-    @property
-    def numModules(self) -> int:
-        return len(self._moduleDict)
-
     # Function To Get Module Object From Module Name
     def getModule(self, module: str) -> AbstractModule:
         return self._moduleDict[module]
@@ -603,6 +598,14 @@ class _ModuleManager(AbstractManager):
     # Handles _ModuleManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractModule:
         return self.getModule(*args, **kwargs)
+
+    # Get Number Of Modules
+    def __len__(self) -> int:
+        return len(self._moduleDict)
+
+    # Check if module exists
+    def __contains__(self, item: str) -> bool:
+        return item in self._moduleDict
 
 
 # Dependency Object

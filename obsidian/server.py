@@ -127,14 +127,15 @@ class Server:
         )
         Logger.info("All Modules Initialized!!!", module="init")
 
-        Logger.info(f"{ModuleManager.numModules} Modules Initialized", module="init")
-        Logger.info(f"{PacketManager.numPackets} Packets Initialized", module="init")
-        Logger.info(f"{BlockManager.numBlocks} Blocks Initialized", module="init")
-        Logger.info(f"{CommandManager.numCommands} Commands Initialized", module="init")
-        Logger.info(f"{MapGeneratorManager.numMapGenerators} Map Generators Initialized", module="init")
+        Logger.info(f"{len(ModuleManager)} Modules Initialized", module="init")
+        Logger.info(f"{len(PacketManager)} Packets Initialized", module="init")
+        Logger.info(f"{len(WorldFormatManager)} World Formats Initialized", module="init")
+        Logger.info(f"{len(BlockManager)} Blocks Initialized", module="init")
+        Logger.info(f"{len(CommandManager)} Commands Initialized", module="init")
+        Logger.info(f"{len(MapGeneratorManager)} Map Generators Initialized", module="init")
 
         if self.supportsCPE:
-            Logger.info(f"{CPEModuleManager.numCPE} Classic Protocol Extensions Initialized", module="init")
+            Logger.info(f"{len(CPEModuleManager)} Classic Protocol Extensions Initialized", module="init")
 
         # Print Pretty List of All Modules
         Logger.info(f"Module List:\n{ModuleManager.generateTable()}", module="init")

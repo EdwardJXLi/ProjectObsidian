@@ -97,6 +97,14 @@ class _CPEModuleManager():
     def numCPE(self) -> int:
         return len(self._cpeExtensions)
 
+    # Get Number Of CPE Extensions
+    def __len__(self) -> int:
+        return len(self._cpeExtensions)
+
+    # Check if cpe exists
+    def __contains__(self, cpe: str) -> bool:
+        return cpe in self._cpeExtensions
+
 
 # Creates Global CPEModuleManager As Singleton
 CPEModuleManager = _CPEModuleManager()

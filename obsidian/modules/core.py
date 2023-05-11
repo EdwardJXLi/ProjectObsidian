@@ -3,7 +3,7 @@ from obsidian.constants import MAX_MESSAGE_LENGTH, SERVER_PATH, __version__
 from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
-from obsidian.worldformat import AbstractWorldFormat, WorldFormat, WorldFormats
+from obsidian.worldformat import AbstractWorldFormat, WorldFormat, WorldFormats, WorldFormatManager
 from obsidian.world import World, WorldManager
 from obsidian.mapgen import AbstractMapGenerator, MapGeneratorStatus, MapGenerator, MapGenerators
 from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
@@ -913,9 +913,9 @@ class CoreModule(AbstractModule):
             lastAccessed = datetime.datetime.fromtimestamp(worldMetadata.get("lastAccessed", int(time.time())))
 
             # Try parsing world generator
-            try:
+            if worldMetadata.get("generator", None) in MapGenerators:
                 generator = MapGenerators[worldMetadata.get("generator", None)]
-            except KeyError:
+            else:
                 Logger.warn("ObsidianWorldFormat - Unknown World Generator.")
                 generator = None  # Continue with no generator
 
@@ -2818,9 +2818,9 @@ class CoreModule(AbstractModule):
             # If no world format is passed, use current world format.
             # Else, get the requested world format.
             if formatName:
-                try:
+                if formatName not in WorldFormatManager:
                     newWorldFormat = WorldFormats[formatName]
-                except KeyError:
+                else:
                     raise CommandError(f"&cWorld format '{formatName}' does not exist!")
             else:
                 if ctx.worldPlayerManager is not None:
@@ -2845,7 +2845,10 @@ class CoreModule(AbstractModule):
                 raise CommandError(f"&cWorld '{newWorldPath.name}' already exists!")
 
             # Detect type of old world format
-            oldWorldFormat = WorldFormats.getWorldFormatFromExtension(oldWorldPath.suffix[1:])
+            try:
+                oldWorldFormat = WorldFormats.getWorldFormatFromExtension(oldWorldPath.suffix[1:])
+            except KeyError:
+                raise CommandError(f"&cWorld format '{oldWorldPath.suffix[1:]}' is not supported!")
 
             # Send user warning converting
             Logger.warn("User is about to convert world from one format to another!", module="format-convert")

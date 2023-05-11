@@ -40,10 +40,10 @@ class AbstractBlock(AbstractSubmodule[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractBlock:
-        try:
+        if argument in BlockManager:
             # Try to grab the block from the blocks list
             return BlockManager.getBlock(argument)
-        except KeyError:
+        else:
             # Raise error if block not found
             raise ConverterError(f"Block {argument} Not Found!")
 
@@ -110,11 +110,6 @@ class _BlockManager(AbstractManager):
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
-    # Property Method To Get Number Of Blocks
-    @property
-    def numBlocks(self) -> int:
-        return len(self._blockDict)
-
     # Generate a List of All Block Ids
     def getAllBlockIds(self) -> list[int]:
         return list(self._blockIds.keys())
@@ -137,6 +132,14 @@ class _BlockManager(AbstractManager):
     # Handles _BlockManager.item
     def __getattr__(self, *args, **kwargs) -> AbstractBlock:
         return self.getBlock(*args, **kwargs)
+
+    # Get Number Of Blocks
+    def __len__(self) -> int:
+        return len(self._blockDict)
+
+    # Check if block exists
+    def __contains__(self, block: str) -> bool:
+        return block in self._blockDict
 
 
 # Creates Global BlockManager As Singleton

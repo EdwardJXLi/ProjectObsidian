@@ -67,10 +67,10 @@ class AbstractRequestPacket(AbstractPacket[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractRequestPacket:
-        try:
+        if argument in PacketManager.RequestManager:
             # Try to grab the request packet from the packets list
             return PacketManager.RequestManager.getPacket(argument)
-        except KeyError:
+        else:
             # Raise error if request packet not found
             raise ConverterError(f"Request Packet {argument} Not Found!")
 
@@ -85,10 +85,10 @@ class AbstractResponsePacket(AbstractPacket[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractResponsePacket:
-        try:
+        if argument in PacketManager.ResponseManager:
             # Try to grab the response packet from the packet list
             return PacketManager.ResponseManager.getPacket(argument)
-        except KeyError:
+        else:
             # Raise error if response packet not found
             raise ConverterError(f"Response Packet {argument} Not Found!")
 
@@ -177,6 +177,14 @@ class _DirectionalPacketManager(AbstractManager):
     def __getattr__(self, *args, **kwargs):
         return self.getPacket(*args, **kwargs)
 
+    # Gets number of packets registered
+    def __len__(self):
+        return len(self._packetDict)
+
+    # Check if packet exists
+    def __contains__(self, packet: str):
+        return packet in self._packetDict
+
 
 # Internal Packet Manager Singleton
 class _PacketManager:
@@ -208,10 +216,13 @@ class _PacketManager:
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
-    # Property Method To Get Number Of Packets
-    @property
-    def numPackets(self) -> int:
-        return len(self.RequestManager._packetDict) + len(self.ResponseManager._packetDict)
+    # Get Number Of Packets
+    def __len__(self) -> int:
+        return len(self.RequestManager) + len(self.ResponseManager)
+
+    # Check if packet exists
+    def __contains__(self, packet: str):
+        return packet in self.RequestManager or packet in self.ResponseManager
 
 
 # Creates Global PacketManager As Singleton
