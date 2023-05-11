@@ -2012,22 +2012,22 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["tp", "teleport"])
 
-        async def execute(self, ctx: Player, x: int, y: int, z: int, yaw: int = 0, pitch: int = 0):
+        async def execute(self, ctx: Player, posX: int, posY: int, posZ: int, yaw: int = 0, pitch: int = 0):
             # Check if player is in a world
             if ctx.worldPlayerManager is None:
                 raise CommandError("You are not in a world!")
 
             # Check if location is within world
             try:
-                ctx.worldPlayerManager.world.getBlock(x, y, z)
+                ctx.worldPlayerManager.world.getBlock(posX, posY, posZ)
             except BlockError:
                 raise CommandError("Coordinates are outside of the world!")
 
             # Set players location to world spawnpoint
             await ctx.setLocation(
-                x * 32 + 16,
-                y * 32 + 51,
-                z * 32 + 16,
+                posX * 32 + 16,
+                posY * 32 + 51,
+                posZ * 32 + 16,
                 yaw,
                 pitch
             )
