@@ -4,10 +4,15 @@ if TYPE_CHECKING:
     from obsidian.module import AbstractModule
 
 from typing import Type
+from collections import namedtuple
 from obsidian.utils.ptl import PrettyTableLite
 
 from obsidian.log import Logger
 from obsidian.errors import CPEError, FatalError
+
+
+# Define new type for extension classes
+CPEExtension = namedtuple("CPEExtension", ["name", "version"])
 
 
 # CPE (Classic Protocol Extension) Registration Decorator
@@ -30,7 +35,7 @@ def CPE(
 class _CPEModuleManager():
     def __init__(self):
         # List of modules (by type) and the CPE Extension they implement (ExtName, ExtVersion)
-        self._cpeExtensions: dict[Type[AbstractModule], tuple[str, int]] = {}
+        self._cpeExtensions: dict[Type[AbstractModule], CPEExtension] = {}
         self._cpeSkipList: list[Type[AbstractModule]] = []  # List of modules to skip if CPE is disabled
 
     # CPE Registration. Called by CPE Decorator
@@ -45,10 +50,10 @@ class _CPEModuleManager():
 
         # Check if module already implements a CPE
         if module in self._cpeExtensions:
-            raise CPEError(f"Module {module.__name__} already implements CPE Extension {self._cpeExtensions[module][0]} version {self._cpeExtensions[module][1]}.")
+            raise CPEError(f"Module {module.__name__} already implements CPE Extension {self._cpeExtensions[module].name} version {self._cpeExtensions[module].version}.")
 
         # Add CPE Extension to list
-        self._cpeExtensions[module] = (extName, extVersion)
+        self._cpeExtensions[module] = CPEExtension(extName, extVersion)
 
         # Check if module should be skipped if CPE support is disabled
         if cpeOnly:
@@ -65,7 +70,7 @@ class _CPEModuleManager():
         return module in self._cpeSkipList
 
     # Returns CPE Extension Name and Version for module
-    def getCPE(self, module: Type[AbstractModule]) -> tuple[str, int]:
+    def getCPE(self, module: Type[AbstractModule]) -> CPEExtension:
         if not self.hasCPE(module):
             raise CPEError(f"Module {module.__name__} does not implement a CPE Extension.")
         return self._cpeExtensions[module]
