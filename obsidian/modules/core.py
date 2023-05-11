@@ -254,15 +254,15 @@ class CoreModule(AbstractModule):
             # <Player ExtInfo Packet>
             # (64String) Client Application Name
             # (Byte) Client Extension Count
-            _, applicationName, extensionCount = struct.unpack(self.FORMAT, bytearray(rawData))
+            _, clientSoftware, extensionCount = struct.unpack(self.FORMAT, bytearray(rawData))
 
             # Unpack Client Application Name
-            applicationName = unpackString(applicationName)
-            if not applicationName.isprintable():
+            clientSoftware = unpackString(clientSoftware)
+            if not clientSoftware.isprintable():
                 raise ClientError("Invalid Character In Client Application Name.")
 
             # Return ExtInfo Data
-            return applicationName, extensionCount
+            return clientSoftware, extensionCount
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
@@ -741,14 +741,14 @@ class CoreModule(AbstractModule):
                 CRITICAL=True
             )
 
-        async def serialize(self, applicationName: str, extensionCount: int):
+        async def serialize(self, serverSoftware: str, extensionCount: int):
             # <Server ExtInfo Packet>
             # (64String) Server Application Name
             # (Byte) Server Extension Count
             msg = struct.pack(
                 self.FORMAT,
                 self.ID,
-                bytearray(packageString(applicationName)),
+                bytearray(packageString(serverSoftware)),
                 int(extensionCount)
             )
             return msg

@@ -9,12 +9,14 @@ from typing import Type, Optional, Callable
 from obsidian.log import Logger
 from obsidian.world import World
 from obsidian.player import Player
+from obsidian.cpe import CPEExtension
 from obsidian.packet import (
     PacketManager, Packets,
     AbstractRequestPacket,
     AbstractResponsePacket
 )
 from obsidian.constants import (
+    __version__,
     NET_TIMEOUT,
     CRITICAL_REQUEST_ERRORS,
     CRITICAL_RESPONSE_ERRORS
@@ -85,12 +87,6 @@ class NetworkHandler:
         Logger.debug(f"{self.connectionInfo} | Waiting For Initial Player Information Packet", module="network")
         protocolVersion, username, verificationKey, supportsCPE = await self.dispatcher.readPacket(Packets.Request.PlayerIdentification)
 
-        # If client supports CPE and if server enables CPE, start CPE negotiation
-        # CPE stands for Classic Protocol Extension, and is defined here: https://wiki.vg/Classic_Protocol_Extension
-        if supportsCPE and self.server.config.enableCPE:
-            Logger.info("Client Supports CPE, Starting CPE Negotiation", module="network")
-            await self._handleCPENegotiation()
-
         # Checking Client Protocol Version
         if protocolVersion > self.server.protocolVersion:
             raise ClientError(f"Server Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion})")
@@ -100,6 +96,12 @@ class NetworkHandler:
         # Create Player
         Logger.debug(f"{self.connectionInfo} | Creating Player {username}", module="network")
         self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
+
+        # If client supports CPE and if server enables CPE, start CPE negotiation
+        # CPE stands for Classic Protocol Extension, and is defined here: https://wiki.vg/Classic_Protocol_Extension
+        if supportsCPE and self.server.config.enableCPE:
+            Logger.info("Client Supports CPE, Starting CPE Negotiation", module="network")
+            await self._handleCPENegotiation()
 
         # Send Server Information Packet
         Logger.debug(f"{self.connectionInfo} | Sending Initial Server Information Packet", module="network")
@@ -136,25 +138,44 @@ class NetworkHandler:
         await self._beginPlayerLoop()
 
     async def _handleCPENegotiation(self):
-        # TODO: Implement this once modules support CPE
+        # Check that CPE is enabled and server.cpe is not None
+        if not self.server.supportsCPE:
+            raise ServerError("Server Does Not Support CPE!")
+
+        # Sanity check that this should be called after player initialization
+        if not self.player:
+            raise ServerError("CPE Negotiation Called Before Player Initialization!")
+
+        # Enable CPE support on the player
+        self.player.supportsCPE = True
 
         # Send Server ExtInfo Packet
         Logger.debug(f"{self.connectionInfo} | Sending Server CPE ExtInfo (Extension Info) Packet", module="network")
-        await self.dispatcher.sendPacket(Packets.Response.ServerExtInfo, "Obsidian", 0)
+        await self.dispatcher.sendPacket(Packets.Response.ServerExtInfo, f"Obsidian {__version__}", 0)
+
+        # Send ExtEntry Packet For Each Extension that server supports
+        Logger.debug(f"{self.connectionInfo} | Sending Server CPE ExtEntry (Extension Entry) Packets", module="network")
+        Logger.debug(f"{self.connectionInfo} | Server supports {len(self.server.getSupportedCPE())} extensions", module="network")
+        for extension in self.server.getSupportedCPE():
+            Logger.debug(f"{self.connectionInfo} | Sending Server CPE ExtEntry for {extension.name} version {extension.version}", module="network")
+            await self.dispatcher.sendPacket(Packets.Response.ServerExtEntry, extension.name, extension.version)
 
         # Receive Client ExtInfo Packet
         Logger.debug(f"{self.connectionInfo} | Waiting For Player CPE ExtInfo (Extension Info) Packet", module="network")
-        clientApplicationName, extensionCount = await self.dispatcher.readPacket(Packets.Request.PlayerExtInfo)
+        clientSoftware, extensionCount = await self.dispatcher.readPacket(Packets.Request.PlayerExtInfo)
+        Logger.debug(f"{self.connectionInfo} | ExtInfo Received! Client supports {extensionCount} extensions", module="network")
+        Logger.debug(f"{self.connectionInfo} | Client is also running on software: {clientSoftware}", module="network")
+        self.player.clientSoftware = clientSoftware
 
-        print(extensionCount)
+        # Receive Client ExtEntry Packets
+        for extNum in range(extensionCount):
+            Logger.debug(f"{self.connectionInfo} | Waiting Client CPE ExtEntry #{extNum}", module="network")
+            extName, extVersion = await self.dispatcher.readPacket(Packets.Request.PlayerExtEntry)
+            Logger.debug(f"{self.connectionInfo} | ExtEntry Received! Client supports {extName} version {extVersion}", module="network")
+            self.player._extensions.add(CPEExtension(extName, extVersion))
 
-        # TODO: temp
-        for i in range(extensionCount):
-            extensionName, extensionVersion = await self.dispatcher.readPacket(Packets.Request.PlayerExtEntry)
-            print(extensionName, extensionVersion)
-
-        Logger.warn("CPE Negotiation Not Implemented Yet!", module="network")
-        Logger.warn("Continuing for now...", module="network")
+        # Finish CPE Negotiation
+        Logger.info(f"{self.connectionInfo} | Finished CPE Negotiation", module="network")
 
     async def _beginPlayerLoop(self):
         # Set the inLoop flag

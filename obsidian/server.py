@@ -11,7 +11,7 @@ import time
 
 from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager, Packets
-from obsidian.errors import InitError, ServerError, FatalError
+from obsidian.errors import InitError, CPEError, ServerError, FatalError
 from obsidian.log import Logger
 from obsidian.network import NetworkHandler
 from obsidian.module import ModuleManager
@@ -20,8 +20,8 @@ from obsidian.worldformat import WorldFormatManager
 from obsidian.mapgen import MapGeneratorManager
 from obsidian.commands import CommandManager
 from obsidian.blocks import BlockManager
-from obsidian.cpe import CPEModuleManager
 from obsidian.player import PlayerManager
+from obsidian.cpe import CPEModuleManager, CPEExtension
 from obsidian.constants import (
     MANAGERS_LIST,
     Colour,
@@ -49,9 +49,11 @@ class Server:
         self.name: str = name  # Name Of Server
         self.motd: str = motd  # Message Of The Day
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
-        self.supportsCPE: bool = False  # Whether Or Not The Server Supports CPE
         self.initialized: bool = False  # Flag Set When Everything Is Fully Loaded
         self.stopping: bool = False  # Flag To Prevent Crl-C Spamming
+        # CPE Support
+        self.supportsCPE: bool = False  # Whether Or Not The Server Supports CPE
+        self._extensions: set[CPEExtension] = set()  # Set Of CPE Extensions
         # These Values Have Getters
         self._server: Optional[asyncio.AbstractServer] = None  # Asyncio Server Object (initialized later)
         self._worldManager: Optional[WorldManager] = None  # World Manager Class (initialized later)
@@ -112,7 +114,12 @@ class Server:
             Path(SERVER_PATH, self.config.worldSaveLocation).mkdir(parents=True, exist_ok=True)
 
         # Set up CPE support
+        Logger.info("Checking CPE Support", module="init")
         self.supportsCPE = self.config.enableCPE
+        if self.supportsCPE:
+            Logger.info("CPE Support Enabled!", module="init")
+        else:
+            Logger.info("CPE Support Disabled!", module="init")
 
         # Print out SubModule Managers
         Logger.info("SubModule Managers Initialized!", module="init")
@@ -205,6 +212,20 @@ class Server:
                 writer.close()
 
         return handler
+
+    def getSupportedCPE(self) -> set[CPEExtension]:
+        # Check if server supports CPE
+        if not self.supportsCPE:
+            raise CPEError("Server does not support CPE (Classic Protocol Extension)")
+
+        return self._extensions
+
+    def supports(self, extension: CPEExtension):
+        # If server does not support CPE, return False
+        if not self.supportsCPE:
+            return False
+
+        return extension in self.getSupportedCPE()
 
     # Getters for server, worldManager, and playerManager
     @property

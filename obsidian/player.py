@@ -11,12 +11,14 @@ import asyncio
 
 from obsidian.packet import AbstractResponsePacket, Packets
 from obsidian.log import Logger
+from obsidian.cpe import CPEExtension
 from obsidian.commands import Commands, _parseArgs
 from obsidian.constants import Colour, CRITICAL_RESPONSE_ERRORS
 from obsidian.types import UsernameType, _formatUsername
 from obsidian.errors import (
     ServerError,
     WorldError,
+    CPEError,
     PacketError,
     ClientError,
     BlockError,
@@ -58,7 +60,7 @@ class PlayerManager:
             raise ClientError("This Username Is Taken!")
 
         # Creating Player Class
-        player = Player(self, network, self.server, username, displayName, verificationKey)
+        player = Player(self, network, self.server, username, displayName, "Unknown", verificationKey)
 
         # Check if user is an operator and set their status
         await player.updateOperatorStatus(sendMessage=False)
@@ -435,25 +437,66 @@ class WorldPlayerManager:
 
 
 class Player:
-    def __init__(self, playerManager: PlayerManager, networkHandler: NetworkHandler, server: Server, username: UsernameType, displayName: str, key: str):
+    def __init__(
+        self,
+        playerManager: PlayerManager,
+        networkHandler: NetworkHandler,
+        server: Server,
+        username: UsernameType,
+        displayName: str,
+        clientSoftware: str,
+        key: str
+    ):
+        # Player Information
         self.server: Server = server
         self.username: UsernameType = username
         self.name: str = displayName
+        self.clientSoftware: str = clientSoftware
+        self.verificationKey: str = key
+
+        # Player State
         self.posX: int = 0
         self.posY: int = 0
         self.posZ: int = 0
         self.posYaw: int = 0
         self.posPitch: int = 0
+
+        # Player Objects
         self.server: Server = playerManager.server
-        self.verificationKey: str = key
         self.playerManager: PlayerManager = playerManager
         self.networkHandler: NetworkHandler = networkHandler
         self.worldPlayerManager: Optional[WorldPlayerManager] = None
         self.playerId: Optional[int] = None
 
+        # CPE Support
+        self.supportsCPE: bool = False
+        self._extensions: set[CPEExtension] = set()
+
     @property
     def opStatus(self) -> bool:
         return self.username in self.playerManager.server.config.operatorsList
+
+    def getSupportedCPE(self) -> set[CPEExtension]:
+        # Check if player supports CPE
+        if not self.supportsCPE:
+            raise CPEError("Client does not support CPE (Classic Protocol Extension)")
+
+        # Check if server supports CPE (getSupportedCPE will throw CPEError if not)
+        serverCPE = self.server.getSupportedCPE()
+
+        # Return intersection of the server and client
+        return self._extensions.intersection(serverCPE)
+
+    def supports(self, extension: CPEExtension):
+        # If player does not support CPE, return False
+        if not self.supportsCPE:
+            return False
+
+        # If server does not support CPE, also return False
+        if not self.server.supportsCPE:
+            return False
+
+        return extension in self.getSupportedCPE()
 
     async def updateOperatorStatus(self, sendMessage: bool = True):
         # Check if player is an operator
