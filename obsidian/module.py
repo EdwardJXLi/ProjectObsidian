@@ -129,13 +129,14 @@ class _ModuleManager(AbstractManager):
         super().__init__("Module", AbstractModule)
 
         # Creates List Of Modules That Has The Module Name As Keys
-        self._moduleDict = dict()
-        self._moduleIgnorelist = []
-        self._sortedModuleGraph = []
-        self._completed = False
-        self._ensureCore = True
-        self._initCpe = False
-        self._errorList = []  # Logging Which Modules Encountered Errors While Loading Up
+        self._modulePreloadDict: dict[str, Type[AbstractModule]] = dict()
+        self._moduleDict: dict[str, AbstractModule] = dict()
+        self._moduleIgnorelist: list[str] = []
+        self._sortedModuleGraph: list[Type[AbstractModule]] = []
+        self._completed: bool = False
+        self._ensureCore: bool = True
+        self._initCpe: bool = False
+        self._errorList: list[tuple[str, str]] = []  # Logging Which Modules Encountered Errors While Loading Up
 
     # Function to import all modules
     # EnsureCore ensures core module is present
@@ -242,7 +243,7 @@ class _ModuleManager(AbstractManager):
         Logger.verbose(f"Detected and Imported Module Files {_moduleFiles}", module="module-import")
         # Check If Core Was Loaded
         if self._ensureCore:
-            if "core" not in self._moduleDict.keys():
+            if "core" not in self._modulePreloadDict.keys():
                 self._errorList.append(("core", "PreInit-EnsureCore"))  # Module Loaded WITH Errors
                 raise FatalError("Error While Loading Module core - Critical Module Not Found")
 
@@ -256,17 +257,17 @@ class _ModuleManager(AbstractManager):
 
         # If CPE is not supported by server, check for CPE support in modules
         Logger.debug("CPE Support Disabled. Verifying CPE support.", module="verify-cpe")
-        for moduleName, moduleObj in list(self._moduleDict.items()):
+        for moduleName, moduleType in list(self._modulePreloadDict.items()):
             try:
                 Logger.debug(f"Checking CPE Support for Module {moduleName}", module="verify-cpe")
-                if CPEModuleManager.hasCPE(moduleObj):
+                if CPEModuleManager.hasCPE(moduleType):
                     Logger.debug(f"Module {moduleName} Implements a CPE Extension.", module="verify-cpe")
                     Logger.verbose(f"Checking whether CPE is enabled, and whether the {moduleName} module should be skipped...", module="verify-cpe")
-                    if CPEModuleManager.shouldSkip(moduleObj):
+                    if CPEModuleManager.shouldSkip(moduleType):
                         Logger.verbose(f"Skipping Module {moduleName} Due To CPE Settings", module="verify-cpe")
                         # Remove Module
                         Logger.debug(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
-                        del self._moduleDict[moduleName]
+                        del self._modulePreloadDict[moduleName]
                     else:
                         Logger.verbose(f"Module {moduleName} will not skipped.", module="verify-cpe")
                 else:
@@ -284,32 +285,35 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
-                del self._moduleDict[moduleName]
+                if moduleName in self._modulePreloadDict:
+                    del self._modulePreloadDict[moduleName]
+                if moduleName in self._moduleDict:
+                    del self._moduleDict[moduleName]
 
     # Intermediate Function to Check and Initialize Dependencies
     def _initDependencies(self):
-        for moduleName, moduleObj in list(self._moduleDict.items()):
+        for moduleName, moduleType in list(self._modulePreloadDict.items()):
             try:
                 Logger.debug(f"Checking Dependencies for Module {moduleName}", module="module-resolve")
                 # Loop through all dependencies, check type, then check if exists
-                for dependency in moduleObj.DEPENDENCIES:
+                for dependency in moduleType.DEPENDENCIES:
                     # Get Variables
                     depName = dependency.NAME
                     depVer = dependency.VERSION
                     Logger.verbose(f"Checking if Dependency {depName} Exists", module="module-resolve")
                     # Check if Dependency is "Loaded"
-                    if depName in self._moduleDict.keys():
+                    if depName in self._modulePreloadDict.keys():
                         # Check if Version should be checked
                         if depVer is None:
                             Logger.verbose(f"Skipping Version Check For Dependency {dependency}", module="module-resolve")
                             pass  # No Version Check Needed
-                        elif depVer == self._moduleDict[dependency.NAME].VERSION:
+                        elif depVer == self._modulePreloadDict[dependency.NAME].VERSION:
                             Logger.verbose(f"Dependencies {dependency} Satisfied!", module="module-resolve")
                             pass
                         else:
                             raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {depVer} | Has: {self._moduleDict[dependency.NAME].VERSION})")
                         # If All Passes, Link Module Class
-                        dependency.MODULE = self._moduleDict[dependency.NAME]
+                        dependency.MODULE = self._modulePreloadDict[dependency.NAME]
                     else:
                         raise DependencyError(f"Dependency '{dependency}' Not Found!")
             except FatalError as e:
@@ -325,7 +329,10 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {moduleName} From Loader!", module="module-resolve")
-                del self._moduleDict[moduleName]
+                if moduleName in self._modulePreloadDict:
+                    del self._modulePreloadDict[moduleName]
+                if moduleName in self._moduleDict:
+                    del self._moduleDict[moduleName]
 
     # Intermediate Function to Resolve Circular Dependencies
     def _resolveDependencyCycles(self):
@@ -341,11 +348,11 @@ class _ModuleManager(AbstractManager):
             for dependency in current.DEPENDENCIES:
                 _ensureNoCycles(dependency.MODULE, (*previous, current.NAME))
 
-        for moduleName, moduleObj in list(self._moduleDict.items()):
+        for moduleName, moduleType in list(self._modulePreloadDict.items()):
             try:
                 Logger.debug(f"Ensuring No Circular Dependencies For Module {moduleName}", module="module-verify")
                 # Run DFS Through All Decencies To Check If Cycle Exists
-                _ensureNoCycles(moduleObj)
+                _ensureNoCycles(moduleType)
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
@@ -359,7 +366,10 @@ class _ModuleManager(AbstractManager):
                 Logger.askConfirmation()
                 # Remove Module
                 Logger.warn(f"Removing Module {moduleName} From Loader!", module="module-verify")
-                del self._moduleDict[moduleName]
+                if moduleName in self._modulePreloadDict:
+                    del self._modulePreloadDict[moduleName]
+                if moduleName in self._moduleDict:
+                    del self._moduleDict[moduleName]
 
     # Intermediate Function to Build Dependency Graph
     def _buildDependencyGraph(self):
@@ -386,10 +396,10 @@ class _ModuleManager(AbstractManager):
             Logger.verbose(f"Added {module.NAME} To Dependency Graph. DG Is Now {self._sortedModuleGraph}", module="topological-sort")
 
         # Run Topological Sort on All Non-Visited Modules
-        for moduleName in list(self._moduleDict.keys()):
+        for moduleName in list(self._modulePreloadDict.keys()):
             Logger.verbose(f"Attempting Topological Sort on {moduleName}", module="module-prep")
             if moduleName not in visited:
-                _topologicalSort(self._moduleDict[moduleName])
+                _topologicalSort(self._modulePreloadDict[moduleName])
 
         # Print Out Status
         Logger.debug(f"Finished Generating Dependency Graph. Result: {self._sortedModuleGraph}", module="module-prep")
@@ -397,8 +407,10 @@ class _ModuleManager(AbstractManager):
     # Intermediate Function to Initialize Modules
     def _initModules(self):
         for idx, module in enumerate(self._sortedModuleGraph):
+            # Get the module name
+            moduleName = module.NAME
             try:
-                Logger.debug(f"Initializing Module {module.NAME}", module=f"{module.NAME}-init")
+                Logger.debug(f"Initializing Module {moduleName}", module=f"{moduleName}-init")
                 # Initialize Module
                 initializedModule = module(
                     module.NAME,
@@ -407,77 +419,91 @@ class _ModuleManager(AbstractManager):
                     module.VERSION,
                     module.DEPENDENCIES
                 )
-                # Replacing Item in _moduleDict and _sortedModuleGraph with the Initialized Version!
-                self._moduleDict[module.NAME] = initializedModule
-                self._sortedModuleGraph[idx] = initializedModule
-                Logger.info(f"Initialized Module {module.NAME}", module="init-module")
+                # Setting Item in _moduleDict with Initialized Version of _modulePreloadDict!
+                self._moduleDict[moduleName] = initializedModule
+                Logger.info(f"Initialized Module {moduleName}", module="init-module")
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._errorList.append((module.NAME, "Init-Module"))  # Module Loaded WITH Errors
+                self._errorList.append((moduleName, "Init-Module"))  # Module Loaded WITH Errors
                 # If the Error is an Init Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Initializing Modules For {module.NAME} - {type(e).__name__}: {e}\n", module="module-init", printTb=not not isinstance(e, InitError))
+                Logger.error(f"Error While Initializing Modules For {moduleName} - {type(e).__name__}: {e}\n", module="module-init", printTb=not not isinstance(e, InitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-init")
-                Logger.warn(f"Skipping Module {module.NAME}?", module="module-init")
+                Logger.warn(f"Skipping Module {moduleName}?", module="module-init")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module.NAME} From Loader!", module="module-init")
-                del self._moduleDict[module.NAME]
+                Logger.warn(f"Removing Module {moduleName} From Loader!", module="module-init")
+                if moduleName in self._modulePreloadDict:
+                    del self._modulePreloadDict[moduleName]
+                if moduleName in self._moduleDict:
+                    del self._moduleDict[moduleName]
 
     # Intermediate Function to Initialize Submodules
     def _initSubmodules(self):
         # Loop through all the submodules in the order of the sorted graph
-        for module in self._sortedModuleGraph:
+        for moduleType in self._sortedModuleGraph:
+            # Get the module from the module dict
+            module = self._moduleDict[moduleType.NAME]
+            # Get the module name
+            moduleName = module.NAME
             try:
                 # Loop Through All Items within Module
-                Logger.debug(f"Checking All Items in {module.NAME}", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Checking All Items in {moduleName}", module=f"{moduleName}-submodule-init")
                 # Loop Through All Items In Class of Object
                 for item in module.__class__.__dict__.values():
                     # Check If Item Has "obsidian_submodule" Flag
                     if hasattr(item, "obsidian_submodule"):
-                        Logger.verbose(f"{item} Is A Submodule! Adding As {module.NAME} Submodule.", module=f"{module.NAME}-submodule-init")
+                        Logger.verbose(f"{item} Is A Submodule! Adding As {moduleName} Submodule.", module=f"{moduleName}-submodule-init")
                         # Register Submodule Using information Provided by Submodule Class
                         item.MANAGER.register(item, module)
 
                         # Check if all methods are registered
-                        Logger.verbose(f"Checking if {item.MANAGER.NAME} {item.NAME} have all methods registered", module=f"{module.NAME}-submodule-init")
+                        Logger.verbose(f"Checking if {item.MANAGER.NAME} {item.NAME} have all methods registered", module=f"{moduleName}-submodule-init")
 
                         # Get list of base class methods
                         baseMethods = [name for name, val in item.MANAGER.SUBMODULE.__dict__.items() if callable(val) and not name.startswith("__")]
-                        Logger.verbose(f"{item.MANAGER.NAME} Base Class has methods: {baseMethods}", module=f"{module.NAME}-submodule-init")
+                        Logger.verbose(f"{item.MANAGER.NAME} Base Class has methods: {baseMethods}", module=f"{moduleName}-submodule-init")
                         # Get list of currently registered methods
                         submoduleMethods = [name for name, val in item.__dict__.items() if callable(val) and not name.startswith("__")]
-                        Logger.verbose(f"{item.MANAGER.NAME} {item.NAME} has methods: {submoduleMethods}", module=f"{module.NAME}-submodule-init")
+                        Logger.verbose(f"{item.MANAGER.NAME} {item.NAME} has methods: {submoduleMethods}", module=f"{moduleName}-submodule-init")
 
                         # Loop through all methods and check if they are registered
                         for methodName in baseMethods:
                             if methodName not in submoduleMethods:
                                 if not methodName.startswith("_"):
-                                    Logger.warn(f"{item.MANAGER.NAME} {item.NAME} Does Not Have Method {methodName} Registered!", module=f"{module.NAME}-submodule-init")
-                                    Logger.warn("This could cause issues when overriding methods!", module=f"{module.NAME}-submodule-init")
+                                    Logger.warn(f"{item.MANAGER.NAME} {item.NAME} Does Not Have Method {methodName} Registered!", module=f"{moduleName}-submodule-init")
+                                    Logger.warn("This could cause issues when overriding methods!", module=f"{moduleName}-submodule-init")
 
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._errorList.append((module.NAME, "Init-Submodule"))  # Module Loaded WITH Errors
+                self._errorList.append((moduleName, "Init-Submodule"))  # Module Loaded WITH Errors
                 # If the Error is an Init Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Initializing Submodules For {module.NAME} - {type(e).__name__}: {e}\n", module="submodule-init", printTb=not isinstance(e, InitError))
+                Logger.error(f"Error While Initializing Submodules For {moduleName} - {type(e).__name__}: {e}\n", module="submodule-init", printTb=not isinstance(e, InitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="submodule-init")
-                Logger.warn(f"Skipping Module {module.NAME}?", module="submodule-init")
+                Logger.warn(f"Skipping Module {moduleName}?", module="submodule-init")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module.NAME} From Loader!", module="submodule-init")
-                del self._moduleDict[module.NAME]
+                Logger.warn(f"Removing Module {moduleName} From Loader!", module="submodule-init")
+                if moduleName in self._modulePreloadDict:
+                    del self._modulePreloadDict[moduleName]
+                if moduleName in self._moduleDict:
+                    del self._moduleDict[moduleName]
 
     # Intermediate Function to run Post-Initialization Scripts
     def _postInit(self):
-        for module in self._sortedModuleGraph:
+        # Loop through all the submodules in the order of the sorted graph
+        for moduleType in self._sortedModuleGraph:
+            # Get the module from the module dict
+            module = self._moduleDict[moduleType.NAME]
+            # Get the module name
+            moduleName = module.NAME
             try:
-                Logger.debug(f"Running Post-Initialization for Module {module.NAME}", module=f"{module.NAME}-postinit")
+                Logger.debug(f"Running Post-Initialization for Module {moduleName}", module=f"{moduleName}-postinit")
                 # Calling the Final Init function
                 module.postInit()
             except FatalError as e:
@@ -485,15 +511,18 @@ class _ModuleManager(AbstractManager):
                 raise e
             except Exception as e:
                 # Handle Exception if Error Occurs
-                self._errorList.append((module.NAME, "Init-Final"))  # Module Loaded WITH Errors
+                self._errorList.append((moduleName, "Init-Final"))  # Module Loaded WITH Errors
                 # If the Error is an Postinit Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Running Post-Initialization For {module.NAME} - {type(e).__name__}: {e}\n", module="postinit", printTb=not isinstance(e, PostInitError))
+                Logger.error(f"Error While Running Post-Initialization For {moduleName} - {type(e).__name__}: {e}\n", module="postinit", printTb=not isinstance(e, PostInitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="postinit")
-                Logger.warn(f"Skipping Module {module.NAME}?", module="postinit")
+                Logger.warn(f"Skipping Module {moduleName}?", module="postinit")
                 Logger.askConfirmation()
                 # Remove Module
-                Logger.warn(f"Removing Module {module.NAME} From Loader!", module="postinit")
-                del self._moduleDict[module.NAME]
+                Logger.warn(f"Removing Module {moduleName} From Loader!", module="postinit")
+                if moduleName in self._modulePreloadDict:
+                    del self._modulePreloadDict[moduleName]
+                if moduleName in self._moduleDict:
+                    del self._moduleDict[moduleName]
 
     # Registration. Called by Module Decorator
     def register(
@@ -511,7 +540,7 @@ class _ModuleManager(AbstractManager):
         # Format Name
         name = formatName(name)
         # Checking If Module Is Already In Modules List
-        if name in self._moduleDict.keys():
+        if name in self._modulePreloadDict.keys():
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
         # Check If Module Is Ignored
         if name in self._moduleIgnorelist:
@@ -530,7 +559,7 @@ class _ModuleManager(AbstractManager):
         module.AUTHOR = author
         module.VERSION = version
         module.DEPENDENCIES = dependencies
-        self._moduleDict[name] = module
+        self._modulePreloadDict[name] = module
 
         return module
 

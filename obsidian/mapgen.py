@@ -20,9 +20,9 @@ def MapGenerator(*args, **kwargs):
 # Map generation status
 # Used for live updates in multithreaded map generation
 class MapGeneratorStatus:
-    def __init__(self, generator, printUpdates: bool = True):
+    def __init__(self, generator: AbstractMapGenerator, printUpdates: bool = True):
         # Base level information on generators
-        self.generator = generator
+        self.generator: AbstractMapGenerator = generator
 
         # Initialize variables to default values
         self.done: bool = False
@@ -30,7 +30,7 @@ class MapGeneratorStatus:
         self.progress: float = 0
 
         # Flag to dictate if status updates should be printed to term
-        self.printUpdates = printUpdates
+        self.printUpdates: bool = printUpdates
 
         # Error Handling for Map Generation
         self.error: Optional[Exception] = None

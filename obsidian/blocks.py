@@ -54,7 +54,6 @@ class _BlockManager(AbstractManager):
         # Initialize Overarching Manager Class
         super().__init__("Block", AbstractBlock)
 
-        # TODO Rename these!
         # Creates List Of Blocks That Has The Block Name As Keys
         self._blockDict: dict[str, AbstractBlock] = dict()
         # Create Cache Of Block Ids to Obj

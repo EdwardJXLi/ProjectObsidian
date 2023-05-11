@@ -441,9 +441,9 @@ class World:
         self.worldUUID: uuid.UUID = worldUUID or uuid.uuid4()
         self.worldCreationService: str = worldCreationService or "Obsidian"
         self.worldCreationPlayer: str = worldCreationPlayer or "ObsidianPlayer"
-        self.timeCreated = timeCreated or datetime.datetime.now()
-        self.lastModified = lastModified or datetime.datetime.now()
-        self.lastAccessed = lastAccessed or datetime.datetime.now()
+        self.timeCreated: datetime.datetime = timeCreated or datetime.datetime.now()
+        self.lastModified: datetime.datetime = lastModified or datetime.datetime.now()
+        self.lastAccessed: datetime.datetime = lastAccessed or datetime.datetime.now()
 
         # Check if file IO was given if persistent
         if self.persistent:
