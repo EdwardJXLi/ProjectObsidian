@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from obsidian.server import Server
 
+from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any, Type, Optional, Callable, Generic
 from pathlib import Path
@@ -34,7 +35,7 @@ from obsidian.types import formatName, T
 
 
 # Manager Skeleton
-class AbstractManager:
+class AbstractManager(ABC):
     def __init__(self, name: str, submodule: Type[AbstractSubmodule] | Type[AbstractModule]):
         self.NAME = name
         self.SUBMODULE = submodule
@@ -60,7 +61,7 @@ class AbstractManager:
 
 # Module Skeleton
 @dataclass
-class AbstractModule:
+class AbstractModule(ABC):
     NAME: str
     DESCRIPTION: str
     AUTHOR: str
@@ -105,7 +106,7 @@ class AbstractModule:
 
 # Submodule Skeleton
 @dataclass
-class AbstractSubmodule(Generic[T]):
+class AbstractSubmodule(ABC, Generic[T]):
     NAME: str
     DESCRIPTION: str
     VERSION: str
