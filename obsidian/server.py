@@ -169,6 +169,19 @@ class Server:
             Logger.warn(f"Failed: {ModuleManager._errorList}\n", module="init")
             Logger.askConfirmation()
 
+        # Populating CPE Extensions List
+        Logger.info("Populating CPE Extensions List", module="init")
+        if self.supportsCPE:
+            # Loop through all loaded modules and check if they have CPE support
+            # TODO: this is hacky af
+            for moduleClass in ModuleManager._modulePreloadDict.values():
+                Logger.verbose(f"Checking if {moduleClass} implements CPE", module="init")
+                if moduleClass in CPEModuleManager._cpeExtensions:
+                    ext = CPEModuleManager._cpeExtensions[moduleClass]
+                    self._extensions.add(ext)
+                    Logger.verbose(f"Extension {ext} added.", module="init")
+            Logger.debug(f"Server Supports {len(self._extensions)} Extensions: {self._extensions}", module="init")
+
         # Initialize WorldManager
         Logger.info("Initializing World Manager", module="init")
         self._worldManager = WorldManager(self, ignorelist=self.config.worldIgnoreList)
