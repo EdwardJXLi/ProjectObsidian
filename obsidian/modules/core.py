@@ -2966,8 +2966,28 @@ class CoreModule(AbstractModule):
             # TODO: This works fine for now, but might cause issues later...
             await ctx.networkHandler.closeConnection("Server Shutting Down", notifyPlayer=True)
 
-            # Server doesn't like it if
             ctx.server.asyncStop()
+
+    @Command(
+        "ForceStopServer",
+        description="Force stops the server, without saving",
+        version="v1.0.0"
+    )
+    class ForceStopCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["forcestop", "stopnosave"], OP=True)
+
+        async def execute(self, ctx: Player):
+            await ctx.sendMessage("&4Force Stopping Server")
+            # await ctx.playerManager.server.stop(saveWorlds=False)
+
+            # Server doesn't like it when it sys.exit()s mid await
+            # So as a workaround, we disconnect the calling user first then stop the server using asyncstop
+            # Which should launch the stop script on another event loop.
+            # TODO: This works fine for now, but might cause issues later...
+            await ctx.networkHandler.closeConnection("Server Shutting Down", notifyPlayer=True)
+
+            ctx.server.asyncStop(saveWorlds=False)
 
 
 # Helper functions for the command generation

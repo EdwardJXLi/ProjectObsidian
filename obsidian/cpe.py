@@ -80,7 +80,7 @@ class _CPEModuleManager():
         try:
             table = PrettyTableLite()  # Create Pretty List Class
 
-            table.field_names = ["Extension", "Version", "Implementing Module"]
+            table.field_names = ["Extension", "Version", "Implementation"]
             # Loop Through All CPE's And Add Value
             for module, (extName, extVersion) in self._cpeExtensions.items():
                 # Add Row To Table

@@ -267,13 +267,13 @@ class Server:
             eventLoop = asyncio.get_running_loop()
             Logger.debug("Existing Event Loop detected. Sending Stop Command!", "server-stop")
             asyncio.run_coroutine_threadsafe(
-                self.stop(),
+                self.stop(*args, **kwargs),
                 eventLoop
             )
         except RuntimeError:
             Logger.debug("No Running Event Loops Were Detected. Creating Stop Event Loop", "server-stop")
             eventLoop = asyncio.new_event_loop()
-            eventLoop.run_until_complete(self.stop())
+            eventLoop.run_until_complete(self.stop(*args, **kwargs))
             eventLoop.stop()
 
         # Start a new thread with a dead mans switch to kill the server if it takes too long to stop
@@ -287,7 +287,7 @@ class Server:
         Logger.debug("Starting Dead Mans Thread", "server-stop")
         threading.Thread(target=deadMansProcess, daemon=True).start()
 
-    async def stop(self):
+    async def stop(self, sendMessage: bool = True, saveWorlds: bool = True):
         try:
             # Setting initialized to false to prevent multiple ctl-c
             if self.stopping:
@@ -304,7 +304,7 @@ class Server:
             self.initialized = False
             self.stopping = True
 
-            if self.playerManager:
+            if self.playerManager and sendMessage:
                 # Send message to all players
                 Logger.info("Sending Disconnect Message To All Players", module="server-stop")
                 await self.playerManager.sendGlobalMessage("&cServer Shutting Down")
@@ -329,7 +329,7 @@ class Server:
                 self.server.close()
 
             # Managing worlds
-            if self.worldManager:
+            if self.worldManager and saveWorlds:
                 # Saving Worlds
                 Logger.info("Saving All Worlds", module="server-stop")
                 self.worldManager.saveWorlds()
