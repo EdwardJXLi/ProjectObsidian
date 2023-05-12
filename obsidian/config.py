@@ -177,7 +177,6 @@ class ServerConfig(AbstractConfig):
     verifyMapAfterSave: bool = True  # Whether to try loading and verifying the map after saving.
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
-    loginMessage: str = "Testing Server"  # Message Displayed When A Player Joins The Server
     defaultMOTD: list[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
     # Logger Configuration
     logBuffer: int = 1  # Number of Log Messages to be buffered before flushed to file
