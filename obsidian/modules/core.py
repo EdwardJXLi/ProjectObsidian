@@ -797,7 +797,6 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                KEYS=["raw"],
                 EXTENSIONS=["gz"]
             )
 
@@ -848,15 +847,14 @@ class CoreModule(AbstractModule):
             fileIO.write(world.gzipMap())
 
     @WorldFormat(
-        "Obsidian",
-        description="Obsidian Map Data File",
+        "ObsidianWorld",
+        description="Obsidian World Data File",
         version="v1.0.0"
     )
     class ObsidianWorldFormat(AbstractWorldFormat["CoreModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                KEYS=["obsidian"],
                 EXTENSIONS=["obw", "zip"]
             )
 

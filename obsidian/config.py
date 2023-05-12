@@ -157,7 +157,7 @@ class ServerConfig(AbstractConfig):
     # Chat Configuration
     playerChatColor: str = "&a"
     operatorChatColor: str = "&4"
-    allowPlayerColor: bool = True
+    allowPlayerColor: bool = False
     # Block Configuration
     disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks
     allowLiquidPlacement: bool = False
@@ -172,7 +172,7 @@ class ServerConfig(AbstractConfig):
     serverMaxPlayers: int = 127  # Number Of Players Max Allowed On The Entire Server
     worldMaxPlayers: Optional[int] = None  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
-    defaultSaveFormat: str = "raw"  # Name Of Default World Save Format
+    defaultSaveFormat: str = "ObsidianWorld"  # Name Of Default World Save Format
     backupBeforeSave: bool = True  # Whether to backup the map before saving
     verifyMapAfterSave: bool = True  # Whether to try loading and verifying the map after saving.
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!

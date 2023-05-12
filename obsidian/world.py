@@ -24,7 +24,6 @@ from obsidian.mapgen import (
 )
 from obsidian.packet import Packets
 from obsidian.constants import SERVER_PATH
-from obsidian.types import formatName
 from obsidian.errors import (
     FatalError,
     MapGenerationError,
@@ -49,15 +48,11 @@ class WorldManager:
 
         # Get worldFormat Using Given World Format Key
         # Loop Through All World Formats
-        for worldFormat in WorldFormats._formatDict.values():
-            # Check If key Matches With Config Key List
-            if formatName(self.server.config.defaultSaveFormat) in worldFormat.KEYS:
-                # Set World Format
-                self.worldFormat: AbstractWorldFormat = worldFormat
-                break
+        if self.server.config.defaultSaveFormat in WorldFormats:
+            self.worldFormat = WorldFormats[self.server.config.defaultSaveFormat]
         # Check If World Format Was Found
         else:
-            raise FatalError(f"Unknown World Format Key {self.server.config.defaultSaveFormat} Given In Server Config!")
+            raise FatalError(f"Unknown World Format {self.server.config.defaultSaveFormat} Given In Server Config!")
         Logger.info(f"Using World Format {self.worldFormat.NAME}", module="init-world")
 
         # If World Location Was Not Given, Disable Persistance
