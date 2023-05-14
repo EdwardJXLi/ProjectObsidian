@@ -5,11 +5,10 @@ if TYPE_CHECKING:
 
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, Type, Optional, Callable, Generic
+from typing import Any, Type, Optional, Generic
 from pathlib import Path
 import importlib
 import pkgutil
-import inspect
 
 from obsidian.cpe import CPEModuleManager
 from obsidian.utils.ptl import PrettyTableLite
@@ -666,104 +665,6 @@ def Submodule(submodule: AbstractManager, name: str, description: Optional[str] 
         # Return cls Obj for Decorator
         return cls
     return internal
-
-
-# Method Override Decorator - Provides dynamic run-time method overriding
-# Used In @Override
-def Override(
-    target: Callable,
-    abstract: bool = False  # Allows for modifying abstract methods (Removes Warning)
-):
-    def internal(destination: Callable):
-        # Because when someone overrides a method multiple times,
-        # the parent class and (original) class name gets destroyed and lost.
-        # _OBSIDIAN_OVERRIDE_CACHE saves those two values the first time it gets overridden.
-        # And every subsequent time, it just returns the cached values.
-        Logger.debug(f"Overriding Method {target} with {destination}", module="dynamic-method-override")
-
-        # Check if the attribute is set
-        if not hasattr(target, "_OBSIDIAN_OVERRIDE_CACHE"):
-            Logger.debug("First time overriding method. Getting name and parent", module="dynamic-method-override")
-            # Get the name and parent class of the function to override
-            funcName = target.__name__
-            parentClass = getMethodParentClass(target)
-            Logger.debug(f"Method {funcName} has Parent Class: {parentClass}", module="dynamic-method-override")
-
-            # If no parent class is found, return error
-            if not parentClass:
-                # Key Note: Overriding functions that are not in class
-                # are not supported because imports are absolute not relative,
-                # meaning any changes are not propagated to the original function.
-                raise InitError(f"Method {funcName} is not overridable. (No Parent Class Found!)")
-
-            # Check if parent class is an abstract class (Ignore if abstract flag is set)
-            if parentClass in [m.SUBMODULE for m in MANAGERS_LIST] and not abstract:
-                Logger.warn(f"Caution! {destination.__name__} is trying to override an abstract module {parentClass}!", module="dynamic-method-override")
-                Logger.warn("This could cause unintended side effects!", module="dynamic-method-override")
-                Logger.askConfirmation()
-        else:
-            Logger.debug("Override Cache Found! Using Cached Information", module="dynamic-method-override")
-            # Grab information out of cache
-            funcName, parentClass = target._OBSIDIAN_OVERRIDE_CACHE
-            Logger.debug(f"Method {funcName} has Parent Class: {parentClass}", module="dynamic-method-override")
-
-        # Define method to override
-        # A lambda is created so that the old (target) method can be passed in
-        overriddenMethod: Callable[[Any, Any], Any] = lambda *args, **kwargs: destination(target, *args, **kwargs)
-
-        # Save the new function name and parent class to Override Cache
-        overriddenMethod._OBSIDIAN_OVERRIDE_CACHE = (funcName, parentClass)
-
-        # Override method in parent class to the new method
-        setattr(parentClass, funcName, overriddenMethod)
-        Logger.debug(f"Saved {overriddenMethod} to {parentClass}", module="dynamic-method-override")
-
-        return destination
-    return internal
-
-
-# Inject Method Decorator. Used to dynamically add new methods to classes at runtime
-# Used In @InjectMethod
-def InjectMethod(
-    target: Type[object]
-):
-    def internal(destination: Callable):
-        # Save name of target class and destination function
-        targetName = target.__name__
-        destName = destination.__name__
-        Logger.debug(f"Injecting Method {destName} into class {targetName} ({target})", module="dynamic-method-inject")
-
-        # Check if if function of name target already exists
-        if hasattr(target, destName):
-            # Method registered under the same name
-            conflict = getattr(target, destName)
-            # Return error to user
-            Logger.error(f"Class {targetName} already contains method of name {destName} ({conflict})", module="dynamic-method-inject")
-            Logger.error("This could be because two modules are injecting a function of the same name or that the author meant to use @Override", module="dynamic-method-inject")
-            raise InitError(f"Method {destName} already exists in class {targetName}")
-
-        # Adding method to destination class
-        setattr(target, destName, destination)
-        Logger.debug(f"Added {destName} to {targetName}", module="dynamic-method-inject")
-
-    return internal
-
-
-# Helper method to get parent class of method
-# Hybrid code by @Yoel http://stackoverflow.com/a/25959545 and @Stewori https://github.com/Stewori/pytypes
-# This code is heavily shaky, so expect some bugs! But it should work for most common use cases.
-def getMethodParentClass(function: Callable):
-    Logger.verbose(f"Getting parent class for method {function}", module="get-method-parent-class")
-    # After this point, I have little idea what it does...
-    cls = getattr(inspect.getmodule(function), function.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0], None)
-    if cls is None:
-        clsNames = function.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0].split('.')
-        cls = inspect.getmodule(function)
-        for cls_name in clsNames:
-            cls = getattr(cls, cls_name)
-    if isinstance(cls, type):
-        return cls
-    return getattr(function, '__objclass__', None)  # handle special descriptor objects
 
 
 # Creates Global ModuleManager As Singleton

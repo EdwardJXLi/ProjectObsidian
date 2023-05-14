@@ -23,6 +23,10 @@ class PostInitError(Exception):
     pass
 
 
+class MixinError(Exception):
+    pass
+
+
 class PacketError(Exception):
     pass
 
