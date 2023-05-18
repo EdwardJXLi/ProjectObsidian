@@ -1964,7 +1964,7 @@ class CoreModule(AbstractModule):
     )
     class ListStaffCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["liststaff", "staff", "listallstaff", "allstaff"])
+            super().__init__(*args, ACTIVATORS=["staff", "liststaff", "listallstaff", "allstaff"])
 
         async def execute(self, ctx: Player):
             staffList = list(ctx.server.playerManager.players.values())
@@ -1980,6 +1980,46 @@ class CoreModule(AbstractModule):
 
             # Generate Player List Output
             output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&4", separator=", ")
+
+            # Add Footer
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "PlayerInfo",
+        description="Detailed information for a specific player",
+        version="v1.0.0"
+    )
+    class PlayerInfoCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["player", "playerinfo"])
+
+        async def execute(self, ctx: Player, player: Optional[Player] = None):
+            # If no player is passed, use self
+            if player is None:
+                player = ctx
+
+            # Generate plugin output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.centerMessage(f"&ePlayer Information: {player.name}", colour="&2"))
+
+            # Add Player Information
+            output.append(f"&d[Username]&f {player.username}")
+            output.append(f"&d[Joined World]&f {player.worldPlayerManager.world.name if player.worldPlayerManager else 'Unknown'}")
+            output.append(f"&d[Coordinates]&f &7x:&f{player.posX//32} &7y:&f{player.posY//32} &7z:&f{player.posZ//32}")
+            output.append(f"&d[Client Software]&f {player.clientSoftware}")
+            output.append(f"&d[CPE Enabled]&f {player.supportsCPE} ({len(player._extensions)} extensions supported)")
+            output.append(f"&d[Internal Player Id]&f {player.playerId}")
+
+            # Add self-only Player Information
+            if player is ctx:
+                output.append("&7(Only you can see the information below)")
+                output.append(f"&d[Network Information]&f {player.networkHandler.ip}:{player.networkHandler.port}")
+                output.append(f"&d[Verification Key]&f {player.verificationKey}")
 
             # Add Footer
             output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
@@ -2039,7 +2079,7 @@ class CoreModule(AbstractModule):
     )
     class TeleportPlayerCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["tpp", "teleportplayer"])
+            super().__init__(*args, ACTIVATORS=["tpplayer", "tpp", "teleportplayer"])
 
         async def execute(self, ctx: Player, player1: Player, player2: Optional[Player] = None):
             # Check who to teleport to who!
@@ -2125,7 +2165,7 @@ class CoreModule(AbstractModule):
     )
     class ListWorldsCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["listworlds", "worlds", "lw"])
+            super().__init__(*args, ACTIVATORS=["worlds", "listworlds", "lw"])
 
         async def execute(self, ctx: Player):
             # Get list of worlds
@@ -2178,7 +2218,7 @@ class CoreModule(AbstractModule):
             output.append(f"&d[Persistent]&f {world.persistent}")
             output.append(f"&d[Max Players]&f {world.maxPlayers}")
             output.append(f"&d[UUID]&f {world.worldUUID}")
-            output.append(f"&d[Created ]&f {world.worldCreationPlayer} using {world.worldCreationService}")
+            output.append(f"&d[Created By]&f {world.worldCreationPlayer} using {world.worldCreationService}")
             output.append(f"&d[Time Created]&f {world.timeCreated}")
 
             # Add Footer
@@ -2404,43 +2444,6 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(f"&aPlayer {username} Pardoned!")
 
     @Command(
-        "IpBan",
-        description="Bans a user by ip",
-        version="v1.0.0"
-    )
-    class IpBanCommand(AbstractCommand["CoreModule"]):
-        def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["ipban"], OP=True)
-
-        async def execute(self, ctx: Player, name: str, *, reason: str = "You Have Been Banned By An Operator"):
-            # Parse Name Into Username
-            username = _formatUsername(name)
-
-            # Get Player Object
-            player = ctx.playerManager.players.get(username, None)
-
-            # If Player is Not Found, Return Error
-            if not player:
-                raise CommandError(f"Player {username} is not online!")
-
-            # Check if player ip is already banned.
-            serverConfig = ctx.server.config
-            ip = player.networkHandler.ip
-            if ip in serverConfig.bannedIps:
-                await ctx.sendMessage(f"Player Ip {ip} is already banned! Kicking All Players With IP.")
-            else:
-                # Add Ip To Banned Ips List
-                serverConfig.bannedIps.append(ip)
-                serverConfig.save()
-
-            # If Ip Is Connected, Kick Players With That Ip
-            if ctx.playerManager.getPlayersByIp(ip):
-                await ctx.playerManager.kickPlayerByIp(ip, reason=reason)
-
-            # Send Response Back
-            await ctx.sendMessage(f"&aPlayer {username} Banned By Ip {ip}!")
-
-    @Command(
         "BanIp",
         description="Bans an ip",
         version="v1.0.0"
@@ -2533,7 +2536,7 @@ class CoreModule(AbstractModule):
     )
     class SayCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["say"], OP=True)
+            super().__init__(*args, ACTIVATORS=["say", "repeat"], OP=True)
 
         async def execute(self, ctx: Player, msg: str):
             # Check if player is in a world
@@ -2550,7 +2553,7 @@ class CoreModule(AbstractModule):
     )
     class SayAllCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["sayall"], OP=True)
+            super().__init__(*args, ACTIVATORS=["sayall", "repeatall"], OP=True)
 
         async def execute(self, ctx: Player, msg: str):
             # Send message
