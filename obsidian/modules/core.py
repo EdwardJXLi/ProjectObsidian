@@ -903,16 +903,18 @@ class CoreModule(AbstractModule):
             spawnPitch = worldMetadata.get("spawnPitch", 0)
             # Misc Values
             seed = worldMetadata.get("seed", random.randint(0, 2**64))
+            canEdit = worldMetadata.get("canEdit", True)
             worldUUID = uuid.UUID(worldMetadata.get("worldUUID", str(uuid.uuid4())))
             worldCreationService = worldMetadata.get("worldCreationService", "Obsidian")
+            worldCreationGenerator = worldMetadata.get("worldCreationGenerator", None)
             worldCreationPlayer = worldMetadata.get("worldCreationPlayer", "ObsidianPlayer")
             timeCreated = datetime.datetime.fromtimestamp(worldMetadata.get("timeCreated", int(time.time())))
             lastModified = datetime.datetime.fromtimestamp(worldMetadata.get("lastModified", int(time.time())))
             lastAccessed = datetime.datetime.fromtimestamp(worldMetadata.get("lastAccessed", int(time.time())))
 
             # Try parsing world generator
-            if worldMetadata.get("generator", None) in MapGenerators:
-                generator = MapGenerators[worldMetadata.get("generator", None)]
+            if worldCreationGenerator in MapGenerators:
+                generator = MapGenerators[worldCreationGenerator]
             else:
                 Logger.warn("ObsidianWorldFormat - Unknown World Generator.")
                 generator = None  # Continue with no generator
@@ -967,6 +969,7 @@ class CoreModule(AbstractModule):
                 generator=generator,
                 persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO,  # Pass In File Reader/Writer
+                canEdit=canEdit,
                 logoutLocations=logoutLocations,
                 worldUUID=worldUUID,
                 worldCreationService=worldCreationService,
@@ -1006,8 +1009,10 @@ class CoreModule(AbstractModule):
 
             # Add Misc Data
             worldMetadata["seed"] = world.seed
+            worldMetadata["canEdit"] = world.canEdit
             worldMetadata["worldUUID"] = str(world.worldUUID)
             worldMetadata["worldCreationService"] = world.worldCreationService
+            worldMetadata["worldCreationGenerator"] = world.generator.NAME if world.generator else None
             worldMetadata["worldCreationPlayer"] = world.worldCreationPlayer
             worldMetadata["timeCreated"] = int(time.mktime(world.timeCreated.timetuple()))
             worldMetadata["lastModified"] = int(time.mktime(world.lastModified.timetuple()))
@@ -2203,9 +2208,11 @@ class CoreModule(AbstractModule):
             if world.generator:
                 output.append(f"&d[World Generator]&f {world.generator.NAME}")
             output.append(f"&d[Persistent]&f {world.persistent}")
+            output.append(f"&d[Read Only]&f {not world.canEdit}")
             output.append(f"&d[Max Players]&f {world.maxPlayers}")
             output.append(f"&d[UUID]&f {world.worldUUID}")
-            output.append(f"&d[Created By]&f {world.worldCreationPlayer} using {world.worldCreationService}")
+            output.append(f"&d[Created By]&f {world.worldCreationPlayer}")
+            output.append(f"&d[World Generator]&f {world.generator.NAME if world.generator else 'Unknown'} Using {world.worldCreationService}")
             output.append(f"&d[Time Created]&f {world.timeCreated}")
 
             # Add Footer
@@ -2692,6 +2699,31 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(f"&7x: &e{world.spawnX//32} &7y: &e{world.spawnY//32} &7z: &e{world.spawnZ//32} &7yaw: &e{world.spawnYaw} &7pitch: &e{world.spawnPitch}!")
 
     @Command(
+        "ToggleWorldEdit",
+        description="Toggles world editing.",
+        version="v1.0.0"
+    )
+    class ToggleWorldEditCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["toggleedit", "togglemodify", "readonly"], OP=True)
+
+        async def execute(self, ctx: Player, world: Optional[World] = None):
+            # If no world is passed, use players current world
+            if world is None:
+                if ctx.worldPlayerManager is not None:
+                    world = ctx.worldPlayerManager.world
+                else:
+                    raise CommandError("You are not in a world!")
+
+            # Toggle world edit status
+            if world.canEdit:
+                world.canEdit = False
+                await ctx.sendMessage("&aWorld Editing Disabled!")
+            else:
+                world.canEdit = True
+                await ctx.sendMessage("&aWorld Editing Enabled!")
+
+    @Command(
         "ClearPlayerLogouts",
         description="Clears all last logout locations in world",
         version="v1.0.0"
@@ -2793,6 +2825,7 @@ class CoreModule(AbstractModule):
             else:
                 raise CommandError("You are not in a world!")
 
+    # TODO: MOVE OUT OF CORE!!!
     @Command(
         "ConvertWorld",
         description="Converts world from one format to another format.",
