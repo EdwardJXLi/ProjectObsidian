@@ -385,7 +385,6 @@ class World:
         spawnZ: Optional[int] = None,
         spawnYaw: Optional[int] = None,
         spawnPitch: Optional[int] = None,
-        resetWorldSpawn: bool = False,
         generator: Optional[AbstractMapGenerator] = None,
         persistent: bool = False,
         fileIO: Optional[io.BufferedRandom] = None,
@@ -417,7 +416,6 @@ class World:
 
         # Generate/Set Spawn Coords
         self.generateSpawnCoords(
-            resetCoords=resetWorldSpawn,
             spawnX=spawnX,
             spawnY=spawnY,
             spawnZ=spawnZ,

@@ -917,17 +917,6 @@ class CoreModule(AbstractModule):
                 Logger.warn("ObsidianWorldFormat - Unknown World Generator.")
                 generator = None  # Continue with no generator
 
-            # Check if world spawn need to be regenerated
-            if (any(("spawnX" not in worldMetadata,
-                     "spawnY" not in worldMetadata,
-                     "spawnZ" not in worldMetadata,
-                     "spawnYaw" not in worldMetadata,
-                     "spawnPitch" not in worldMetadata))):
-                Logger.warn("ObsidianWorldFormat - World Spawn Data Missing! Generating New World Spawn Location...")
-                resetWorldSpawn = True
-            else:
-                resetWorldSpawn = False
-
             # Check if version is valid
             if version != self.VERSION:
                 Logger.warn(f"ObsidianWorldFormat - World Version Mismatch! Expected: {self.VERSION} Got: {version}", module="obsidian-map")
@@ -975,7 +964,6 @@ class CoreModule(AbstractModule):
                 spawnZ=spawnZ,
                 spawnYaw=spawnYaw,
                 spawnPitch=spawnPitch,
-                resetWorldSpawn=resetWorldSpawn,
                 generator=generator,
                 persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO,  # Pass In File Reader/Writer
@@ -2008,7 +1996,6 @@ class CoreModule(AbstractModule):
             output.append(CommandHelper.centerMessage(f"&ePlayer Information: {player.name}", colour="&2"))
 
             # Add Player Information
-            output.append(f"&d[Username]&f {player.username}")
             output.append(f"&d[Joined World]&f {player.worldPlayerManager.world.name if player.worldPlayerManager else 'Unknown'}")
             output.append(f"&d[Coordinates]&f &7x:&f{player.posX//32} &7y:&f{player.posY//32} &7z:&f{player.posZ//32}")
             output.append(f"&d[Client Software]&f {player.clientSoftware}")
