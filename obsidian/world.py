@@ -36,6 +36,10 @@ from obsidian.errors import (
 )
 
 
+class WorldMetadata:
+    pass
+
+
 class WorldManager:
     def __init__(self, server: Server, ignorelist: list[str] = []):
         self.server: Server = server
@@ -390,13 +394,13 @@ class World:
         fileIO: Optional[io.BufferedRandom] = None,
         canEdit: bool = True,
         maxPlayers: int = 250,
-        logoutLocations: Optional[dict[str, tuple[int, int, int, int, int]]] = None,
         worldUUID: Optional[uuid.UUID] = None,
         worldCreationService: Optional[str] = None,
         worldCreationPlayer: Optional[str] = None,
         timeCreated: Optional[datetime.datetime] = None,
         lastModified: Optional[datetime.datetime] = None,
-        lastAccessed: Optional[datetime.datetime] = None
+        lastAccessed: Optional[datetime.datetime] = None,
+        additionalMetadata: Optional[dict[str, WorldMetadata]] = None
     ):
         # Y is the height
         self.worldManager: WorldManager = worldManager
@@ -420,15 +424,7 @@ class World:
             spawnY=spawnY,
             spawnZ=spawnZ,
             spawnYaw=spawnYaw,
-            spawnPitch=spawnPitch,
-            logoutLocations=logoutLocations)
-
-        # Set spawn locations
-        if logoutLocations is None:
-            Logger.verbose("Logout Location was not provided. Generating Empty List.", "world-load")
-            self.logoutLocations = dict()
-        else:
-            self.logoutLocations = logoutLocations
+            spawnPitch=spawnPitch)
 
         # For the extra info that Obsidian does not use, generate with default ones
         self.worldUUID: uuid.UUID = worldUUID or uuid.uuid4()
@@ -437,6 +433,12 @@ class World:
         self.timeCreated: datetime.datetime = timeCreated or datetime.datetime.now()
         self.lastModified: datetime.datetime = lastModified or datetime.datetime.now()
         self.lastAccessed: datetime.datetime = lastAccessed or datetime.datetime.now()
+
+        # Finally process any additional world metdata
+        if additionalMetadata is None:
+            self.additionalMetadata: dict[str, WorldMetadata] = dict()
+        else:
+            self.additionalMetadata: dict[str, WorldMetadata] = additionalMetadata
 
         # Check if file IO was given if persistent
         if self.persistent:
@@ -459,8 +461,7 @@ class World:
         spawnY: Optional[int] = None,
         spawnZ: Optional[int] = None,
         spawnYaw: Optional[int] = None,
-        spawnPitch: Optional[int] = None,
-        logoutLocations: Optional[dict[str, tuple[int, int, int, int, int]]] = None
+        spawnPitch: Optional[int] = None
     ) -> None:
         # Generate spawn coords using an iterative system
         # Set spawnX

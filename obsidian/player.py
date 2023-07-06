@@ -223,18 +223,20 @@ class WorldPlayerManager:
             self.world.spawnPitch
         )
 
+        posX, posY, posZ, yaw, pitch = defaultSpawn
+
         # Get Player List Logout Location
-        Logger.debug("Attempting to spawn player to last logout location.")
-        if self.world.logoutLocations is not None:
-            lastLogoutLocation = self.world.logoutLocations.get(player.name, None)
-            if lastLogoutLocation is not None:
-                Logger.debug(f"Last Logout Location is: {lastLogoutLocation}")
-                posX, posY, posZ, yaw, pitch = lastLogoutLocation
-            else:
-                Logger.debug("Last Logout Location is None! Using default spawn position instead!")
-                posX, posY, posZ, yaw, pitch = defaultSpawn
-        else:
-            raise ServerError("lastLogoutLocation Is None! This should not happen!")
+        # Logger.debug("Attempting to spawn player to last logout location.")
+        # if self.world.logoutLocations is not None:
+        #     lastLogoutLocation = self.world.logoutLocations.get(player.name, None)
+        #     if lastLogoutLocation is not None:
+        #         Logger.debug(f"Last Logout Location is: {lastLogoutLocation}")
+        #         posX, posY, posZ, yaw, pitch = lastLogoutLocation
+        #     else:
+        #         Logger.debug("Last Logout Location is None! Using default spawn position instead!")
+        #         posX, posY, posZ, yaw, pitch = defaultSpawn
+        # else:
+        #     raise ServerError("lastLogoutLocation Is None! This should not happen!")
 
         # Check if player yaw and pitch is valid
         if not (0 <= yaw <= 255 and 0 <= pitch <= 255):
@@ -320,8 +322,8 @@ class WorldPlayerManager:
     async def removePlayer(self, player: Player) -> bool:
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
         # Saving Player Location for Last Login
-        if self.world.logoutLocations is not None:
-            self.world.logoutLocations[player.name] = (player.posX, player.posY, player.posZ, player.posYaw, player.posPitch)
+        # if self.world.logoutLocations is not None:
+        #     self.world.logoutLocations[player.name] = (player.posX, player.posY, player.posZ, player.posYaw, player.posPitch)
 
         # Delete User From Player List + Deallocate ID
         if player.playerId is not None:

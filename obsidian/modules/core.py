@@ -927,22 +927,6 @@ class CoreModule(AbstractModule):
             if name != Path(fileIO.name).stem:
                 Logger.warn(f"ObsidianWorldFormat - World Name Mismatch! Expected: {Path(fileIO.name).stem} Got: {name}", module="obsidian-map")
 
-            # Load Logout Locations
-            Logger.debug("Loading Logout Locations", module="obsidian-map")
-            if "logouts" in zipFile.namelist():
-                logoutLocations = {}
-                for player, coords in json.loads(zipFile.read("logouts").decode("utf-8")).items():
-                    logX = coords["X"]
-                    logY = coords["Y"]
-                    logZ = coords["Z"]
-                    logYaw = coords["Yaw"]
-                    logPitch = coords["Pitch"]
-                    logoutLocations[player] = (logX, logY, logZ, logYaw, logPitch)
-                    Logger.debug(f"Loaded Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="obsidian-map")
-            else:
-                logoutLocations = {}
-                Logger.warn("ObsidianWorldFormat - Missing Logout Info.", module="obsidian-map")
-
             # Load Map Data
             Logger.debug("Loading Map Data", module="obsidian-map")
             rawData = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
@@ -970,7 +954,6 @@ class CoreModule(AbstractModule):
                 persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO,  # Pass In File Reader/Writer
                 canEdit=canEdit,
-                logoutLocations=logoutLocations,
                 worldUUID=worldUUID,
                 worldCreationService=worldCreationService,
                 worldCreationPlayer=worldCreationPlayer,
@@ -1018,21 +1001,6 @@ class CoreModule(AbstractModule):
             worldMetadata["lastModified"] = int(time.mktime(world.lastModified.timetuple()))
             worldMetadata["lastAccessed"] = int(time.mktime(world.lastAccessed.timetuple()))
 
-            # Set up logout location  metadata
-            if world.logoutLocations is not None:
-                logoutLocations = {}
-                for player, coord in world.logoutLocations.items():
-                    logX, logY, logZ, logYaw, logPitch = coord
-                    logoutLocations[player] = {}
-                    logoutLocations[player]["X"] = logX
-                    logoutLocations[player]["Y"] = logY
-                    logoutLocations[player]["Z"] = logZ
-                    logoutLocations[player]["Yaw"] = logYaw
-                    logoutLocations[player]["Pitch"] = logPitch
-            else:
-                logoutLocations = {}
-                Logger.error("Logout locations is None! This should not happen, but continuing anyway...", module="obsidian-map", printTb=False)
-
             # Set Generator Info
             if world.generator:
                 worldMetadata["generator"] = world.generator.NAME
@@ -1049,9 +1017,6 @@ class CoreModule(AbstractModule):
                 # Write the metadata file
                 Logger.debug("Writing metadata file", module="obsidian-map")
                 zipFile.writestr("metadata", json.dumps(worldMetadata, indent=4))
-                # Write the logout location file
-                Logger.debug("Writing logout locations file", module="obsidian-map")
-                zipFile.writestr("logouts", json.dumps(logoutLocations, indent=4))
                 # Write the map file
                 Logger.debug("Writing map file", module="obsidian-map")
                 zipFile.writestr("map", world.gzipMap())
@@ -2724,13 +2689,13 @@ class CoreModule(AbstractModule):
                 await ctx.sendMessage("&aWorld Editing Enabled!")
 
     @Command(
-        "ClearPlayerLogouts",
-        description="Clears all last logout locations in world",
+        "ClearWorldMetadata",
+        description="Clears all additional metdata in world",
         version="v1.0.0"
     )
-    class ClearPlayerLogoutsCommand(AbstractCommand["CoreModule"]):
+    class ClearWorldMetadataCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["clearplayerlogouts", "clearlastlogouts"], OP=True)
+            super().__init__(*args, ACTIVATORS=["clearmetadata", "metadataclear"], OP=True)
 
         async def execute(self, ctx: Player, world: Optional[World] = None):
             # If no world is passed, use players current world
@@ -2740,11 +2705,18 @@ class CoreModule(AbstractModule):
                 else:
                     raise CommandError("You are not in a world!")
 
-            # Empty the dictionary for last login locations
-            world.logoutLocations = {}
+            # Confirm with user before clearing
+            await ctx.sendMessage("&cAre you sure you want to clear all additional world metadata? (y/n)")
+            resp = await ctx.getNextMessage()
+            if resp.lower() != "y":
+                await ctx.sendMessage("&cClearing metadata cancelled!")
+                return
+
+            # Empty the dictionary for metdata
+            world.additionalMetadata = {}
 
             # Send Response Back
-            await ctx.sendMessage("&aLast Logins Cleared!")
+            await ctx.sendMessage("&aMetdata Cleared!")
 
     @Command(
         "ReloadWorlds",
