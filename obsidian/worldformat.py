@@ -24,7 +24,6 @@ def WorldFormat(*args, **kwargs):
 @dataclass
 class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
     # Mandatory Values Defined In Packet Init
-    KEYS: list[str] = field(default_factory=list)        # List of "keys" that dictate this world format
     EXTENSIONS: list[str] = field(default_factory=list)  # List of file extensions
 
     def loadWorld(
