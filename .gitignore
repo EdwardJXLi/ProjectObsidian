@@ -15,10 +15,7 @@ test-modules
 protocol-test
 
 # Modules Folder
-obsidian/modules/*
-!obsidian/modules/__init__.py
-!obsidian/modules/core.py
-!obsidian/modules/PLUGIN.md
+obsidian/modules/_*
 
 # Pycache
 __pycache__
