@@ -433,8 +433,8 @@ class World:
         # For the extra info that Obsidian does not use, generate with default ones
         # Seed
         if seed is None:
-            Logger.warn("World Seed Not Given! Generating Random Seed!", module="world-load")
-            self.seed: int = random.randint(0, 2**31 - 1)
+            Logger.warn("World Seed Not Given! Setting seed to zero!", module="world-load")
+            self.seed: int = 0
         else:
             self.seed: int = seed
         # worldUUID
@@ -445,19 +445,19 @@ class World:
             self.worldUUID: uuid.UUID = worldUUID
         # timeCreated
         if timeCreated is None:
-            Logger.warn("World Time Created Not Given! Generating Current Time!", module="world-load")
+            Logger.warn("World Time Created Not Given! Using Current Time!", module="world-load")
             self.timeCreated: datetime.datetime = datetime.datetime.now()
         else:
             self.timeCreated: datetime.datetime = timeCreated
         # lastModified
         if lastModified is None:
-            Logger.warn("World Last Modified Time Not Given! Generating Current Time!", module="world-load")
+            Logger.warn("World Last Modified Time Not Given! Using Current Time!", module="world-load")
             self.lastModified: datetime.datetime = datetime.datetime.now()
         else:
             self.lastModified: datetime.datetime = lastModified
         # lastAccessed
         if lastAccessed is None:
-            Logger.warn("World Last Accessed Time Not Given! Generating Current Time!", module="world-load")
+            Logger.warn("World Last Accessed Time Not Given! Using Current Time!", module="world-load")
             self.lastAccessed: datetime.datetime = datetime.datetime.now()
         else:
             self.lastAccessed: datetime.datetime = lastAccessed
