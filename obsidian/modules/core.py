@@ -944,7 +944,7 @@ class CoreModule(AbstractModule):
             # Misc Values
             seed = worldMetadata.get("seed", None)
             canEdit = worldMetadata.get("canEdit", True)
-            worldUUID = uuid.UUID(worldMetadata.get("worldUUID")) if "worldMetadata" in worldMetadata else None
+            worldUUID = uuid.UUID(worldMetadata.get("worldUUID")) if "worldUUID" in worldMetadata else None
             worldCreationService = worldMetadata.get("worldCreationService", None)
             worldCreationPlayer = worldMetadata.get("worldCreationPlayer", None)
             mapGeneratorSoftware = worldMetadata.get("mapGeneratorSoftware", None)
@@ -2264,8 +2264,8 @@ class CoreModule(AbstractModule):
             output.append(f"&d[Read Only]&f {not world.canEdit}")
             output.append(f"&d[Max Players]&f {world.maxPlayers}")
             output.append(f"&d[UUID]&f {world.worldUUID}")
-            output.append(f"&d[Created By]&f {world.worldCreationPlayer}")
-            output.append(f"&d[World Generator]&f {world.generator.NAME if world.generator else 'Unknown'} Using {world.worldCreationService}")
+            output.append(f"&d[Created By]&f {world.worldCreationPlayer} (Account: {world.worldCreationService})")
+            output.append(f"&d[Map Generator]&f {world.mapGeneratorName} (Using {world.mapGeneratorSoftware})")
             output.append(f"&d[Time Created]&f {world.timeCreated}")
 
             # Add Footer
