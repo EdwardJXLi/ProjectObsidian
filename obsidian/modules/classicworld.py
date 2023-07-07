@@ -46,6 +46,8 @@ class ClassicWorld(AbstractModule):
         ):
             from obsidian.modules.nbtlib import NBTLib
 
+            Logger.warn("Loading from ClassicWorld is still WIP! Expect bugs!", module="ClassicWorld")
+
             # Open, read, and parse NBT file
             Logger.debug("Reading ClassicWorld NBT File", module="ClassicWorld")
             fileIO.seek(0)
