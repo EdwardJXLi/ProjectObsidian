@@ -63,7 +63,7 @@ class LiquidPlaceModule(AbstractModule):
         "ToggleLiquidPlace",
         description="Toggle Liquid Placement"
     )
-    class ToggleLiquidPlace(AbstractCommand["LiquidPlaceModule"]):
+    class ToggleLiquidPlaceCommand(AbstractCommand["LiquidPlaceModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,

@@ -1,18 +1,18 @@
 # Project Obsidian
 
-A fully featured Minecraft Classic Server fully reimplemented in Python!
+A fully featured & modular Minecraft Classic / Classicube Server fully reimplemented in Python!
 
 ![Minecraft Version 0.30_01c](https://img.shields.io/badge/Minecraft%20Version-0.30__01c-green)
 ![Protocol Version 7](https://img.shields.io/badge/Protocol%20Version-7-blue)
 ![Classic Server Version](https://img.shields.io/badge/Classic%20Server%20Version-1.10.1-purple)
 
 # Features
-- Full [Clean-Room Reimplementation](https://en.wikipedia.org/wiki/Clean_room_design) of the Minecraft Classic Protocol
+- Full Implementation of the Minecraft Classic Protocol
 - Asynchronous & Multithreaded
+- Supports [CPE (Classic Protocol Extension)](https://wiki.vg/Classic_Protocol_Extension)
 - Highly Customizable and Modular
-- Supports up to 200+ concurrent clients
 - Multi-World Support
-- Supports Multiple World Formats (Raw, ClassicWorld)
+- Supports Multiple World Formats
 - Fully featured plugin support
 
 # Instructions
@@ -38,25 +38,14 @@ python3.10 main.py
 Once you have the server up, you can run `main.py -h` to see the available flags you can set
 
 # Plugins
-Plugins page coming soon...
+Project Obsidian comes with numerous plugins to get you started. Check them out here: [Plugins](obsidian/modules/PLUGIN.md)
 
 # Plugin Development
-For information regarding plugin development, refer to the Plugin Development Guide.
-
-# Upcoming Features
-- CPE (Classic Protocol Extension) Support
-- ClassicWorld Format (.cw) Support
-- Server Map Format (.dat) Support
-- Command Line Console
-- Better Chat Colour Support
-- Multi-lingual Support
-
-# Updates
-Coming Soon...
+For information regarding plugin development, refer to the Plugin Development Guide (Coming Soon).
 
 # Getting Help
 If you have any issues, feel free to join our discord server!
-[https://discord.gg/9QF2bPc](https://discord.gg/9QF2bPc)
+[https://discord.hydranet.dev/](https://discord.hydranet.dev/)
 
 # Disclaimers
 **Project Obsidian is not affiliated with (or supported by) Mojang AB, Minecraft, or Microsoft in any way.**
