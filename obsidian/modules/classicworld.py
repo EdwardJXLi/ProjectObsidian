@@ -77,7 +77,7 @@ class ClassicWorldModule(AbstractModule):
             spawnPitch = nbtFile["Spawn"]["P"].value
             print(spawnX, spawnY, spawnZ, spawnYaw, spawnPitch)
             # Misc Values
-            seed = random.randint(0, 2**64)  # TODO
+            seed = random.randint(0, 2**31 - 1)  # TODO
             canEdit = True  # TODO
             worldUUID = uuid.UUID(bytes=bytes(nbtFile["UUID"].value))  # TODO
             worldCreationService = "Unknown"  # TODO

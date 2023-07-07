@@ -107,7 +107,7 @@ class WorldManager:
         # Generate Seed if no seed was passed
         Logger.debug("Generating Seed If No Seed Was Passed", module="world-create")
         if seed is None:
-            seed = random.randint(0, 2**64)
+            seed = random.randint(0, 2**31 - 1)
 
         # Generate the world map
         worldMap = self.generateMap(
@@ -434,7 +434,7 @@ class World:
         # Seed
         if seed is None:
             Logger.warn("World Seed Not Given! Generating Random Seed!", module="world-load")
-            self.seed: int = random.randint(0, 2**32)
+            self.seed: int = random.randint(0, 2**31 - 1)
         else:
             self.seed: int = seed
         # worldUUID
