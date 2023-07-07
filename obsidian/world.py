@@ -9,6 +9,7 @@ from threading import Lock
 import io
 import gzip
 import uuid
+import shutil
 import struct
 import random
 import datetime
@@ -605,8 +606,7 @@ class World:
                         Logger.warn("This usually means there was an unclean previous save.", module="world-save")
 
                     # Create and Save Backup File
-                    with open(backupPath, "wb+") as backupFile:
-                        self.worldManager.worldFormat.saveWorld(self, backupFile, self.worldManager)
+                    shutil.copy(savePath, backupPath)
 
                 # Save the world to file
                 self.worldManager.worldFormat.saveWorld(self, self.fileIO, self.worldManager)
@@ -614,7 +614,6 @@ class World:
                 # Check is save was successful
                 if self.worldManager.server.config.verifyMapAfterSave:
                     self.verifyWorldSave()
-
                     Logger.info("World Save Verification Successful!", module="world-save")
 
                 # If a backup file was deleted, remove it.
