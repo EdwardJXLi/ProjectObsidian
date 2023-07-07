@@ -15,7 +15,7 @@ from obsidian.log import Logger
     version="1.3.0",
     dependencies=[Dependency("core", "1.0.0")]
 )
-class LiquidPlace(AbstractModule):
+class LiquidPlaceModule(AbstractModule):
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -63,7 +63,7 @@ class LiquidPlace(AbstractModule):
         "ToggleLiquidPlace",
         description="Toggle Liquid Placement"
     )
-    class ToggleLiquidPlace(AbstractCommand["LiquidPlace"]):
+    class ToggleLiquidPlace(AbstractCommand["LiquidPlaceModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,

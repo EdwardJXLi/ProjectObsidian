@@ -22,7 +22,7 @@ ClassicWorld World Format Support as documented at https://wiki.vg/ClassicWorld_
     version="1.0.0",
     dependencies=[Dependency("core"), Dependency("nbtlib")]
 )
-class ClassicWorld(AbstractModule):
+class ClassicWorldModule(AbstractModule):
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -31,7 +31,7 @@ class ClassicWorld(AbstractModule):
         description="ClassicWorld World Format",
         version="v1.0.0"
     )
-    class ClassicWorldFormat(AbstractWorldFormat["ClassicWorld"]):
+    class ClassicWorldFormat(AbstractWorldFormat["ClassicWorldModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,

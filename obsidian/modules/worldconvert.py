@@ -17,7 +17,7 @@ from pathlib import Path
     version="1.0.0",
     dependencies=[Dependency("core")]
 )
-class WorldConverter(AbstractModule):
+class WorldConverterModule(AbstractModule):
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -26,7 +26,7 @@ class WorldConverter(AbstractModule):
         description="Converts world from one format to another format.",
         version="v1.0.0"
     )
-    class ConvertWorldCommand(AbstractCommand["WorldConverter"]):
+    class ConvertWorldCommand(AbstractCommand["WorldConverterModule"]):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["convertworld"], OP=True)
 
