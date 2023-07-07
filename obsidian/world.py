@@ -123,8 +123,8 @@ class WorldManager:
             self,  # Pass In World Manager
             worldName,  # Pass In World Name
             sizeX, sizeY, sizeZ,  # Passing World X, Y, Z
-            seed,  # Passing In World Seed
             worldMap,  # Passing In World Map
+            seed=seed,  # Passing In World Seed
             # Spawn Information
             spawnX=spawnX,
             spawnY=spawnY,
@@ -379,8 +379,8 @@ class World:
         sizeX: int,
         sizeY: int,
         sizeZ: int,
-        seed: int,
         mapArray: bytearray,
+        seed: Optional[int] = None,
         spawnX: Optional[int] = None,
         spawnY: Optional[int] = None,
         spawnZ: Optional[int] = None,
@@ -394,6 +394,8 @@ class World:
         worldUUID: Optional[uuid.UUID] = None,
         worldCreationService: Optional[str] = None,
         worldCreationPlayer: Optional[str] = None,
+        mapGeneratorSoftware: Optional[str] = None,
+        mapGeneratorName: Optional[str] = None,
         timeCreated: Optional[datetime.datetime] = None,
         lastModified: Optional[datetime.datetime] = None,
         lastAccessed: Optional[datetime.datetime] = None,
@@ -406,7 +408,6 @@ class World:
         self.sizeX: int = sizeX
         self.sizeY: int = sizeY
         self.sizeZ: int = sizeZ
-        self.seed: int = seed
 
         # Set rest of input arguments
         self.mapArray: bytearray = mapArray
@@ -423,13 +424,43 @@ class World:
             spawnYaw=spawnYaw,
             spawnPitch=spawnPitch)
 
+        # Set the rest of the random world metadata
+        self.worldCreationService: Optional[str] = worldCreationService
+        self.worldCreationPlayer: Optional[str] = worldCreationPlayer
+        self.mapGeneratorSoftware: Optional[str] = mapGeneratorSoftware
+        self.mapGeneratorName: Optional[str] = mapGeneratorName
+
         # For the extra info that Obsidian does not use, generate with default ones
-        self.worldUUID: uuid.UUID = worldUUID or uuid.uuid4()
-        self.worldCreationService: str = worldCreationService or "Obsidian"
-        self.worldCreationPlayer: str = worldCreationPlayer or "ObsidianPlayer"
-        self.timeCreated: datetime.datetime = timeCreated or datetime.datetime.now()
-        self.lastModified: datetime.datetime = lastModified or datetime.datetime.now()
-        self.lastAccessed: datetime.datetime = lastAccessed or datetime.datetime.now()
+        # Seed
+        if seed is None:
+            Logger.warn("World Seed Not Given! Generating Random Seed!", module="world-load")
+            self.seed: int = random.randint(0, 2**32)
+        else:
+            self.seed: int = seed
+        # worldUUID
+        if worldUUID is None:
+            Logger.warn("World UUID Not Given! Generating Random UUID!", module="world-load")
+            self.worldUUID: uuid.UUID = uuid.uuid4()
+        else:
+            self.worldUUID: uuid.UUID = worldUUID
+        # timeCreated
+        if timeCreated is None:
+            Logger.warn("World Time Created Not Given! Generating Current Time!", module="world-load")
+            self.timeCreated: datetime.datetime = datetime.datetime.now()
+        else:
+            self.timeCreated: datetime.datetime = timeCreated
+        # lastModified
+        if lastModified is None:
+            Logger.warn("World Last Modified Time Not Given! Generating Current Time!", module="world-load")
+            self.lastModified: datetime.datetime = datetime.datetime.now()
+        else:
+            self.lastModified: datetime.datetime = lastModified
+        # lastAccessed
+        if lastAccessed is None:
+            Logger.warn("World Last Accessed Time Not Given! Generating Current Time!", module="world-load")
+            self.lastAccessed: datetime.datetime = datetime.datetime.now()
+        else:
+            self.lastAccessed: datetime.datetime = lastAccessed
 
         # Finally process any additional world metadata
         if additionalMetadata is None:

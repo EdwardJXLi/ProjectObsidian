@@ -107,8 +107,8 @@ class ClassicWorldModule(AbstractModule):
                 worldManager,  # Pass In World Manager
                 name,
                 sizeX, sizeY, sizeZ,
-                seed,
                 rawData,
+                seed=seed,
                 spawnX=spawnX,
                 spawnY=spawnY,
                 spawnZ=spawnZ,

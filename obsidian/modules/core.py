@@ -821,8 +821,8 @@ class CoreModule(AbstractModule):
                 worldManager,  # Pass In World Manager
                 Path(fileIO.name).stem,  # Pass In World Name (Save File Name Without EXT)
                 256, 256, 256,  # Passing World X, Y, Z
-                0,  # World Seed (but ofc it doesn't exist)
                 bytearray(rawData),  # Generating Map Data
+                0,  # World Seed (but ofc it doesn't exist)
                 persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO  # Pass In File Reader/Writer
             )
@@ -936,28 +936,33 @@ class CoreModule(AbstractModule):
             sizeY = worldMetadata.get("Y")
             sizeZ = worldMetadata.get("Z")
             # Optional Values
-            spawnX = worldMetadata.get("spawnX", 0)
-            spawnY = worldMetadata.get("spawnY", 0)
-            spawnZ = worldMetadata.get("spawnZ", 0)
-            spawnYaw = worldMetadata.get("spawnYaw", 0)
-            spawnPitch = worldMetadata.get("spawnPitch", 0)
+            spawnX = worldMetadata.get("spawnX", None)
+            spawnY = worldMetadata.get("spawnY", None)
+            spawnZ = worldMetadata.get("spawnZ", None)
+            spawnYaw = worldMetadata.get("spawnYaw", None)
+            spawnPitch = worldMetadata.get("spawnPitch", None)
             # Misc Values
-            seed = worldMetadata.get("seed", random.randint(0, 2**64))
+            seed = worldMetadata.get("seed", None)
             canEdit = worldMetadata.get("canEdit", True)
-            worldUUID = uuid.UUID(worldMetadata.get("worldUUID", str(uuid.uuid4())))
-            worldCreationService = worldMetadata.get("worldCreationService", "Obsidian")
-            worldCreationGenerator = worldMetadata.get("worldCreationGenerator", None)
-            worldCreationPlayer = worldMetadata.get("worldCreationPlayer", "ObsidianPlayer")
-            timeCreated = datetime.datetime.fromtimestamp(worldMetadata.get("timeCreated", int(time.time())))
-            lastModified = datetime.datetime.fromtimestamp(worldMetadata.get("lastModified", int(time.time())))
-            lastAccessed = datetime.datetime.fromtimestamp(worldMetadata.get("lastAccessed", int(time.time())))
+            worldUUID = uuid.UUID(worldMetadata.get("worldUUID")) if "worldMetadata" in worldMetadata else None
+            worldCreationService = worldMetadata.get("worldCreationService", None)
+            worldCreationPlayer = worldMetadata.get("worldCreationPlayer", None)
+            mapGeneratorSoftware = worldMetadata.get("mapGeneratorSoftware", None)
+            mapGeneratorName = worldMetadata.get("mapGeneratorName", None)
+            timeCreated = datetime.datetime.fromtimestamp(worldMetadata.get("timeCreated")) if "timeCreated" in worldMetadata else None
+            lastModified = datetime.datetime.fromtimestamp(worldMetadata.get("lastModified")) if "lastModified" in worldMetadata else None
+            lastAccessed = datetime.datetime.fromtimestamp(worldMetadata.get("lastAccessed")) if "lastAccessed" in worldMetadata else None
 
             # Try parsing world generator
-            if worldCreationGenerator in MapGenerators:
-                generator = MapGenerators[worldCreationGenerator]
+            if mapGeneratorSoftware == "Obsidian":
+                if mapGeneratorName in MapGenerators:
+                    generator = MapGenerators[mapGeneratorName]
+                else:
+                    Logger.warn(f"ObsidianWorldFormat - Unknown World Generator {mapGeneratorName}.", module="obsidian-map")
+                    generator = None  # Continue with no generator
             else:
-                Logger.warn("ObsidianWorldFormat - Unknown World Generator.")
-                generator = None  # Continue with no generator
+                Logger.warn(f"ObsidianWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="obsidian-map")
+                generator = None
 
             # Check if version is valid
             if version != self.VERSION:
@@ -1003,8 +1008,8 @@ class CoreModule(AbstractModule):
                 worldManager,  # Pass In World Manager
                 name,
                 sizeX, sizeY, sizeZ,
-                seed,
                 rawData,
+                seed=seed,
                 spawnX=spawnX,
                 spawnY=spawnY,
                 spawnZ=spawnZ,
@@ -1017,6 +1022,8 @@ class CoreModule(AbstractModule):
                 worldUUID=worldUUID,
                 worldCreationService=worldCreationService,
                 worldCreationPlayer=worldCreationPlayer,
+                mapGeneratorSoftware=mapGeneratorSoftware,
+                mapGeneratorName=mapGeneratorName,
                 timeCreated=timeCreated,
                 lastModified=lastModified,
                 lastAccessed=lastAccessed,
@@ -1057,8 +1064,9 @@ class CoreModule(AbstractModule):
             worldMetadata["canEdit"] = world.canEdit
             worldMetadata["worldUUID"] = str(world.worldUUID)
             worldMetadata["worldCreationService"] = world.worldCreationService
-            worldMetadata["worldCreationGenerator"] = world.generator.NAME if world.generator else None
             worldMetadata["worldCreationPlayer"] = world.worldCreationPlayer
+            worldMetadata["mapGeneratorSoftware"] = world.mapGeneratorSoftware
+            worldMetadata["mapGeneratorName"] = world.mapGeneratorName
             worldMetadata["timeCreated"] = int(time.mktime(world.timeCreated.timetuple()))
             worldMetadata["lastModified"] = int(time.mktime(world.lastModified.timetuple()))
             worldMetadata["lastAccessed"] = int(time.mktime(world.lastAccessed.timetuple()))
