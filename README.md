@@ -41,7 +41,7 @@ Once you have the server up, you can run `main.py -h` to see the available flags
 Project Obsidian comes with numerous plugins to get you started. Check them out here: [Plugins](obsidian/modules/PLUGIN.md)
 
 # Plugin Development
-For information regarding plugin development, refer to the Plugin Development Guide (Coming Soon).
+For information regarding plugin development, refer to the [Plugin Development Guide](obsidian/modules/DEVELOPMENT.md) (Coming Soon).
 
 # Getting Help
 If you have any issues, feel free to join our discord server!
