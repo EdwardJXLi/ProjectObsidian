@@ -912,16 +912,21 @@ class CoreModule(AbstractModule):
             persistent: bool = True
         ):
             # Open Zip File
-            Logger.debug("Loading Zip File", module="obsidian-map")
+            Logger.debug("Loading OBW File", module="obsidian-map")
             zipFile = zipfile.ZipFile(fileIO)
+
+            # Keep track of which files have not been touched
+            # We will add these back to the zip file later when saving, as to maintain backward compatibility
+            untouchedFiles = set(zipFile.namelist())
 
             # Check validity of zip file
             if "metadata" not in zipFile.namelist() or "map" not in zipFile.namelist():
-                raise WorldFormatError("ObsidianWorldFormat - Invalid Zip File! Missing Critical Data!")
+                raise WorldFormatError("ObsidianWorldFormat - Invalid OBW File! Missing Critical Data!")
 
             # Load Metadata
             Logger.debug("Loading Metadata", module="obsidian-map")
             worldMetadata = json.loads(zipFile.read("metadata").decode("utf-8"))
+            untouchedFiles.remove("metadata")
             Logger.debug(f"Loaded Metadata: {worldMetadata}", module="obsidian-map")
 
             # Check if metadata is valid
@@ -991,20 +996,19 @@ class CoreModule(AbstractModule):
                     metadataDict = json.loads(zipFile.read(filename).decode("utf-8"))
                     Logger.debug(f"Loading Additional Metadata: {metadataName} - {metadataDict}", module="obsidian-map")
                     additionalMetadata[metadataName] = metadataReader(metadataDict)
+                    untouchedFiles.remove(filename)
 
             # Load Map Data
             Logger.debug("Loading Map Data", module="obsidian-map")
             rawData = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
+            untouchedFiles.remove("map")
 
             # Sanity Check File Size
             if (sizeX * sizeY * sizeZ) != len(rawData):
                 raise WorldFormatError(f"ObsidianWorldFormat - Invalid Map Data! Expected: {sizeX * sizeY * sizeZ} Got: {len(rawData)}")
 
-            # Close Zip File
-            zipFile.close()
-
             # Create World Data
-            return World(
+            world = World(
                 worldManager,  # Pass In World Manager
                 name,
                 sizeX, sizeY, sizeZ,
@@ -1029,6 +1033,22 @@ class CoreModule(AbstractModule):
                 lastAccessed=lastAccessed,
                 additionalMetadata=additionalMetadata
             )
+
+            # Check if there are any files left in the zip file
+            if len(untouchedFiles) > 0:
+                Logger.warn(f"ObsidianWorldFormat - Unknown Files In OBW File: {untouchedFiles}", module="obsidian-map")
+                unrecognizedFiles: dict[str, io.BytesIO] = dict()
+                # Make a copy of each unrecognized file and put them in unrecognizedFiles
+                for filename in untouchedFiles:
+                    unrecognizedFiles[filename] = io.BytesIO(zipFile.read(filename))
+                # Add unrecognizedFiles to world
+                setattr(world, "unrecognizedFiles", unrecognizedFiles)
+
+            # Close Zip File
+            zipFile.close()
+
+            # Return World
+            return world
 
         def saveWorld(
             self,
@@ -1108,6 +1128,12 @@ class CoreModule(AbstractModule):
                 # Write the map file
                 Logger.debug("Writing map file", module="obsidian-map")
                 zipFile.writestr("map", world.gzipMap())
+                # Check if there were any unrecognized files
+                if hasattr(world, "unrecognizedFiles"):
+                    unrecognizedFiles: dict[str, io.BytesIO] = getattr(world, "unrecognizedFiles")
+                    Logger.debug(f"Writing {len(unrecognizedFiles)} unrecognized files: {unrecognizedFiles}", module="obsidian-map")
+                    for filename, file in unrecognizedFiles.items():
+                        zipFile.writestr(filename, file.read())
 
     #
     # MAP GENERATORS
