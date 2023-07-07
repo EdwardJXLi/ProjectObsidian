@@ -178,6 +178,8 @@ class ServerConfig(AbstractConfig):
     checkValidSpawn: bool = True  # Check if the world spawn is valid. If not, generate new one!
     gzipCompressionLevel: int = 9  # Int Containing Level Of Gzip Compression
     defaultMOTD: list[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
+    # Player Configuration
+    savePlayerLogoutLocation: bool = True  # Flag to determine whether to save player logout location
     # Logger Configuration
     logBuffer: int = 1  # Number of Log Messages to be buffered before flushed to file
     # Default World Generation Config

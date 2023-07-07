@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from obsidian.server import Server
 
@@ -34,10 +34,6 @@ from obsidian.errors import (
     WorldSaveError,
     ConverterError
 )
-
-
-class WorldMetadata:
-    pass
 
 
 class WorldManager:
@@ -434,7 +430,7 @@ class World:
         self.lastModified: datetime.datetime = lastModified or datetime.datetime.now()
         self.lastAccessed: datetime.datetime = lastAccessed or datetime.datetime.now()
 
-        # Finally process any additional world metdata
+        # Finally process any additional world metadata
         if additionalMetadata is None:
             self.additionalMetadata: dict[str, WorldMetadata] = dict()
         else:
@@ -449,6 +445,19 @@ class World:
                 Logger.askConfirmation()
             else:
                 Logger.debug(f"Persistent World Has FileIO {self.fileIO}", "world-load")
+
+        # Setup last logout location
+        self.logoutLocations: Optional[LogoutLocationMetadata] = None  # Dict of {playerName: (x, y, z, yaw, pitch)}
+        # Check if server has last logout metadata enabled
+        if self.worldManager.server.config.savePlayerLogoutLocation:
+            # Check if last logout location metadata exists. If not, create it
+            if "logoutLocations" not in self.additionalMetadata:
+                Logger.debug("Creating Last Logout Location Metadata", module="world-init")
+                self.additionalMetadata["logoutLocations"] = LogoutLocationMetadata()
+
+            # Create a quick reference to the last logout location metadata
+            self.logoutLocations = cast(LogoutLocationMetadata, self.additionalMetadata["logoutLocations"])
+            Logger.debug(f"Loaded Last Logout Positions. {self.logoutLocations.getAllLogoutLocations()}", module="world-init")
 
         # Initialize WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
@@ -678,3 +687,31 @@ class World:
 
         # Raise error if world not found
         raise ConverterError(f"World {worldName} Not Found!")
+
+
+# World Metadata Class - Used for storing additional metadata defined by extensions
+class WorldMetadata:
+    pass
+
+
+class LogoutLocationMetadata(WorldMetadata):
+    def __init__(self):
+        self.logoutLocations: dict[str, tuple[int, int, int, int, int]] = dict()
+
+    def setLogoutLocation(self, name: str, x: int, y: int, z: int, yaw: int, pitch: int):
+        self.logoutLocations[name] = (x, y, z, yaw, pitch)
+
+    def getLogoutLocation(self, name: str):
+        if name in self.logoutLocations:
+            return self.logoutLocations[name]
+        else:
+            return None
+
+    def getAllLogoutLocations(self):
+        return self.logoutLocations
+
+    def __getitem__(self, name: str):
+        return self.getLogoutLocation(name)
+
+    def __contains__(self, name: str):
+        return name in self.logoutLocations

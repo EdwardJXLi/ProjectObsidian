@@ -4,7 +4,7 @@ from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat, WorldFormats, WorldFormatManager
-from obsidian.world import World, WorldManager
+from obsidian.world import World, WorldManager, WorldMetadata, LogoutLocationMetadata
 from obsidian.mapgen import AbstractMapGenerator, MapGeneratorStatus, MapGenerator, MapGenerators
 from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
@@ -855,8 +855,48 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                EXTENSIONS=["obw", "zip"]
+                EXTENSIONS=["obw"],
+                METADATA_SUPPORT=True
             )
+
+            # Create readers and writers for LogoutLocation
+            def readLogoutLocation(data: dict):
+                logoutLocations = LogoutLocationMetadata()
+
+                # Loop through all players and load logout location
+                Logger.debug("Loading Logout Locations", module="logout-location")
+                for player, coords in data.items():
+                    logX = coords["X"]
+                    logY = coords["Y"]
+                    logZ = coords["Z"]
+                    logYaw = coords["Yaw"]
+                    logPitch = coords["Pitch"]
+                    logoutLocations.setLogoutLocation(player, logX, logY, logZ, logYaw, logPitch)
+                    Logger.debug(f"Loaded Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="logout-location")
+
+                return logoutLocations
+
+            def writeLogoutLocation(logoutLocations: LogoutLocationMetadata):
+                data: dict = {}
+
+                # Loop through all logout locations and save them
+                Logger.debug("Saving Logout Locations", module="logout-location")
+                for player, coords in logoutLocations.getAllLogoutLocations().items():
+                    logX, logY, logZ, logYaw, logPitch = coords
+                    data[player] = {
+                        "X": logX,
+                        "Y": logY,
+                        "Z": logZ,
+                        "Yaw": logYaw,
+                        "Pitch": logPitch
+                    }
+                    Logger.debug(f"Saved Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="logout-location")
+
+                return data
+
+            # Register readers and writers
+            self.registerMetadataReader("logoutLocations", readLogoutLocation)
+            self.registerMetadataWriter("logoutLocations", writeLogoutLocation)
 
         criticalFields = {
             "version",
@@ -927,6 +967,26 @@ class CoreModule(AbstractModule):
             if name != Path(fileIO.name).stem:
                 Logger.warn(f"ObsidianWorldFormat - World Name Mismatch! Expected: {Path(fileIO.name).stem} Got: {name}", module="obsidian-map")
 
+            # Load Additional Metadata
+            Logger.debug("Loading Additional Metadata", module="obsidian-map")
+            additionalMetadata: dict[str, WorldMetadata] = {}
+            for filename in zipFile.namelist():
+                # Check if file is additional metadata
+                if filename.startswith("extmetadata/"):
+                    # Get metadata name
+                    metadataName = filename.split("/", 1)[1]
+
+                    # Get the metadata reader
+                    metadataReader = self.getMetadataReader(metadataName)
+                    if metadataReader is None:
+                        Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Reading Metadata: {metadataName}", module="obsidian-map")
+                        continue
+
+                    # Read metadata file
+                    metadataDict = json.loads(zipFile.read(filename).decode("utf-8"))
+                    Logger.debug(f"Loading Additional Metadata: {metadataName} - {metadataDict}", module="obsidian-map")
+                    additionalMetadata[metadataName] = metadataReader(metadataDict)
+
             # Load Map Data
             Logger.debug("Loading Map Data", module="obsidian-map")
             rawData = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
@@ -959,7 +1019,8 @@ class CoreModule(AbstractModule):
                 worldCreationPlayer=worldCreationPlayer,
                 timeCreated=timeCreated,
                 lastModified=lastModified,
-                lastAccessed=lastAccessed
+                lastAccessed=lastAccessed,
+                additionalMetadata=additionalMetadata
             )
 
         def saveWorld(
@@ -969,6 +1030,7 @@ class CoreModule(AbstractModule):
             worldManager: WorldManager
         ):
             # Set up the metadata about the world
+            Logger.debug("Saving Metadata", module="obsidian-map")
             worldMetadata = {}
 
             # This world format closely follows that of
@@ -1008,6 +1070,20 @@ class CoreModule(AbstractModule):
                 worldMetadata["generator"] = None
             worldMetadata["seed"] = world.seed
 
+            # Generate Additional Metadata
+            Logger.debug("Saving Additional Metadata", module="obsidian-map")
+            additionalMetadata: dict[str, dict] = {}
+            for metadataName, metadata in world.additionalMetadata.items():
+                # Get metadata writer
+                metadataWriter = self.getMetadataWriter(metadataName)
+                if metadataWriter is None:
+                    Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Writing Metadata: {metadataName}", module="obsidian-map")
+                    continue
+
+                # Create metadata dict
+                Logger.debug(f"Generating Additional Metadata: {metadataName} - {metadata}", module="obsidian-map")
+                additionalMetadata[metadataName] = metadataWriter(metadata)
+
             # Clearing Current Save File
             fileIO.truncate(0)
             fileIO.seek(0)
@@ -1017,6 +1093,10 @@ class CoreModule(AbstractModule):
                 # Write the metadata file
                 Logger.debug("Writing metadata file", module="obsidian-map")
                 zipFile.writestr("metadata", json.dumps(worldMetadata, indent=4))
+                # Write additional metadata files
+                for metadataName, metadataDict in additionalMetadata.items():
+                    Logger.debug(f"Writing additional metadata file: {metadataName}", module="obsidian-map")
+                    zipFile.writestr("extmetadata/" + metadataName, json.dumps(metadataDict, indent=4))
                 # Write the map file
                 Logger.debug("Writing map file", module="obsidian-map")
                 zipFile.writestr("map", world.gzipMap())
@@ -2690,7 +2770,7 @@ class CoreModule(AbstractModule):
 
     @Command(
         "ClearWorldMetadata",
-        description="Clears all additional metdata in world",
+        description="Clears all additional metadata in world",
         version="v1.0.0"
     )
     class ClearWorldMetadataCommand(AbstractCommand["CoreModule"]):
@@ -2712,11 +2792,11 @@ class CoreModule(AbstractModule):
                 await ctx.sendMessage("&cClearing metadata cancelled!")
                 return
 
-            # Empty the dictionary for metdata
+            # Empty the dictionary for metadata
             world.additionalMetadata = {}
 
             # Send Response Back
-            await ctx.sendMessage("&aMetdata Cleared!")
+            await ctx.sendMessage("&aMetadata Cleared!")
 
     @Command(
         "ReloadWorlds",
