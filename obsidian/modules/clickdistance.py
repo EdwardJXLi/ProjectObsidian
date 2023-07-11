@@ -4,7 +4,7 @@ from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player, WorldPlayerManager
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets
 from obsidian.world import World, WorldMetadata
-from obsidian.worldformat import WorldFormats
+from obsidian.worldformat import WorldFormatManager, WorldFormats
 from obsidian.config import AbstractConfig
 from obsidian.mixins import Inject, InjectionPoint, InjectMethod
 from obsidian.errors import CommandError
@@ -48,8 +48,8 @@ class ClickDistanceModule(AbstractModule):
             return {"distance": distanceMetadata.distance}
 
         # Register readers and writers
-        WorldFormats.ObsidianWorld.registerMetadataReader("clickDistance", readClickDistance)
-        WorldFormats.ObsidianWorld.registerMetadataWriter("clickDistance", writeClickDistance)
+        WorldFormatManager.registerMetadataReader(WorldFormats.ObsidianWorld, "clickDistance", readClickDistance)
+        WorldFormatManager.registerMetadataWriter(WorldFormats.ObsidianWorld, "clickDistance", writeClickDistance)
 
     # Create helper function to set click distance of a player
     @InjectMethod(target=Player)

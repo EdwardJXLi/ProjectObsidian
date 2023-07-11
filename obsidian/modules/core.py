@@ -3,7 +3,7 @@ from obsidian.constants import MAX_MESSAGE_LENGTH, __version__
 from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
-from obsidian.worldformat import AbstractWorldFormat, WorldFormat
+from obsidian.worldformat import AbstractWorldFormat, WorldFormat, WorldFormatManager
 from obsidian.world import World, WorldManager, WorldMetadata, LogoutLocationMetadata
 from obsidian.mapgen import AbstractMapGenerator, MapGeneratorStatus, MapGenerator, MapGenerators
 from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
@@ -895,8 +895,8 @@ class CoreModule(AbstractModule):
                 return data
 
             # Register readers and writers
-            self.registerMetadataReader("logoutLocations", readLogoutLocation)
-            self.registerMetadataWriter("logoutLocations", writeLogoutLocation)
+            WorldFormatManager.registerMetadataReader(self, "logoutLocations", readLogoutLocation)
+            WorldFormatManager.registerMetadataWriter(self, "logoutLocations", writeLogoutLocation)
 
         criticalFields = {
             "version",
@@ -987,7 +987,7 @@ class CoreModule(AbstractModule):
                     metadataName = filename.split("/", 1)[1]
 
                     # Get the metadata reader
-                    metadataReader = self.getMetadataReader(metadataName)
+                    metadataReader = WorldFormatManager.getMetadataReader(self, metadataName)
                     if metadataReader is None:
                         Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Reading Metadata: {metadataName}", module="obsidian-map")
                         continue
@@ -1103,7 +1103,7 @@ class CoreModule(AbstractModule):
             additionalMetadata: dict[str, dict] = {}
             for metadataName, metadata in world.additionalMetadata.items():
                 # Get metadata writer
-                metadataWriter = self.getMetadataWriter(metadataName)
+                metadataWriter = WorldFormatManager.getMetadataWriter(self, metadataName)
                 if metadataWriter is None:
                     Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Writing Metadata: {metadataName}", module="obsidian-map")
                     continue

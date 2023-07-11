@@ -49,44 +49,6 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
     ):
         raise NotImplementedError("World Saving Not Implemented")
 
-    def registerMetadataReader(self, metadataName: str, reader: Callable):
-        Logger.debug(f"Registering metadata reader {metadataName} for world format {self.NAME}", module="worldformat")
-        # Check if world format supports metadata
-        if not self.METADATA_SUPPORT:
-            Logger.warn(f"Trying to add metadata reader {metadataName} to world format {self.NAME} that does not support metadata!", module="worldformat")
-
-        # Check if metadata type already has a reader
-        if metadataName in self.METADATA_READERS:
-            raise InitRegisterError(f"Metadata Type {metadataName} already has a reader for world format {self.NAME}!")
-
-        # Add reader to list
-        self.METADATA_READERS[metadataName] = reader
-
-    def registerMetadataWriter(self, metadataName: str, writer: Callable):
-        Logger.debug(f"Registering metadata writer {metadataName} for world format {self.NAME}", module="worldformat")
-        # Check if world format supports metadata
-        if not self.METADATA_SUPPORT:
-            Logger.warn(f"Trying to add metadata writer {metadataName} to world format {self.NAME} that does not support metadata!", module="worldformat")
-
-        # Check if metadata type already has a writer
-        if metadataName in self.METADATA_WRITERS:
-            raise InitRegisterError(f"Metadata Type {metadataName} already has a writer for world format {self.NAME}!")
-
-        # Add writer to list
-        self.METADATA_WRITERS[metadataName] = writer
-
-    def getMetadataReader(self, metadataName: str):
-        if metadataName not in self.METADATA_READERS:
-            return None
-
-        return self.METADATA_READERS[metadataName]
-
-    def getMetadataWriter(self, metadataName: str):
-        if metadataName not in self.METADATA_WRITERS:
-            return None
-
-        return self.METADATA_WRITERS[metadataName]
-
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractWorldFormat:
         if argument in WorldFormatManager:
@@ -133,6 +95,44 @@ class _WorldFormatManager(AbstractManager):
         self._formatDict[worldFormat.NAME] = worldFormat
 
         return worldFormat
+
+    def registerMetadataReader(self, worldFormat: AbstractWorldFormat, metadataName: str, reader: Callable):
+        Logger.debug(f"Registering metadata reader {metadataName} for world format {worldFormat.NAME}", module="worldformat")
+        # Check if world format supports metadata
+        if not worldFormat.METADATA_SUPPORT:
+            Logger.warn(f"Trying to add metadata reader {metadataName} to world format {worldFormat.NAME} that does not support metadata!", module="worldformat")
+
+        # Check if metadata type already has a reader
+        if metadataName in worldFormat.METADATA_READERS:
+            raise InitRegisterError(f"Metadata Type {metadataName} already has a reader for world format {worldFormat.NAME}!")
+
+        # Add reader to list
+        worldFormat.METADATA_READERS[metadataName] = reader
+
+    def registerMetadataWriter(self, worldFormat: AbstractWorldFormat, metadataName: str, writer: Callable):
+        Logger.debug(f"Registering metadata writer {metadataName} for world format {worldFormat.NAME}", module="worldformat")
+        # Check if world format supports metadata
+        if not worldFormat.METADATA_SUPPORT:
+            Logger.warn(f"Trying to add metadata writer {metadataName} to world format {worldFormat.NAME} that does not support metadata!", module="worldformat")
+
+        # Check if metadata type already has a writer
+        if metadataName in worldFormat.METADATA_WRITERS:
+            raise InitRegisterError(f"Metadata Type {metadataName} already has a writer for world format {worldFormat.NAME}!")
+
+        # Add writer to list
+        worldFormat.METADATA_WRITERS[metadataName] = writer
+
+    def getMetadataReader(self, worldFormat: AbstractWorldFormat, metadataName: str):
+        if metadataName not in worldFormat.METADATA_READERS:
+            return None
+
+        return worldFormat.METADATA_READERS[metadataName]
+
+    def getMetadataWriter(self, worldFormat: AbstractWorldFormat, metadataName: str):
+        if metadataName not in worldFormat.METADATA_WRITERS:
+            return None
+
+        return worldFormat.METADATA_WRITERS[metadataName]
 
     # Generate a Pretty List of World Formats
     def generateTable(self):
