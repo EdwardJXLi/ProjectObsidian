@@ -588,7 +588,7 @@ class _ModuleManager(AbstractManager):
 
     # Function To Get Module Object From Module Name
     def getModule(self, module: str) -> AbstractModule:
-        return self._moduleDict[module]
+        return self._moduleDict[formatName(module)]
 
     # Handles _ModuleManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractModule:

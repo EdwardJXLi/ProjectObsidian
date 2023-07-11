@@ -95,7 +95,7 @@ class ClickDistanceModule(AbstractModule):
         self = cast(World, self)
 
         # Get default click distance from config
-        defaultClickDistance = cast(ClickDistanceModule, Modules.clickdistance).config.defaultClickDistance
+        defaultClickDistance = cast(ClickDistanceModule, Modules.ClickDistance).config.defaultClickDistance
 
         # If "clickDistance" metadata is not present, create it
         if self.additionalMetadata.get("clickDistance") is None:
