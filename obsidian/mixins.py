@@ -244,8 +244,7 @@ def Inject(
 # Inject Method Decorator. Used to dynamically add new methods to classes at runtime
 # Used In @InjectMethod
 def InjectMethod(
-    target: Type[object],
-    abstract: bool = False
+    target: Type[object]
 ):
     def internal(destination: Callable):
         # Save name of target class and destination function

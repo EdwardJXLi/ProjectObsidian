@@ -50,6 +50,7 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
         raise NotImplementedError("World Saving Not Implemented")
 
     def registerMetadataReader(self, metadataName: str, reader: Callable):
+        Logger.debug(f"Registering metadata reader {metadataName} for world format {self.NAME}", module="worldformat")
         # Check if world format supports metadata
         if not self.METADATA_SUPPORT:
             Logger.warn(f"Trying to add metadata reader {metadataName} to world format {self.NAME} that does not support metadata!", module="worldformat")
@@ -62,6 +63,7 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
         self.METADATA_READERS[metadataName] = reader
 
     def registerMetadataWriter(self, metadataName: str, writer: Callable):
+        Logger.debug(f"Registering metadata writer {metadataName} for world format {self.NAME}", module="worldformat")
         # Check if world format supports metadata
         if not self.METADATA_SUPPORT:
             Logger.warn(f"Trying to add metadata writer {metadataName} to world format {self.NAME} that does not support metadata!", module="worldformat")

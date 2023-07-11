@@ -129,9 +129,9 @@ class NetworkHandler:
             self.player.posPitch
         )
 
-        # Send MOTD to user
-        Logger.debug(f"{self.connectionInfo} | Sending MOTD", module="network")
-        await self.player.sendMOTD()
+        # Perform any post login actions
+        Logger.debug(f"{self.connectionInfo} | Performing Post Login Actions", module="network")
+        await self._processPostLogin()
 
         # Setup And Begin Player Loop
         Logger.debug(f"{self.connectionInfo} | Starting Player Loop", module="network")
@@ -176,6 +176,15 @@ class NetworkHandler:
 
         # Finish CPE Negotiation
         Logger.info(f"{self.connectionInfo} | Finished CPE Negotiation", module="network")
+
+    async def _processPostLogin(self):
+        # Check if player is not None
+        if self.player is None:
+            raise ServerError("Trying To Process Post Login Actions Before Player Is Initialized!")
+
+        # Send MOTD to user
+        Logger.debug(f"{self.connectionInfo} | Sending MOTD", module="network")
+        await self.player.sendMOTD()
 
     async def _beginPlayerLoop(self):
         # Set the inLoop flag
