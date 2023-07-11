@@ -251,44 +251,76 @@ class _ModuleManager(AbstractManager):
     def _verifyCpeSupport(self):
         # If CPE is supported by server, dont skip anything
         if self._initCpe:
+            # If CPE is supported by server, check for CPE naming conflicts
             Logger.debug("CPE Support Enabled", module="verify-cpe")
-            Logger.debug("Skipping CPE Support Check", module="verify-cpe")
-            return
+            Logger.debug("Checking for CPE naming conflicts", module="verify-cpe")
+            for moduleName, moduleType in list(self._modulePreloadDict.items()):
+                try:
+                    # Check CPE Support
+                    Logger.debug(f"Checking CPE Support for Module {moduleName}", module="verify-cpe")
+                    if CPEModuleManager.hasCPE(moduleType):
+                        Logger.debug(f"Module {moduleName} Implements a CPE Extension.", module="verify-cpe")
 
-        # If CPE is not supported by server, check for CPE support in modules
-        Logger.debug("CPE Support Disabled. Verifying CPE support.", module="verify-cpe")
-        for moduleName, moduleType in list(self._modulePreloadDict.items()):
-            try:
-                Logger.debug(f"Checking CPE Support for Module {moduleName}", module="verify-cpe")
-                if CPEModuleManager.hasCPE(moduleType):
-                    Logger.debug(f"Module {moduleName} Implements a CPE Extension.", module="verify-cpe")
-                    Logger.verbose(f"Checking whether CPE is enabled, and whether the {moduleName} module should be skipped...", module="verify-cpe")
-                    if CPEModuleManager.shouldSkip(moduleType):
-                        Logger.verbose(f"Skipping Module {moduleName} Due To CPE Settings", module="verify-cpe")
-                        # Remove Module
-                        Logger.debug(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
-                        del self._modulePreloadDict[moduleName]
+                        # Check if there is a naming conflict
+                        if CPEModuleManager.hasCPENameConflict(moduleType):
+                            raise CPEError(f"Module {moduleName} has a CPE Name Conflict. Please Rename the Module or the CPE Extension.")
                     else:
-                        Logger.verbose(f"Module {moduleName} will not skipped.", module="verify-cpe")
-                else:
-                    Logger.verbose(f"Module {moduleName} does not implement a CPE Extension. Skipping Check!", module="verify-cpe")
-            except FatalError as e:
-                # Pass Down Fatal Error To Base Server
-                raise e
-            except Exception as e:
-                # Handle Exception if Error Occurs
-                self._errorList.append((moduleName, "PreInit-CPE-Check"))  # Module Loaded WITH Errors
-                # If the Error is a CPE Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Verifying CPE Support For {moduleName} - {type(e).__name__}: {e}\n", module="verify-cpe", printTb=not isinstance(e, CPEError))
-                Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="verify-cpe")
-                Logger.warn(f"Skipping Module {moduleName}?", module="verify-cpe")
-                Logger.askConfirmation()
-                # Remove Module
-                Logger.warn(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
-                if moduleName in self._modulePreloadDict:
-                    del self._modulePreloadDict[moduleName]
-                if moduleName in self._moduleDict:
-                    del self._moduleDict[moduleName]
+                        Logger.verbose(f"Module {moduleName} does not implement a CPE Extension. Skipping Check!", module="verify-cpe")
+                except FatalError as e:
+                    # Pass Down Fatal Error To Base Server
+                    raise e
+                except Exception as e:
+                    # Handle Exception if Error Occurs
+                    self._errorList.append((moduleName, "PreInit-CPE-Check"))  # Module Loaded WITH Errors
+                    # If the Error is a CPE Error (raised on purpose), Don't print out TB
+                    Logger.error(f"Error While Verifying CPE Support For {moduleName} - {type(e).__name__}: {e}\n", module="verify-cpe", printTb=not isinstance(e, CPEError))
+                    Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="verify-cpe")
+                    Logger.warn(f"Skipping Module {moduleName}?", module="verify-cpe")
+                    Logger.askConfirmation()
+                    # Remove Module
+                    Logger.warn(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
+                    if moduleName in self._modulePreloadDict:
+                        del self._modulePreloadDict[moduleName]
+                    if moduleName in self._moduleDict:
+                        del self._moduleDict[moduleName]
+        else:
+            # If CPE is not supported by server, check for CPE support in modules
+            Logger.debug("CPE Support Disabled. Verifying CPE support.", module="verify-cpe")
+            for moduleName, moduleType in list(self._modulePreloadDict.items()):
+                try:
+                    # Check CPE Support
+                    Logger.debug(f"Checking CPE Support for Module {moduleName}", module="verify-cpe")
+                    if CPEModuleManager.hasCPE(moduleType):
+                        Logger.debug(f"Module {moduleName} Implements a CPE Extension.", module="verify-cpe")
+
+                        # Check if CPE module meets the conditions for skip
+                        Logger.verbose(f"Checking whether CPE is enabled, and whether the {moduleName} module should be skipped...", module="verify-cpe")
+                        if CPEModuleManager.shouldSkip(moduleType):
+                            Logger.verbose(f"Skipping Module {moduleName} Due To CPE Settings", module="verify-cpe")
+                            # Remove Module
+                            Logger.debug(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
+                            del self._modulePreloadDict[moduleName]
+                        else:
+                            Logger.verbose(f"Module {moduleName} will not skipped.", module="verify-cpe")
+                    else:
+                        Logger.verbose(f"Module {moduleName} does not implement a CPE Extension. Skipping Check!", module="verify-cpe")
+                except FatalError as e:
+                    # Pass Down Fatal Error To Base Server
+                    raise e
+                except Exception as e:
+                    # Handle Exception if Error Occurs
+                    self._errorList.append((moduleName, "PreInit-CPE-Check"))  # Module Loaded WITH Errors
+                    # If the Error is a CPE Error (raised on purpose), Don't print out TB
+                    Logger.error(f"Error While Verifying CPE Support For {moduleName} - {type(e).__name__}: {e}\n", module="verify-cpe", printTb=not isinstance(e, CPEError))
+                    Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="verify-cpe")
+                    Logger.warn(f"Skipping Module {moduleName}?", module="verify-cpe")
+                    Logger.askConfirmation()
+                    # Remove Module
+                    Logger.warn(f"Removing Module {moduleName} From Loader!", module="verify-cpe")
+                    if moduleName in self._modulePreloadDict:
+                        del self._modulePreloadDict[moduleName]
+                    if moduleName in self._moduleDict:
+                        del self._moduleDict[moduleName]
 
     # Intermediate Function to Check and Initialize Dependencies
     def _initDependencies(self):

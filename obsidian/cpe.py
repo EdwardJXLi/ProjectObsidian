@@ -75,6 +75,18 @@ class _CPEModuleManager():
             raise CPEError(f"Module {module.__name__} does not implement a CPE Extension.")
         return self._cpeExtensions[module]
 
+    # Returns True if there is a naming conflict with the given CPE Extension
+    def hasCPENameConflict(self, checkModule: Type[AbstractModule]) -> bool:
+        moduleCpeName = self.getCPE(checkModule).name
+        for module, (extName, extVersion) in self._cpeExtensions.items():
+            # Ignore self
+            if module == checkModule:
+                continue
+
+            if extName == moduleCpeName:
+                return True
+        return False
+
     # Generate a Pretty List of Modules
     def generateTable(self):
         try:
