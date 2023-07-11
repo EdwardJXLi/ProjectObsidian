@@ -29,6 +29,7 @@ import struct
 )
 class ClickDistanceModule(AbstractModule):
     def __init__(self, *args):
+        raise Exception("WTF")
         super().__init__(*args)
         self.config = self.initConfig(self.ClickDistanceConfig)
 
@@ -51,60 +52,60 @@ class ClickDistanceModule(AbstractModule):
         WorldFormatManager.registerMetadataReader(WorldFormats.ObsidianWorld, "clickDistance", readClickDistance)
         WorldFormatManager.registerMetadataWriter(WorldFormats.ObsidianWorld, "clickDistance", writeClickDistance)
 
-    # Create helper function to set click distance of a player
-    @InjectMethod(target=Player)
-    async def setClickDistance(self, distance: int):
-        # Since we are injecting, set type of self to Player
-        self = cast(Player, self)
+        # Create helper function to set click distance of a player
+        @InjectMethod(target=Player)
+        async def setClickDistance(self, distance: int):
+            # Since we are injecting, set type of self to Player
+            self = cast(Player, self)
 
-        Logger.info(f"Setting click distance to {distance} for {self.username}", module="clickdistance")
-        await self.networkHandler.dispatcher.sendPacket(Packets.Response.SetClickDistance, distance)
+            Logger.info(f"Setting click distance to {distance} for {self.username}", module="clickdistance")
+            await self.networkHandler.dispatcher.sendPacket(Packets.Response.SetClickDistance, distance)
 
-    # Create helper function to set click distance of a world
-    @InjectMethod(target=World)
-    async def setWorldClickDistance(self, distance: int, notifyPlayers: bool = True):
-        # Since we are injecting, set type of self to Player
-        self = cast(World, self)
+        # Create helper function to set click distance of a world
+        @InjectMethod(target=World)
+        async def setWorldClickDistance(self, distance: int, notifyPlayers: bool = True):
+            # Since we are injecting, set type of self to Player
+            self = cast(World, self)
 
-        # Get the click distance metadata
-        # Using cast to ignore type of world, as clickDistance is injected
-        clickDistanceMetadata: ClickDistanceModule.ClickDistanceMetadata = cast(Any, self).clickDistance
+            # Get the click distance metadata
+            # Using cast to ignore type of world, as clickDistance is injected
+            clickDistanceMetadata: ClickDistanceModule.ClickDistanceMetadata = cast(Any, self).clickDistance
 
-        # Set click distance
-        clickDistanceMetadata.distance = distance
+            # Set click distance
+            clickDistanceMetadata.distance = distance
 
-        # If notifyPlayers is True, notify players of the change
-        if notifyPlayers:
-            await self.playerManager.sendWorldPacket(Packets.Response.SetClickDistance, distance)
+            # If notifyPlayers is True, notify players of the change
+            if notifyPlayers:
+                await self.playerManager.sendWorldPacket(Packets.Response.SetClickDistance, distance)
 
-    # Send player click distance on join
-    @Inject(target=WorldPlayerManager.joinPlayer, at=InjectionPoint.AFTER)
-    async def sendClickDistance(self, player: Player):
-        # Since we are injecting, set type of self to WorldPlayerManager
-        self = cast(WorldPlayerManager, self)
+        # Send player click distance on join
+        @Inject(target=WorldPlayerManager.joinPlayer, at=InjectionPoint.AFTER)
+        async def sendClickDistance(self, player: Player):
+            # Since we are injecting, set type of self to WorldPlayerManager
+            self = cast(WorldPlayerManager, self)
 
-        # Send click distance packet to player
-        # Using cast to ignore type of player, as setClickDistance is injected
-        # Using cast to ignore type of self.world, as clickDistance is injected
-        await cast(Any, player).setClickDistance(cast(Any, self.world).clickDistance.distance)
+            # Send click distance packet to player
+            # Using cast to ignore type of player, as setClickDistance is injected
+            # Using cast to ignore type of self.world, as clickDistance is injected
+            await cast(Any, player).setClickDistance(cast(Any, self.world).clickDistance.distance)
 
-    # Load click distance during world load
-    @Inject(target=World.__init__, at=InjectionPoint.AFTER)
-    def loadWorldClickDistance(self, *args, **kwargs):
-        # Since we are injecting, set type of self to World
-        self = cast(World, self)
+        # Load click distance during world load
+        @Inject(target=World.__init__, at=InjectionPoint.AFTER)
+        def loadWorldClickDistance(self, *args, **kwargs):
+            # Since we are injecting, set type of self to World
+            self = cast(World, self)
 
-        # Get default click distance from config
-        defaultClickDistance = cast(ClickDistanceModule, Modules.ClickDistance).config.defaultClickDistance
+            # Get default click distance from config
+            defaultClickDistance = cast(ClickDistanceModule, Modules.ClickDistance).config.defaultClickDistance
 
-        # If "clickDistance" metadata is not present, create it
-        if self.additionalMetadata.get("clickDistance") is None:
-            self.additionalMetadata["clickDistance"] = ClickDistanceModule.ClickDistanceMetadata()
-            self.additionalMetadata["clickDistance"].setClickDistance(defaultClickDistance)
+            # If "clickDistance" metadata is not present, create it
+            if self.additionalMetadata.get("clickDistance") is None:
+                self.additionalMetadata["clickDistance"] = ClickDistanceModule.ClickDistanceMetadata()
+                self.additionalMetadata["clickDistance"].setClickDistance(defaultClickDistance)
 
-        # Set click distance
-        # Using cast to ignore type of self, as clickDistance is injected
-        cast(Any, self).clickDistance = self.additionalMetadata["clickDistance"]
+            # Set click distance
+            # Using cast to ignore type of self, as clickDistance is injected
+            cast(Any, self).clickDistance = self.additionalMetadata["clickDistance"]
 
     # Packet to send to clients to change click distance
     @ResponsePacket(
