@@ -29,7 +29,6 @@ import struct
 )
 class ClickDistanceModule(AbstractModule):
     def __init__(self, *args):
-        raise Exception("WTF")
         super().__init__(*args)
         self.config = self.initConfig(self.ClickDistanceConfig)
 
