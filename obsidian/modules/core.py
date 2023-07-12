@@ -1926,6 +1926,62 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
+        "CPEList",
+        description="Lists CPE Extensions supported by the client and server",
+        version="v1.0.0"
+    )
+    class CPEListCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["cpe", "cpelist", "cpeinfo", "cpeextensions", "cpeext"])
+
+        async def execute(self, ctx: Player):
+            # Generate command output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.centerMessage("&eCPE Extensions", colour="&2"))
+            output.append("&7Use /modules to see all the modules loaded on the server")
+
+            # Add additional info on client and server
+            output.append(f"&7Server Software: ProjectObsidian {__version__}")
+            output.append(f"&7Client Software: {ctx.clientSoftware}")
+
+            # Check if server supports CPE
+            if ctx.server.supportsCPE:
+                # Get CPE Extensions
+                serverCpeExtensions = ctx.server.getSupportedCPE()
+
+                # List CPE support on the server
+                output += CommandHelper.formatList(serverCpeExtensions, processInput=lambda ext: f"{ext[0]}[v{ext[1]}]", initialMessage="&3[Server Supports]&6 ", separator=", ", lineStart="&6")
+
+                # Check if client supports CPE
+                if ctx.supportsCPE:
+                    # Get full list of CPE Extensions
+                    clientCpeExtensions = ctx._extensions
+
+                    # List CPE support on the client
+                    output += CommandHelper.formatList(clientCpeExtensions, processInput=lambda ext: f"{ext[0]}[v{ext[1]}]", initialMessage="&b[Client Supports]&e ", separator=", ", lineStart="&e")
+
+                    # Get list of mutually supported CPE Extensions
+                    mutualCpeExtensions = ctx.getSupportedCPE()
+
+                    # List mutually supported CPE Extensions
+                    output += CommandHelper.formatList(mutualCpeExtensions, processInput=lambda ext: f"{ext[0]}[v{ext[1]}]", initialMessage="&9[Mutual Support]&f ", separator=", ", lineStart="&f")
+                else:
+                    output.append("&b[Client Supports]&f &cCPE is not supported by your client!")
+                    output.append("&9[Mutual Support]&f &cN/A")
+            else:
+                output.append("&3[Server Supports]&f &cCPE is disabled on this server!")
+                output.append("&b[Client Supports]&f &cN/A")
+                output.append("&9[Mutual Support]&f &cN/A")
+
+            # Add Footer
+            output.append(CommandHelper.centerMessage(f"&eServer CPE Support: {ctx.server.supportsCPE}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
         "PluginsList",
         description="Lists all plugins/modules installed",
         version="v1.0.0"
@@ -2054,7 +2110,7 @@ class CoreModule(AbstractModule):
             output.append("&7Use /player [name] to see additional details about a player")
 
             # Generate Player List Output
-            output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ")
+            output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ", lineStart="&e")
 
             # Add Footer
             output.append(CommandHelper.centerMessage(f"&eWorld Name: {manager.world.name}", colour="&2"))
@@ -2096,8 +2152,7 @@ class CoreModule(AbstractModule):
                     continue
 
                 # Generate Player List Output
-
-                output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage=f"&d[{world.name}] &e", separator=", ")
+                output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage=f"&d[{world.name}] &e", separator=", ", lineStart="&e")
 
             # If any words were hidden, print notice
             if numHidden > 0:
@@ -2132,7 +2187,7 @@ class CoreModule(AbstractModule):
             output.append(CommandHelper.centerMessage(f"&eStaff Online: {len(playersList)}", colour="&2"))
 
             # Generate Player List Output
-            output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&4", separator=", ")
+            output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&4", separator=", ", lineStart="&4")
 
             # Add Footer
             output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
@@ -2332,7 +2387,7 @@ class CoreModule(AbstractModule):
             output.append("&7Use /world [world] to see additional details about a world")
 
             # Generate Player List Output
-            output += CommandHelper.formatList(worldList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ")
+            output += CommandHelper.formatList(worldList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ", lineStart="&e")
 
             # Add Footer
             output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
@@ -2957,7 +3012,7 @@ class CoreModule(AbstractModule):
                         worldList,
                         processInput=lambda p: str(p.name),
                         initialMessage="&eSaving These Worlds: ",
-                        separator=", "
+                        separator=", ", lineStart="&e"
                     )
                 )
 
