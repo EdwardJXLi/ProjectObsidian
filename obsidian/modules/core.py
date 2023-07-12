@@ -1616,7 +1616,7 @@ class CoreModule(AbstractModule):
     )
     class HelpCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["help", "commands", "cmds"])
+            super().__init__(*args, ACTIVATORS=["help", "commands", "cmds", "ls"])
 
         async def execute(self, ctx: Player, *, pageNumOrQuery: int | str = 1):
             # If command is not an int, assume its a command name and print help for that

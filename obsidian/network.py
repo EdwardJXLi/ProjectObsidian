@@ -151,7 +151,7 @@ class NetworkHandler:
 
         # Send Server ExtInfo Packet
         Logger.debug(f"{self.connectionInfo} | Sending Server CPE ExtInfo (Extension Info) Packet", module="network")
-        await self.dispatcher.sendPacket(Packets.Response.ServerExtInfo, f"ProjectObsidian Ver: {__version__}", 0)
+        await self.dispatcher.sendPacket(Packets.Response.ServerExtInfo, f"ProjectObsidian - {__version__}", 0)
 
         # Send ExtEntry Packet For Each Extension that server supports
         Logger.debug(f"{self.connectionInfo} | Sending Server CPE ExtEntry (Extension Entry) Packets", module="network")
