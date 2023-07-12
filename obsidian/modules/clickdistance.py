@@ -1,5 +1,5 @@
 from obsidian.module import Module, AbstractModule, Dependency, Modules
-from obsidian.cpe import CPE
+from obsidian.cpe import CPE, CPEExtension
 from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player, WorldPlayerManager
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets
@@ -7,7 +7,7 @@ from obsidian.world import World, WorldMetadata
 from obsidian.worldformat import WorldFormatManager, WorldFormats
 from obsidian.config import AbstractConfig
 from obsidian.mixins import Inject, InjectionPoint, InjectMethod
-from obsidian.errors import CommandError
+from obsidian.errors import CPEError, CommandError
 from obsidian.log import Logger
 
 from dataclasses import dataclass
@@ -57,6 +57,10 @@ class ClickDistanceModule(AbstractModule):
             # Since we are injecting, set type of self to Player
             self = cast(Player, self)
 
+            # Check if player supports the ClickDistance Extension
+            if CPEExtension("ClickDistance", 1) not in self.getSupportedCPE():
+                raise CPEError(f"Player {self.name} Does Not Support ClickDistance Extension!")
+
             Logger.info(f"Setting click distance to {distance} for {self.username}", module="clickdistance")
             await self.networkHandler.dispatcher.sendPacket(Packets.Response.SetClickDistance, distance)
 
@@ -75,7 +79,11 @@ class ClickDistanceModule(AbstractModule):
 
             # If notifyPlayers is True, notify players of the change
             if notifyPlayers:
-                await self.playerManager.sendWorldPacket(Packets.Response.SetClickDistance, distance)
+                for player in self.playerManager.getPlayers():
+                    # Only send click distance to players that support the ClickDistance Extension
+                    if CPEExtension("ClickDistance", 1) in player.getSupportedCPE():
+                        # Using cast to ignore type of player, as setClickDistance is injected
+                        await cast(Any, player).setClickDistance(distance)
 
         # Send player click distance on join
         @Inject(target=WorldPlayerManager.joinPlayer, at=InjectionPoint.AFTER)
@@ -83,10 +91,12 @@ class ClickDistanceModule(AbstractModule):
             # Since we are injecting, set type of self to WorldPlayerManager
             self = cast(WorldPlayerManager, self)
 
-            # Send click distance packet to player
-            # Using cast to ignore type of player, as setClickDistance is injected
-            # Using cast to ignore type of self.world, as clickDistance is injected
-            await cast(Any, player).setClickDistance(cast(Any, self.world).clickDistance.distance)
+            # Check if player supports the ClickDistance Extension
+            if CPEExtension("ClickDistance", 1) in player.getSupportedCPE():
+                # Send click distance packet to player
+                # Using cast to ignore type of player, as setClickDistance is injected
+                # Using cast to ignore type of self.world, as clickDistance is injected
+                await cast(Any, player).setClickDistance(cast(Any, self.world).clickDistance.distance)
 
         # Load click distance during world load
         @Inject(target=World.__init__, at=InjectionPoint.AFTER)
@@ -148,6 +158,10 @@ class ClickDistanceModule(AbstractModule):
             if player is None:
                 player = ctx
 
+            # Check if player supports the ClickDistance Extension
+            if CPEExtension("ClickDistance", 1) not in player.getSupportedCPE():
+                raise CommandError(f"Player {player.name} Does Not Support ClickDistance Extension!")
+
             # Send click distance to player
             # Using cast to ignore type of player, as setClickDistance is injected
             await cast(Any, player).setClickDistance(distance)
@@ -174,6 +188,10 @@ class ClickDistanceModule(AbstractModule):
             # If no player is specified, set the distance for the sender
             if player is None:
                 player = ctx
+
+            # Check if player supports the ClickDistance Extension
+            if CPEExtension("ClickDistance", 1) not in player.getSupportedCPE():
+                raise CommandError(f"Player {player.name} Does Not Support ClickDistance Extension!")
 
             # Get the default click distance
             defaultClickDistance = self.module.config.defaultClickDistance

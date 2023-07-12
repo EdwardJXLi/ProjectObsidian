@@ -6,7 +6,7 @@ from obsidian.blocks import AbstractBlock, BlockManager
 from obsidian.player import Player
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets
 from obsidian.mixins import Inject, InjectionPoint, InjectMethod, addAttribute
-from obsidian.errors import ServerError
+from obsidian.errors import ServerError, CPEError, CommandError
 from obsidian.log import Logger
 
 from typing import Optional, Any, cast
@@ -50,8 +50,8 @@ class HeldBlockModule(AbstractModule):
             if ctx is None:
                 raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
-            # Check if player supports the HeldBlock CPE Extension
-            if ctx.supportsCPE and CPEExtension("HeldBlock", 1) in ctx.getSupportedCPE() and handleUpdate:
+            # Check if player supports the HeldBlock Extension
+            if CPEExtension("HeldBlock", 1) in ctx.getSupportedCPE() and handleUpdate:
                 # Set held block of player
                 # Using cast to ignore type of player, as heldBlock is injected
                 cast(Any, ctx).heldBlock = BlockManager.getBlockById(heldBlock)
@@ -61,6 +61,10 @@ class HeldBlockModule(AbstractModule):
         async def holdThis(self, block: AbstractBlock, preventChange: bool = False):
             # Since we are injecting, set type of self to Player
             self = cast(Player, self)
+
+            # Check if player supports the HeldBlock Extension
+            if CPEExtension("HeldBlock", 1) not in self.getSupportedCPE():
+                raise CPEError(f"Player {self.name} Does Not Support HeldBlock Extension!")
 
             # Set held block of player
             # Using cast to ignore type of player, as heldBlock is injected
@@ -111,6 +115,10 @@ class HeldBlockModule(AbstractModule):
             )
 
         async def execute(self, ctx: Player, player: Player, block: AbstractBlock, preventChange: bool = False):
+            # Check if player supports the HeldBlock Extension
+            if CPEExtension("HeldBlock", 1) not in player.getSupportedCPE():
+                raise CommandError(f"Player {player.name} Does Not Support HeldBlock Extension!")
+
             # Force player to hold a specific block
             # Using cast to ignore type of player, as holdThis is injected
             await cast(Any, player).holdThis(block, preventChange)
@@ -132,11 +140,13 @@ class HeldBlockModule(AbstractModule):
             )
 
         async def execute(self, ctx: Player, player: Player):
+            # Check if player supports the HeldBlock Extension
+            if CPEExtension("HeldBlock", 1) not in player.getSupportedCPE():
+                raise CommandError(f"Player {player.name} Does Not Support HeldBlock Extension!")
+
             # Get held block of player
             # Using cast to ignore type of player, as heldBlock is injected
             heldBlock = cast(Any, player).heldBlock
-
-            print(heldBlock)
 
             # Notify Sender
             await ctx.sendMessage(f"&a{player.username} is holding {heldBlock.NAME} (&9{heldBlock.ID}&a)")

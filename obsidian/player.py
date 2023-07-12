@@ -18,7 +18,6 @@ from obsidian.types import UsernameType, _formatUsername
 from obsidian.errors import (
     ServerError,
     WorldError,
-    CPEError,
     PacketError,
     ClientError,
     BlockError,
@@ -481,7 +480,7 @@ class Player:
     def getSupportedCPE(self) -> set[CPEExtension]:
         # Check if player supports CPE
         if not self.supportsCPE:
-            raise CPEError("Client does not support CPE (Classic Protocol Extension)")
+            return set()
 
         # Check if server supports CPE (getSupportedCPE will throw CPEError if not)
         serverCPE = self.server.getSupportedCPE()
