@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import os
 import asyncio
+import pathlib
+import platform
 
-# Server Version
-__version__ = "1.0.0"
+# Get python version
+PY_VERSION = f"{platform.python_implementation()} - {platform.python_version()}"
 
 # Server Location
 SERVER_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -34,6 +36,20 @@ MODULES_IMPORT = "obsidian.modules."
 # Managers
 # Dynamically generated list of registered managers.
 MANAGERS_LIST = []
+
+
+# Helper function to get git hash
+def get_git_revision():
+    git_dir = pathlib.Path(SERVER_PATH, "../", ".git")
+    with pathlib.Path(git_dir, 'HEAD').open('r') as head:
+        ref = head.readline().split(' ')[-1].strip()
+
+    with pathlib.Path(git_dir, ref).open('r') as git_hash:
+        return git_hash.readline().strip()
+
+
+# Server Version
+__version__ = f"dev_{get_git_revision()[:7]}"
 
 
 # Colour handler

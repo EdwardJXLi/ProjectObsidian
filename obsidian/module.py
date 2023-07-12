@@ -343,7 +343,7 @@ class _ModuleManager(AbstractManager):
                             Logger.verbose(f"Dependencies {dependency} Satisfied!", module="module-resolve")
                             pass
                         else:
-                            raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {depVer} | Has: {self._moduleDict[dependency.NAME].VERSION})")
+                            raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {depVer} | Has: {self._modulePreloadDict[dependency.NAME].VERSION})")
                         # If All Passes, Link Module Class
                         dependency.MODULE = self._modulePreloadDict[dependency.NAME]
                     else:

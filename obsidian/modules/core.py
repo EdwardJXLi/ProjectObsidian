@@ -1,5 +1,5 @@
 from obsidian.module import Module, AbstractModule, ModuleManager
-from obsidian.constants import MAX_MESSAGE_LENGTH, __version__
+from obsidian.constants import MAX_MESSAGE_LENGTH, PY_VERSION, __version__
 from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
@@ -1678,11 +1678,8 @@ class CoreModule(AbstractModule):
 
             # Add Header
             output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", colour="&2"))
-
-            # Add some additional tips to help command (Only if first page)
-            if currentPage == 0:
-                output.append("&7Use /help [n] to get the nth page of help.&f")
-                output.append("&7Use /help [query] for help on a plugin or command.&f")
+            output.append("&7Use /help [n] to get the nth page of help.&f")
+            output.append("&7Use /help [query] for help on a plugin or command.&f")
 
             # Add command information
             for cmdName, cmd in commands[currentPage * commandsPerPage:currentPage * commandsPerPage + commandsPerPage]:
@@ -1849,6 +1846,86 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
+        "ServerInfo",
+        description="Detailed information about the server",
+        version="v1.0.0"
+    )
+    class ServerInfoCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["server", "info", "about", "serverinfo", "aboutserver"])
+
+        async def execute(self, ctx: Player):
+            # Generate plugin output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.centerMessage(f"&eServer Information: {ctx.server.name}", colour="&2"))
+
+            # Add Player Information
+            output.append(f"&d[Server Name]&f {ctx.server.name}")
+            output.append("&d[Server Software]&f Powered By: &a>> &dProject&5Obsidian &a<<")
+            output.append(f"&d[Server Version]&f {__version__}")
+            output.append(f"&d[Modules]&f {len(ModuleManager)} Modules Loaded. &7(/modules for more info)")
+            if ctx.server.playerManager.maxSize is not None:
+                output.append(f"&d[Players Online]&f {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} &7(/list for more info)")
+            else:
+                output.append(f"&d[Players Online]&f {len(ctx.server.playerManager.players)} &7(/list for more info)")
+            output.append(f"&d[Worlds]&f {len(ctx.server.worldManager.worlds)} Worlds Loaded. &7(/worlds for more info)")
+            output.append(f"&d[Commands]&f {len(CommandManager)} Commands Loaded. &7(/help for more info)")
+            if ctx.server.supportsCPE:
+                output.append("&d[Client Extensions]&f &aCPE Enabled! &7(/cpe for more info)")
+            else:
+                output.append("&d[Client Extensions]&f &6CPE Disabled!")
+            output.append("&7Use /software to learn more about ProjectObsidian.")
+
+            # Add Footer
+            output.append(CommandHelper.centerMessage(f"&eServer Software: ProjectObsidian {__version__}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "SoftwareInfo",
+        description="Detailed information about ProjectObsidian, the server software",
+        version="v1.0.0"
+    )
+    class SoftwareInfoCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["software", "obsidian", "softwareinfo", "obsidianinfo"])
+
+        async def execute(self, ctx: Player):
+            # Generate plugin output
+            output = []
+
+            # Add Header
+            output.append("&2" + "=" * 53)
+            # The extra space is to pad the extra missing
+            output.append(f"{' ' * 31}&a>>>  &dProject&5Obsidian  &a<<<")
+            output.append(CommandHelper.centerMessage(f"&bVersion: {__version__}&f  |  &a{PY_VERSION}", padCharacter="  "))
+            output.append("&2" + "=" * 53)
+
+            # Add additional information about the software
+            output.append(f"&dSupports: c0.30 &f| &9Protocol: v7 &f| &aPlayers Online: {len(ctx.server.playerManager.players)}")
+
+            # Add description
+            output.append("&eProjectObsidian is an experimental heavily-modular")
+            output.append("&eMinecraft Classic Server software written in 100% Python.")
+
+            # Add github link
+            output.append("&a[GitHub]&f https://github.com/EdwardJXLi/ProjectObsidian")
+
+            # Add Disclaimer
+            output.append("&c=== [Disclaimer] ===")
+            output.append("&7ProjectObsidian is not affiliated with Microsoft or Mojang")
+            output.append("&7and contains absolutely no source code from Minecraft.")
+
+            # Add Footer
+            output.append(CommandHelper.centerMessage("Created by RadioactiveHydra/EdwardJXLi", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
         "PluginsList",
         description="Lists all plugins/modules installed",
         version="v1.0.0"
@@ -1876,6 +1953,8 @@ class CoreModule(AbstractModule):
 
             # Add Header
             output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", colour="&2"))
+            output.append("&7Use /plugins [n] to get the nth page of plugins.&f")
+            output.append("&7Use /plugin [plugin] for additional info on a plugin.&f")
 
             # Add command information
             for moduleName, module in modules[currentPage * modulesPerPage:currentPage * modulesPerPage + modulesPerPage]:
@@ -1971,12 +2050,13 @@ class CoreModule(AbstractModule):
 
             # Add Header
             output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(playersList)}/{manager.world.maxPlayers}", colour="&2"))
+            output.append("&7Use /listall to see players in all worlds")
+            output.append("&7Use /player [name] to see additional details about a player")
 
             # Generate Player List Output
             output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ")
 
             # Add Footer
-            output.append("&7To see players in all worlds, use /listall")
             output.append(CommandHelper.centerMessage(f"&eWorld Name: {manager.world.name}", colour="&2"))
 
             # Send Message
@@ -2000,6 +2080,7 @@ class CoreModule(AbstractModule):
                 output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
             else:
                 output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
+            output.append("&7Use /player [name] to see additional details about a player")
 
             # Keep track of the number of worlds that were hidden
             numHidden = 0
@@ -2084,13 +2165,14 @@ class CoreModule(AbstractModule):
             output.append(f"&d[Coordinates]&f &7x:&f{player.posX//32} &7y:&f{player.posY//32} &7z:&f{player.posZ//32}")
             output.append(f"&d[Client Software]&f {player.clientSoftware}")
             output.append(f"&d[CPE Enabled]&f {player.supportsCPE} ({len(player._extensions)} extensions supported)")
-            output.append(f"&d[Internal Player Id]&f {player.playerId}")
+            output.append(f"&d[Operator]&f {player.opStatus}")
 
             # Add self-only Player Information
             if player is ctx:
                 output.append("&7(Only you can see the information below)")
                 output.append(f"&d[Network Information]&f {player.networkHandler.ip}:{player.networkHandler.port}")
                 output.append(f"&d[Verification Key]&f {player.verificationKey}")
+                output.append(f"&d[Internal Player Id]&f {player.playerId}")
 
             # Add Footer
             output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
@@ -2247,6 +2329,7 @@ class CoreModule(AbstractModule):
 
             # Add Header
             output.append(CommandHelper.centerMessage(f"&eWorlds Loaded: {len(worldList)}", colour="&2"))
+            output.append("&7Use /world [world] to see additional details about a world")
 
             # Generate Player List Output
             output += CommandHelper.formatList(worldList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ")

@@ -13,7 +13,7 @@ from obsidian.log import Logger
     description="Place Liquids Using Alterate Blocks",
     author="RadioactiveHydra",
     version="1.3.0",
-    dependencies=[Dependency("core", "1.0.0")]
+    dependencies=[Dependency("core")]
 )
 class LiquidPlaceModule(AbstractModule):
     def __init__(self, *args):
