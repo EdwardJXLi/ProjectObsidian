@@ -158,6 +158,7 @@ class ServerConfig(AbstractConfig):
     playerChatColor: str = "&a"
     operatorChatColor: str = "&4"
     allowPlayerColor: bool = False
+    repeatCommands: bool = False  # Repeat Commands In Chat
     # Block Configuration
     disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks
     allowLiquidPlacement: bool = False

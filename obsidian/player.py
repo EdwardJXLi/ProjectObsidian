@@ -677,6 +677,8 @@ class Player:
 
         # Checking If Message Is A Command
         if message[0] == "/":
+            # Tell user that a command was run
+            await self.sendMessage(f"&9Running Command: &b{message}&f")
             # Using create task to allow for async command handling
             return asyncio.create_task(self.handlePlayerCommand(message[1:]))
 
