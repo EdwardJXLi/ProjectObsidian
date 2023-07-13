@@ -1926,6 +1926,19 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
+        "SoftwareVersion",
+        description="Prints out version of ProjectObsidian",
+        version="v1.0.0"
+    )
+    class SoftwareVersionCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["version"])
+
+        async def execute(self, ctx: Player):
+            # Send Version of ProjectObsidian
+            await ctx.sendMessage(f"&dProject&5Obsidian &fv. &b{__version__} &fon &a{PY_VERSION}&f")
+
+    @Command(
         "CPEList",
         description="Lists CPE Extensions supported by the client and server",
         version="v1.0.0"

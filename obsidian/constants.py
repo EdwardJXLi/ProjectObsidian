@@ -6,7 +6,7 @@ import pathlib
 import platform
 
 # Get python version
-PY_VERSION = f"{platform.python_implementation()} - {platform.python_version()}"
+PY_VERSION = f"{platform.python_implementation()} {platform.python_version()}"
 
 # Server Location
 SERVER_PATH = os.path.dirname(os.path.abspath(__file__))
