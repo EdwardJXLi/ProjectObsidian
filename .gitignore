@@ -9,6 +9,9 @@ configs
 # Ignore Vanilla Minecraft
 vanilla
 
+# Ignore Development Servers
+dev-server
+
 # Testing Folders
 testing
 test-modules
