@@ -120,7 +120,17 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
         if param.annotation in [Any]:
             Logger.debug("Argument Type is part of ignored types.", module="converter")
             return arg
+        # If the type is a boolean, run special logic to convert it
+        if param.annotation is bool:
+            Logger.debug("Argument Type is a boolean. Attempting to convert", module="converter")
+            if arg.lower() in ["true", "t", "yes", "y", "1"]:
+                return True
+            elif arg.lower() in ["false", "f", "no", "n", "0"]:
+                return False
+            else:
+                raise CommandError(f"Arg '{name}' Expected {' or '.join(['True', 'False'])} But Got '{arg}'")
         # Transform the argument
+        Logger.debug(f"Converting Argument of Type {param.annotation}", module="converter")
         transformed = param.annotation.__call__(arg)
         # Check if transformation is successful
         if type(transformed) == param.annotation:

@@ -78,10 +78,10 @@ class Logger:
                 # Give user Warning, and ask them for further input
                 cls.warn(f"{message} (y/n)", module="confirmation")
                 userInput = input()
-                if userInput.lower() == "y" or userInput.lower() == "yes":
+                if userInput.lower() in ["y", "yes"]:
                     cls._log("")
                     return True
-                elif userInput.lower() == "n" or userInput.lower() == "no":
+                elif userInput.lower() in ["n", "no"]:
                     if exit_on_no:
                         cls.warn("Ok Exiting...", module="confirmation")
                         sys.exit()
