@@ -10,6 +10,12 @@
 - `classicworld` - Adds support for the classicworld format
 - `worldconvert` - World conversion module, converts worlds from one format to another
 
+# CPE Modules
+- `clickdistance` - Adds support for the ClickDistance CPE
+- `heldblock` - Adds support for the HeldBlock CPE
+- `emotefix` - Adds support for the EmoteFix CPE
+- `texthotkey` - Adds support for the TextHotKey CPE
+
 ## Quality of Life Modules
 - `liquidplace` - Allows placements of liquids in the world without cheats
 
