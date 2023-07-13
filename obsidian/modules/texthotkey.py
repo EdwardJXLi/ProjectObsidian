@@ -60,8 +60,8 @@ class TextHotKeyModule(AbstractModule):
                     Logger.debug(f"{self.connectionInfo} | Sending Hotkey {label}", module="network")
                     await self.dispatcher.sendPacket(
                         Packets.Response.SetTextHotKey,
-                        bytearray(packageString(label)),
-                        bytearray(packageString(data["action"])),
+                        label,
+                        data["action"],
                         data["keyCode"],
                         data["keyMods"]
                     )
@@ -81,12 +81,20 @@ class TextHotKeyModule(AbstractModule):
             )
 
         async def serialize(self, label: str, action: str, keyCode: int, keyMods: int):
-            # <Set Click Distance Packet>
+            # <Set Text HotKey Packet>
+            # (Byte) Packet ID
             # (64String) Label
             # (64String) Action
-            # (int) KeyCode
-            # (byte) KeyMods
-            msg = struct.pack(self.FORMAT, self.ID, label, action, keyCode, keyMods)
+            # (Int) KeyCode
+            # (Byte) KeyMods
+            msg = struct.pack(
+                self.FORMAT,
+                self.ID,
+                bytearray(packageString(label)),
+                bytearray(packageString(action)),
+                keyCode,
+                keyMods
+            )
             return msg
 
         def onError(self, *args, **kwargs):

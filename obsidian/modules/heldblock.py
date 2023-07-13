@@ -91,7 +91,7 @@ class HeldBlockModule(AbstractModule):
             )
 
         async def serialize(self, blockToHold: AbstractBlock, preventChange: bool = False):
-            # <Set Click Distance Packet>
+            # <Hold This Packet>
             # (Byte) Packet ID
             # (Byte) Block To Hold
             # (Byte) Prevent Change

@@ -15,6 +15,7 @@
 - `heldblock` - Adds support for the HeldBlock CPE
 - `emotefix` - Adds support for the EmoteFix CPE
 - `texthotkey` - Adds support for the TextHotKey CPE
+- `selectioncuboid` - Adds support for the SelectionCuboid CPE
 
 ## Quality of Life Modules
 - `liquidplace` - Allows placements of liquids in the world without cheats
