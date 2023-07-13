@@ -10,6 +10,7 @@ from typing import Optional, Type
 import asyncio
 
 from obsidian.packet import AbstractResponsePacket, Packets
+from obsidian.blocks import BlockManager
 from obsidian.log import Logger
 from obsidian.cpe import CPEExtension
 from obsidian.commands import Commands, _parseArgs
@@ -767,7 +768,7 @@ class Player:
         Logger.debug(f"Got Movement Data From Player! {posX=}, {posY=}, {posZ=}, {posYaw=}, {posPitch=}", module="player")
         return posX, posY, posZ, posYaw, posPitch
 
-    async def getNextBlockUpdate(self, *args, revertBlockUpdate: bool = True, **kwargs) -> tuple[int, int, int, int]:
+    async def getNextBlockUpdate(self, *args, revertBlockUpdate: bool = True, **kwargs) -> tuple[int, int, int, AbstractBlock]:
         Logger.debug(f"Getting Next Block Update From Player {self.name}", module="player")
         # Create a listener for the next block update packet sent from player
         response = await self.networkHandler.dispatcher.waitFor(Packets.Request.UpdateBlock, *args, **kwargs)
@@ -787,7 +788,7 @@ class Player:
 
         # Return processed block update back to user
         Logger.debug(f"Got Block Update From Player! {blockX=}, {blockY=}, {blockZ=}, {blockId=}", module="player")
-        return blockX, blockY, blockZ, blockId
+        return blockX, blockY, blockZ, BlockManager.getBlockById(blockId)
 
     async def sendMOTD(self, motdMessage: Optional[list[str]] = None):
         # If motdMessage was not passed, use default one in config
