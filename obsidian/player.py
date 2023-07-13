@@ -673,16 +673,17 @@ class Player:
 
     async def handlePlayerMessage(self, message: str):
         # Format, Process, and Handle incoming player message requests.
-        Logger.debug(f"Handling Player Message From Player {self.name}", module="player")
+        Logger.debug(f"Handling Player Message {message} From Player {self.name}", module="player")
+
+        # Checking If Message Is A Command
+        if message[0] == "/":
+            # Using create task to allow for async command handling
+            return asyncio.create_task(self.handlePlayerCommand(message[1:]))
 
         # Checking If Player Is Joined To A World
         if self.worldPlayerManager is None:
             Logger.debug(f"Player {self.name} Trying To handlePlayerMessage When No World Is Joined", module="player")
             return None  # Skip Rest
-
-        # Checking If Message Is A Command
-        if message[0] == "/":
-            return asyncio.create_task(self.handlePlayerCommand(message[1:]))
 
         # If color chat is enabled, replace '%' characters with '&'
         if self.server.config.allowPlayerColor:
@@ -710,10 +711,10 @@ class Player:
             # Format cmdName
             cmdName = cmdName.lower()
             Logger.info(f"Command {cmdName} Received From Player {self.name}", module="command")
-            Logger.debug(f"Handling Command {cmdName} With Arguments {cmdArgs}", module="command")
 
             # Get Command Object
             command = Commands.getCommandFromName(cmdName)
+            Logger.debug(f"Handling Command {command.NAME} With Arguments {cmdArgs}", module="command")
 
             # Check if command is disabled
             if command.NAME in self.playerManager.server.config.disabledCommands:
@@ -733,6 +734,7 @@ class Player:
 
             # Try the Command
             try:
+                Logger.debug(f"Executing Command {type(command)} from player {self.name} with args {parsedArguments} and kwargs {parsedKwArgs}", module="command")
                 await command.execute(self, *parsedArguments, **parsedKwArgs)
             except CommandError as e:
                 raise e  # Pass Down Exception To Lower Layer
