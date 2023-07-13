@@ -2749,7 +2749,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["say", "repeat"], OP=True)
 
-        async def execute(self, ctx: Player, msg: str):
+        async def execute(self, ctx: Player, *, msg: str):
             # Check if player is in a world
             if ctx.worldPlayerManager is None:
                 raise CommandError("You are not in a world!")
