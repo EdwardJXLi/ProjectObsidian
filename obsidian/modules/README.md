@@ -16,6 +16,7 @@
 - `emotefix` - Adds support for the EmoteFix CPE
 - `texthotkey` - Adds support for the TextHotKey CPE
 - `selectioncuboid` - Adds support for the SelectionCuboid CPE
+- `playerclick` - Adds support for the PlayerClick CPE
 
 ## Quality of Life Modules
 - `liquidplace` - Allows placements of liquids in the world without cheats
