@@ -799,6 +799,10 @@ class Player:
         if motdMessage is None:
             motdMessage = self.playerManager.server.config.defaultMOTD
 
+        # Quick undocumented feature! If motdMessage is a command, run that command for the user.
+        if type(motdMessage) is str and motdMessage.startswith("/"):
+            return await self.handlePlayerCommand(motdMessage[1:])
+
         # Send MOTD To Player
         Logger.debug(f"Sending MOTD to Player {self.name}", module="command")
         await self.sendMessage(motdMessage)
