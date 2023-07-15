@@ -471,6 +471,9 @@ class World:
         else:
             self.additionalMetadata: dict[tuple[str, str], WorldMetadata] = additionalMetadata
 
+        # Set last accessed time
+        self.lastAccessed = datetime.datetime.now()
+
         # Check if file IO was given if persistent
         if self.persistent:
             if self.fileIO is None:
@@ -579,6 +582,9 @@ class World:
         # Check If Block Is Out Of Range
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
             raise BlockError(f"Block Placement Is Out Of Range ({blockX}, {blockY}, {blockZ})")
+
+        # Set last modified date
+        self.lastModified = datetime.datetime.now()
 
         # Setting Block in MapArray
         self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = blockId
