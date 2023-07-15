@@ -4,7 +4,6 @@ RUN set -eux; useradd obsidian -d /server;
 RUN apt-get update -y
 
 COPY . /server
-COPY .git /server
 WORKDIR /server
 
 USER obsidian:obsidian
