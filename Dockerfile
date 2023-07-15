@@ -9,4 +9,4 @@ RUN apt-get update -y
 COPY . /server
 WORKDIR /server
 
-CMD [ "python3", "main.py", "-d", "-v", "-p", "$PORT", "-n", "$NAME", "-m", "$MOTD" ]
+CMD python3 main.py -d -v -p $PORT -n "$NAME" -m "$MOTD"
