@@ -9,8 +9,8 @@ from obsidian.errors import WorldFormatError
 from pathlib import Path
 import datetime
 import time
-import uuid
 import io
+import uuid
 
 '''
 ClassicWorld World Format Support as documented at https://wiki.vg/ClassicWorld_file_format
@@ -211,19 +211,19 @@ class ClassicWorldModule(AbstractModule):
 
             # Parse TimeCreated tag. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
             if "TimeCreated" in nbtFile:
-                timeCreated = datetime.fromtimestamp(nbtFile["TimeCreated"].value)
+                timeCreated = datetime.datetime.fromtimestamp(nbtFile["TimeCreated"].value)
             else:
                 Logger.warn("ClassicWorldFormat - TimeCreated tag is missing. Using default value!", module="classicworld")
                 timeCreated = None
             # Parse LastAccessed tag. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
             if "LastAccessed" in nbtFile:
-                lastAccessed = datetime.fromtimestamp(nbtFile["LastAccessed"].value)
+                lastAccessed = datetime.datetime.fromtimestamp(nbtFile["LastAccessed"].value)
             else:
                 Logger.warn("ClassicWorldFormat - LastAccessed tag is missing. Using default value!", module="classicworld")
                 lastAccessed = None
             # Parse LastModified tag. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
             if "LastModified" in nbtFile:
-                lastModified = datetime.fromtimestamp(nbtFile["LastModified"].value)
+                lastModified = datetime.datetime.fromtimestamp(nbtFile["LastModified"].value)
             else:
                 Logger.warn("ClassicWorldFormat - LastModified tag is missing. Using default value!", module="classicworld")
                 lastModified = None
