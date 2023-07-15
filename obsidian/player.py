@@ -4,13 +4,12 @@ if TYPE_CHECKING:
     from obsidian.server import Server
     from obsidian.world import World
     from obsidian.network import NetworkHandler
-    from obsidian.blocks import AbstractBlock
 
 from typing import Optional, Type
 import asyncio
 
 from obsidian.packet import AbstractResponsePacket, Packets
-from obsidian.blocks import BlockManager
+from obsidian.blocks import AbstractBlock, BlockManager
 from obsidian.log import Logger
 from obsidian.cpe import CPEExtension
 from obsidian.commands import Commands, _parseArgs
