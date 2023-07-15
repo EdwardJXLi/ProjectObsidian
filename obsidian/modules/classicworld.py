@@ -153,51 +153,52 @@ class ClassicWorldModule(AbstractModule):
 
             # If the world is a classicube world, convert block coordinates to player-position coordinates
             if classicube and spawnX is not None and spawnY is not None and spawnZ is not None:
+                Logger.warn("Applying Classicube Spawn Coordinates Fix! If your spawn is messed up, this is probably why!", module="classicworld")
                 spawnX = spawnX * 32 + 16
                 spawnY = spawnY * 32 + 51
                 spawnZ = spawnZ * 32 + 16
 
-            # Parse World Creation Information
+            # Parse World Creation Information. This is optional field!
             if "CreatedBy" in nbtFile:
-                # Parse Player Service. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
+                # Parse Player Service. This is optional field!
                 if "Service" in nbtFile["CreatedBy"]:
                     worldCreationService = nbtFile["CreatedBy"]["Service"].value
                 else:
-                    Logger.warn("ClassicWorldFormat - Service tag is missing from CreatedBy compound. Using default value!", module="classicworld")
+                    Logger.info("ClassicWorldFormat - Service tag is missing from CreatedBy compound. Using default value!", module="classicworld")
                     worldCreationService = None
-                # Parse Player Name. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
+                # Parse Player Name. This is optional field!
                 if "Username" in nbtFile["CreatedBy"]:
                     worldCreationPlayer = nbtFile["CreatedBy"]["Username"].value
                 else:
-                    Logger.warn("ClassicWorldFormat - Username tag is missing from CreatedBy compound. Using default value!", module="classicworld")
+                    Logger.info("ClassicWorldFormat - Username tag is missing from CreatedBy compound. Using default value!", module="classicworld")
                     worldCreationPlayer = None
             else:
-                Logger.warn("ClassicWorldFormat - CreatedBy compound is missing. Using default values!", module="classicworld")
+                Logger.info("ClassicWorldFormat - CreatedBy compound is missing. Using default values!", module="classicworld")
                 worldCreationService = None
                 worldCreationPlayer = None
 
-            # Parse Map Generator Information
+            # Parse Map Generator Information. This is optional field!
             if "MapGenerator" in nbtFile:
-                # Parse Map Generator Software. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
+                # Parse Map Generator Software. This is optional field!
                 if "Software" in nbtFile["MapGenerator"]:
                     mapGeneratorSoftware = nbtFile["MapGenerator"]["Software"].value
                 else:
-                    Logger.warn("ClassicWorldFormat - Software tag is missing from MapGenerator compound. Using default value!", module="classicworld")
+                    Logger.info("ClassicWorldFormat - Software tag is missing from MapGenerator compound. Using default value!", module="classicworld")
                     mapGeneratorSoftware = None
-                # Parse Map Generator Name. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
+                # Parse Map Generator Name. This is optional field!
                 if "MapGeneratorName" in nbtFile["MapGenerator"]:
                     mapGeneratorName = nbtFile["MapGenerator"]["MapGeneratorName"].value
                 else:
-                    Logger.warn("ClassicWorldFormat - MapGeneratorName tag is missing from MapGenerator compound. Using default value!", module="classicworld")
+                    Logger.info("ClassicWorldFormat - MapGeneratorName tag is missing from MapGenerator compound. Using default value!", module="classicworld")
                     mapGeneratorName = None
                 # Parse World Seed. THIS IS ACTUALLY NOT PART OF THE SPEC, but some software adds it so we will parse it!
                 if "Seed" in nbtFile["MapGenerator"]:
                     seed = nbtFile["MapGenerator"]["Seed"].value
                 else:
-                    Logger.warn("ClassicWorldFormat - Seed tag is missing from MapGenerator compound. Using default value!", module="classicworld")
+                    Logger.info("ClassicWorldFormat - Seed tag is missing from MapGenerator compound. Using default value!", module="classicworld")
                     seed = None
             else:
-                Logger.warn("ClassicWorldFormat - MapGenerator compound is missing. Using default values!", module="classicworld")
+                Logger.info("ClassicWorldFormat - MapGenerator compound is missing. Using default values!", module="classicworld")
                 mapGeneratorSoftware = None
                 mapGeneratorName = None
                 seed = None
@@ -206,26 +207,26 @@ class ClassicWorldModule(AbstractModule):
             if "UUID" in nbtFile:
                 worldUUID = uuid.UUID(bytes=bytes(nbtFile["UUID"].value))
             else:
-                Logger.warn("ClassicWorldFormat - UUID tag is missing. Using default value!", module="classicworld")
+                Logger.info("ClassicWorldFormat - UUID tag is missing. Using default value!", module="classicworld")
                 worldUUID = None
 
-            # Parse TimeCreated tag. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
+            # Parse TimeCreated tag. This is optional field!
             if "TimeCreated" in nbtFile:
                 timeCreated = datetime.datetime.fromtimestamp(nbtFile["TimeCreated"].value)
             else:
-                Logger.warn("ClassicWorldFormat - TimeCreated tag is missing. Using default value!", module="classicworld")
+                Logger.info("ClassicWorldFormat - TimeCreated tag is missing. Using default value!", module="classicworld")
                 timeCreated = None
-            # Parse LastAccessed tag. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
+            # Parse LastAccessed tag. This is optional field!
             if "LastAccessed" in nbtFile:
                 lastAccessed = datetime.datetime.fromtimestamp(nbtFile["LastAccessed"].value)
             else:
-                Logger.warn("ClassicWorldFormat - LastAccessed tag is missing. Using default value!", module="classicworld")
+                Logger.info("ClassicWorldFormat - LastAccessed tag is missing. Using default value!", module="classicworld")
                 lastAccessed = None
-            # Parse LastModified tag. This is a "Mandatory" spec as per the wiki, but some software leaves it blank
+            # Parse LastModified tag. This is optional field!
             if "LastModified" in nbtFile:
                 lastModified = datetime.datetime.fromtimestamp(nbtFile["LastModified"].value)
             else:
-                Logger.warn("ClassicWorldFormat - LastModified tag is missing. Using default value!", module="classicworld")
+                Logger.info("ClassicWorldFormat - LastModified tag is missing. Using default value!", module="classicworld")
                 lastModified = None
             # Finally, add the missing values that obsidian uses
             canEdit = True  # ClassicWorld does not save this information, so we will assume it is editable
@@ -238,7 +239,7 @@ class ClassicWorldModule(AbstractModule):
                     Logger.warn(f"ClassicWorldFormat - Unknown World Generator {mapGeneratorName}.", module="classicworld")
                     generator = None  # Continue with no generator
             else:
-                Logger.warn(f"ObsidianWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="classicworld")
+                Logger.warn(f"ClassicWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="classicworld")
                 generator = None
 
             # Load Additional Metadata
