@@ -49,7 +49,10 @@ def get_git_revision():
 
 
 # Server Version
-__version__ = f"dev_{get_git_revision()[:7]}"
+try:
+    __version__ = f"dev_{get_git_revision()[:7]}"
+except FileNotFoundError:
+    __version__ = "unknown"
 
 
 # Colour handler
