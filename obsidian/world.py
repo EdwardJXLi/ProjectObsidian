@@ -134,6 +134,7 @@ class WorldManager:
             spawnPitch=spawnPitch,
             # World Config Info
             generator=generator,  # Pass In World Generator
+            worldFormat=self.worldFormat,  # Pass In World Format
             persistent=persistent,  # Pass In Persistent Flag
             fileIO=fileIO,  # Pass In FileIO Object (if persistent set)
             # Misc World Info
@@ -390,6 +391,7 @@ class World:
         spawnYaw: Optional[int] = None,
         spawnPitch: Optional[int] = None,
         generator: Optional[AbstractMapGenerator] = None,
+        worldFormat: Optional[AbstractWorldFormat] = None,
         persistent: bool = False,
         fileIO: Optional[io.BufferedRandom] = None,
         canEdit: bool = True,
@@ -408,6 +410,7 @@ class World:
         self.worldManager: WorldManager = worldManager
         self.name: str = name
         self.generator: Optional[AbstractMapGenerator] = generator
+        self.worldFormat: Optional[AbstractWorldFormat] = worldFormat
         self.sizeX: int = sizeX
         self.sizeY: int = sizeY
         self.sizeZ: int = sizeZ

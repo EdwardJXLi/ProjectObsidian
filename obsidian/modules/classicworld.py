@@ -319,6 +319,7 @@ class ClassicWorldModule(AbstractModule):
                 spawnYaw=spawnYaw,
                 spawnPitch=spawnPitch,
                 generator=generator,
+                worldFormat=self,
                 persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO,  # Pass In File Reader/Writer
                 canEdit=canEdit,

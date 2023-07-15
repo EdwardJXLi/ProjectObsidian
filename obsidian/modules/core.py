@@ -1025,6 +1025,7 @@ class CoreModule(AbstractModule):
                 spawnYaw=spawnYaw,
                 spawnPitch=spawnPitch,
                 generator=generator,
+                worldFormat=self,
                 persistent=persistent,  # Pass In Persistent Flag
                 fileIO=fileIO,  # Pass In File Reader/Writer
                 canEdit=canEdit,
@@ -2441,8 +2442,8 @@ class CoreModule(AbstractModule):
             output.append(f"&d[World Size]&f &7x:&f{world.sizeX} &7y:&f{world.sizeY} &7z:&f{world.sizeZ}")
             output.append(f"&d[World Spawn]&f &7x:&f{world.spawnX//32} &7y:&f{world.spawnY//32} &7z:&f{world.spawnZ//32}")
             output.append(f"&d[World Generator]&f {world.generator.NAME if world.generator else 'N/A'}")
+            output.append(f"&d[World Format]&f {world.worldFormat.NAME if world.worldFormat else 'N/A'}")
             output.append(f"&d[Read Only]&f {not world.canEdit}")
-            output.append(f"&d[Max Players]&f {world.maxPlayers}")
             output.append(f"&d[UUID]&f {world.worldUUID}")
             output.append(f"&d[Created By]&f {world.worldCreationPlayer} (Account: {world.worldCreationService})")
             output.append(f"&d[Map Generator]&f {world.mapGeneratorName} (Using {world.mapGeneratorSoftware})")
