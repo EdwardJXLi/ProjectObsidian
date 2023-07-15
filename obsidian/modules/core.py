@@ -912,7 +912,7 @@ class CoreModule(AbstractModule):
             persistent: bool = True
         ):
             # Open Zip File
-            Logger.debug("Loading OBW File", module="obsidian-map")
+            Logger.debug("Loading OBW File", module="obsidianworld")
             zipFile = zipfile.ZipFile(fileIO)
 
             # Keep track of which files have not been touched
@@ -924,10 +924,10 @@ class CoreModule(AbstractModule):
                 raise WorldFormatError("ObsidianWorldFormat - Invalid OBW File! Missing Critical Data!")
 
             # Load Metadata
-            Logger.debug("Loading Metadata", module="obsidian-map")
+            Logger.debug("Loading Metadata", module="obsidianworld")
             worldMetadata = json.loads(zipFile.read("metadata").decode("utf-8"))
             untouchedFiles.remove("metadata")
-            Logger.debug(f"Loaded Metadata: {worldMetadata}", module="obsidian-map")
+            Logger.debug(f"Loaded Metadata: {worldMetadata}", module="obsidianworld")
 
             # Check if metadata is valid
             if self.criticalFields.intersection(set(worldMetadata.keys())) != self.criticalFields:
@@ -963,29 +963,29 @@ class CoreModule(AbstractModule):
                 if mapGeneratorName in MapGenerators:
                     generator = MapGenerators[mapGeneratorName]
                 else:
-                    Logger.warn(f"ObsidianWorldFormat - Unknown World Generator {mapGeneratorName}.", module="obsidian-map")
+                    Logger.warn(f"ObsidianWorldFormat - Unknown World Generator {mapGeneratorName}.", module="obsidianworld")
                     generator = None  # Continue with no generator
             else:
-                Logger.warn(f"ObsidianWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="obsidian-map")
+                Logger.warn(f"ObsidianWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="obsidianworld")
                 generator = None
 
             # Check if version is valid
             if version != self.VERSION:
-                Logger.warn(f"ObsidianWorldFormat - World Version Mismatch! Expected: {self.VERSION} Got: {version}", module="obsidian-map")
+                Logger.warn(f"ObsidianWorldFormat - World Version Mismatch! Expected: {self.VERSION} Got: {version}", module="obsidianworld")
 
             # Check if world names are the same
             if name != Path(fileIO.name).stem:
-                Logger.warn(f"ObsidianWorldFormat - World Name Mismatch! Expected: {Path(fileIO.name).stem} Got: {name}", module="obsidian-map")
+                Logger.warn(f"ObsidianWorldFormat - World Name Mismatch! Expected: {Path(fileIO.name).stem} Got: {name}", module="obsidianworld")
 
             # Load Additional Metadata
-            Logger.debug("Loading Additional Metadata", module="obsidian-map")
+            Logger.debug("Loading Additional Metadata", module="obsidianworld")
             additionalMetadata: dict[tuple[str, str], WorldMetadata] = {}
             for filename in zipFile.namelist():
                 # Check if file is additional metadata
                 if filename.startswith("extmetadata/"):
                     # Check if metadata is valid
                     if len(filename.split("/")) != 3:
-                        Logger.warn(f"ObsidianWorldFormat - Invalid Additional Metadata File! Expected: extmetadata/<software>/<name>! Got: {filename}", module="obsidian-map")
+                        Logger.warn(f"ObsidianWorldFormat - Invalid Additional Metadata File! Expected: extmetadata/<software>/<name>! Got: {filename}", module="obsidianworld")
                         continue
 
                     # Get metadata software and name
@@ -994,17 +994,17 @@ class CoreModule(AbstractModule):
                     # Get the metadata reader
                     metadataReader = WorldFormatManager.getMetadataReader(self, metadataSoftware, metadataName)
                     if metadataReader is None:
-                        Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Reading Metadata: [{metadataSoftware}]{metadataName}", module="obsidian-map")
+                        Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Reading Metadata: [{metadataSoftware}]{metadataName}", module="obsidianworld")
                         continue
 
                     # Read metadata file
                     metadataDict = json.loads(zipFile.read(filename).decode("utf-8"))
-                    Logger.debug(f"Loading Additional Metadata: [{metadataSoftware}]{metadataName} - {metadataDict}", module="obsidian-map")
+                    Logger.debug(f"Loading Additional Metadata: [{metadataSoftware}]{metadataName} - {metadataDict}", module="obsidianworld")
                     additionalMetadata[(metadataSoftware, metadataName)] = metadataReader(metadataDict)
                     untouchedFiles.remove(filename)
 
             # Load Map Data
-            Logger.debug("Loading Map Data", module="obsidian-map")
+            Logger.debug("Loading Map Data", module="obsidianworld")
             rawData = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
             untouchedFiles.remove("map")
 
@@ -1041,7 +1041,7 @@ class CoreModule(AbstractModule):
 
             # Check if there are any files left in the zip file
             if len(untouchedFiles) > 0:
-                Logger.warn(f"ObsidianWorldFormat - Unknown Files In OBW File: {untouchedFiles}", module="obsidian-map")
+                Logger.warn(f"ObsidianWorldFormat - Unknown Files In OBW File: {untouchedFiles}", module="obsidianworld")
                 unrecognizedFiles: dict[str, io.BytesIO] = dict()
                 # Make a copy of each unrecognized file and put them in unrecognizedFiles
                 for filename in untouchedFiles:
@@ -1062,7 +1062,7 @@ class CoreModule(AbstractModule):
             worldManager: WorldManager
         ):
             # Set up the metadata about the world
-            Logger.debug("Saving Metadata", module="obsidian-map")
+            Logger.debug("Saving Metadata", module="obsidianworld")
             worldMetadata = {}
 
             # This world format closely follows that of
@@ -1104,17 +1104,17 @@ class CoreModule(AbstractModule):
             worldMetadata["seed"] = world.seed
 
             # Generate Additional Metadata
-            Logger.debug("Saving Additional Metadata", module="obsidian-map")
+            Logger.debug("Saving Additional Metadata", module="obsidianworld")
             additionalMetadata: dict[tuple[str, str], dict] = {}
             for (metadataSoftware, metadataName), metadata in world.additionalMetadata.items():
                 # Get metadata writer
                 metadataWriter = WorldFormatManager.getMetadataWriter(self, metadataSoftware, metadataName)
                 if metadataWriter is None:
-                    Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Writing Metadata: [{metadataSoftware}]{metadataName}", module="obsidian-map")
+                    Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Writing Metadata: [{metadataSoftware}]{metadataName}", module="obsidianworld")
                     continue
 
                 # Create metadata dict
-                Logger.debug(f"Generating Additional Metadata: [{metadataSoftware}]{metadataName} - {metadata}", module="obsidian-map")
+                Logger.debug(f"Generating Additional Metadata: [{metadataSoftware}]{metadataName} - {metadata}", module="obsidianworld")
                 additionalMetadata[(metadataSoftware, metadataName)] = metadataWriter(metadata)
 
             # Clearing Current Save File
@@ -1124,19 +1124,19 @@ class CoreModule(AbstractModule):
             # Create zip file
             with zipfile.ZipFile(fileIO, "w") as zipFile:
                 # Write the metadata file
-                Logger.debug("Writing metadata file", module="obsidian-map")
+                Logger.debug("Writing metadata file", module="obsidianworld")
                 zipFile.writestr("metadata", json.dumps(worldMetadata, indent=4))
                 # Write additional metadata files
                 for (metadataSoftware, metadataName), metadataDict in additionalMetadata.items():
-                    Logger.debug(f"Writing additional metadata file: {metadataName}", module="obsidian-map")
+                    Logger.debug(f"Writing additional metadata file: {metadataName}", module="obsidianworld")
                     zipFile.writestr(str(Path("extmetadata", metadataSoftware, metadataName)), json.dumps(metadataDict, indent=4))
                 # Write the map file
-                Logger.debug("Writing map file", module="obsidian-map")
+                Logger.debug("Writing map file", module="obsidianworld")
                 zipFile.writestr("map", world.gzipMap())
                 # Check if there were any unrecognized files
                 if hasattr(world, "unrecognizedFiles"):
                     unrecognizedFiles: dict[str, io.BytesIO] = getattr(world, "unrecognizedFiles")
-                    Logger.debug(f"Writing {len(unrecognizedFiles)} unrecognized files: {unrecognizedFiles}", module="obsidian-map")
+                    Logger.debug(f"Writing {len(unrecognizedFiles)} unrecognized files: {unrecognizedFiles}", module="obsidianworld")
                     for filename, file in unrecognizedFiles.items():
                         zipFile.writestr(filename, file.read())
 

@@ -385,7 +385,7 @@ class ClassicWorldModule(AbstractModule):
             # If world has any unrecognized metadata, write it to file
             if hasattr(world, "classicworldUnrecognizedMetadata"):
                 unrecognizedMetadata: dict[tuple[str, str], NBTLib.TAG_Compound] = getattr(world, "classicworldUnrecognizedMetadata")
-                Logger.debug(f"Writing {len(unrecognizedMetadata)} unrecognized metadata entries: {unrecognizedMetadata}", module="obsidian-map")
+                Logger.debug(f"Writing {len(unrecognizedMetadata)} unrecognized metadata entries: {unrecognizedMetadata}", module="classicworld")
                 for (metadataSoftware, metadataName), unrecognizedNbt in unrecognizedMetadata.items():
                     # Check if software compound exists. If not, create it.
                     if metadataSoftware not in metadataNbt:
