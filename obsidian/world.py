@@ -87,6 +87,7 @@ class WorldManager:
         spawnZ: Optional[int] = None,
         spawnYaw: Optional[int] = None,
         spawnPitch: Optional[int] = None,
+        worldCreationService: Optional[str] = None,
         worldCreationPlayer: Optional[str] = None
     ) -> World:
         Logger.info(f"Creating New World {worldName}...", module="world-create")
@@ -137,8 +138,10 @@ class WorldManager:
             fileIO=fileIO,  # Pass In FileIO Object (if persistent set)
             # Misc World Info
             worldUUID=uuid.uuid4(),  # Generate World UUID
-            worldCreationService="Obsidian",  # Set World Creation Service
-            worldCreationPlayer=worldCreationPlayer or "ObsidianPlayer",  # Set World Creation Player
+            worldCreationService=worldCreationService or "N/A",  # Set World Creation Service
+            worldCreationPlayer=worldCreationPlayer or "ObsidianServer",  # Set World Creation Player
+            mapGeneratorSoftware="Obsidian",  # Set World Map Generator Software
+            mapGeneratorName=generator.NAME,  # Set World Map Generator Name
             timeCreated=datetime.datetime.now(),  # Set World Creation Time
             lastModified=datetime.datetime.now(),  # Set World Last Modified Time
             lastAccessed=datetime.datetime.now()  # Set World Last Accessed Time

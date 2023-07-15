@@ -2440,9 +2440,7 @@ class CoreModule(AbstractModule):
             output.append(f"&d[Seed]&f {world.seed}")
             output.append(f"&d[World Size]&f &7x:&f{world.sizeX} &7y:&f{world.sizeY} &7z:&f{world.sizeZ}")
             output.append(f"&d[World Spawn]&f &7x:&f{world.spawnX//32} &7y:&f{world.spawnY//32} &7z:&f{world.spawnZ//32}")
-            if world.generator:
-                output.append(f"&d[World Generator]&f {world.generator.NAME}")
-            output.append(f"&d[Persistent]&f {world.persistent}")
+            output.append(f"&d[World Generator]&f {world.generator.NAME if world.generator else 'N/A'}")
             output.append(f"&d[Read Only]&f {not world.canEdit}")
             output.append(f"&d[Max Players]&f {world.maxPlayers}")
             output.append(f"&d[UUID]&f {world.worldUUID}")
