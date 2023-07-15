@@ -48,8 +48,8 @@ class ClickDistanceModule(AbstractModule):
             return {"distance": distanceMetadata.distance}
 
         # Register readers and writers
-        WorldFormatManager.registerMetadataReader(WorldFormats.ObsidianWorld, "clickDistance", readClickDistance)
-        WorldFormatManager.registerMetadataWriter(WorldFormats.ObsidianWorld, "clickDistance", writeClickDistance)
+        WorldFormatManager.registerMetadataReader(WorldFormats.ObsidianWorld, "CPE", "clickDistance", readClickDistance)
+        WorldFormatManager.registerMetadataWriter(WorldFormats.ObsidianWorld, "CPE", "clickDistance", writeClickDistance)
 
         # Create helper function to set click distance of a player
         @InjectMethod(target=Player)
@@ -108,13 +108,14 @@ class ClickDistanceModule(AbstractModule):
             defaultClickDistance = cast(ClickDistanceModule, Modules.ClickDistance).config.defaultClickDistance
 
             # If "clickDistance" metadata is not present, create it
-            if self.additionalMetadata.get("clickDistance") is None:
-                self.additionalMetadata["clickDistance"] = ClickDistanceModule.ClickDistanceMetadata()
-                self.additionalMetadata["clickDistance"].setClickDistance(defaultClickDistance)
+            if self.additionalMetadata.get(("CPE", "clickDistance")) is None:
+                clickDistanceMetadata = ClickDistanceModule.ClickDistanceMetadata()
+                clickDistanceMetadata.setClickDistance(defaultClickDistance)
+                self.additionalMetadata[("CPE", "clickDistance")] = clickDistanceMetadata
 
             # Set click distance
             # Using cast to ignore type of self, as clickDistance is injected
-            cast(Any, self).clickDistance = self.additionalMetadata["clickDistance"]
+            cast(Any, self).clickDistance = self.additionalMetadata[("CPE", "clickDistance")]
 
     # Packet to send to clients to change click distance
     @ResponsePacket(

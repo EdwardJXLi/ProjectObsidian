@@ -895,8 +895,8 @@ class CoreModule(AbstractModule):
                 return data
 
             # Register readers and writers
-            WorldFormatManager.registerMetadataReader(self, "logoutLocations", readLogoutLocation)
-            WorldFormatManager.registerMetadataWriter(self, "logoutLocations", writeLogoutLocation)
+            WorldFormatManager.registerMetadataReader(self, "obsidian", "logoutLocations", readLogoutLocation)
+            WorldFormatManager.registerMetadataWriter(self, "obsidian", "logoutLocations", writeLogoutLocation)
 
         criticalFields = {
             "version",
@@ -979,23 +979,28 @@ class CoreModule(AbstractModule):
 
             # Load Additional Metadata
             Logger.debug("Loading Additional Metadata", module="obsidian-map")
-            additionalMetadata: dict[str, WorldMetadata] = {}
+            additionalMetadata: dict[tuple[str, str], WorldMetadata] = {}
             for filename in zipFile.namelist():
                 # Check if file is additional metadata
                 if filename.startswith("extmetadata/"):
-                    # Get metadata name
-                    metadataName = filename.split("/", 1)[1]
+                    # Check if metadata is valid
+                    if len(filename.split("/")) != 3:
+                        Logger.warn(f"ObsidianWorldFormat - Invalid Additional Metadata File! Expected: extmetadata/<software>/<name>! Got: {filename}", module="obsidian-map")
+                        continue
+
+                    # Get metadata software and name
+                    _, metadataSoftware, metadataName = filename.split("/")
 
                     # Get the metadata reader
-                    metadataReader = WorldFormatManager.getMetadataReader(self, metadataName)
+                    metadataReader = WorldFormatManager.getMetadataReader(self, metadataSoftware, metadataName)
                     if metadataReader is None:
-                        Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Reading Metadata: {metadataName}", module="obsidian-map")
+                        Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Reading Metadata: [{metadataSoftware}]{metadataName}", module="obsidian-map")
                         continue
 
                     # Read metadata file
                     metadataDict = json.loads(zipFile.read(filename).decode("utf-8"))
-                    Logger.debug(f"Loading Additional Metadata: {metadataName} - {metadataDict}", module="obsidian-map")
-                    additionalMetadata[metadataName] = metadataReader(metadataDict)
+                    Logger.debug(f"Loading Additional Metadata: [{metadataSoftware}]{metadataName} - {metadataDict}", module="obsidian-map")
+                    additionalMetadata[(metadataSoftware, metadataName)] = metadataReader(metadataDict)
                     untouchedFiles.remove(filename)
 
             # Load Map Data
@@ -1100,17 +1105,17 @@ class CoreModule(AbstractModule):
 
             # Generate Additional Metadata
             Logger.debug("Saving Additional Metadata", module="obsidian-map")
-            additionalMetadata: dict[str, dict] = {}
-            for metadataName, metadata in world.additionalMetadata.items():
+            additionalMetadata: dict[tuple[str, str], dict] = {}
+            for (metadataSoftware, metadataName), metadata in world.additionalMetadata.items():
                 # Get metadata writer
-                metadataWriter = WorldFormatManager.getMetadataWriter(self, metadataName)
+                metadataWriter = WorldFormatManager.getMetadataWriter(self, metadataSoftware, metadataName)
                 if metadataWriter is None:
-                    Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Writing Metadata: {metadataName}", module="obsidian-map")
+                    Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Writing Metadata: [{metadataSoftware}]{metadataName}", module="obsidian-map")
                     continue
 
                 # Create metadata dict
-                Logger.debug(f"Generating Additional Metadata: {metadataName} - {metadata}", module="obsidian-map")
-                additionalMetadata[metadataName] = metadataWriter(metadata)
+                Logger.debug(f"Generating Additional Metadata: [{metadataSoftware}]{metadataName} - {metadata}", module="obsidian-map")
+                additionalMetadata[(metadataSoftware, metadataName)] = metadataWriter(metadata)
 
             # Clearing Current Save File
             fileIO.truncate(0)
@@ -1122,9 +1127,9 @@ class CoreModule(AbstractModule):
                 Logger.debug("Writing metadata file", module="obsidian-map")
                 zipFile.writestr("metadata", json.dumps(worldMetadata, indent=4))
                 # Write additional metadata files
-                for metadataName, metadataDict in additionalMetadata.items():
+                for (metadataSoftware, metadataName), metadataDict in additionalMetadata.items():
                     Logger.debug(f"Writing additional metadata file: {metadataName}", module="obsidian-map")
-                    zipFile.writestr("extmetadata/" + metadataName, json.dumps(metadataDict, indent=4))
+                    zipFile.writestr(str(Path("extmetadata", metadataSoftware, metadataName)), json.dumps(metadataDict, indent=4))
                 # Write the map file
                 Logger.debug("Writing map file", module="obsidian-map")
                 zipFile.writestr("map", world.gzipMap())

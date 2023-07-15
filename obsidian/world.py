@@ -399,7 +399,7 @@ class World:
         timeCreated: Optional[datetime.datetime] = None,
         lastModified: Optional[datetime.datetime] = None,
         lastAccessed: Optional[datetime.datetime] = None,
-        additionalMetadata: Optional[dict[str, WorldMetadata]] = None
+        additionalMetadata: Optional[dict[tuple[str, str], WorldMetadata]] = None
     ):
         # Y is the height
         self.worldManager: WorldManager = worldManager
@@ -464,9 +464,9 @@ class World:
 
         # Finally process any additional world metadata
         if additionalMetadata is None:
-            self.additionalMetadata: dict[str, WorldMetadata] = dict()
+            self.additionalMetadata: dict[tuple[str, str], WorldMetadata] = dict()
         else:
-            self.additionalMetadata: dict[str, WorldMetadata] = additionalMetadata
+            self.additionalMetadata: dict[tuple[str, str], WorldMetadata] = additionalMetadata
 
         # Check if file IO was given if persistent
         if self.persistent:
@@ -483,12 +483,12 @@ class World:
         # Check if server has last logout metadata enabled
         if self.worldManager.server.config.savePlayerLogoutLocation:
             # Check if last logout location metadata exists. If not, create it
-            if "logoutLocations" not in self.additionalMetadata:
+            if ("obsidian", "logoutLocations") not in self.additionalMetadata:
                 Logger.debug("Creating Last Logout Location Metadata", module="world-init")
-                self.additionalMetadata["logoutLocations"] = LogoutLocationMetadata()
+                self.additionalMetadata[("obsidian", "logoutLocations")] = LogoutLocationMetadata()
 
             # Create a quick reference to the last logout location metadata
-            self.logoutLocations = cast(LogoutLocationMetadata, self.additionalMetadata["logoutLocations"])
+            self.logoutLocations = cast(LogoutLocationMetadata, self.additionalMetadata[("obsidian", "logoutLocations")])
             Logger.debug(f"Loaded Last Logout Positions. {self.logoutLocations.getAllLogoutLocations()}", module="world-init")
 
         # Initialize WorldPlayerManager
