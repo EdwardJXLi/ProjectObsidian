@@ -77,8 +77,38 @@ class ClassicWorldModule(AbstractModule):
                 return data
 
             # Register readers and writers
-            # WorldFormatManager.registerMetadataReader(self, "obsidian", "logoutLocations", readLogoutLocation)
-            # WorldFormatManager.registerMetadataWriter(self, "obsidian", "logoutLocations", writeLogoutLocation)
+            WorldFormatManager.registerMetadataReader(self, "obsidian", "logoutLocations", readLogoutLocation)
+            WorldFormatManager.registerMetadataWriter(self, "obsidian", "logoutLocations", writeLogoutLocation)
+
+        # Helper function to convert classicworld naming to obsidian naming
+        # For example:
+        # SomeSoftware -> someSoftware
+        # TestThing1 -> testThing1
+        # ABC -> ABC
+        # CAPITALS -> CAPITALS
+        @staticmethod
+        def convertNameToObsidian(name: str) -> str:
+            # If name is all caps, return it
+            if name.isupper():
+                return name
+
+            # If the first character is uppercase, make it lowercase
+            return name[0].lower() + name[1:]
+
+        # Helper function to convert obsidian naming to classicworld naming
+        # For example:
+        # someSoftware -> SomeSoftware
+        # testThing1 -> TestThing1
+        # ABC -> ABC
+        # CAPITALS -> CAPITALS
+        @staticmethod
+        def convertNameToCW(name: str) -> str:
+            # If name is all caps, return it
+            if name.isupper():
+                return name
+
+            # If the first character is lowercase, make it uppercase
+            return name[0].upper() + name[1:]
 
         def loadWorld(
             self,
@@ -247,9 +277,12 @@ class ClassicWorldModule(AbstractModule):
             additionalMetadata: dict[tuple[str, str], WorldMetadata] = {}
             unrecognizedMetadata: dict[tuple[str, str], NBTLib.TAG_Compound] = {}
             # Loop through each software and process its metadata
-            for metadataSoftware, softwareNbt in nbtFile["Metadata"].items():
+            for _metadataSoftware, softwareNbt in nbtFile["Metadata"].items():
                 # For each software, loop through its sub-compounds and process them
-                for metadataName, metadataNbt in softwareNbt.items():
+                for _metadataName, metadataNbt in softwareNbt.items():
+                    # Convert classicworld naming to obsidian naming
+                    metadataSoftware = self.convertNameToObsidian(_metadataSoftware)
+                    metadataName = self.convertNameToObsidian(_metadataName)
                     # Get the metadata reader
                     metadataReader = WorldFormatManager.getMetadataReader(self, metadataSoftware, metadataName)
                     if metadataReader is None:
@@ -367,6 +400,10 @@ class ClassicWorldModule(AbstractModule):
 
             # Loop through metadata and write it to file
             for (metadataSoftware, metadataName), metadata in world.additionalMetadata.items():
+                # Convert obsidian naming to classicworld naming
+                _metadataSoftware = self.convertNameToCW(metadataSoftware)
+                _metadataName = self.convertNameToCW(metadataName)
+
                 # Get metadata writer
                 metadataWriter = WorldFormatManager.getMetadataWriter(self, metadataSoftware, metadataName)
                 if metadataWriter is None:
@@ -374,27 +411,31 @@ class ClassicWorldModule(AbstractModule):
                     continue
 
                 # Check if software compound exists. If not, create it.
-                if metadataSoftware not in metadataNbt:
-                    metadataNbt[metadataSoftware] = NBTLib.TAG_Compound(name=metadataSoftware)
-                metadataSoftwareNbt = metadataNbt[metadataSoftware]
+                if _metadataSoftware not in metadataNbt:
+                    metadataNbt[_metadataSoftware] = NBTLib.TAG_Compound(name=_metadataSoftware)
+                metadataSoftwareNbt = metadataNbt[_metadataSoftware]
 
                 # Write metadata
                 Logger.debug(f"Generating Additional Metadata: [{metadataSoftware}]{metadataName} - {metadata}", module="classicworld")
-                metadataSoftwareNbt[metadataName] = metadataWriter(metadata)
+                metadataSoftwareNbt[_metadataName] = metadataWriter(metadata)
 
             # If world has any unrecognized metadata, write it to file
             if hasattr(world, "classicworldUnrecognizedMetadata"):
                 unrecognizedMetadata: dict[tuple[str, str], NBTLib.TAG_Compound] = getattr(world, "classicworldUnrecognizedMetadata")
                 Logger.debug(f"Writing {len(unrecognizedMetadata)} unrecognized metadata entries: {unrecognizedMetadata}", module="classicworld")
                 for (metadataSoftware, metadataName), unrecognizedNbt in unrecognizedMetadata.items():
+                    # Convert obsidian naming to classicworld naming
+                    _metadataSoftware = self.convertNameToCW(metadataSoftware)
+                    _metadataName = self.convertNameToCW(metadataName)
+
                     # Check if software compound exists. If not, create it.
-                    if metadataSoftware not in metadataNbt:
-                        metadataNbt[metadataSoftware] = NBTLib.TAG_Compound(name=metadataSoftware)
-                    metadataSoftwareNbt = metadataNbt[metadataSoftware]
+                    if _metadataSoftware not in metadataNbt:
+                        metadataNbt[_metadataSoftware] = NBTLib.TAG_Compound(name=_metadataSoftware)
+                    metadataSoftwareNbt = metadataNbt[_metadataSoftware]
 
                     # Write unknown metadata
                     Logger.debug(f"Writing Unrecognized Metadata: [{metadataSoftware}]{metadataName} - {unrecognizedNbt}", module="classicworld")
-                    metadataSoftwareNbt[metadataName] = unrecognizedNbt
+                    metadataSoftwareNbt[_metadataName] = unrecognizedNbt
 
             # Write metadata to file
             nbtFile.tags.append(metadataNbt)
