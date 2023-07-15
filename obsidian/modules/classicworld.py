@@ -6,6 +6,7 @@ from obsidian.world import World, WorldManager
 from obsidian.errors import WorldFormatError
 
 from pathlib import Path
+import time
 import io
 import uuid
 
@@ -49,6 +50,7 @@ class ClassicWorldModule(AbstractModule):
 
             # Open, read, and parse NBT file
             Logger.debug("Reading ClassicWorld NBT File", module="ClassicWorld")
+            fileIO.seek(0)
             nbtFile = NBTLib.NBTFile(fileobj=fileIO)
 
             # Check ClassicWorld Version
@@ -236,4 +238,57 @@ class ClassicWorldModule(AbstractModule):
             fileIO: io.BufferedRandom,
             worldManager: WorldManager
         ):
-            raise NotImplementedError("ClassicWorldFormat.saveWorld() is not implemented!")
+            from obsidian.modules.nbtlib import NBTLib
+
+            Logger.warn("Saving to ClassicWorld is still WIP! Expect bugs!", module="ClassicWorld")
+
+            # Begin creating NBT File
+            nbtFile = NBTLib.NBTFile()
+            nbtFile.name = "ClassicWorld"
+
+            # Write format version
+            nbtFile.tags.append(NBTLib.TAG_Byte(name="FormatVersion", value=1))
+
+            # Write world name and UUID
+            nbtFile.tags.append(NBTLib.TAG_String(name="Name", value=world.name))
+            nbtFile.tags.append(NBTLib.TAG_Byte_Array(name="UUID", buffer=io.BytesIO(world.worldUUID.bytes)))
+
+            # Write world size
+            nbtFile.tags.append(NBTLib.TAG_Short(name="X", value=world.sizeX))
+            nbtFile.tags.append(NBTLib.TAG_Short(name="Y", value=world.sizeY))
+            nbtFile.tags.append(NBTLib.TAG_Short(name="Z", value=world.sizeZ))
+
+            # Generate and write CreatedBy compound
+            createdBy = NBTLib.TAG_Compound(name="CreatedBy")
+            createdBy.tags.append(NBTLib.TAG_String(name="Service", value=world.worldCreationService or "Unknown"))
+            createdBy.tags.append(NBTLib.TAG_String(name="Username", value=world.worldCreationPlayer or "Unknown"))
+            nbtFile.tags.append(createdBy)
+
+            # Generate and write MapGenerator compound
+            mapGenerator = NBTLib.TAG_Compound(name="MapGenerator")
+            mapGenerator.tags.append(NBTLib.TAG_String(name="Software", value=world.mapGeneratorSoftware or "Unknown"))
+            mapGenerator.tags.append(NBTLib.TAG_String(name="MapGeneratorName", value=world.mapGeneratorName or "Unknown"))
+            mapGenerator.tags.append(NBTLib.TAG_Int(name="Seed", value=world.seed))
+            nbtFile.tags.append(mapGenerator)
+
+            # Write time information
+            nbtFile.tags.append(NBTLib.TAG_Long(name="TimeCreated", value=int(time.mktime(world.timeCreated.timetuple()))))
+            nbtFile.tags.append(NBTLib.TAG_Long(name="LastAccessed", value=int(time.mktime(world.lastAccessed.timetuple()))))
+            nbtFile.tags.append(NBTLib.TAG_Long(name="LastModified", value=int(time.mktime(world.lastModified.timetuple()))))
+
+            # Generate and write Spawn information
+            spawn = NBTLib.TAG_Compound(name="Spawn")
+            spawn.tags.append(NBTLib.TAG_Short(name="X", value=world.spawnX))
+            spawn.tags.append(NBTLib.TAG_Short(name="Y", value=world.spawnY))
+            spawn.tags.append(NBTLib.TAG_Short(name="Z", value=world.spawnZ))
+            spawn.tags.append(NBTLib.TAG_Byte(name="H", value=world.spawnYaw))
+            spawn.tags.append(NBTLib.TAG_Byte(name="P", value=world.spawnPitch))
+            nbtFile.tags.append(spawn)
+
+            # Write map data
+            nbtFile.tags.append(NBTLib.TAG_Byte_Array(name="BlockArray", buffer=io.BytesIO(world.mapArray)))
+
+            # Test it out
+            raise NotImplementedError("ClassicWorldFormat - Saving is not implemented yet!")
+            print(nbtFile.pretty_tree())
+            nbtFile.write_file("test.nbt")

@@ -495,7 +495,7 @@ class NBTLib(AbstractModule):
             # TODO: add a value parameter as well
             super(NBTLib.TAG_Compound, self).__init__()
             self.tags = []
-            self.name = ""
+            self.name = name
             if buffer:
                 self._parse_buffer(buffer)
 
