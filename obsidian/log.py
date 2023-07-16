@@ -39,6 +39,8 @@ class Logger:
         # Open File
         logPath = Path(logPath, f"{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log")
         cls.LOGFILE = open(logPath, "a")
+        # Write debug message
+        print(f"Logging to {logPath}")
 
     @classmethod
     def _log(cls, message: str, tags: tuple[str, ...] = tuple(), colour: str = Colour.NONE, textColour: str = Colour.NONE):
