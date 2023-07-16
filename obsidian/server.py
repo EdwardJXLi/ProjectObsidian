@@ -8,6 +8,7 @@ import sys
 import os
 import threading
 import time
+import uuid
 
 from obsidian.config import ServerConfig
 from obsidian.packet import PacketManager, Packets
@@ -50,6 +51,7 @@ class Server:
         self.port: int = port  # Port Number Of Server
         self.name: str = name  # Name Of Server
         self.motd: str = motd  # Message Of The Day
+        self.salt: str = str(uuid.uuid4())  # Unique Server Salt
         self.protocolVersion: int = 0x07  # Minecraft Protocol Version
         self.initialized: bool = False  # Flag Set When Everything Is Fully Loaded
         self.stopping: bool = False  # Flag To Prevent Crl-C Spamming

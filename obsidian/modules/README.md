@@ -5,6 +5,7 @@
 
 ## Libraries / Utilities
 - `nbtlib` - NBT Library, used for reading and writing NBT files
+- `classicubeapi` - Classicube API Library, used for interfacing with the Classicube API for server heartbeat and authentication
 
 ## Official Modules
 - `classicworld` - Adds support for the classicworld format
