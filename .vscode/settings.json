@@ -44,6 +44,7 @@
         "nargs",
         "nologging",
         "objclass",
+        "obsidianworld",
         "peername",
         "pkgutil",
         "PLAYERLOOP",

@@ -78,6 +78,8 @@ class Logger:
                     cls.LOGFILE.flush()
             except Exception as e:
                 print(f"Error While Handing Log Message - {type(e).__name__}: {e}")
+        # Reset colour at the end of the line
+        output += Colour.RESET
         # Print Final String
         print(output)
 

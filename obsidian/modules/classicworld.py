@@ -125,6 +125,7 @@ class ClassicWorldModule(AbstractModule):
             nbtFile = NBTLib.NBTFile(fileobj=fileIO)
 
             # Check ClassicWorld Version
+            Logger.debug("Checking ClassicWorld Version", module="classicworld")
             version = nbtFile["FormatVersion"].value
             if version != 1:
                 raise WorldFormatError(f"ClassicWorld version {version} is not supported!")
@@ -151,12 +152,13 @@ class ClassicWorldModule(AbstractModule):
             '''
 
             # Get world name and determine if this is a classicube world
+            Logger.debug("Parsing and Reading World Metadata", module="classicworld")
             if "Name" in nbtFile:
                 name = nbtFile["Name"].value
                 classicube = False
             else:
-                Logger.warn("ClassicWorldFormat - Name tag is missing. Using file name as world name!", module="classicworld")
-                Logger.warn("ClassicWorldFormat - Also using this information to assume world file is a classicube world!", module="classicworld")
+                Logger.warn("Name tag is missing. Using file name as world name!", module="classicworld")
+                Logger.warn("Also using this information to assume world file is a classicube world!", module="classicworld")
                 name = Path(fileIO.name).stem
                 classicube = True
 
@@ -173,7 +175,7 @@ class ClassicWorldModule(AbstractModule):
                 spawnYaw = nbtFile["Spawn"]["H"].value
                 spawnPitch = nbtFile["Spawn"]["P"].value
             else:
-                Logger.warn("ClassicWorldFormat - Spawn compound is missing. Using default values!", module="classicworld")
+                Logger.warn("Spawn compound is missing. Using default values!", module="classicworld")
                 spawnX = None
                 spawnY = None
                 spawnZ = None
@@ -193,16 +195,16 @@ class ClassicWorldModule(AbstractModule):
                 if "Service" in nbtFile["CreatedBy"]:
                     worldCreationService = nbtFile["CreatedBy"]["Service"].value
                 else:
-                    Logger.info("ClassicWorldFormat - Service tag is missing from CreatedBy compound. Using default value!", module="classicworld")
+                    Logger.info("Service tag is missing from CreatedBy compound. Using default value!", module="classicworld")
                     worldCreationService = None
                 # Parse Player Name. This is optional field!
                 if "Username" in nbtFile["CreatedBy"]:
                     worldCreationPlayer = nbtFile["CreatedBy"]["Username"].value
                 else:
-                    Logger.info("ClassicWorldFormat - Username tag is missing from CreatedBy compound. Using default value!", module="classicworld")
+                    Logger.info("Username tag is missing from CreatedBy compound. Using default value!", module="classicworld")
                     worldCreationPlayer = None
             else:
-                Logger.info("ClassicWorldFormat - CreatedBy compound is missing. Using default values!", module="classicworld")
+                Logger.info("CreatedBy compound is missing. Using default values!", module="classicworld")
                 worldCreationService = None
                 worldCreationPlayer = None
 
@@ -212,22 +214,22 @@ class ClassicWorldModule(AbstractModule):
                 if "Software" in nbtFile["MapGenerator"]:
                     mapGeneratorSoftware = nbtFile["MapGenerator"]["Software"].value
                 else:
-                    Logger.info("ClassicWorldFormat - Software tag is missing from MapGenerator compound. Using default value!", module="classicworld")
+                    Logger.info("Software tag is missing from MapGenerator compound. Using default value!", module="classicworld")
                     mapGeneratorSoftware = None
                 # Parse Map Generator Name. This is optional field!
                 if "MapGeneratorName" in nbtFile["MapGenerator"]:
                     mapGeneratorName = nbtFile["MapGenerator"]["MapGeneratorName"].value
                 else:
-                    Logger.info("ClassicWorldFormat - MapGeneratorName tag is missing from MapGenerator compound. Using default value!", module="classicworld")
+                    Logger.info("MapGeneratorName tag is missing from MapGenerator compound. Using default value!", module="classicworld")
                     mapGeneratorName = None
                 # Parse World Seed. THIS IS ACTUALLY NOT PART OF THE SPEC, but some software adds it so we will parse it!
                 if "Seed" in nbtFile["MapGenerator"]:
                     seed = nbtFile["MapGenerator"]["Seed"].value
                 else:
-                    Logger.info("ClassicWorldFormat - Seed tag is missing from MapGenerator compound. Using default value!", module="classicworld")
+                    Logger.info("Seed tag is missing from MapGenerator compound. Using default value!", module="classicworld")
                     seed = None
             else:
-                Logger.info("ClassicWorldFormat - MapGenerator compound is missing. Using default values!", module="classicworld")
+                Logger.info("MapGenerator compound is missing. Using default values!", module="classicworld")
                 mapGeneratorSoftware = None
                 mapGeneratorName = None
                 seed = None
@@ -236,39 +238,40 @@ class ClassicWorldModule(AbstractModule):
             if "UUID" in nbtFile:
                 worldUUID = uuid.UUID(bytes=bytes(nbtFile["UUID"].value))
             else:
-                Logger.info("ClassicWorldFormat - UUID tag is missing. Using default value!", module="classicworld")
+                Logger.info("UUID tag is missing. Using default value!", module="classicworld")
                 worldUUID = None
 
             # Parse TimeCreated tag. This is optional field!
             if "TimeCreated" in nbtFile:
                 timeCreated = datetime.datetime.fromtimestamp(nbtFile["TimeCreated"].value)
             else:
-                Logger.info("ClassicWorldFormat - TimeCreated tag is missing. Using default value!", module="classicworld")
+                Logger.info("TimeCreated tag is missing. Using default value!", module="classicworld")
                 timeCreated = None
             # Parse LastAccessed tag. This is optional field!
             if "LastAccessed" in nbtFile:
                 lastAccessed = datetime.datetime.fromtimestamp(nbtFile["LastAccessed"].value)
             else:
-                Logger.info("ClassicWorldFormat - LastAccessed tag is missing. Using default value!", module="classicworld")
+                Logger.info("LastAccessed tag is missing. Using default value!", module="classicworld")
                 lastAccessed = None
             # Parse LastModified tag. This is optional field!
             if "LastModified" in nbtFile:
                 lastModified = datetime.datetime.fromtimestamp(nbtFile["LastModified"].value)
             else:
-                Logger.info("ClassicWorldFormat - LastModified tag is missing. Using default value!", module="classicworld")
+                Logger.info("LastModified tag is missing. Using default value!", module="classicworld")
                 lastModified = None
             # Finally, add the missing values that obsidian uses
             canEdit = True  # ClassicWorld does not save this information, so we will assume it is editable
 
             # Try parsing world generator
+            Logger.debug("Parsing World Generator", module="classicworld")
             if mapGeneratorSoftware == "Obsidian":
                 if type(mapGeneratorName) is str and mapGeneratorName in MapGenerators:
                     generator = MapGenerators[mapGeneratorName]
                 else:
-                    Logger.info(f"ClassicWorldFormat - Unknown World Generator {mapGeneratorName}.", module="classicworld")
+                    Logger.info(f"Unknown World Generator {mapGeneratorName}.", module="classicworld")
                     generator = None  # Continue with no generator
             else:
-                Logger.info(f"ClassicWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="classicworld")
+                Logger.info(f"Unknown World Generator Software {mapGeneratorSoftware}.", module="classicworld")
                 generator = None
 
             # Load Additional Metadata
@@ -277,17 +280,20 @@ class ClassicWorldModule(AbstractModule):
             unrecognizedMetadata: dict[tuple[str, str], NBTLib.TAG_Compound] = {}
             # Loop through each software and process its metadata
             for _metadataSoftware, softwareNbt in nbtFile["Metadata"].items():
+                Logger.verbose(f"Loading Additional Metadata For Software: [{_metadataSoftware}]", module="classicworld")
                 # For each software, loop through its sub-compounds and process them
                 for _metadataName, metadataNbt in softwareNbt.items():
+                    Logger.verbose(f"Loading Additional Metadata For: [{_metadataSoftware}]{_metadataName}", module="classicworld")
                     # Convert classicworld naming to obsidian naming
                     metadataSoftware = self.convertNameToObsidian(_metadataSoftware)
                     metadataName = self.convertNameToObsidian(_metadataName)
                     # Get the metadata reader
                     metadataReader = WorldFormatManager.getMetadataReader(self, metadataSoftware, metadataName)
                     if metadataReader is None:
-                        Logger.warn(f"ClassicWorldFormat - World Format Does Not Support Reading Metadata: [{metadataSoftware}]{metadataName}", module="classicworld")
+                        Logger.warn(f"World Format Does Not Support Reading Metadata: [{metadataSoftware}]{metadataName}", module="classicworld")
                         unrecognizedMetadata[(metadataSoftware, metadataName)] = metadataNbt
                         continue
+                    Logger.verbose(f"Metadata [{metadataSoftware}]{metadataName} uses reader [{metadataReader}]")
 
                     # Read metadata file
                     Logger.debug(f"Loading Additional Metadata: [{metadataSoftware}]{metadataName} - {metadataNbt}", module="classicworld")
@@ -298,10 +304,11 @@ class ClassicWorldModule(AbstractModule):
                 Logger.warn(f"There were {len(unrecognizedMetadata)} unrecognized metadata types: {list(unrecognizedMetadata.keys())}", module="classicworld")
 
             # Load Map Data
-            Logger.debug("ClassicWorldFormat - Loading Map Data", module="classicworld")
+            Logger.debug("Loading Map Data", module="classicworld")
             rawData = nbtFile["BlockArray"].value
 
             # Sanity Check File Size
+            Logger.debug("Sanity Checking Map Data", module="classicworld")
             if (sizeX * sizeY * sizeZ) != len(rawData):
                 raise WorldFormatError(f"ClassicWorldFormat - Invalid Map Data! Expected: {sizeX * sizeY * sizeZ} Got: {len(rawData)}")
 
@@ -346,8 +353,11 @@ class ClassicWorldModule(AbstractModule):
             from obsidian.modules.nbtlib import NBTLib
 
             # Begin creating NBT File
+            Logger.debug("Creating NBT File", module="classicworld")
             nbtFile = NBTLib.NBTFile()
             nbtFile.name = "ClassicWorld"
+
+            Logger.debug("Writing World Metadata", module="classicworld")
 
             # Write format version
             nbtFile.tags.append(NBTLib.TAG_Byte(name="FormatVersion", value=1))
@@ -390,10 +400,12 @@ class ClassicWorldModule(AbstractModule):
             nbtFile.tags.append(spawn)
 
             # Write map data
+            Logger.debug("Writing Map Data", module="classicworld")
             nbtFile.tags.append(NBTLib.TAG_Byte_Array(name="BlockArray"))
             nbtFile["BlockArray"].value = world.mapArray
 
             # Write Metadata
+            Logger.debug("Writing Additional Metadata", module="classicworld")
             metadataNbt = NBTLib.TAG_Compound(name="Metadata")
 
             # Loop through metadata and write it to file
@@ -401,15 +413,18 @@ class ClassicWorldModule(AbstractModule):
                 # Convert obsidian naming to classicworld naming
                 _metadataSoftware = self.convertNameToCW(metadataSoftware)
                 _metadataName = self.convertNameToCW(metadataName)
+                Logger.verbose(f"Writing Additional Metadata For: [{metadataSoftware}]{metadataName}", module="classicworld")
 
                 # Get metadata writer
                 metadataWriter = WorldFormatManager.getMetadataWriter(self, metadataSoftware, metadataName)
                 if metadataWriter is None:
-                    Logger.warn(f"ClassicWorldFormat - World Format Does Not Support Writing Metadata: [{metadataSoftware}]{metadataName}", module="classicworld")
+                    Logger.warn(f"World Format Does Not Support Writing Metadata: [{metadataSoftware}]{metadataName}", module="classicworld")
                     continue
+                Logger.verbose(f"Metadata [{metadataSoftware}]{metadataName} uses writer [{metadataWriter}]")
 
                 # Check if software compound exists. If not, create it.
                 if _metadataSoftware not in metadataNbt:
+                    Logger.verbose(f"CW Metadata Software Compound Does Not Exist. Creating It: {_metadataSoftware}", module="classicworld")
                     metadataNbt[_metadataSoftware] = NBTLib.TAG_Compound(name=_metadataSoftware)
                 metadataSoftwareNbt = metadataNbt[_metadataSoftware]
 
@@ -425,9 +440,11 @@ class ClassicWorldModule(AbstractModule):
                     # Convert obsidian naming to classicworld naming
                     _metadataSoftware = self.convertNameToCW(metadataSoftware)
                     _metadataName = self.convertNameToCW(metadataName)
+                    Logger.verbose(f"Writing Unrecognized Metadata For: [{metadataSoftware}]{metadataName}", module="classicworld")
 
                     # Check if software compound exists. If not, create it.
                     if _metadataSoftware not in metadataNbt:
+                        Logger.verbose(f"CW Metadata Software Compound Does Not Exist. Creating It: {_metadataSoftware}", module="classicworld")
                         metadataNbt[_metadataSoftware] = NBTLib.TAG_Compound(name=_metadataSoftware)
                     metadataSoftwareNbt = metadataNbt[_metadataSoftware]
 
