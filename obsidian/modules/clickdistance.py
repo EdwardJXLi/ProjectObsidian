@@ -174,13 +174,13 @@ class ClickDistanceModule(AbstractModule):
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
 
-    # Command to set individual player's click distance.
+    # Command to get and set an individual player's click distance.
     @Command(
-        "SetClickDistance",
-        description="Sets the click distance for a player",
+        "ClickDistance",
+        description="Gets or sets the click distance for a player",
         version="v1.0.0"
     )
-    class SetClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
+    class ClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -188,7 +188,7 @@ class ClickDistanceModule(AbstractModule):
                 OP=True
             )
 
-        async def execute(self, ctx: Player, distance: int, player: Optional[Player] = None):
+        async def execute(self, ctx: Player, player: Optional[Player] = None, distance: Optional[int] = None):
             # If no player is specified, set the distance for the sender
             if player is None:
                 player = ctx
@@ -196,6 +196,10 @@ class ClickDistanceModule(AbstractModule):
             # Check if player supports the ClickDistance Extension
             if CPEExtension("ClickDistance", 1) not in player.getSupportedCPE():
                 raise CommandError(f"Player {player.name} Does Not Support ClickDistance Extension!")
+
+            # Check if distance is specified. If not, then simply print the click distance
+            if distance is None:
+                return await ctx.sendMessage("&eTo get the click distance of a world, use &d/worldclickdistance")
 
             # Send click distance to player
             # Using cast to ignore type of player, as setClickDistance is injected
@@ -239,13 +243,13 @@ class ClickDistanceModule(AbstractModule):
             # Notify Sender
             await ctx.sendMessage(f"&aReset click distance for {player.username} to {defaultClickDistance}")
 
-    # Command to set the world click distance
+    # Command to get and set the world click distance
     @Command(
-        "SetWorldClickDistance",
-        description="Sets the click distance for the world",
+        "WorldClickDistance",
+        description="Gets and sets the click distance for the world",
         version="v1.0.0"
     )
-    class SetWorldClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
+    class WorldClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -253,13 +257,18 @@ class ClickDistanceModule(AbstractModule):
                 OP=True
             )
 
-        async def execute(self, ctx: Player, distance: int, world: Optional[World] = None):
+        async def execute(self, ctx: Player, world: Optional[World] = None, distance: Optional[int] = None):
             # If no world is passed, use players current world
             if world is None:
                 if ctx.worldPlayerManager is not None:
                     world = ctx.worldPlayerManager.world
                 else:
                     raise CommandError("You are not in a world!")
+
+            # Check if distance is specified. If not, then simply print the click distance
+            if distance is None:
+                # Using cast to ignore type of world, as clickDistance is injected
+                return await ctx.sendMessage(f"&aClick distance for world {world.name} is {cast(Any, world).clickDistance.distance}")
 
             # Set world click distance
             # Using cast to ignore type of world, as setWorldClickDistance is injected
