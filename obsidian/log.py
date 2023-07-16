@@ -15,6 +15,7 @@ class Logger:
     VERBOSE = False
     SERVER_MODE = False
     LOGFILE = None
+    COLOUR = Colour.SYSTEM_SUPPORTS_COLORS
     # These might be somewhat dangerous if the server crashes and stuff isn't logged.
     # Either way, its an option for servers with slower RWs.
     BUFFER_SIZE = 1
@@ -46,12 +47,21 @@ class Logger:
         output = ""
         # Adding Tags
         for tag in tags:
-            output += f"[{colour}{str(tag).upper()}{Colour.RESET}{Colour.BACK_RESET}]"
+            if cls.COLOUR:
+                output += f"[{colour}{str(tag).upper()}{Colour.RESET}{Colour.BACK_RESET}]"
+            else:
+                output += f"[{str(tag).upper()}]"
         # Add Message
         if len(tags) != 0:
-            output += f": {textColour}{message}{Colour.BACK_RESET}"
+            if cls.COLOUR:
+                output += f": {textColour}{message}{Colour.BACK_RESET}"
+            else:
+                output += f": {message}"
         else:
-            output += f"{textColour}{message}{Colour.BACK_RESET}"
+            if cls.COLOUR:
+                output += f"{textColour}{message}{Colour.BACK_RESET}"
+            else:
+                output += f"{message}"
         # Log String Into LogFile (If Fail Skip)
         if cls.LOGFILE is not None:
             try:

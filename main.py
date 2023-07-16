@@ -28,12 +28,14 @@ async def main():
     parser.add_argument('-v', "--verbose", help="Increase Debug Output Verbosity", action="store_true")
     parser.add_argument('-q', "--quiet", help="Disabled Logging To File", action="store_true")
     parser.add_argument('-s', "--server", help="Auto-Denys Confirmation Dialogs", action="store_true")
+    parser.add_argument('-nc', "--no-colour", help="Disable Colour While Logging", action="store_true")
     args = parser.parse_args()
 
     # Set Logging Levels
     Logger.DEBUG = args.debug
     Logger.VERBOSE = args.verbose
     Logger.SERVER_MODE = args.server
+    Logger.COLOUR = not args.no_colour  # yes, canadian english. no, too bad
 
     # Set Up Logging File
     if not args.quiet:

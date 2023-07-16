@@ -97,6 +97,7 @@ class Colour():
     BACK_LIGHT_MAGENTA_E = ""
     BACK_LIGHT_CYAN_EX = ""
     BACK_LIGHT_WHITE_EX = ""
+    SYSTEM_SUPPORTS_COLORS = False
 
     @classmethod
     def init(cls):
@@ -140,6 +141,8 @@ class Colour():
             cls.BACK_LIGHT_MAGENTA_E = f"{CSI}105m"
             cls.BACK_LIGHT_CYAN_EX = f"{CSI}106m"
             cls.BACK_LIGHT_WHITE_EX = f"{CSI}107m"
+            # Set flag indicating colour support
+            cls.SYSTEM_SUPPORTS_COLORS = True
 
         else:
             print("!!! COLOUR PRINTING IS NOT SUPPORTED FOR YOUR SYSTEM !!!")
