@@ -155,15 +155,13 @@ class ServerConfig(AbstractConfig):
     # CPE (Classic Protocol Extension) Configuration
     enableCPE: bool = True  # Enable CPE (Classic Protocol Extension)
     # Chat Configuration
-    playerChatColor: str = "&a"
-    operatorChatColor: str = "&4"
-    allowPlayerColor: bool = False
+    playerChatColor: str = "&a"  # Colour Of Player Chat
+    operatorChatColor: str = "&4"  # Colour Of Operator Chat
+    allowPlayerColor: bool = False  # Allow Players To Use Colour In Chat
     repeatCommands: bool = False  # Repeat Commands In Chat
     # Block Configuration
     disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks
     allowLiquidPlacement: bool = False
-    # World Generator Config
-    defaultWorldGenConfig: str = "defaultworld.json"
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     worldIgnoreList: list[str] = field(default_factory=list)  # Worlds to ignore
