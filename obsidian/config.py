@@ -168,7 +168,7 @@ class ServerConfig(AbstractConfig):
     persistentWorlds: bool = True  # Override flag to turn off world persistance
     automaticallyDetermineSpawn: bool = False  # Reset Spawn Location for Every Player
     defaultWorld: str = "default"  # Name Of Default World
-    serverMaxPlayers: int = 127  # Number Of Players Max Allowed On The Entire Server
+    serverMaxPlayers: Optional[int] = None  # Number Of Players Max Allowed On The Entire Server
     worldMaxPlayers: Optional[int] = None  # Number Of Players Max Allowed In One World
     defaultGenerator: str = "Flat"  # Name Of Default Map/World Generator
     defaultSaveFormat: str = "ObsidianWorld"  # Name Of Default World Save Format
