@@ -25,4 +25,4 @@ class ColourPickerModule(AbstractModule):
 
         async def execute(self, ctx: Player, *, msg: str = "TEST"):
             for c in "0123456789abcdef":
-                await ctx.sendMessage(f"&{c}#{msg}")
+                await ctx.sendMessage(f"&{c}{c}: {msg}")
