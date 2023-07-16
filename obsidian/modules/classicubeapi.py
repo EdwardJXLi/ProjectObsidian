@@ -59,6 +59,9 @@ class ClassiCubeApiModule(AbstractModule):
         import requests
         Logger.info("Starting server heartbeat", module="classiccubeapi")
 
+        # Save server url information
+        serverUrl = None
+
         # Start hot-loop for heartbeat
         while True:
             try:
@@ -75,7 +78,7 @@ class ClassiCubeApiModule(AbstractModule):
                     "max": server.playerManager.maxSize or config.defaultMaxSize,
                     "public": config.public,
                     "salt": server.salt,
-                    "software": f"&dProject&5Obsidian &av.{__version__}&f" if config.softwareOverride is None else config.softwareOverride,
+                    "software": f"&dProject&5Obsidian &fv. &a{__version__}&f" if config.softwareOverride is None else config.softwareOverride,
                     "web": config.web,
                 }
 
@@ -85,6 +88,17 @@ class ClassiCubeApiModule(AbstractModule):
 
                 # Check if response is valid json
                 Logger.verbose(f"Received response from server: {resp.text}", module="classiccubeapi")
+
+                # Checking is response was successful
+                if config.playUri in resp.text:
+                    if serverUrl is None:
+                        serverUrl = resp.text
+                        Logger.info(f"Server is now online on ClassiCube! Play at {serverUrl}", module="classiccubeapi")
+                    elif serverUrl != resp.text:
+                        serverUrl = resp.text
+                        Logger.warn(f"Server URL has changed! Play at {serverUrl}", module="classiccubeapi")
+                else:
+                    Logger.error(f"Server heartbeat failed! Response: {resp.text}", module="classiccubeapi")
 
                 # Sleep
                 time.sleep(config.heartbeatInterval)
@@ -99,6 +113,7 @@ class ClassiCubeApiModule(AbstractModule):
         # Base settings
         url: str = "https://www.classicube.net"
         heartbeatUri: str = "server/heartbeat"
+        playUri: str = "server/play"
         # Heartbeat Settings
         heartbeat: bool = True
         heartbeatInterval: int = 60
