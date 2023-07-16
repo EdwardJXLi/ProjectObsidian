@@ -6,6 +6,7 @@ ENV MOTD="Python Server Implementation"
 ENV ARGS=""
 
 RUN apt-get update -y
+RUN pip install requests
 
 COPY . /server
 WORKDIR /server
