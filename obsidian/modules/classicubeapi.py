@@ -75,7 +75,7 @@ class ClassiCubeApiModule(AbstractModule):
                     "max": server.playerManager.maxSize or config.defaultMaxSize,
                     "public": config.public,
                     "salt": server.salt,
-                    "software": f"&dProject&5Obsidian &fv.{__version__}" if config.softwareOverride is None else config.softwareOverride,
+                    "software": f"&dProject&5Obsidian &av.{__version__}&f" if config.softwareOverride is None else config.softwareOverride,
                     "web": config.web,
                 }
 
