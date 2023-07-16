@@ -10,4 +10,4 @@ RUN apt-get update -y
 COPY . /server
 WORKDIR /server
 
-ENTRYPOINT python3 main.py -p $PORT -n "$NAME" -m "$MOTD" $ARGS
+CMD exec python3 main.py -p $PORT -n "$NAME" -m "$MOTD" $ARGS
