@@ -35,7 +35,7 @@ class ClickDistanceModule(AbstractModule):
     def postInit(self):
         super().postInit()
 
-        # Create readers and writers for ClickDistance
+        # Create readers and writers for ObsidianWorld
         def readClickDistance(data: dict):
             clickDistanceMetadata = ClickDistanceModule.ClickDistanceMetadata()
 
@@ -50,6 +50,39 @@ class ClickDistanceModule(AbstractModule):
         # Register readers and writers
         WorldFormatManager.registerMetadataReader(WorldFormats.ObsidianWorld, "CPE", "clickDistance", readClickDistance)
         WorldFormatManager.registerMetadataWriter(WorldFormats.ObsidianWorld, "CPE", "clickDistance", writeClickDistance)
+
+        # If ClassicWorld is installed, create readers and writers for ClassicWorld
+        if "ClassicWorld" in WorldFormats:
+            from obsidian.modules.nbtlib import NBTLib
+
+            # Create readers and writers for ClassicWorld
+            def cwReadClickDistance(data: NBTLib.TAG_Compound):
+                clickDistanceMetadata = ClickDistanceModule.ClickDistanceMetadata()
+
+                # Check if ExtensionVersion is supported
+                # Some software (cough classicube) has this missing, so check if it exists first
+                if "ExtensionVersion" in data and data["ExtensionVersion"].value != 1:
+                    raise CPEError(f"ClassicWorld ClickDistance ExtensionVersion {data['ExtensionVersion'].value} is not supported!")
+
+                # Read click distance
+                clickDistanceMetadata.distance = data["Distance"].value
+
+                return clickDistanceMetadata
+
+            def cwWriteClickDistance(distanceMetadata: ClickDistanceModule.ClickDistanceMetadata):
+                metadataNbt = NBTLib.TAG_Compound(name="ClickDistance")
+
+                # Write version info
+                metadataNbt.tags.append(NBTLib.TAG_Short(name="ExtensionVersion", value=1))
+
+                # Write click distance
+                metadataNbt.tags.append(NBTLib.TAG_Short(name="Distance", value=distanceMetadata.distance))
+
+                return metadataNbt
+
+            # Register readers and writers
+            WorldFormatManager.registerMetadataReader(WorldFormats.ClassicWorld, "CPE", "clickDistance", cwReadClickDistance)
+            WorldFormatManager.registerMetadataWriter(WorldFormats.ClassicWorld, "CPE", "clickDistance", cwWriteClickDistance)
 
         # Create helper function to set click distance of a player
         @InjectMethod(target=Player)
