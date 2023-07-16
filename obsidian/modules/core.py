@@ -963,10 +963,10 @@ class CoreModule(AbstractModule):
                 if mapGeneratorName in MapGenerators:
                     generator = MapGenerators[mapGeneratorName]
                 else:
-                    Logger.warn(f"ObsidianWorldFormat - Unknown World Generator {mapGeneratorName}.", module="obsidianworld")
+                    Logger.info(f"ObsidianWorldFormat - Unknown World Generator {mapGeneratorName}.", module="obsidianworld")
                     generator = None  # Continue with no generator
             else:
-                Logger.warn(f"ObsidianWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="obsidianworld")
+                Logger.info(f"ObsidianWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="obsidianworld")
                 generator = None
 
             # Check if version is valid

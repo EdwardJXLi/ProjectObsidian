@@ -23,8 +23,10 @@ from obsidian.blocks import BlockManager
 from obsidian.player import PlayerManager
 from obsidian.cpe import CPEModuleManager, CPEExtension
 from obsidian.constants import (
-    MANAGERS_LIST,
     Colour,
+    __version__,
+    PY_VERSION,
+    MANAGERS_LIST,
     MODULES_FOLDER,
     SERVER_PATH
 )
@@ -88,7 +90,20 @@ class Server:
             Logger.fatal("==================== FATAL ERROR! ====================", module="obsidian", printTb=False)
 
     async def _init(self):
-        Logger.info(f"=== Initializing Server '{self.name}' ===", module="init")
+        # Print out logo on startup
+        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}========================================{Colour.MAGENTA}====================================", module="init")
+        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}    ____               _           __  {Colour.MAGENTA}____  __         _     ___           ", module="init")
+        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}   / __ \\_________    (_)__  _____/ /_{Colour.MAGENTA}/ __ \\/ /_  _____(_)___/ (_)___ _____ ", module="init")
+        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}  / /_/ / ___/ __ \\  / / _ \\/ ___/ __{Colour.MAGENTA}/ / / / __ \\/ ___/ / __  / / __ `/ __ \\", module="init")
+        Logger.info(f"{Colour.LIGHT_MAGENTA_EX} / ____/ /  / /_/ / / /  __/ /__/ /_{Colour.MAGENTA}/ /_/ / /_/ (__  ) / /_/ / / /_/ / / / /", module="init")
+        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}/_/   /_/   \\____/_/ /\\___/\\___/\\__/{Colour.MAGENTA}\\____/_.___/____/_/\\__,_/_/\\__,_/_/ /_/ ", module="init")
+        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}                /___/                                                       ", module="init")
+        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}================================={Colour.MAGENTA}===========================================", module="init")
+
+        # Print out Server Information
+        Logger.info(f"=== Starting {Colour.LIGHT_MAGENTA_EX}Project{Colour.MAGENTA}Obsidian{Colour.RESET} v. {Colour.CYAN}{__version__}{Colour.RESET} on {Colour.GREEN}{PY_VERSION}{Colour.RESET} ===", module="init")
+        Logger.info(f"Initializing Server '{self.name}' on port: {self.port}", module="init")
+        Logger.info(f"Server MOTD: {self.motd}", module="init")
 
         # Testing If Debug Is Enabled
         Logger.debug("Debug Is Enabled", module="init")
@@ -197,6 +212,8 @@ class Server:
         Logger.info(f"Setting Up Server {self.name}", module="init")
         self._server = await asyncio.start_server(self._getConnHandler(), self.address, self.port)
 
+        # Print out final initialization message
+        Logger.info(f"Finished Initializing ProjectObsidian v. {__version__}", module="init")
         self.initialized = True
 
     async def run(self):
@@ -204,7 +221,7 @@ class Server:
             # Check if server is initialized and async server has started
             if self.initialized and self.server:
                 # Start Server
-                Logger.info(f"Starting Server {self.name} On {self.address} Port {self.port}", module="obsidian")
+                Logger.info(f"Starting Server '{self.name}' On {self.address} Port {self.port}", module="obsidian")
                 await self.server.serve_forever()
             else:
                 raise ServerError("Server Did Not Initialize. This May Be Because server.init() Was Never Called Or An Error Occurred While Initializing")

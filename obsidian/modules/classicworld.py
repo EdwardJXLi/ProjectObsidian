@@ -37,7 +37,8 @@ class ClassicWorldModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                EXTENSIONS=["cw"]
+                EXTENSIONS=["cw"],
+                METADATA_SUPPORT=True
             )
             from obsidian.modules.nbtlib import NBTLib
 
@@ -117,8 +118,6 @@ class ClassicWorldModule(AbstractModule):
             persistent: bool = True
         ):
             from obsidian.modules.nbtlib import NBTLib
-
-            Logger.warn("Loading from ClassicWorld is still WIP! Expect bugs!", module="classicworld")
 
             # Open, read, and parse NBT file
             Logger.debug("Reading ClassicWorld NBT File", module="classicworld")
@@ -266,10 +265,10 @@ class ClassicWorldModule(AbstractModule):
                 if type(mapGeneratorName) is str and mapGeneratorName in MapGenerators:
                     generator = MapGenerators[mapGeneratorName]
                 else:
-                    Logger.warn(f"ClassicWorldFormat - Unknown World Generator {mapGeneratorName}.", module="classicworld")
+                    Logger.info(f"ClassicWorldFormat - Unknown World Generator {mapGeneratorName}.", module="classicworld")
                     generator = None  # Continue with no generator
             else:
-                Logger.warn(f"ClassicWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="classicworld")
+                Logger.info(f"ClassicWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="classicworld")
                 generator = None
 
             # Load Additional Metadata
@@ -345,8 +344,6 @@ class ClassicWorldModule(AbstractModule):
             worldManager: WorldManager
         ):
             from obsidian.modules.nbtlib import NBTLib
-
-            Logger.warn("Saving to ClassicWorld is still WIP! Expect bugs!", module="classicworld")
 
             # Begin creating NBT File
             nbtFile = NBTLib.NBTFile()

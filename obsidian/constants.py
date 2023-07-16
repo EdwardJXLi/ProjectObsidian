@@ -76,7 +76,7 @@ class Colour():
     LIGHT_GREEN_EX = ""
     LIGHT_YELLOW_EX = ""
     LIGHT_BLUE_EX = ""
-    LIGHT_MAGENTA_E = ""
+    LIGHT_MAGENTA_EX = ""
     LIGHT_CYAN_EX = ""
     LIGHT_WHITE_EX = ""
     BACK_BLACK = ""
@@ -94,7 +94,7 @@ class Colour():
     BACK_LIGHT_GREEN_EX = ""
     BACK_LIGHT_YELLOW_EX = ""
     BACK_LIGHT_BLUE_EX = ""
-    BACK_LIGHT_MAGENTA_E = ""
+    BACK_LIGHT_MAGENTA_EX = ""
     BACK_LIGHT_CYAN_EX = ""
     BACK_LIGHT_WHITE_EX = ""
     SYSTEM_SUPPORTS_COLORS = False
@@ -118,7 +118,7 @@ class Colour():
             cls.LIGHT_GREEN_EX = f"{CSI}92m"
             cls.LIGHT_YELLOW_EX = f"{CSI}93m"
             cls.LIGHT_BLUE_EX = f"{CSI}94m"
-            cls.LIGHT_MAGENTA_E = f"{CSI}95m"
+            cls.LIGHT_MAGENTA_EX = f"{CSI}95m"
             cls.LIGHT_CYAN_EX = f"{CSI}96m"
             cls.LIGHT_WHITE_EX = f"{CSI}97m"
 
@@ -138,7 +138,7 @@ class Colour():
             cls.BACK_LIGHT_GREEN_EX = f"{CSI}102m"
             cls.BACK_LIGHT_YELLOW_EX = f"{CSI}103m"
             cls.BACK_LIGHT_BLUE_EX = f"{CSI}104m"
-            cls.BACK_LIGHT_MAGENTA_E = f"{CSI}105m"
+            cls.BACK_LIGHT_MAGENTA_EX = f"{CSI}105m"
             cls.BACK_LIGHT_CYAN_EX = f"{CSI}106m"
             cls.BACK_LIGHT_WHITE_EX = f"{CSI}107m"
             # Set flag indicating colour support
