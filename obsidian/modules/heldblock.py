@@ -105,6 +105,7 @@ class HeldBlockModule(AbstractModule):
     @Command(
         "HoldThis",
         description="Forces a player to hold a block.",
+        version="v1.0.0"
     )
     class HoldThisCommand(AbstractCommand["HeldBlockModule"]):
         def __init__(self, *args):
@@ -130,6 +131,7 @@ class HeldBlockModule(AbstractModule):
     @Command(
         "GetHeldBlock",
         description="Gets the block that a player is holding.",
+        version="v1.0.0"
     )
     class GetHeldBlockCommand(AbstractCommand["HeldBlockModule"]):
         def __init__(self, *args):

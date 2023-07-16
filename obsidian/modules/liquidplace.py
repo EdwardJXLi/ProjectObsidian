@@ -61,7 +61,8 @@ class LiquidPlaceModule(AbstractModule):
 
     @Command(
         "ToggleLiquidPlace",
-        description="Toggle Liquid Placement"
+        description="Toggle Liquid Placement",
+        version="v1.0.0"
     )
     class ToggleLiquidPlaceCommand(AbstractCommand["LiquidPlaceModule"]):
         def __init__(self, *args):

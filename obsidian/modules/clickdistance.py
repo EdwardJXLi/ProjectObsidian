@@ -145,6 +145,7 @@ class ClickDistanceModule(AbstractModule):
     @Command(
         "SetClickDistance",
         description="Sets the click distance for a player",
+        version="v1.0.0"
     )
     class SetClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
         def __init__(self, *args):
@@ -176,6 +177,7 @@ class ClickDistanceModule(AbstractModule):
     @Command(
         "ResetClickDistance",
         description="Resets the click distance for a player to the default",
+        version="v1.0.0"
     )
     class ResetClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
         def __init__(self, *args):
@@ -208,6 +210,7 @@ class ClickDistanceModule(AbstractModule):
     @Command(
         "SetWorldClickDistance",
         description="Sets the click distance for the world",
+        version="v1.0.0"
     )
     class SetWorldClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
         def __init__(self, *args):
@@ -236,6 +239,7 @@ class ClickDistanceModule(AbstractModule):
     @Command(
         "ResetWorldClickDistance",
         description="Resets the click distance for the world to the default",
+        version="v1.0.0"
     )
     class ResetWorldClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
         def __init__(self, *args):
