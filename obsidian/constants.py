@@ -20,7 +20,8 @@ CRITICAL_RESPONSE_ERRORS = [
     # These errors will bypass the packet.onError() handler and get forced raised
     BrokenPipeError,
     ConnectionResetError,
-    asyncio.IncompleteReadError
+    asyncio.IncompleteReadError,
+    asyncio.TimeoutError
 ]
 
 # Message Constants
