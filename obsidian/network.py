@@ -58,6 +58,9 @@ class NetworkHandler:
         except asyncio.IncompleteReadError:
             Logger.warn(f"Ip {self.connectionInfo} Incomplete Read Error. Closing Connection.", module="network")
             await self.closeConnection(reason="Incomplete Read Error")
+        except asyncio.TimeoutError:
+            Logger.warn(f"Ip {self.connectionInfo} Timeout Error. Closing Connection.", module="network")
+            await self.closeConnection(reason="Timeout Error")
         except Exception as e:
             Logger.error(f"Error While Handling Connection {self.connectionInfo} - {type(e).__name__}: {e}", module="network")
             try:
