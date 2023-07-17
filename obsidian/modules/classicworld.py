@@ -70,8 +70,8 @@ class ClassicWorldModule(AbstractModule):
                     playerData.tags.append(NBTLib.TAG_Short(name="X", value=logX))
                     playerData.tags.append(NBTLib.TAG_Short(name="Y", value=logY))
                     playerData.tags.append(NBTLib.TAG_Short(name="Z", value=logZ))
-                    playerData.tags.append(NBTLib.TAG_Byte(name="H", value=logYaw))
-                    playerData.tags.append(NBTLib.TAG_Byte(name="P", value=logPitch))
+                    playerData.tags.append(NBTLib.TAG_Short(name="H", value=logYaw))
+                    playerData.tags.append(NBTLib.TAG_Short(name="P", value=logPitch))
                     data.tags.append(playerData)
                     Logger.debug(f"Saved Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="logout-location")
 
