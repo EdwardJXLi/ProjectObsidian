@@ -806,8 +806,8 @@ class Player:
 
         # Cut up and send message
         if len(message) > maxHeaderLen:  # Cut Message If Too Long
-            await self.worldPlayerManager.sendWorldMessage(message[:maxHeaderLen], author=self)
-            message = message[maxHeaderLen:]
+            await self.worldPlayerManager.sendWorldMessage(message[:(64 - maxHeaderLen)], author=self)
+            message = message[(64 - maxHeaderLen):]
             while message:
                 await self.worldPlayerManager.sendWorldMessage(message[:64])
                 message = message[64:]
