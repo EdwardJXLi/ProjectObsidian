@@ -216,8 +216,9 @@ class CoreModule(AbstractModule):
                 raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
             # Unpack String
-            # Check if string is valid
             message = unpackString(message)
+
+            # Check if string is valid
             if not message.isprintable():
                 await ctx.sendMessage("&4ERROR: Message Failed To Send - Invalid Character In Message&f")
                 return None  # Don't Complete Message Sending

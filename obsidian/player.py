@@ -397,20 +397,7 @@ class WorldPlayerManager:
                     Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
         return True  # Success!
 
-    async def sendWorldMessage(
-        self,
-        message: str | list,
-        author: None | str | Player = None,  # Information on the message author
-        worldTag: bool = False,  # Flag dictating if the [world] header should be added
-        ignoreList: list[Player] = []  # List of players to not send the message not
-    ) -> bool:
-        # If Message Is A List, Recursively Send All Messages Within
-        if isinstance(message, list):
-            Logger.debug("Sending List Of Messages!", module="world-message")
-            for msg in message:
-                await self.sendWorldMessage(msg, author=author, worldTag=worldTag, ignoreList=ignoreList)
-            return True  # Break Out of Function
-
+    def generateMessage(self, message: str, author: None | str | Player = None, worldTag: bool = False):
         # Hacky Way To Get World Type
         # Format Message To Be Sent
         # Add Author Tag
@@ -426,6 +413,25 @@ class WorldPlayerManager:
         # Add World Tag (If Requested)
         if worldTag:
             message = f"[&7{self.world.name}&f] {message}"
+
+        return message
+
+    async def sendWorldMessage(
+        self,
+        message: str | list,
+        author: None | str | Player = None,  # Information on the message author
+        worldTag: bool = False,  # Flag dictating if the [world] header should be added
+        ignoreList: list[Player] = []  # List of players to not send the message not
+    ) -> bool:
+        # If Message Is A List, Recursively Send All Messages Within
+        if isinstance(message, list):
+            Logger.debug("Sending List Of Messages!", module="world-message")
+            for msg in message:
+                await self.sendWorldMessage(msg, author=author, worldTag=worldTag, ignoreList=ignoreList)
+            return True  # Break Out of Function
+
+        # Generate the message with header
+        message = self.generateMessage(message, author=author, worldTag=worldTag)
 
         # Finally, send formatted message
         Logger._log(
@@ -694,13 +700,8 @@ class Player:
         if len(message) > 0 and message[-1:] == "&":
             message = message[:-1]  # Cut Last Character
 
-        if len(message) > 32:  # Cut Message If Too Long
-            # Cut Message In Half, then print each half
-            await self.worldPlayerManager.sendWorldMessage(message[:32] + " - ", author=self)
-            await self.worldPlayerManager.sendWorldMessage(" - " + message[32:], author=self)
-            await self.sendMessage("&eWARN: Message Was Cut To Fit On Screen&f")
-        else:
-            await self.worldPlayerManager.sendWorldMessage(message, author=self)
+        # Break up and send message
+        await self.breakupAndSend(message)
 
     async def handlePlayerCommand(self, cmdMessage: str):
         try:
@@ -792,6 +793,25 @@ class Player:
         # Return processed block update back to user
         Logger.debug(f"Got Block Update From Player! {blockX=}, {blockY=}, {blockZ=}, {blockId=}", module="player")
         return blockX, blockY, blockZ, BlockManager.getBlockById(blockId)
+
+    async def breakupAndSend(self, message: str):
+        # Checking If Player Is Joined To A World
+        if self.worldPlayerManager is None:
+            Logger.debug(f"Player {self.name} Trying To handlePlayerMessage When No World Is Joined", module="player")
+            return None  # Skip Rest
+
+        # Get maximum length of message header
+        maxHeaderLen = len(self.worldPlayerManager.generateMessage("", author=self, worldTag=True))
+
+        # Cut up and send message
+        if len(message) > maxHeaderLen:  # Cut Message If Too Long
+            await self.worldPlayerManager.sendWorldMessage(message[:maxHeaderLen], author=self)
+            message = message[maxHeaderLen:]
+            while message:
+                await self.worldPlayerManager.sendWorldMessage(message[:64])
+                message = message[64:]
+        else:
+            await self.worldPlayerManager.sendWorldMessage(message, author=self)
 
     async def sendMOTD(self, motdMessage: Optional[list[str]] = None):
         # If motdMessage was not passed, use default one in config
