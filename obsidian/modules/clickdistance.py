@@ -178,11 +178,11 @@ class ClickDistanceModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                ACTIVATORS=["clickdistance", "setclickdistance", "cd"],
+                ACTIVATORS=["clickdistance", "reach", "cd"],
                 OP=True
             )
 
-        async def execute(self, ctx: Player, player: Optional[Player] = None, distance: Optional[int] = None):
+        async def execute(self, ctx: Player, distance: Optional[int] = None, player: Optional[Player] = None):
             # If no player is specified, set the distance for the sender
             if player is None:
                 player = ctx
@@ -213,7 +213,7 @@ class ClickDistanceModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                ACTIVATORS=["resetclickdistance"],
+                ACTIVATORS=["resetclickdistance", "resetreach"],
                 OP=True
             )
 
@@ -245,11 +245,11 @@ class ClickDistanceModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                ACTIVATORS=["worldclickdistance", "setworldclickdistance", "wcd"],
+                ACTIVATORS=["worldclickdistance", "worldreach", "wcd"],
                 OP=True
             )
 
-        async def execute(self, ctx: Player, world: Optional[World] = None, distance: Optional[int] = None):
+        async def execute(self, ctx: Player, distance: Optional[int] = None, world: Optional[World] = None):
             # If no world is passed, use players current world
             if world is None:
                 if ctx.worldPlayerManager is not None:
@@ -277,7 +277,7 @@ class ClickDistanceModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                ACTIVATORS=["resetworldclickdistance"],
+                ACTIVATORS=["resetworldclickdistance", "resetworldreach"],
                 OP=True
             )
 
