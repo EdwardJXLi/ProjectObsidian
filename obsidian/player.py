@@ -22,7 +22,8 @@ from obsidian.errors import (
     ClientError,
     BlockError,
     CommandError,
-    ConverterError
+    ConverterError,
+    CPEError
 )
 
 
@@ -486,7 +487,7 @@ class Player:
     def getSupportedCPE(self) -> set[CPEExtension]:
         # Check if player supports CPE
         if not self.supportsCPE:
-            return set()
+            raise CPEError("Player Does Not Support CPE")
 
         # Check if server supports CPE (getSupportedCPE will throw CPEError if not)
         serverCPE = self.server.getSupportedCPE()

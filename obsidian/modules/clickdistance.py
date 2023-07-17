@@ -91,7 +91,7 @@ class ClickDistanceModule(AbstractModule):
             self = cast(Player, self)
 
             # Check if player supports the ClickDistance Extension
-            if CPEExtension("ClickDistance", 1) not in self.getSupportedCPE():
+            if not self.supports(CPEExtension("ClickDistance", 1)):
                 raise CPEError(f"Player {self.name} Does Not Support ClickDistance Extension!")
 
             Logger.info(f"Setting click distance to {distance} for {self.username}", module="clickdistance")
@@ -114,7 +114,7 @@ class ClickDistanceModule(AbstractModule):
             if notifyPlayers:
                 for player in self.playerManager.getPlayers():
                     # Only send click distance to players that support the ClickDistance Extension
-                    if CPEExtension("ClickDistance", 1) in player.getSupportedCPE():
+                    if player.supports(CPEExtension("ClickDistance", 1)):
                         # Using cast to ignore type of player, as setClickDistance is injected
                         await cast(Any, player).setClickDistance(distance)
 
@@ -125,7 +125,7 @@ class ClickDistanceModule(AbstractModule):
             self = cast(WorldPlayerManager, self)
 
             # Check if player supports the ClickDistance Extension
-            if CPEExtension("ClickDistance", 1) in player.getSupportedCPE():
+            if player.supports(CPEExtension("ClickDistance", 1)):
                 # Send click distance packet to player
                 # Using cast to ignore type of player, as setClickDistance is injected
                 # Using cast to ignore type of self.world, as clickDistance is injected
@@ -194,7 +194,7 @@ class ClickDistanceModule(AbstractModule):
                 player = ctx
 
             # Check if player supports the ClickDistance Extension
-            if CPEExtension("ClickDistance", 1) not in player.getSupportedCPE():
+            if not player.supports(CPEExtension("ClickDistance", 1)):
                 raise CommandError(f"Player {player.name} Does Not Support ClickDistance Extension!")
 
             # Check if distance is specified. If not, then simply print the click distance
@@ -230,7 +230,7 @@ class ClickDistanceModule(AbstractModule):
                 player = ctx
 
             # Check if player supports the ClickDistance Extension
-            if CPEExtension("ClickDistance", 1) not in player.getSupportedCPE():
+            if not player.supports(CPEExtension("ClickDistance", 1)):
                 raise CommandError(f"Player {player.name} Does Not Support ClickDistance Extension!")
 
             # Get the default click distance

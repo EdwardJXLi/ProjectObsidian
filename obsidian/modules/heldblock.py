@@ -51,7 +51,7 @@ class HeldBlockModule(AbstractModule):
                 raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
             # Check if player supports the HeldBlock Extension
-            if CPEExtension("HeldBlock", 1) in ctx.getSupportedCPE() and handleUpdate:
+            if ctx.supports(CPEExtension("HeldBlock", 1)) and handleUpdate:
                 # Set held block of player
                 # Using cast to ignore type of player, as heldBlock is injected
                 cast(Any, ctx).heldBlock = BlockManager.getBlockById(heldBlock)
@@ -63,7 +63,7 @@ class HeldBlockModule(AbstractModule):
             self = cast(Player, self)
 
             # Check if player supports the HeldBlock Extension
-            if CPEExtension("HeldBlock", 1) not in self.getSupportedCPE():
+            if not self.supports(CPEExtension("HeldBlock", 1)):
                 raise CPEError(f"Player {self.name} Does Not Support HeldBlock Extension!")
 
             # Set held block of player
@@ -117,7 +117,7 @@ class HeldBlockModule(AbstractModule):
 
         async def execute(self, ctx: Player, player: Player, block: AbstractBlock, preventChange: bool = False):
             # Check if player supports the HeldBlock Extension
-            if CPEExtension("HeldBlock", 1) not in player.getSupportedCPE():
+            if not player.supports(CPEExtension("HeldBlock", 1)):
                 raise CommandError(f"Player {player.name} Does Not Support HeldBlock Extension!")
 
             # Force player to hold a specific block
@@ -143,7 +143,7 @@ class HeldBlockModule(AbstractModule):
 
         async def execute(self, ctx: Player, player: Player):
             # Check if player supports the HeldBlock Extension
-            if CPEExtension("HeldBlock", 1) not in player.getSupportedCPE():
+            if not player.supports(CPEExtension("HeldBlock", 1)):
                 raise CommandError(f"Player {player.name} Does Not Support HeldBlock Extension!")
 
             # Get held block of player

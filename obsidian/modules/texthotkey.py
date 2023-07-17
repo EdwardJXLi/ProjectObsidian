@@ -53,7 +53,7 @@ class TextHotKeyModule(AbstractModule):
                 raise ServerError("Trying To Process Post Login Actions Before Player Is Initialized!")
 
             # Check if player supports the TextHotKey Extension
-            if CPEExtension("TextHotKey", 1) in self.player.getSupportedCPE():
+            if self.player.supports(CPEExtension("TextHotKey", 1)):
                 Logger.debug(f"{self.connectionInfo} | Sending Hotkeys", module="network")
                 # Send hotkeys to player
                 for label, data in hotkeys.items():
