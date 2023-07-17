@@ -9,7 +9,7 @@ from obsidian.mixins import Inject, InjectionPoint, InjectMethod, addAttribute
 from obsidian.errors import ServerError, CPEError, CommandError
 from obsidian.log import Logger
 
-from typing import Optional, Any, cast
+from typing import Optional, cast
 import struct
 
 
@@ -53,8 +53,7 @@ class HeldBlockModule(AbstractModule):
             # Check if player supports the HeldBlock Extension
             if ctx.supports(CPEExtension("HeldBlock", 1)) and handleUpdate:
                 # Set held block of player
-                # Using cast to ignore type of player, as heldBlock is injected
-                cast(Any, ctx).heldBlock = BlockManager.getBlockById(heldBlock)
+                setattr(ctx, "heldBlock", BlockManager.getBlockById(heldBlock))
 
         # Create helper function to set held block of a player
         @InjectMethod(target=Player)
@@ -67,8 +66,7 @@ class HeldBlockModule(AbstractModule):
                 raise CPEError(f"Player {self.name} Does Not Support HeldBlock Extension!")
 
             # Set held block of player
-            # Using cast to ignore type of player, as heldBlock is injected
-            cast(Any, self).heldBlock = block
+            setattr(self, "heldBlock", block)
 
             # Send HoldThis Packet
             Logger.info(f"Setting held block for {self.username} to {block.NAME} ({block.ID}).", module="clickdistance")
@@ -122,7 +120,7 @@ class HeldBlockModule(AbstractModule):
 
             # Force player to hold a specific block
             # Using cast to ignore type of player, as holdThis is injected
-            await cast(Any, player).holdThis(block, preventChange)
+            await getattr(player, "holdThis")(block, preventChange)
 
             # Notify Sender
             await ctx.sendMessage(f"&aSet {player.username}'s held block to {block.NAME}")
@@ -148,7 +146,7 @@ class HeldBlockModule(AbstractModule):
 
             # Get held block of player
             # Using cast to ignore type of player, as heldBlock is injected
-            heldBlock = cast(Any, player).heldBlock
+            heldBlock = getattr(player, "heldBlock")
 
             # Notify Sender
             await ctx.sendMessage(f"&a{player.username} is holding {heldBlock.NAME} (&9{heldBlock.ID}&a)")

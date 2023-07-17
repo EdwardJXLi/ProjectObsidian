@@ -11,7 +11,7 @@ from obsidian.errors import CPEError, CommandError
 from obsidian.log import Logger
 
 from dataclasses import dataclass
-from typing import Optional, Any, cast
+from typing import Optional, cast
 import struct
 
 
@@ -104,8 +104,7 @@ class ClickDistanceModule(AbstractModule):
             self = cast(World, self)
 
             # Get the click distance metadata
-            # Using cast to ignore type of world, as clickDistance is injected
-            clickDistanceMetadata: ClickDistanceModule.ClickDistanceMetadata = cast(Any, self).clickDistance
+            clickDistanceMetadata: ClickDistanceModule.ClickDistanceMetadata = getattr(self, "clickDistance")
 
             # Set click distance
             clickDistanceMetadata.distance = distance
@@ -115,8 +114,7 @@ class ClickDistanceModule(AbstractModule):
                 for player in self.playerManager.getPlayers():
                     # Only send click distance to players that support the ClickDistance Extension
                     if player.supports(CPEExtension("ClickDistance", 1)):
-                        # Using cast to ignore type of player, as setClickDistance is injected
-                        await cast(Any, player).setClickDistance(distance)
+                        await getattr(player, "setClickDistance")(distance)
 
         # Send player click distance on join
         @Inject(target=WorldPlayerManager.joinPlayer, at=InjectionPoint.AFTER)
@@ -127,9 +125,7 @@ class ClickDistanceModule(AbstractModule):
             # Check if player supports the ClickDistance Extension
             if player.supports(CPEExtension("ClickDistance", 1)):
                 # Send click distance packet to player
-                # Using cast to ignore type of player, as setClickDistance is injected
-                # Using cast to ignore type of self.world, as clickDistance is injected
-                await cast(Any, player).setClickDistance(cast(Any, self.world).clickDistance.distance)
+                await getattr(player, "setClickDistance")(getattr(self.world, "clickDistance").distance)
 
         # Load click distance during world load
         @Inject(target=World.__init__, at=InjectionPoint.AFTER)
@@ -146,9 +142,7 @@ class ClickDistanceModule(AbstractModule):
                 clickDistanceMetadata.setClickDistance(defaultClickDistance)
                 self.additionalMetadata[("CPE", "clickDistance")] = clickDistanceMetadata
 
-            # Set click distance
-            # Using cast to ignore type of self, as clickDistance is injected
-            cast(Any, self).clickDistance = self.additionalMetadata[("CPE", "clickDistance")]
+            setattr(self, "clickDistance", self.additionalMetadata[("CPE", "clickDistance")])
 
     # Packet to send to clients to change click distance
     @ResponsePacket(
@@ -202,8 +196,7 @@ class ClickDistanceModule(AbstractModule):
                 return await ctx.sendMessage("&eTo get the click distance of a world, use &d/worldclickdistance")
 
             # Send click distance to player
-            # Using cast to ignore type of player, as setClickDistance is injected
-            await cast(Any, player).setClickDistance(distance)
+            await getattr(player, "setClickDistance")(distance)
 
             # Notify Sender
             await ctx.sendMessage(f"&aSet click distance for {player.username} to {distance}")
@@ -237,8 +230,7 @@ class ClickDistanceModule(AbstractModule):
             defaultClickDistance = self.module.config.defaultClickDistance
 
             # Send click distance to player
-            # Using cast to ignore type of player, as setClickDistance is injected
-            await cast(Any, player).setClickDistance(defaultClickDistance)
+            await getattr(player, "setClickDistance")(defaultClickDistance)
 
             # Notify Sender
             await ctx.sendMessage(f"&aReset click distance for {player.username} to {defaultClickDistance}")
@@ -267,12 +259,10 @@ class ClickDistanceModule(AbstractModule):
 
             # Check if distance is specified. If not, then simply print the click distance
             if distance is None:
-                # Using cast to ignore type of world, as clickDistance is injected
-                return await ctx.sendMessage(f"&aClick distance for world {world.name} is {cast(Any, world).clickDistance.distance}")
+                return await ctx.sendMessage(f"&aClick distance for world {world.name} is {getattr(world, 'clickDistance').getClickDistance()}")
 
             # Set world click distance
-            # Using cast to ignore type of world, as setWorldClickDistance is injected
-            await cast(Any, world).setWorldClickDistance(distance, notifyPlayers=True)
+            await getattr(world, "setWorldClickDistance")(distance, notifyPlayers=True)
 
             # Notify Sender
             await ctx.sendMessage(f"&aSet click distance for world {world.name} to {distance}")
@@ -304,7 +294,7 @@ class ClickDistanceModule(AbstractModule):
 
             # Set world click distance
             # Using cast to ignore type of world, as setWorldClickDistance is injected
-            await cast(Any, world).setWorldClickDistance(defaultClickDistance, notifyPlayers=True)
+            await getattr(world, "setWorldClickDistance")(defaultClickDistance, notifyPlayers=True)
 
             # Notify Sender
             await ctx.sendMessage(f"&aReset click distance for world {world.name} to {defaultClickDistance}")
