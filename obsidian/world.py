@@ -365,7 +365,7 @@ class WorldManager:
             SERVER_PATH,
             savePath,
             worldName + "." + worldFormat.EXTENSIONS[0]  # Gets the first value in the valid extensions list
-        )
+        ).resolve()
         Logger.debug(f"File world path is {worldPath}", module="world-gen")
 
         # Check if file already exists

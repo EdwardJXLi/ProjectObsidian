@@ -49,12 +49,21 @@ class WorldConverterModule(AbstractModule):
             # Get world format extension
             newFormatExt = "." + newWorldFormat.EXTENSIONS[0]
 
-            # Get the world to be converted
+            # Get the world save path
             if ctx.server.config.worldSaveLocation:
-                oldWorldPath = Path(SERVER_PATH, ctx.server.config.worldSaveLocation, worldFile)
-                newWorldPath = Path(SERVER_PATH, ctx.server.config.worldSaveLocation, Path(worldFile).stem + newFormatExt)
+                worldSavePath = Path(SERVER_PATH, ctx.server.config.worldSaveLocation).resolve()
             else:
                 raise CommandError("&cworldSaveLocation in server configuration is not set!")
+
+            # Get the world to be converted
+            oldWorldPath = Path(worldSavePath, worldFile).resolve()
+            newWorldPath = Path(worldSavePath, Path(worldFile).stem + newFormatExt).resolve()
+
+            # Verify file paths
+            if not oldWorldPath.is_relative_to(worldSavePath):
+                raise CommandError(f"&cWorld '{oldWorldPath.name}' does not exist!")
+            if not newWorldPath.is_relative_to(worldSavePath):
+                raise CommandError(f"&cCannot create world '{newWorldPath.name}'!")
 
             # Check if world exists and if new world does not exist
             if not oldWorldPath.exists():
