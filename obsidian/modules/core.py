@@ -2921,6 +2921,28 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(f"&7x: &e{world.spawnX//32} &7y: &e{world.spawnY//32} &7z: &e{world.spawnZ//32} &7yaw: &e{world.spawnYaw} &7pitch: &e{world.spawnPitch}!")
 
     @Command(
+        "SetWorldName",
+        description="Sets the world name to a new value.",
+        version="v1.0.0"
+    )
+    class SetWorldNameCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["worldname", "setworldname"], OP=True)
+
+        async def execute(self, ctx: Player, newName: str):
+            # Get player world
+            if ctx.worldPlayerManager is not None:
+                world = ctx.worldPlayerManager.world
+            else:
+                raise CommandError("You are not in a world!")
+
+            # Set world name
+            world.name = newName
+
+            # Send Response Back
+            await ctx.sendMessage(f"&aWorld Name Set To: {newName}! (Will be saved on next world save)")
+
+    @Command(
         "ResetWorldSpawn",
         description="Sets global default world spawn to defaults.",
         version="v1.0.0"
