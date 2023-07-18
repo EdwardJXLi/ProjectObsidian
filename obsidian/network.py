@@ -115,6 +115,10 @@ class NetworkHandler:
         Logger.debug(f"{self.connectionInfo} | Preparing To Send World {defaultWorld.name}", module="network")
         await self.sendWorldData(defaultWorld)
 
+        # Send global message that player has connected to the server
+        Logger.debug(f"{self.connectionInfo} | Sending Global Player Join Message", module="network")
+        await self.player.playerManager.sendGlobalMessage(f"&2{self.player.name} connected to the server!")
+
         # Join Default World
         Logger.debug(f"{self.connectionInfo} | Joining Default World {defaultWorld.name}", module="network")
         await self.player.joinWorld(defaultWorld)
@@ -284,8 +288,13 @@ class NetworkHandler:
 
         # Removing and Cleaning Up Player If Necessary
         if self.player is not None:
+            # Remove player from the current world
             Logger.debug("Closing and Cleaning Up User", module="network")
             await self.player.playerManager.deletePlayer(self.player)
+
+            # Send global message that player has disconnected from the server
+            Logger.debug(f"{self.connectionInfo} | Sending Global Player Leave Message", module="network")
+            await self.player.playerManager.sendGlobalMessage(f"&2{self.player.name} disconnected from the server!")
 
         Logger.debug(f"Closing Connection {self.connectionInfo} For Reason {reason}", module="network")
         # Send Disconnect Message
