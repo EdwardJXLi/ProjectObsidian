@@ -3107,7 +3107,7 @@ class CoreModule(AbstractModule):
     )
     class StopCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["stop"], OP=True)
+            super().__init__(*args, ACTIVATORS=["stop", "shutdown"], OP=True)
 
         async def execute(self, ctx: Player):
             await ctx.sendMessage("&4Stopping Server")
