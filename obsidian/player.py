@@ -697,9 +697,10 @@ class Player:
         if self.server.config.allowPlayerColor:
             message = message.replace("%", "&")
 
-        # Check If Last Character Is '&' (Crashes Older Minecraft Clients)
-        if len(message) > 0 and message[-1:] == "&":
-            message = message[:-1]  # Cut Last Character
+        # Constantly remove the last character if it is a '&'
+        # This crashes older clients, so we need to remove it
+        while message.endswith("&"):
+            message = message[:-1]
 
         # Break up and send message
         await self.breakupAndSend(message)
