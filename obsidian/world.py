@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from obsidian.server import Server
+    from obsidian.player import Player
 
 from typing import Optional
 from pathlib import Path
@@ -15,7 +16,6 @@ import random
 import datetime
 
 from obsidian.log import Logger
-from obsidian.player import WorldPlayerManager, Player
 from obsidian.blocks import BlockManager, Blocks, AbstractBlock
 from obsidian.worldformat import WorldFormats, AbstractWorldFormat
 from obsidian.mapgen import (
@@ -501,6 +501,8 @@ class World:
             Logger.debug(f"Loaded Last Logout Positions. {self.logoutLocations.getAllLogoutLocations()}", module="world-init")
 
         # Initialize WorldPlayerManager
+        # World has to be imported now to prevent circular imports
+        from obsidian.player import WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
         self.playerManager = WorldPlayerManager(self)
 

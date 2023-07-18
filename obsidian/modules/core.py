@@ -664,7 +664,7 @@ class CoreModule(AbstractModule):
             packedMessage = packageString(message)
             if len(packedMessage) > 0 and packedMessage[-1] == ord("&"):  # Using the ascii value as it is packed into a bytearray already
                 Logger.warn(f"Trying to send message '{message}' with '&' as the last character!", module="packet-serializer")
-                packedMessage = packedMessage[:-1]
+                packedMessage = packedMessage[:-1]  # This isnt supposed to prevent any exploits, just to prevent accidents if the message gets cut off short
 
             # Send Message Packet
             msg = struct.pack(

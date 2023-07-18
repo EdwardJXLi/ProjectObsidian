@@ -157,6 +157,8 @@ class ServerConfig(AbstractConfig):
     # Chat Configuration
     playerChatColor: str = "&a"  # Colour Of Player Chat
     operatorChatColor: str = "&4"  # Colour Of Operator Chat
+    worldChatColor: str = "&9"  # Colour Of World Chat Prefix
+    globalChatMessages: bool = False  # Send Chat Messages To All Players Across Worlds
     allowPlayerColor: bool = False  # Allow Players To Use Colour In Chat
     repeatCommands: bool = False  # Repeat Commands In Chat
     # Block Configuration
