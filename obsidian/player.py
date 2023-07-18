@@ -423,12 +423,12 @@ class WorldPlayerManager:
 
     async def processPlayerMessage(self, player: Player, message: str, world: None | str | World = None):
         # Get maximum length of message header
-        maxHeaderLen = len(self.generateMessage("", author=player, world=world))
+        headerLength = len(self.generateMessage("", author=player, world=world))
 
         # Cut up and send message
-        if len(message) > maxHeaderLen:  # Cut Message If Too Long
-            await self.sendWorldMessage(message[:(64 - maxHeaderLen)], author=player, world=world)
-            message = message[(64 - maxHeaderLen):]
+        if len(message) + headerLength > 64:  # Cut Message If Too Long
+            await self.sendWorldMessage(message[:(64 - headerLength)], author=player, world=world)
+            message = message[(64 - headerLength):]
             while message:
                 await self.sendWorldMessage(message[:64])
                 message = message[64:]
