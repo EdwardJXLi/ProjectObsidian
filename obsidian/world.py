@@ -13,6 +13,7 @@ import uuid
 import shutil
 import struct
 import random
+import asyncio
 import datetime
 
 from obsidian.log import Logger
@@ -585,9 +586,9 @@ class World:
             raise BlockError(f"Requested Block Is Out Of Range ({blockX}, {blockY}, {blockZ})")
         return BlockManager.getBlockById(self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)])
 
-    async def setBlock(self, blockX: int, blockY: int, blockZ: int, blockId: int, player: Optional[Player] = None, sendPacket: bool = True, updateSelf: bool = False) -> bool:
+    async def setBlock(self, blockX: int, blockY: int, blockZ: int, block: AbstractBlock, player: Optional[Player] = None, sendPacket: bool = True, updateSelf: bool = False) -> bool:
         # Handles Block Updates In Server + Checks If Block Placement Is Allowed
-        Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {blockId}", module="world")
+        Logger.debug(f"Setting World Block {blockX}, {blockY}, {blockZ} to {block.ID}", module="world")
 
         # Check If Block Is Out Of Range
         if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
@@ -597,7 +598,7 @@ class World:
         self.lastModified = datetime.datetime.now()
 
         # Setting Block in MapArray
-        self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = blockId
+        self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = block.ID
 
         if sendPacket:
             # Sending Block Update Update Packet To All Players
@@ -606,13 +607,45 @@ class World:
                 blockX,
                 blockY,
                 blockZ,
-                blockId,
+                block.ID,
                 # not sending to self as that may cause some de-sync issues
                 ignoreList=[player] if player is not None and not updateSelf else []
             )
 
         # SetBlock Successful!
         return True
+
+    async def bulkBlockUpdate(self, blockUpdates: dict[tuple[int, int, int], AbstractBlock], sendPacket: bool = True):
+        # Handles Bulk Block Updates In Server + Checks If Block Placement Is Allowed
+        Logger.debug(f"Handling Bulk Block Update for {len(blockUpdates)} blocks", module="world")
+
+        # Set last modified date
+        self.lastModified = datetime.datetime.now()
+
+        # Loop through each block and handle update
+        for (blockX, blockY, blockZ), block in blockUpdates.items():
+            Logger.verbose(f"Setting World Block {blockX}, {blockY}, {blockZ} to {block.ID}", module="world")
+
+            # Check If Block Is Out Of Range
+            if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
+                raise BlockError(f"Block Placement Is Out Of Range ({blockX}, {blockY}, {blockZ})")
+
+            # Setting Block in MapArray
+            self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = block.ID
+
+            if sendPacket:
+                # If fastBlockUpdates is disabled, run a 0 second sleep so that other tasks can operate
+                if not self.worldManager.server.config.fastBlockUpdates:
+                    await asyncio.sleep(0)
+
+                # Sending Block Update Update Packet To All Players
+                await self.playerManager.sendWorldPacket(
+                    Packets.Response.SetBlock,
+                    blockX,
+                    blockY,
+                    blockZ,
+                    block.ID
+                )
 
     def getHighestBlock(self, blockX: int, blockZ: int, start: Optional[int] = None) -> int:
         # Returns the highest block

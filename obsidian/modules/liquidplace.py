@@ -26,19 +26,19 @@ class LiquidPlaceModule(AbstractModule):
         # Override Block Placing to Place Liquids!
         @Override(CoreModule.RedCloth.placeBlock)
         async def placeStationaryLava(block_self, *args, **kwargs):
-            await self.placeLiquid(block_self, *args, liquidType=Blocks.StationaryLava.ID, **kwargs)
+            await self.placeLiquid(block_self, *args, liquidType=Blocks.StationaryLava, **kwargs)
 
         @Override(CoreModule.OrangeCloth.placeBlock)
         async def placeFlowingLava(block_self, *args, **kwargs):
-            await self.placeLiquid(block_self, *args, liquidType=Blocks.FlowingLava.ID, **kwargs)
+            await self.placeLiquid(block_self, *args, liquidType=Blocks.FlowingLava, **kwargs)
 
         @Override(CoreModule.UltramarineCloth.placeBlock)
         async def placeStationaryWater(block_self, *args, **kwargs):
-            await self.placeLiquid(block_self, *args, liquidType=Blocks.StationaryWater.ID, **kwargs)
+            await self.placeLiquid(block_self, *args, liquidType=Blocks.StationaryWater, **kwargs)
 
         @Override(CoreModule.CapriCloth.placeBlock)
         async def placeFlowingWater(block_self, *args, **kwargs):
-            await self.placeLiquid(block_self, *args, liquidType=Blocks.FlowingWater.ID, **kwargs)
+            await self.placeLiquid(block_self, *args, liquidType=Blocks.FlowingWater, **kwargs)
 
     # Method to Place Custom Liquids
     async def placeLiquid(self, block_self, ctx, blockX, blockY, blockZ, liquidType):

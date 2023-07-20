@@ -163,7 +163,8 @@ class ServerConfig(AbstractConfig):
     repeatCommands: bool = False  # Repeat Commands In Chat
     # Block Configuration
     disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks
-    allowLiquidPlacement: bool = False
+    allowLiquidPlacement: bool = False  # Allow Players To Place Liquids
+    fastBlockUpdates: bool = True  # Send Block Updates Faster, but freezes server
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     worldIgnoreList: list[str] = field(default_factory=list)  # Worlds to ignore

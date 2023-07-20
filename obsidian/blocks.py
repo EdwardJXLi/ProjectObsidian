@@ -36,7 +36,7 @@ class AbstractBlock(AbstractSubmodule[T], Generic[T]):
             raise ClientError("You Don't Have Permission To Edit This Block!")
 
         # Setting Block in World
-        await ctx.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, self.ID, player=ctx)
+        await ctx.worldPlayerManager.world.setBlock(blockX, blockY, blockZ, self, player=ctx)
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractBlock:
