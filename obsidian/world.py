@@ -634,8 +634,8 @@ class World:
             self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = block.ID
 
             if sendPacket:
-                # If fastBlockUpdates is disabled, run a 0 second sleep so that other tasks can operate
-                if not self.worldManager.server.config.fastBlockUpdates:
+                # If asynchronousBlockUpdates is enabled, run a 0 second sleep so that other tasks can operate
+                if self.worldManager.server.config.asynchronousBlockUpdates:
                     await asyncio.sleep(0)
 
                 # Sending Block Update Update Packet To All Players
