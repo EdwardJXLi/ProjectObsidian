@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.mixins import Inject, InjectionPoint
-from obsidian.constants import __version__, PY_VERSION
+from obsidian.constants import __version__
 from obsidian.config import AbstractConfig
 from obsidian.errors import ModuleError
 from obsidian.server import Server
@@ -78,7 +78,7 @@ class ClassiCubeApiModule(AbstractModule):
                     "max": server.playerManager.maxSize or config.defaultMaxSize,
                     "public": config.public,
                     "salt": server.salt,
-                    "software": f"&dProject&5Obsidian &fv. &b{__version__} &fon &a{PY_VERSION}&f" if config.softwareOverride is None else config.softwareOverride,
+                    "software": f"&dProject&5Obsidian &fv. &a{__version__}&f" if config.softwareOverride is None else config.softwareOverride,
                     "web": config.web,
                 }
 
