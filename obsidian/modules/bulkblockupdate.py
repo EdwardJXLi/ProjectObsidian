@@ -58,6 +58,13 @@ class BulkBlockUpdateModule(AbstractModule):
                 self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = block.ID
 
             if sendPacket:
+                # Check if the number of block updates exceed the map reload threshold. If so, send a map refresh instead
+                if len(blockUpdates) > self.worldManager.server.config.blockUpdatesBeforeReload:
+                    Logger.debug("Number of block updates exceed the map reload threshold. Sending map refresh instead.", module="world")
+                    for player in self.playerManager.getPlayers():
+                        await player.networkHandler.sendWorldData(self)
+                    return
+
                 # Make list of players who support BulkBlockUpdate and who dont
                 bulkUpdatePlayers: list[Player] = []
                 regularUpdatePlayers: list[Player] = []
@@ -116,7 +123,7 @@ class BulkBlockUpdateModule(AbstractModule):
                             blockX, blockY, blockZ, block.ID
                         )
 
-                Logger.debug("Done processing bulkBlockUpdate")
+                Logger.debug("Done processing bulkBlockUpdate", module="world")
 
     @ResponsePacket(
         "BulkBlockUpdate",

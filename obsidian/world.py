@@ -622,18 +622,28 @@ class World:
         # Set last modified date
         self.lastModified = datetime.datetime.now()
 
-        # Loop through each block and handle update
+        # Update maparray with block updates
+        Logger.debug("Updating World Map Array", module="world")
         for (blockX, blockY, blockZ), block in blockUpdates.items():
-            Logger.verbose(f"Setting World Block {blockX}, {blockY}, {blockZ} to {block.ID}", module="world")
-
             # Check If Block Is Out Of Range
             if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
                 raise BlockError(f"Block Placement Is Out Of Range ({blockX}, {blockY}, {blockZ})")
 
-            # Setting Block in MapArray
+            # Update Map Array
             self.mapArray[blockX + self.sizeX * (blockZ + self.sizeZ * blockY)] = block.ID
 
-            if sendPacket:
+        if sendPacket:
+            # Check if the number of block updates exceed the map reload threshold. If so, send a map refresh instead
+            if len(blockUpdates) > self.worldManager.server.config.blockUpdatesBeforeReload:
+                Logger.debug("Number of block updates exceed the map reload threshold. Sending map refresh instead.", module="world")
+                for player in self.playerManager.getPlayers():
+                    await player.networkHandler.sendWorldData(self)
+                return
+
+            # Loop through each block and handle update
+            for (blockX, blockY, blockZ), block in blockUpdates.items():
+                Logger.verbose(f"Setting World Block {blockX}, {blockY}, {blockZ} to {block.ID}", module="world")
+
                 # If asynchronousBlockUpdates is enabled, run a 0 second sleep so that other tasks can operate
                 if self.worldManager.server.config.asynchronousBlockUpdates:
                     await asyncio.sleep(0)

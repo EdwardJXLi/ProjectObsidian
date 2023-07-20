@@ -2386,6 +2386,23 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage("&aRespawned!")
 
     @Command(
+        "ReloadWorld",
+        description="Re-sends map data.",
+        version="v1.0.0"
+    )
+    class ReloadWorldCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["reload", "reloadworld", "rw"])
+
+        async def execute(self, ctx: Player):
+            # Check if player is in a world
+            if ctx.worldPlayerManager is None:
+                raise CommandError("You are not in a world!")
+
+            # Send world data again
+            await ctx.networkHandler.sendWorldData(ctx.worldPlayerManager.world)
+
+    @Command(
         "JoinWorld",
         description="Joins another world",
         version="v1.0.0"

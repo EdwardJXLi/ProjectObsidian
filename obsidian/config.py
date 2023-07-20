@@ -165,6 +165,7 @@ class ServerConfig(AbstractConfig):
     disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks
     allowLiquidPlacement: bool = False  # Allow Players To Place Liquids
     asynchronousBlockUpdates: bool = True  # Allow Block Updates To Be Asynchronous
+    blockUpdatesBeforeReload: int = 8192  # Number of block updates to warrant a reload of the map. -1 to disable
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     worldIgnoreList: list[str] = field(default_factory=list)  # Worlds to ignore
