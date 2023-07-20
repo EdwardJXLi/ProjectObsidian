@@ -167,6 +167,7 @@ class ServerConfig(AbstractConfig):
     # World Configuration
     worldSaveLocation: Optional[str] = "worlds"  # Location of Save Folder
     worldIgnoreList: list[str] = field(default_factory=list)  # Worlds to ignore
+    newWorldWarning: bool = True  # Whether to warn the user when a new world is created
     persistentWorlds: bool = True  # Override flag to turn off world persistance
     automaticallyDetermineSpawn: bool = False  # Reset Spawn Location for Every Player
     defaultWorld: str = "default"  # Name Of Default World

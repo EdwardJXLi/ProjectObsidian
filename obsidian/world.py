@@ -260,11 +260,16 @@ class WorldManager:
             if self.server.config.defaultWorld not in self.worlds.keys():
                 # Check if other worlds were loaded as well
                 if len(self.worlds.keys()) > 0:
-                    Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
-                    Logger.warn("Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
-                    # Ask User If They Want To Continue With World Generation
-                    Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load")
-                    Logger.askConfirmation(message="Generate New World?")
+                    if self.server.config.newWorldWarning:
+                        # Warn User That Default World Was Not Loaded
+                        Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
+                        Logger.warn("Checking If World Exists. Consider Changing The Default World and/or File Format In Config.", module="world-load")
+                        # Ask User If They Want To Continue With World Generation
+                        Logger.warn(f"Other Worlds Were Detected. Generate New World With Name {self.server.config.defaultWorld}?", module="world-load")
+                        Logger.askConfirmation(message="Generate New World?")
+                    else:
+                        # Generate New World
+                        pass
                 else:
                     Logger.warn("No Existing Worlds Were Detected. Generating New World!", module="world-load")
                 # Generate New World
