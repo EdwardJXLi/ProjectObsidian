@@ -10,6 +10,7 @@
 ## Official Modules
 - `classicworld` - Adds support for the classicworld format
 - `worldconvert` - World conversion module, converts worlds from one format to another
+- `basiccuboid` - Adds basic support for the /cuboid command
 
 # CPE Modules
 - `clickdistance` - Adds support for the ClickDistance CPE
@@ -19,7 +20,9 @@
 - `selectioncuboid` - Adds support for the SelectionCuboid CPE
 - `playerclick` - Adds support for the PlayerClick CPE
 - `longermessages` - Adds support for the LongerMessages CPE
+- `bulkblockupdate` - Adds support for the BulkBlockUpdate CPE
 - `twowayping` - Adds support for the TwoWayPing CPE
+- `instantmotd` - Adds support for the InstantMOTD CPE
 
 ## Quality of Life Modules
 - `liquidplace` - Allows placements of liquids in the world without cheats
