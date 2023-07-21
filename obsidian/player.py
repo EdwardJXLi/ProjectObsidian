@@ -79,12 +79,12 @@ class PlayerManager:
         Logger.verbose(f"Found Players: {matchingPlayers}", module="player-manager")
         return matchingPlayers
 
-    async def deletePlayer(self, player: Player) -> bool:
+    async def deletePlayer(self, player: Player, reason: Optional[str] = None) -> bool:
         Logger.debug(f"Removing Player {player.name}", module="player-manager")
         # Remove Player From World If Necessary
         if player.worldPlayerManager is not None and player.playerId is not None:
             Logger.debug("User Leaving World", module="player-manager")
-            await player.worldPlayerManager.removePlayer(player)
+            await player.worldPlayerManager.removePlayer(player, reason=reason)
 
         # Remove Player From PlayerManager
         for playerName, playerObj in self.players.items():
@@ -102,7 +102,7 @@ class PlayerManager:
             # Get Player Object
             player = self.players[username]
             # Kick Player
-            await player.networkHandler.closeConnection(reason, notifyPlayer=True)
+            await player.networkHandler.closeConnection(reason, notifyPlayer=True, chatMessage="Kicked By Server")
             Logger.debug(f"Successfully Kicked Player {username}", module="player")
             return True
         else:
@@ -123,7 +123,7 @@ class PlayerManager:
         Logger.info(f"Kicking {len(toKick)} Player(s) by Ip {ip}", module="player-manager")
         for player in toKick:
             Logger.debug(f"Player {player.name} is being kicked", module="player-manager")
-            await player.networkHandler.closeConnection(reason, notifyPlayer=True)
+            await player.networkHandler.closeConnection(reason, notifyPlayer=True, chatMessage="Kicked By Server")
 
         return True
 
@@ -149,7 +149,7 @@ class PlayerManager:
                         Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}", module="global-packet-dispatcher")
                     else:
                         # Bad Timing with Connection Closure. Ignoring
-                        Logger.verbose(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="global-packet-dispatcher")
+                        Logger.debug(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="global-packet-dispatcher")
         return True  # Success!
 
     async def sendGlobalMessage(
@@ -314,9 +314,9 @@ class WorldPlayerManager:
                     Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
                 else:
                     # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
+                    Logger.debug(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
 
-    async def removePlayer(self, player: Player) -> bool:
+    async def removePlayer(self, player: Player, reason: Optional[str] = None) -> bool:
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
 
         # Check if last logout location is enabled
@@ -341,7 +341,11 @@ class WorldPlayerManager:
         Logger.debug(f"Removed Player {player.networkHandler.connectionInfo} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
 
         # Sending Leave Chat Message
-        await self.sendWorldMessage(f"&e{player.name} Left The World &9(ID {player.playerId})&f")
+        # If reason is specified, send it
+        if reason:
+            await self.sendWorldMessage(f"&e{player.name} Left The World ({reason}) &9(ID {player.playerId})&f")
+        else:
+            await self.sendWorldMessage(f"&e{player.name} Left The World &9(ID {player.playerId})&f")
 
         # Return True if Successful
         return True
@@ -395,7 +399,7 @@ class WorldPlayerManager:
                     Logger.error(f"An Error Occurred While Sending World Packet {packet.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
                 else:
                     # Bad Timing with Connection Closure. Ignoring
-                    Logger.verbose(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
+                    Logger.debug(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
         return True  # Success!
 
     def generateMessage(self, message: str, author: None | str | Player = None, world: None | str | World = None):

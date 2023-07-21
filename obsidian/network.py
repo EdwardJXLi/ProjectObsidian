@@ -48,23 +48,23 @@ class NetworkHandler:
             return await self._initConnection(*args, **kwargs)
         except ClientError as e:
             Logger.warn(f"Client Error, Disconnecting Ip {self.connectionInfo} - {type(e).__name__}: {e}", module="network")
-            await self.closeConnection(reason=str(e), notifyPlayer=True)
+            await self.closeConnection(str(e), notifyPlayer=True, chatMessage="Client Error")
         except BrokenPipeError:
             Logger.warn(f"Ip {self.connectionInfo} Broken Pipe. Closing Connection.", module="network")
-            await self.closeConnection(reason="Broken Pipe")
+            await self.closeConnection("Broken Pipe", chatMessage="Disconnected")
         except ConnectionResetError:
             Logger.warn(f"Ip {self.connectionInfo} Connection Reset. Closing Connection.", module="network")
-            await self.closeConnection(reason="Connection Reset")
+            await self.closeConnection("Connection Reset", chatMessage="Disconnected")
         except asyncio.IncompleteReadError:
             Logger.warn(f"Ip {self.connectionInfo} Incomplete Read Error. Closing Connection.", module="network")
-            await self.closeConnection(reason="Incomplete Read Error")
+            await self.closeConnection("Incomplete Read Error", chatMessage="Disconnected")
         except asyncio.TimeoutError:
             Logger.warn(f"Ip {self.connectionInfo} Timeout Error. Closing Connection.", module="network")
-            await self.closeConnection(reason="Timeout Error")
+            await self.closeConnection("Timeout Error", chatMessage="Disconnected")
         except Exception as e:
             Logger.error(f"Error While Handling Connection {self.connectionInfo} - {type(e).__name__}: {e}", module="network")
             try:
-                await self.closeConnection(reason="Internal Server Error", notifyPlayer=True)
+                await self.closeConnection("Internal Server Error", notifyPlayer=True)
             except Exception as e:
                 Logger.error(f"Close Connected Failed To Complete Successfully - {type(e).__name__}: {e}", module="network")
 
@@ -215,7 +215,7 @@ class NetworkHandler:
 
         # Disconnect Player from Current World Manager and Remove worldPlayerManager from user
         Logger.debug(f"{self.connectionInfo} | Removing Player From Current World {previousWorld.name}", module="change-world")
-        await self.player.worldPlayerManager.removePlayer(self.player)
+        await self.player.worldPlayerManager.removePlayer(self.player, reason=f"Switching World To {world.name}")
         self.player.worldPlayerManager = None
 
         # Sending World Data Of Default World
@@ -266,11 +266,7 @@ class NetworkHandler:
             world.sizeZ
         )
 
-    async def closeConnection(self, reason: Optional[str] = None, notifyPlayer: bool = False):
-        # Setting Up Reason If None
-        if reason is None:
-            reason = "No Reason Provided"
-
+    async def closeConnection(self, reason: str, notifyPlayer: bool = False, chatMessage: Optional[str] = None):
         # Check if user has already been disconnected
         if not self.isConnected:
             Logger.debug("User Already Disconnected.", module="network")
@@ -280,7 +276,7 @@ class NetworkHandler:
         if self.player is not None:
             # Remove player from the current world
             Logger.debug("Closing and Cleaning Up User", module="network")
-            await self.player.playerManager.deletePlayer(self.player)
+            await self.player.playerManager.deletePlayer(self.player, reason=chatMessage)
 
             # Send global message that player has disconnected from the server
             Logger.debug(f"{self.connectionInfo} | Sending Global Player Leave Message", module="network")
@@ -289,7 +285,15 @@ class NetworkHandler:
         Logger.debug(f"Closing Connection {self.connectionInfo} For Reason {reason}", module="network")
         # Send Disconnect Message
         if notifyPlayer:
-            await self.dispatcher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
+            try:
+                await self.dispatcher.sendPacket(Packets.Response.DisconnectPlayer, f"Disconnected: {reason}")
+            except Exception as e:
+                if e not in CRITICAL_RESPONSE_ERRORS:
+                    # Something Broke!
+                    Logger.error(f"An Error Occurred While Disconnect Packet - {type(e).__name__}: {e}", module="network")
+                else:
+                    # Bad Timing with Connection Closure. Ignoring
+                    Logger.debug("Ignoring Error While Sending Disconnect Packet", module="network")
 
         # Set Disconnect Flags
         self.isConnected = False

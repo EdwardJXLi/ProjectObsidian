@@ -2516,6 +2516,18 @@ class CoreModule(AbstractModule):
         async def execute(self, ctx: Player):
             await ctx.sendMOTD()
 
+    @Command(
+        "Quit",
+        description="Quits server with a message",
+        version="v1.0.0"
+    )
+    class QuitCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["quit"])
+
+        async def execute(self, ctx: Player, *, message: Optional[str] = None):
+            await ctx.networkHandler.closeConnection("Quitting the Server...", notifyPlayer=True, chatMessage=message)
+
     #
     # COMMANDS (OPERATORS ONLY)
     #
