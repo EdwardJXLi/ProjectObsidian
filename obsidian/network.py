@@ -202,11 +202,7 @@ class NetworkHandler:
             # Listen and Handle Incoming Packets
             await self.dispatcher.listenForPackets(packetDict=PacketManager.Request.loopPackets)
 
-    async def _processWorldChange(self, world: World, previousWorld: World, updateServerInfo: bool = True):
-        # TODO: updateServerInfoWhileSwitching is included because IDK if clients would like it.
-        # Its an undocumented feature, so look into if its part of the defacto standard
-        # This is use changeable in config
-
+    async def _processWorldChange(self, world: World, previousWorld: World):
         # Check if player is joined in a world in the first place
         if self.player is None:
             raise ServerError("Trying To Change World When NetworkHandler Has No Player...")
@@ -214,9 +210,8 @@ class NetworkHandler:
             raise ServerError(f"Player {self.player.name} Not In World")
 
         # Change Server Information To Include "Switching Server..."
-        if updateServerInfo:
-            Logger.debug(f"{self.connectionInfo} | Changing Server Information Packet", module="change-world")
-            await self.dispatcher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, f"Joining {world.name}...", 0x00)
+        Logger.debug(f"{self.connectionInfo} | Changing Server Information Packet", module="change-world")
+        await self.dispatcher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, f"Joining {world.name}...", 0x00)
 
         # Disconnect Player from Current World Manager and Remove worldPlayerManager from user
         Logger.debug(f"{self.connectionInfo} | Removing Player From Current World {previousWorld.name}", module="change-world")
@@ -243,11 +238,6 @@ class NetworkHandler:
             self.player.posYaw,
             self.player.posPitch
         )
-
-        # Change Server Information Back To Original
-        if updateServerInfo:
-            Logger.debug(f"{self.connectionInfo} | Changing Server Information Packet Back To Original", module="change-world")
-            await self.dispatcher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, self.server.motd, 0x00)
 
     async def sendWorldData(self, world: World):
         # Send Level Initialize Packet

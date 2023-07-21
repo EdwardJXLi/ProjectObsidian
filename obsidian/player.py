@@ -549,7 +549,7 @@ class Player:
         # Attaching Player Onto World Player Manager
         await self.worldPlayerManager.joinPlayer(self)
 
-    async def changeWorld(self, world: World, updateServerInfo: bool = True, sendMessage: bool = True, worldConnectMessage: str = "Whisking You Off To"):
+    async def changeWorld(self, world: World, sendMessage: bool = True, worldConnectMessage: str = "Whisking You Off To"):
         Logger.info(f"Player {self.name} Changing World to {world.name}", module="change-world")
         # Check if player is in a world
         if self.worldPlayerManager is None:
@@ -558,7 +558,7 @@ class Player:
         if sendMessage:
             await self.sendMessage(f"&e{worldConnectMessage} &b{world.name}&e...")
         # Handle the world change
-        await self.networkHandler._processWorldChange(world, self.worldPlayerManager.world, updateServerInfo=updateServerInfo)
+        await self.networkHandler._processWorldChange(world, self.worldPlayerManager.world)
 
     async def setLocation(self, posX: int, posY: int, posZ: int, posYaw: int = 0, posPitch: int = 0, notifyPlayers: bool = True):
         Logger.debug(f"Setting New Player Location for Player {self.name} (X: {posX}, Y: {posY}, Z: {posZ}, Yaw: {posYaw}, Pitch: {posPitch})", module="player")

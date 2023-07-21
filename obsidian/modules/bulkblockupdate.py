@@ -108,7 +108,7 @@ class BulkBlockUpdateModule(AbstractModule):
                         )
 
                 # Loop through each block and handle update for players who dont support BulkBlockUpdate
-                Logger.debug(f"Sending Regular SetBlock Packets to {len(bulkUpdatePlayers)} players", module="world")
+                Logger.debug(f"Sending Regular SetBlock Packets to {len(regularUpdatePlayers)} players", module="world")
                 for (blockX, blockY, blockZ), block in blockUpdates.items():
                     Logger.verbose(f"Setting World Block {blockX}, {blockY}, {blockZ} to {block.ID}", module="world")
 
