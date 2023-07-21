@@ -839,6 +839,10 @@ class Player:
         Logger.debug(f"{self.networkHandler.connectionInfo} | Preparing To Send World {self.worldPlayerManager.world.name}", module="change-world")
         await self.networkHandler.sendWorldData(self.worldPlayerManager.world)
 
+        # Resending currently connected players
+        Logger.debug(f"{self.networkHandler.connectionInfo} | Resending Currently Connected Players", module="change-world")
+        await self.worldPlayerManager.spawnCurrentPlayers(self)
+
         # Some clients want a SpawnPlayer packet after sending a world.
         # Send spawn player packet to user
         Logger.debug(f"{self.networkHandler.connectionInfo} | Preparing To Send Spawn Player Information", module="change-world")
