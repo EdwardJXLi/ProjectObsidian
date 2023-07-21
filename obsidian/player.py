@@ -821,6 +821,34 @@ class Player:
         Logger.debug(f"Got Block Update From Player! {blockX=}, {blockY=}, {blockZ=}, {blockId=}", module="player")
         return blockX, blockY, blockZ, BlockManager.getBlockById(blockId)
 
+    async def reloadWorld(self):
+        # Check if user is in a world
+        if self.worldPlayerManager is None:
+            raise CommandError("You Are Not In A World!")
+
+        # Some clients require a ServerIdentification packet before sending world.
+        # Change Server Information To Include "Reloading World..."
+        Logger.debug(f"{self.networkHandler.connectionInfo} | Changing Server Information Packet", module="change-world")
+        await self.networkHandler.dispatcher.sendPacket(Packets.Response.ServerIdentification, self.server.protocolVersion, self.server.name, "Reloading World...", 0x00)
+
+        # Sending World Data Of Default World
+        Logger.debug(f"{self.networkHandler.connectionInfo} | Preparing To Send World {self.worldPlayerManager.world.name}", module="change-world")
+        await self.networkHandler.sendWorldData(self.worldPlayerManager.world)
+
+        # Some clients want a SpawnPlayer packet after sending a world.
+        # Send spawn player packet to user
+        Logger.debug(f"{self.networkHandler.connectionInfo} | Preparing To Send Spawn Player Information", module="change-world")
+        await self.networkHandler.dispatcher.sendPacket(
+            Packets.Response.SpawnPlayer,
+            255,
+            self.username,
+            self.posX,
+            self.posY,
+            self.posZ,
+            self.posYaw,
+            self.posPitch
+        )
+
     async def sendMOTD(self, motdMessage: Optional[list[str]] = None):
         # If motdMessage was not passed, use default one in config
         if motdMessage is None:

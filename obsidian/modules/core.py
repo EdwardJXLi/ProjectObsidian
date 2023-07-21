@@ -2400,7 +2400,7 @@ class CoreModule(AbstractModule):
                 raise CommandError("You are not in a world!")
 
             # Send world data again
-            await ctx.networkHandler.sendWorldData(ctx.worldPlayerManager.world)
+            await ctx.reloadWorld()
 
     @Command(
         "JoinWorld",

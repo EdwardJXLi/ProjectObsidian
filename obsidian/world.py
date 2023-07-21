@@ -637,7 +637,7 @@ class World:
             if len(blockUpdates) > self.worldManager.server.config.blockUpdatesBeforeReload:
                 Logger.debug("Number of block updates exceed the map reload threshold. Sending map refresh instead.", module="world")
                 for player in self.playerManager.getPlayers():
-                    await player.networkHandler.sendWorldData(self)
+                    await player.reloadWorld()
                 return
 
             # Loop through each block and handle update
