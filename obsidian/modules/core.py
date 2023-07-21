@@ -2944,7 +2944,7 @@ class CoreModule(AbstractModule):
     )
     class SetWorldNameCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["worldname", "setworldname"], OP=True)
+            super().__init__(*args, ACTIVATORS=["worldname", "setworldname", "renameworld"], OP=True)
 
         async def execute(self, ctx: Player, newName: str):
             # Get player world
