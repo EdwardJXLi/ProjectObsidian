@@ -701,10 +701,11 @@ class Player:
 
     async def handlePlayerMessage(self, message: str):
         # Format, Process, and Handle incoming player message requests.
-        Logger.debug(f"Handling Player Message {message} From Player {self.name}", module="player")
+        Logger.debug(f"Handling Player Message '{message}' From Player {self.name}", module="player")
 
         # Checking If Message Is A Command
         if message[0] == "/":
+            Logger.info(f"Handing Player Command '{message}' From Player {self.name}", module="player")
             # Tell user that a command was run
             await self.sendMessage(f"&9> Running: &b{message}&f")
             # Using create task to allow for async command handling
