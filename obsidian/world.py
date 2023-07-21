@@ -511,7 +511,7 @@ class World:
         # World has to be imported now to prevent circular imports
         from obsidian.player import WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
-        self.playerManager = WorldPlayerManager(self)
+        self.playerManager = WorldPlayerManager(self, self.worldManager.server.playerManager)
 
     def generateSpawnCoords(
         self,

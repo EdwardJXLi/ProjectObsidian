@@ -199,15 +199,15 @@ class Server:
                     Logger.verbose(f"Extension {ext} added.", module="init")
             Logger.debug(f"Server Supports {len(self._extensions)} Extensions: {self._extensions}", module="init")
 
+        # Initialize PlayerManager
+        Logger.info("Initializing Player Manager", module="init")
+        self._playerManager = PlayerManager(self, maxSize=self.config.serverMaxPlayers)
+
         # Initialize WorldManager
         Logger.info("Initializing World Manager", module="init")
         self._worldManager = WorldManager(self, ignorelist=self.config.worldIgnoreList)
         Logger.info("Loading Worlds", module="init")
         self.worldManager.loadWorlds()
-
-        # Initialize PlayerManager
-        Logger.info("Initializing Player Manager", module="init")
-        self._playerManager = PlayerManager(self, maxSize=self.config.serverMaxPlayers)
 
         # Create Asyncio Socket Server
         # When new connection occurs, run callback _getConnHandler

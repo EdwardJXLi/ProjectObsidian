@@ -209,8 +209,9 @@ class PlayerManager:
 
 # The Specific Player Manager Per World
 class WorldPlayerManager:
-    def __init__(self, world: World):
+    def __init__(self, world: World, playerManager: PlayerManager):
         self.world: World = world
+        self.playerManager: PlayerManager = playerManager
         self.playerSlots: list[Optional[Player]] = [None] * world.maxPlayers
 
     async def joinPlayer(self, player: Player) -> None:
@@ -427,11 +428,11 @@ class WorldPlayerManager:
     ):
         # Get maximum length of message header
         # TODO: this is kinda cringe
-        headerLength = len(self.world.worldManager.server.playerManager.generateMessage("", author=player, world=world))
+        headerLength = len(self.playerManager.generateMessage("", author=player, world=world))
 
         # Figure out which message handler to use
         if globalMessage:
-            sendMessage = self.world.worldManager.server.playerManager.sendGlobalMessage
+            sendMessage = self.playerManager.sendGlobalMessage
         else:
             sendMessage = self.sendWorldMessage
 
@@ -460,7 +461,7 @@ class WorldPlayerManager:
             return True  # Break Out of Function
 
         # Generate the message with header
-        message = self.world.worldManager.server.playerManager.generateMessage(message, author=author, world=world)
+        message = self.playerManager.generateMessage(message, author=author, world=world)
 
         # Finally, send formatted message
         Logger._log(
