@@ -156,6 +156,7 @@ class PlayerManager:
         self,
         message: str | list,
         author: None | str | Player = None,  # Information on the message author
+        world: None | str | World = None,  # Information on message world location
         globalTag: bool = False,  # Flag dictating if the [world] header should be added
         ignoreList: list[Player] = []  # List of players to not send the message not
     ) -> bool:
@@ -166,20 +167,12 @@ class PlayerManager:
                 await self.sendGlobalMessage(msg, author=author, globalTag=globalTag, ignoreList=ignoreList)
             return True  # Break Out of Function
 
-        # Format Message To Be Sent
-        # Add Author Tag
-        if isinstance(author, str):
-            message = f"<&e{author}&f> {message}"
-        elif isinstance(author, Player):
-            # Special Formatting For OPs
-            if author.opStatus:
-                message = f"<&c{author.name}&f> {message}"
-            else:
-                message = f"<&a{author.name}&f> {message}"
+        # If global tag is set and world is not set, set "world" to "GLOBAL"
+        if not world and globalTag:
+            world = "GLOBAL"
 
-        # Add Global Tag (If Requested)
-        if globalTag:
-            message = f"[&7GLOBAL&f] {message}"
+        # Generate the message with header
+        message = self.generateMessage(message, author=author, world=world)
 
         # Finally, send formatted message
         Logger._log(
@@ -189,6 +182,29 @@ class PlayerManager:
             textColour=Colour.WHITE
         )
         return await self.sendGlobalPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
+
+    def generateMessage(self, message: str, author: None | str | Player = None, world: None | str | World = None):
+        # Hacky Way To Get World Type
+        # Format Message To Be Sent
+        serverConfig = self.server.config
+
+        # Add Author Tag
+        if isinstance(author, str):
+            message = f"<{serverConfig.playerChatColor}{author}&f> {message}"
+        elif isinstance(author, Player):
+            # Special Formatting For OPs
+            if author.opStatus:
+                message = f"<{serverConfig.operatorChatColor}{author.name}&f> {message}"
+            else:
+                message = f"<{serverConfig.playerChatColor}{author.name}&f> {message}"
+
+        # Add World Tag (If Requested)
+        if isinstance(world, str):
+            message = f"{serverConfig.worldChatColor}[{world}]&f {message}"
+        elif isinstance(world, World):
+            message = f"{serverConfig.worldChatColor}[{world.name}]&f {message}"
+
+        return message
 
 
 # The Specific Player Manager Per World
@@ -402,42 +418,32 @@ class WorldPlayerManager:
                     Logger.debug(f"Ignoring Error While Sending World Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
         return True  # Success!
 
-    def generateMessage(self, message: str, author: None | str | Player = None, world: None | str | World = None):
-        # Hacky Way To Get World Type
-        # Format Message To Be Sent
-        serverConfig = self.world.worldManager.server.config
-
-        # Add Author Tag
-        if isinstance(author, str):
-            message = f"<{serverConfig.playerChatColor}{author}&f> {message}"
-        elif isinstance(author, Player):
-            # Special Formatting For OPs
-            if author.opStatus:
-                message = f"<{serverConfig.operatorChatColor}{author.name}&f> {message}"
-            else:
-                message = f"<{serverConfig.playerChatColor}{author.name}&f> {message}"
-
-        # Add World Tag (If Requested)
-        if isinstance(world, str):
-            message = f"{serverConfig.worldChatColor}[{world}]&f {message}"
-        elif isinstance(world, World):
-            message = f"{serverConfig.worldChatColor}[{world.name}]&f {message}"
-
-        return message
-
-    async def processPlayerMessage(self, player: Player, message: str, world: None | str | World = None):
+    async def processPlayerMessage(
+        self,
+        player: Player,
+        message: str,
+        world: None | str | World = None,
+        globalMessage: bool = False
+    ):
         # Get maximum length of message header
-        headerLength = len(self.generateMessage("", author=player, world=world))
+        # TODO: this is kinda cringe
+        headerLength = len(self.world.worldManager.server.playerManager.generateMessage("", author=player, world=world))
+
+        # Figure out which message handler to use
+        if globalMessage:
+            sendMessage = self.world.worldManager.server.playerManager.sendGlobalMessage
+        else:
+            sendMessage = self.sendWorldMessage
 
         # Cut up and send message
         if len(message) + headerLength > 64:  # Cut Message If Too Long
-            await self.sendWorldMessage(message[:(64 - headerLength)], author=player, world=world)
+            await sendMessage(message[:(64 - headerLength)], author=player, world=world)
             message = message[(64 - headerLength):]
             while message:
-                await self.sendWorldMessage(message[:64])
+                await sendMessage(message[:64])
                 message = message[64:]
         else:
-            await self.sendWorldMessage(message, author=player, world=world)
+            await sendMessage(message, author=player, world=world)
 
     async def sendWorldMessage(
         self,
@@ -454,7 +460,7 @@ class WorldPlayerManager:
             return True  # Break Out of Function
 
         # Generate the message with header
-        message = self.generateMessage(message, author=author, world=world)
+        message = self.world.worldManager.server.playerManager.generateMessage(message, author=author, world=world)
 
         # Finally, send formatted message
         Logger._log(
@@ -728,9 +734,12 @@ class Player:
         # Check if message should be sent to single world or to all worlds
         if self.server.config.globalChatMessages:
             # Send message to all worlds
-            for world in self.server.worldManager.worlds.values():
-                Logger.debug(f"Sending Player {self.name} Message To World {world.name}", module="player")
-                await world.playerManager.processPlayerMessage(self, message, world=self.worldPlayerManager.world)
+            await self.worldPlayerManager.processPlayerMessage(
+                self,
+                message,
+                world=self.worldPlayerManager.world,
+                globalMessage=True
+            )
         else:
             # Process send message to world's player
             await self.worldPlayerManager.processPlayerMessage(self, message)
