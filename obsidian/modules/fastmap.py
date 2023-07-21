@@ -1,0 +1,153 @@
+from obsidian.module import Module, AbstractModule, Dependency
+from obsidian.log import Logger
+from obsidian.packet import Packets
+from obsidian.config import AbstractConfig
+from obsidian.world import World
+from obsidian.network import NetworkHandler
+from obsidian.errors import ServerError
+from obsidian.cpe import CPE, CPEExtension
+from obsidian.mixins import Override, InjectMethod
+from obsidian.packet import (
+    AbstractResponsePacket,
+    ResponsePacket
+)
+
+from dataclasses import dataclass
+from typing import cast
+import zlib
+import struct
+
+
+@Module(
+    "FastMap",
+    description="Reduces load on clients and servers by reducing the complexity of sending the map.",
+    author="Obsidian",
+    version="1.0.0",
+    dependencies=[Dependency("core")]
+)
+@CPE(
+    extName="FastMap",
+    extVersion=1,
+    cpeOnly=True
+)
+class FastMapModule(AbstractModule):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.config = self.initConfig(self.FastMapConfig)
+
+    def postInit(self, *args, **kwargs):
+        # Save pointer to original sendWorldData method
+        fallbackSendWorldData = NetworkHandler.sendWorldData
+
+        # Create closure for config
+        fastMapConfig = self.config
+
+        # Override the original sendWorldData method to use the new FastMap protocol
+        @Override(target=NetworkHandler.sendWorldData)
+        async def sendWorldData(self, world: World):
+            # Since we are injecting, set type of self to NetworkHandler
+            self = cast(NetworkHandler, self)
+
+            # Sanity check that this should be called after player initialization
+            if not self.player:
+                raise ServerError("CPE Negotiation Called Before Player Initialization!")
+
+            # Check if player supports the FastMap extension
+            if not self.player.supports(CPEExtension("FastMap", 1)):
+                Logger.debug(f"{self.connectionInfo} | Player does not support FastMap. Falling back to original method.", module="network")
+                # If not, fallback to original method
+                return await fallbackSendWorldData(self, world)
+            else:
+                Logger.debug(f"{self.connectionInfo} | Player supports FastMap. Upgrading to the FastMap protocol.", module="network")
+
+                # Send Level Initialize Packet
+                Logger.debug(f"{self.connectionInfo} | Sending Level Initialize Packet [Fast Map]", module="network")
+                await self.dispatcher.sendPacket(Packets.Response.FastMapLevelInitialize, len(world.mapArray))
+
+                # Preparing To Send Map
+                Logger.debug(f"{self.connectionInfo} | Preparing To Send Map [Fast Map] ", module="network")
+                deflatedWorld = getattr(self, "deflateMap")(world)  # Generate Deflated Map
+                # World Data Needs To Be Sent In Chunks Of 1024 Characters
+                chunks = [deflatedWorld[i: i + 1024] for i in range(0, len(deflatedWorld), 1024)]
+
+                # Looping Through All Chunks And Sending Data
+                Logger.debug(f"{self.connectionInfo} | Sending Chunk Data [Fast Map]", module="network")
+                for chunkCount, chunk in enumerate(chunks):
+                    # Sending Chunk Data
+                    Logger.verbose(f"{self.connectionInfo} | Sending Chunk Data {chunkCount + 1} of {len(chunks)} [Fast Map]", module="network")
+                    await self.dispatcher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
+
+                # Send Level Finalize Packet
+                Logger.debug(f"{self.connectionInfo} | Sending Level Finalize Packet [Fast Map]", module="network")
+                await self.dispatcher.sendPacket(
+                    Packets.Response.LevelFinalize,
+                    world.sizeX,
+                    world.sizeY,
+                    world.sizeZ
+                )
+
+        @InjectMethod(target=NetworkHandler)
+        def deflateMap(self, world: World, compressionLevel: int = -1) -> bytes:
+            # Since we are injecting, set type of self to NetworkHandler
+            self = cast(NetworkHandler, self)
+
+            # If Deflate Compression Level Is -1, Use Default!
+            # includeSizeHeader Dictates If Output Should Include Map Size Header
+            # THIS IS NOT USED FOR FASTMAP!
+
+            # Check If Compression Is -1 (Use Config deflateCompressionLevel)
+            if compressionLevel == -1:
+                compressionLevel = fastMapConfig.deflateCompressionLevel
+
+            # Check If Compression Level Is Valid
+            if compressionLevel >= 0 and compressionLevel <= 9:
+                pass
+            # Invalid Compression Level!
+            else:
+                raise ServerError(f"Invalid Deflate Compression Level Of {compressionLevel}!!!")
+
+            Logger.debug(f"Compressing Map {world.name} With Compression Level {compressionLevel}", module="deflate")
+            # Create compressor object
+            compressor = zlib.compressobj(
+                level=compressionLevel,
+                method=zlib.DEFLATED,
+                wbits=-zlib.MAX_WBITS,
+                memLevel=zlib.DEF_MEM_LEVEL,
+                strategy=zlib.Z_DEFAULT_STRATEGY
+            )
+
+            # Deflate Data
+            deflatedData = compressor.compress(world.mapArray)
+            deflatedData += compressor.flush()
+
+            Logger.debug(f"Deflated Map! DEFLATE SIZE: {len(deflatedData)}", module="deflate")
+            return deflatedData
+
+    @ResponsePacket(
+        "FastMapLevelInitialize",
+        description="Packet To Begin World Data Transfer with the FastMap extension",
+        override=True
+    )
+    class FastMapLevelInitializePacket(AbstractResponsePacket["FastMapModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ID=0x02,
+                FORMAT="!BI",
+                CRITICAL=True
+            )
+
+        async def serialize(self, size: int):
+            # <Level Initialize Packet>
+            # (Byte) Packet ID
+            # (Integer) Size Of Map
+            msg = struct.pack(self.FORMAT, self.ID, size)
+            return msg
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
+    # Config for default click distance
+    @dataclass
+    class FastMapConfig(AbstractConfig):
+        deflateCompressionLevel: int = 9

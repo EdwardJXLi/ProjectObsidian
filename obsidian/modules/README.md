@@ -23,6 +23,7 @@
 - `bulkblockupdate` - Adds support for the BulkBlockUpdate CPE
 - `twowayping` - Adds support for the TwoWayPing CPE
 - `instantmotd` - Adds support for the InstantMOTD CPE
+- `fastmap` - Adds support for the FastMap CPE
 
 ## Quality of Life Modules
 - `liquidplace` - Allows placements of liquids in the world without cheats

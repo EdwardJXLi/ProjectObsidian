@@ -38,7 +38,7 @@ class BulkBlockUpdateModule(AbstractModule):
         # Override the original bulkBlockUpdate method to use the new BulkBlockUpdate packet
         @Override(target=World.bulkBlockUpdate)
         async def bulkBlockUpdate(self, blockUpdates: dict[tuple[int, int, int], AbstractBlock], sendPacket: bool = True):
-            # Since we are injecting, set type of self to Player
+            # Since we are injecting, set type of self to World
             self = cast(World, self)
 
             # Handles Bulk Block Updates In Server + Checks If Block Placement Is Allowed

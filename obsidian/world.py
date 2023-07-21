@@ -33,6 +33,7 @@ from obsidian.errors import (
     BlockError,
     WorldError,
     ClientError,
+    ServerError,
     WorldSaveError,
     ConverterError
 )
@@ -743,15 +744,13 @@ class World:
         # Check If Compression Is -1 (Use Server gzipCompressionLevel)
         if compressionLevel == -1:
             compressionLevel = self.worldManager.server.config.gzipCompressionLevel
+
         # Check If Compression Level Is Valid
-        elif compressionLevel >= 0 and compressionLevel <= 9:
+        if compressionLevel >= 0 and compressionLevel <= 9:
             pass
         # Invalid Compression Level!
         else:
-            Logger.error(f"Invalid GZIP Compression Level Of {compressionLevel}!!!", module="world")
-            Logger.askConfirmation()
-            Logger.warn("Using Fallback Compression Level Of 0", module="world")
-            compressionLevel = 0
+            raise ServerError(f"Invalid GZIP Compression Level Of {compressionLevel}!!!")
 
         Logger.debug(f"Compressing Map {self.name} With Compression Level {compressionLevel}", module="world")
         # Create File Buffer
