@@ -1,4 +1,4 @@
-FROM python:3.10.12-slim
+FROM python:3.11-slim
 
 ENV PORT=25565
 ENV NAME="Minecraft Server"
