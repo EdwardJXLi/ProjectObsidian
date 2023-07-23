@@ -1647,6 +1647,9 @@ class CoreModule(AbstractModule):
                 else:
                     query = pageNumOrQuery
                     pageNum = 1
+                # Check if query is 'all'
+                if query.lower() == "all":
+                    return await Commands.CommandList.execute(ctx)
                 # Try to get query as a module
                 try:
                     module = ModuleManager.SUBMODULE._convertArgument(ctx.server, query)
@@ -1859,6 +1862,50 @@ class CoreModule(AbstractModule):
                 output.append("&4[NOTICE] &fThis Command Is DISABLED!")
 
             output.append(CommandHelper.centerMessage(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "CommandList",
+        description="Generates a list of all commands",
+        version="v1.0.0"
+    )
+    class CommandListCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["cmdlist", "commandlist", "listcmd", "listcmds", "helpall"])
+
+        async def execute(self, ctx: Player, showAlias: bool = False):
+            # Generate and Parse list of commands
+            cmdList = CommandManager._commandDict
+            # If user is not OP, filter out OP and Disabled commands
+            if not ctx.opStatus:
+                cmdList = {k: v for k, v in cmdList.items() if (not v.OP) and (v.NAME not in ctx.playerManager.server.config.disabledCommands)}
+
+            # Generate command output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.centerMessage("&eListing All Commands", colour="&2"))
+            output.append("&7Use /help [query] for help on a plugin or command.&f")
+            output.append("&7Use /cmdlist True  to show all command and aliases.&f")
+
+            # Generate List of Commands
+            if not showAlias:
+                output += CommandHelper.formatList(cmdList.values(), processInput=lambda c: str(c.ACTIVATORS[0]), initialMessage="&e", separator=", ", lineStart="&e")
+            else:
+                fullCommandsList = []
+                for command in cmdList.values():
+                    for i, activator in enumerate(command.ACTIVATORS):
+                        if i == 0:
+                            fullCommandsList.append(f"&e{activator}")
+                        else:
+                            fullCommandsList.append(f"&6{activator}")
+                output.append("&d[Showing all commands including aliases]")
+                output += CommandHelper.formatList(fullCommandsList, initialMessage="&e", separator=", ", lineStart="&e")
+
+            # Add Footer
+            output.append(CommandHelper.centerMessage(f"&eTotal Commands: {len(cmdList)}", colour="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
