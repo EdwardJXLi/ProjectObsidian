@@ -113,7 +113,16 @@ class HeldBlockModule(AbstractModule):
                 OP=True
             )
 
-        async def execute(self, ctx: Player, player: Player, block: AbstractBlock, preventChange: bool = False):
+        async def execute(
+            self, ctx: Player,
+            block: AbstractBlock,
+            player: Optional[Player] = None,
+            preventChange: bool = False
+        ):
+            # Use sender if no player was passed
+            if player is None:
+                player = ctx
+
             # Check if player supports the HeldBlock Extension
             if not player.supports(CPEExtension("HeldBlock", 1)):
                 raise CommandError(f"Player {player.name} Does Not Support HeldBlock Extension!")
@@ -139,7 +148,11 @@ class HeldBlockModule(AbstractModule):
                 OP=True
             )
 
-        async def execute(self, ctx: Player, player: Player):
+        async def execute(self, ctx: Player, player: Optional[Player] = None):
+            # Use sender if no player was passed
+            if player is None:
+                player = ctx
+
             # Check if player supports the HeldBlock Extension
             if not player.supports(CPEExtension("HeldBlock", 1)):
                 raise CommandError(f"Player {player.name} Does Not Support HeldBlock Extension!")
