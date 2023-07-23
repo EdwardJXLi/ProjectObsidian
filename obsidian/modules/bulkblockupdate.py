@@ -59,7 +59,7 @@ class BulkBlockUpdateModule(AbstractModule):
 
             if sendPacket:
                 # Check if the number of block updates exceed the map reload threshold. If so, send a map refresh instead
-                if len(blockUpdates) > self.worldManager.server.config.blockUpdatesBeforeReload:
+                if self.worldManager.server.config.blockUpdatesBeforeReload > 0 and len(blockUpdates) > self.worldManager.server.config.blockUpdatesBeforeReload:
                     Logger.debug("Number of block updates exceed the map reload threshold. Sending map refresh instead.", module="world")
                     for player in self.playerManager.getPlayers():
                         await player.reloadWorld()
