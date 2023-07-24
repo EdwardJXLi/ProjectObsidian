@@ -100,6 +100,7 @@ class NetworkHandler:
         # Verify login - Calculates if md5(salt + name) is equal to verificationKey
         if self.server.config.verifyLogin:
             if verificationKey != hashlib.md5(self.server.salt.encode() + username.encode()).hexdigest():
+                Logger.warn(f"User {username} tried logging in with invalid verification key {verificationKey}!", module="network")
                 raise ClientError("Username Verification Failed!")
         Logger.debug(f"{self.connectionInfo} | Login verified for Player {username}", module="network")
 
