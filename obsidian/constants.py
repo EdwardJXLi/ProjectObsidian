@@ -12,7 +12,7 @@ PY_VERSION = f"{platform.python_implementation()} {platform.python_version()}"
 SERVER_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # Networking Constants
-NET_TIMEOUT = 5
+NET_TIMEOUT = 15
 CRITICAL_REQUEST_ERRORS = [
     # These errors will bypass the packet.onError() handler and get forced raised
 ]
