@@ -375,7 +375,7 @@ class NetworkDispatcher:
                 # Ignore if ignoreUnknownPackets flag is set
                 if not ignoreUnknownPackets:
                     Logger.debug(f"Player Sent Unknown Packet Header {rawData} ({packetHeader})", module="network")
-                    raise ClientError(f"Unknown Packet {packetHeader}")
+                    raise ClientError(f"Unknown Client Packet {packetHeader}")
 
             # Get packet using packetId
             packet = PacketManager.Request.getPacketById(packetHeader)
