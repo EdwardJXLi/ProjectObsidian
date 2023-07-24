@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from obsidian.server import Server
 
 import asyncio
+import hashlib
 from typing import Type, Optional, Callable
 
 from obsidian.log import Logger
@@ -95,6 +96,12 @@ class NetworkHandler:
             raise ClientError(f"Server Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion})")
         elif protocolVersion < self.server.protocolVersion:
             raise ClientError(f"Client Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion})")
+
+        # Verify login - Calculates if md5(salt + name) is equal to verificationKey
+        if self.server.config.verifyLogin:
+            if verificationKey != hashlib.md5(self.server.salt.encode() + username.encode()).hexdigest():
+                raise ClientError("Username Verification Failed!")
+        Logger.debug(f"{self.connectionInfo} | Login verified for Player {username}", module="network")
 
         # Create Player
         Logger.debug(f"{self.connectionInfo} | Creating Player {username}", module="network")

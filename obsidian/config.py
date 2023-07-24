@@ -184,6 +184,7 @@ class ServerConfig(AbstractConfig):
     defaultMOTD: list[str] = field(default_factory=lambda: ["&aServer Powered By Obsidian"])  # Default MOTD
     # Player Configuration
     savePlayerLogoutLocation: bool = True  # Flag to determine whether to save player logout location
+    verifyLogin: bool = True  # Flag to determine whether to verify player login with Mojang or Classicube
     # Logger Configuration
     logBuffer: int = 1  # Number of Log Messages to be buffered before flushed to file
     # Default World Generation Config
