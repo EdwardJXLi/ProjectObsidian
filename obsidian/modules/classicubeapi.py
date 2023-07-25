@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from obsidian.module import Module, AbstractModule, Dependency
+from obsidian.commands import Command, AbstractCommand
+from obsidian.player import Player
 from obsidian.mixins import Inject, InjectionPoint
 from obsidian.constants import __version__
 from obsidian.config import AbstractConfig
@@ -16,7 +18,7 @@ import time
 
 @Module(
     "ClassiCubeAPI",
-    description="Interacts with the ClassiCube API. Processes server heartbeat and classicube authentication.",
+    description="Interacts with the ClassiCube API. Processes server heartbeat.",
     author="Obsidian",
     version="1.0.0",
     dependencies=[Dependency("core")]
@@ -70,15 +72,29 @@ class ClassiCubeApiModule(AbstractModule):
                 # Get url of classicube api heartbeat server
                 url = f"{config.url}/{config.heartbeatUri}"
 
+                # Generate Server Name
+                if config.nameOverride:
+                    serverName = config.nameOverride
+                elif config.addSoftwareHeader:
+                    serverName = f"[ProjectObsidian] {server.name}"
+                else:
+                    serverName = server.name
+
+                # Generate Software Name
+                if config.softwareOverride:
+                    softwareName = config.softwareOverride
+                else:
+                    softwareName = f"&dProject&5Obsidian &fv. &a{__version__}&f"
+
                 # Generate parameters
                 params = {
-                    "name": server.name if config.nameOverride is None else config.nameOverride,
+                    "name": serverName,
                     "port": server.port if config.portOverride is None else config.portOverride,
                     "users": len(server.playerManager.players),
                     "max": server.playerManager.maxSize or config.defaultMaxSize,
                     "public": config.public,
                     "salt": server.salt,
-                    "software": f"&dProject&5Obsidian &fv. &a{__version__}&f" if config.softwareOverride is None else config.softwareOverride,
+                    "software": softwareName,
                     "web": config.web,
                 }
 
@@ -106,6 +122,22 @@ class ClassiCubeApiModule(AbstractModule):
                 Logger.error(f"Unhandled exception in heartbeat thread - {type(e).__name__}: {e}", module="classiccubeapi", printTb=True)
                 time.sleep(10)
 
+    @Command(
+        "ReloadCCApiConfig",
+        description="Reloads the Classicube API Config",
+        version="v1.0.0"
+    )
+    class ReloadCCApiConfigCommand(AbstractCommand["ClassiCubeApiModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["reloadccconfig"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Reload Config
+            self.module.config.reload()
+
+            # Send Response Back
+            await ctx.sendMessage("&aClassiCube API Config Reloaded!")
+
     @dataclass
     class ClassiCubeApiConfig(AbstractConfig):
         # Determine whether or not the ClassiCube API is enabled
@@ -116,11 +148,12 @@ class ClassiCubeApiModule(AbstractModule):
         playUri: str = "server/play"
         # Heartbeat Settings
         heartbeat: bool = True
-        heartbeatInterval: int = 60
+        heartbeatInterval: int = 30
         # Server info settings
         public: bool = True
         web: bool = False
         defaultMaxSize: int = 1024
+        addSoftwareHeader: bool = False
         # Server info overrides
         nameOverride: Optional[str] = None
         portOverride: Optional[int] = None
