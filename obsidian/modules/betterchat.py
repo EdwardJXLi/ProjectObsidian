@@ -2,6 +2,7 @@ from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.mixins import Override
 from obsidian.world import World
 from obsidian.player import Player, WorldPlayerManager
+from obsidian.commands import Command, AbstractCommand
 from obsidian.errors import ServerError
 from obsidian.config import AbstractConfig
 
@@ -230,6 +231,24 @@ class BetterChatModule(AbstractModule):
         # Check if text wrapping is enabled
         if self.config.enablePlayerPing:
             self.initPlayerPing()
+
+    @Command(
+        "ReloadChatConfig",
+        description="Reloads the BetterChat Config",
+        version="v1.0.0"
+    )
+    class ReloadChatConfigCommand(AbstractCommand["BetterChatModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["reloadchat"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Reload Config
+            self.module.config.reload()
+            self.module.textWrapConfig.reload()
+            self.module.playerPingConfig.reload()
+
+            # Send Response Back
+            await ctx.sendMessage("&aBetterChat Config Reloaded!")
 
     # Config for BetterChat
     @dataclass
