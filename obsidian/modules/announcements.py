@@ -57,6 +57,7 @@ class AnnouncementsModule(AbstractModule):
                 eventLoop = asyncio.new_event_loop()
                 Logger.verbose(f"Creating new event loop {eventLoop} to send announcement.", module="announcements")
                 eventLoop.run_until_complete(AnnouncementsModule.sendAnnouncement(server, config, messageIndex=messageIndex))
+                messageIndex += 1
 
                 # Sleep
                 time.sleep(config.interval)
@@ -76,10 +77,13 @@ class AnnouncementsModule(AbstractModule):
             message = random.choice(config.messages)
         else:
             message = config.messages[messageIndex % len(config.messages)]
-            messageIndex += 1
 
         # Add prefix
-        message = config.announcementPrefix + message
+        if isinstance(message, str):
+            message = config.announcementPrefix + message
+        else:
+            for i in range(len(message)):
+                message[i] = config.announcementPrefix + message[i]
         Logger.verbose(f"Sending announcement '{message}'", module="announcements")
 
         # Check if we should send the message
@@ -129,7 +133,7 @@ class AnnouncementsModule(AbstractModule):
         worlds: list[str] = field(default_factory=list)
         # Messages to send
         announcementPrefix: str = "&a[Announcement] "
-        messages: list[str] = field(default_factory=lambda: ["&aThis is a test message!", "&aThis is another test message!"])
+        messages: list[str | list[str]] = field(default_factory=lambda: ["&aThis is a test message!", "&aThis is another test message!"])
         random: bool = False
         # Misc settings
         skipSendIfNoPlayers: bool = True
