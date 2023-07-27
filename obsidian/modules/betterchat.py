@@ -40,7 +40,7 @@ class BetterChatModule(AbstractModule):
             message: str,
             world: None | str | World = None,
             globalMessage: bool = False,
-            ignoreList: list[Player] = [],
+            ignoreList: set[Player] = set(),
             messageHandlerOverride: Optional[Callable[..., Awaitable]] = None
         ):
             # Since we are injecting, set type of self to World
@@ -122,29 +122,29 @@ class BetterChatModule(AbstractModule):
             message: str,
             world: None | str | World = None,
             globalMessage: bool = False,
-            ignoreList: list[Player] = [],
+            ignoreList: set[Player] = set(),
             messageHandlerOverride: Optional[Callable[..., Awaitable]] = None
         ):
             # Since we are injecting, set type of self to World
             self = cast(WorldPlayerManager, self)
 
             # Search for pinged players from the message
-            pingedPlayers: list[Player] = []
-            pingMatches: list[str] = re.findall(playerPingConfig.pingRegex, message)
+            pingedPlayers: set[Player] = set()
+            pingMatches: set[str] = set(re.findall(playerPingConfig.pingRegex, message))
             for match in pingMatches:
                 playerName = match[1:]
                 try:
                     p = Player._convertArgument(player.server, playerName)
                 except Exception:
                     continue  # Ignore invalid players.
-                pingedPlayers.append(p)
+                pingedPlayers.add(p)
 
             # If there are actually pinged players, run the process. Else, continue as normal.
             if len(pingedPlayers) > 0:
                 # Create a helper function to only send the message to the pinged players
                 async def sendMessageToPingedPlayers(
                     message: str | list,
-                    ignoreList: list[Player] = []  # List of players to not send the message not
+                    ignoreList: set[Player] = set()  # List of players to not send the message not
                 ):
                     # Sanity check that ignoreList is empty
                     if len(ignoreList) > 0:
@@ -204,7 +204,7 @@ class BetterChatModule(AbstractModule):
                     message,
                     world=world,
                     globalMessage=globalMessage,
-                    ignoreList=ignoreList + pingedPlayers,
+                    ignoreList=ignoreList | pingedPlayers,
                     messageHandlerOverride=messageHandlerOverride
                 )
 

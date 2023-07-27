@@ -66,15 +66,15 @@ class BulkBlockUpdateModule(AbstractModule):
                     return
 
                 # Make list of players who support BulkBlockUpdate and who dont
-                bulkUpdatePlayers: list[Player] = []
-                regularUpdatePlayers: list[Player] = []
+                bulkUpdatePlayers: set[Player] = set()
+                regularUpdatePlayers: set[Player] = set()
 
                 # Loop through all players and determine who supports BulkBlockUpdate
                 for player in self.playerManager.getPlayers():
                     if player.supports(CPEExtension("BulkBlockUpdate", 1)):
-                        bulkUpdatePlayers.append(player)
+                        bulkUpdatePlayers.add(player)
                     else:
-                        regularUpdatePlayers.append(player)
+                        regularUpdatePlayers.add(player)
                 Logger.verbose(f"Players who support BulkBlockUpdate: {bulkUpdatePlayers}", module="world")
                 Logger.verbose(f"Players who dont support BulkBlockUpdate: {regularUpdatePlayers}", module="world")
 

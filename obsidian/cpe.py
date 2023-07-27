@@ -36,7 +36,7 @@ class _CPEModuleManager():
     def __init__(self):
         # List of modules (by type) and the CPE Extension they implement (ExtName, ExtVersion)
         self._cpeExtensions: dict[Type[AbstractModule], CPEExtension] = {}
-        self._cpeSkipList: list[Type[AbstractModule]] = []  # List of modules to skip if CPE is disabled
+        self._cpeSkipList: set[Type[AbstractModule]] = set()  # List of modules to skip if CPE is disabled
 
     # CPE Registration. Called by CPE Decorator
     def registerCPE(
@@ -57,7 +57,7 @@ class _CPEModuleManager():
 
         # Check if module should be skipped if CPE support is disabled
         if cpeOnly:
-            self._cpeSkipList.append(module)
+            self._cpeSkipList.add(module)
 
         return module
 

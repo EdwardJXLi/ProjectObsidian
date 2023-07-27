@@ -610,7 +610,7 @@ class World:
                 blockZ,
                 block.ID,
                 # not sending to self as that may cause some de-sync issues
-                ignoreList=[player] if player is not None and not updateSelf else []
+                ignoreList={player} if player is not None and not updateSelf else set()
             )
 
         # SetBlock Successful!

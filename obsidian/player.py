@@ -131,7 +131,7 @@ class PlayerManager:
         self,
         packet: Type[AbstractResponsePacket],
         *args,
-        ignoreList: list[Player] = [],
+        ignoreList: set[Player] = set(),
         **kwargs
     ) -> bool:
         # Send packet to ALL members connected to server (all worlds)
@@ -155,7 +155,7 @@ class PlayerManager:
     async def sendGlobalMessage(
         self,
         message: str | list,
-        ignoreList: list[Player] = []  # List of players to not send the message not
+        ignoreList: set[Player] = set()  # List of players to not send the message not
     ) -> bool:
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
@@ -276,7 +276,7 @@ class WorldPlayerManager:
             player.posZ,
             player.posYaw,
             player.posPitch,
-            ignoreList=[player]  # Don't send packet to self!
+            ignoreList={player}  # Don't send packet to self!
         )
 
         # Update User On Currently Connected Players
@@ -342,7 +342,7 @@ class WorldPlayerManager:
         await self.sendWorldPacket(
             Packets.Response.DespawnPlayer,
             player.playerId,
-            ignoreList=[player]  # Don't send packet to self!
+            ignoreList={player}  # Don't send packet to self!
         )
 
         Logger.debug(f"Removed Player {player.networkHandler.connectionInfo} Username {player.name} Id {player.playerId} Joined World {self.world.name}", module="world-player")
@@ -384,7 +384,13 @@ class WorldPlayerManager:
                 playersList.append(player)
         return playersList
 
-    async def sendWorldPacket(self, packet: Type[AbstractResponsePacket], *args, ignoreList: list[Player] = [], **kwargs) -> bool:
+    async def sendWorldPacket(
+        self,
+        packet: Type[AbstractResponsePacket],
+        *args,
+        ignoreList: set[Player] = set(),
+        **kwargs
+    ) -> bool:
         # Send packet to all members in world
         Logger.verbose(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="world-packet-dispatcher")
         # Loop Through All Players
@@ -415,7 +421,7 @@ class WorldPlayerManager:
         message: str,
         world: None | str | World = None,
         globalMessage: bool = False,
-        ignoreList: list[Player] = [],
+        ignoreList: set[Player] = set(),
         messageHandlerOverride: Optional[Callable[..., Awaitable]] = None
     ):
         # Generate Message with Header
@@ -442,7 +448,7 @@ class WorldPlayerManager:
     async def sendWorldMessage(
         self,
         message: str | list,
-        ignoreList: list[Player] = []  # List of players to not send the message not
+        ignoreList: set[Player] = set()  # List of players to not send the message not
     ) -> bool:
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
@@ -585,7 +591,7 @@ class Player:
                 posZ,
                 posYaw,
                 posPitch,
-                ignoreList=[self]  # not sending to self as that is handled elsewhere
+                ignoreList={self}  # not sending to self as that is handled elsewhere
             )
 
             # Send location to self!
@@ -691,7 +697,7 @@ class Player:
             posZ,
             posYaw,
             posPitch,
-            ignoreList=[self]  # not sending to self as that may cause some de-sync issues
+            ignoreList={self}  # not sending to self as that may cause some de-sync issues
         )
 
     async def handlePlayerMessage(self, message: str):

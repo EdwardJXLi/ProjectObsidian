@@ -2287,12 +2287,12 @@ class CoreModule(AbstractModule):
             output = []
 
             # Generate mapping of player -> client
-            playerClients: dict[str, list[Player]] = dict()
+            playerClients: dict[str, set[Player]] = dict()
             for player in ctx.server.playerManager.players.values():
                 client = player.clientSoftware
                 if client not in playerClients:
-                    playerClients[client] = []
-                playerClients[client].append(player)
+                    playerClients[client] = set()
+                playerClients[client].add(player)
 
             # Add Header
             output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Unique Clients: {len(playerClients)}", colour="&2"))
