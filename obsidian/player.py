@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from obsidian.server import Server
     from obsidian.network import NetworkHandler
 
-from typing import Optional, Type
+from typing import Optional, Type, Callable, Awaitable
 import asyncio
 
 from obsidian.packet import AbstractResponsePacket, Packets
@@ -155,24 +155,14 @@ class PlayerManager:
     async def sendGlobalMessage(
         self,
         message: str | list,
-        author: None | str | Player = None,  # Information on the message author
-        world: None | str | World = None,  # Information on message world location
-        globalTag: bool = False,  # Flag dictating if the [world] header should be added
         ignoreList: list[Player] = []  # List of players to not send the message not
     ) -> bool:
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
             Logger.debug("Sending List Of Messages!", module="global-message")
             for msg in message:
-                await self.sendGlobalMessage(msg, author=author, globalTag=globalTag, ignoreList=ignoreList)
+                await self.sendGlobalMessage(msg, ignoreList=ignoreList)
             return True  # Break Out of Function
-
-        # If global tag is set and world is not set, set "world" to "GLOBAL"
-        if not world and globalTag:
-            world = "GLOBAL"
-
-        # Generate the message with header
-        message = self.generateMessage(message, author=author, world=world)
 
         # Finally, send formatted message
         Logger._log(
@@ -421,47 +411,45 @@ class WorldPlayerManager:
 
     async def processPlayerMessage(
         self,
-        player: Player,
+        player: Optional[Player],
         message: str,
         world: None | str | World = None,
-        globalMessage: bool = False
+        globalMessage: bool = False,
+        ignoreList: list[Player] = [],
+        messageHandlerOverride: Optional[Callable[..., Awaitable]] = None
     ):
-        # Get maximum length of message header
-        # TODO: this is kinda cringe
-        headerLength = len(self.playerManager.generateMessage("", author=player, world=world))
+        # Generate Message with Header
+        message = self.playerManager.generateMessage(message, author=player, world=world)
 
         # Figure out which message handler to use
-        if globalMessage:
+        if messageHandlerOverride:
+            sendMessage = messageHandlerOverride
+        elif globalMessage:
             sendMessage = self.playerManager.sendGlobalMessage
         else:
             sendMessage = self.sendWorldMessage
 
         # Cut up and send message
-        if len(message) + headerLength > 64:  # Cut Message If Too Long
-            await sendMessage(message[:(64 - headerLength)], author=player, world=world)
-            message = message[(64 - headerLength):]
+        if len(message) > 64:  # Cut Message If Too Long
+            await sendMessage(message[:64], ignoreList=ignoreList)
+            message = message[64:]
             while message:
                 await sendMessage(message[:64])
                 message = message[64:]
         else:
-            await sendMessage(message, author=player, world=world)
+            await sendMessage(message, ignoreList=ignoreList)
 
     async def sendWorldMessage(
         self,
         message: str | list,
-        author: None | str | Player = None,  # Information on the message author
-        world: None | str | World = None,  # Information on message world location
         ignoreList: list[Player] = []  # List of players to not send the message not
     ) -> bool:
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
             Logger.debug("Sending List Of Messages!", module="world-message")
             for msg in message:
-                await self.sendWorldMessage(msg, author=author, world=world, ignoreList=ignoreList)
+                await self.sendWorldMessage(msg, ignoreList=ignoreList)
             return True  # Break Out of Function
-
-        # Generate the message with header
-        message = self.playerManager.generateMessage(message, author=author, world=world)
 
         # Finally, send formatted message
         Logger._log(
