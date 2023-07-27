@@ -34,8 +34,6 @@ class ClassiCubeApiModule(AbstractModule):
             Logger.info("The ClassiCube API support is disabled! Not starting module.", module="classiccubeapi")
             return
 
-        Logger.warn("The ClassiCube API Module is still WIP! Things may break!", module="classiccubeapi")
-
         # Check if the requests library is installed
         # TODO: Fix this code
         try:
@@ -137,7 +135,7 @@ class ClassiCubeApiModule(AbstractModule):
                 time.sleep(config.heartbeatInterval)
             except Exception as e:
                 Logger.error(f"Unhandled exception in heartbeat thread - {type(e).__name__}: {e}", module="classiccubeapi", printTb=True)
-                time.sleep(10)
+                time.sleep(60)
 
     @Command(
         "ReloadCCApi",
@@ -175,7 +173,7 @@ class ClassiCubeApiModule(AbstractModule):
         # Hostname and Port settings
         portOverride: Optional[int] = None
         # Server Name Settings
-        addSoftwareHeader: bool = False
+        addSoftwareHeader: bool = True
         nameOverride: Optional[str] = None
         # Server Software Settings
         includeSoftwareVersion: bool = True

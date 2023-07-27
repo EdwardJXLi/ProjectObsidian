@@ -27,6 +27,8 @@
 
 ## Quality of Life Modules
 - `liquidplace` - Allows placements of liquids in the world without cheats
+- `buildingcommands` - Adds some basic building commands
+- `announcements` - Adds support for periodic announcements
 
 ## Community Modules
 TODO - Add community modules here
