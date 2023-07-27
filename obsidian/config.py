@@ -64,10 +64,10 @@ class AbstractConfig:
 
     # Server-Boot Init of Config
     def init(self):
-        self.reload()
+        self.reload(attemptRecovery=True)
 
     # Reload; Reset Information From File
-    def reload(self):
+    def reload(self, attemptRecovery: bool = False):
         Logger.debug(f"Reloading Config {self.name}", "config")
         # Make sure folder path exists
         self.configPath.parent.mkdir(parents=True, exist_ok=True)
@@ -84,10 +84,13 @@ class AbstractConfig:
                 else:
                     Logger.info("Skipping Save After Config Load", "config")
             except json.decoder.JSONDecodeError as e:
-                Logger.error(f"Failed To Load Json File! - {type(e).__name__}: {e}", "config")
-                Logger.askConfirmation(message="Override Old Config With Default Values?")
-                with open(self.configPath, "w") as configFile:
-                    self._save(configFile)
+                if attemptRecovery:
+                    Logger.error(f"Failed To Load Json File! - {type(e).__name__}: {e}", "config")
+                    Logger.askConfirmation(message="Override Old Config With Default Values?")
+                    with open(self.configPath, "w") as configFile:
+                        self._save(configFile)
+                else:
+                    raise e
         else:
             Logger.debug("Config File Does Not Exist! Creating Config File.", "config")
             with open(self.configPath, "w") as configFile:
