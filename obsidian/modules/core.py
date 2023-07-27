@@ -2884,7 +2884,7 @@ class CoreModule(AbstractModule):
         def __init__(self, *args):
             super().__init__(*args, ACTIVATORS=["broadcast"], OP=True)
 
-        async def execute(self, ctx: Player, msg: str):
+        async def execute(self, ctx: Player, *, msg: str):
             # Send message
             await ctx.playerManager.sendGlobalMessage(f"&4[Broadcast] &f{msg}")
 

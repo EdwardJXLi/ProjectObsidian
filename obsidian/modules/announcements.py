@@ -66,6 +66,11 @@ class AnnouncementsModule(AbstractModule):
 
     @staticmethod
     async def sendAnnouncement(server: Server, config: AnnouncementsModule.AnnouncementsConfig, messageIndex: int = 0):
+        # Sanity Check messages
+        if len(config.messages) <= 0:
+            Logger.warn("No messages to send!", module="announcements")
+            return
+
         # Get announcement message
         if config.random:
             message = random.choice(config.messages)
