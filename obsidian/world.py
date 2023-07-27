@@ -40,10 +40,10 @@ from obsidian.errors import (
 
 
 class WorldManager:
-    def __init__(self, server: Server, ignorelist: list[str] = []):
+    def __init__(self, server: Server, ignorelist: set[str] = set()):
         self.server: Server = server
         self.worlds: dict[str, World] = dict()
-        self.ignorelist: list[str] = ignorelist
+        self.ignorelist: set[str] = ignorelist
         self.persistent: bool = self.server.config.persistentWorlds
         self.lock: Lock = Lock()
         # Defined Later In Init

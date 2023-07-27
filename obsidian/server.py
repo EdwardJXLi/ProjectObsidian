@@ -205,7 +205,7 @@ class Server:
 
         # Initialize WorldManager
         Logger.info("Initializing World Manager", module="init")
-        self._worldManager = WorldManager(self, ignorelist=self.config.worldIgnoreList)
+        self._worldManager = WorldManager(self, ignorelist=set(self.config.worldIgnoreList))
         Logger.info("Loading Worlds", module="init")
         self.worldManager.loadWorlds()
 
