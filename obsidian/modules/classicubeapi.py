@@ -94,11 +94,20 @@ class ClassiCubeApiModule(AbstractModule):
                     else:
                         softwareName = "&dProject&5Obsidian&f"
 
+                # Calculate number of users
+                if config.countByIp:
+                    uniqueIps = set()
+                    for player in server.playerManager.players.values():
+                        uniqueIps.add(player.networkHandler.ip)
+                    playerCount = len(uniqueIps)
+                else:
+                    playerCount = len(server.playerManager.players)
+
                 # Generate parameters
                 params = {
                     "name": serverName,
                     "port": server.port if config.portOverride is None else config.portOverride,
-                    "users": len(server.playerManager.players),
+                    "users": playerCount,
                     "max": server.playerManager.maxSize or config.defaultMaxSize,
                     "public": config.public,
                     "salt": server.salt,
@@ -160,7 +169,9 @@ class ClassiCubeApiModule(AbstractModule):
         # Server info settings
         public: bool = True
         web: bool = False
+        # Player Count Settings
         defaultMaxSize: int = 1024
+        countByIp: bool = False
         # Hostname and Port settings
         portOverride: Optional[int] = None
         # Server Name Settings
