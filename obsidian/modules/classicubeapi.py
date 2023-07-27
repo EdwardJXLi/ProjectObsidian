@@ -83,8 +83,16 @@ class ClassiCubeApiModule(AbstractModule):
                 # Generate Software Name
                 if config.softwareOverride:
                     softwareName = config.softwareOverride
+                elif not config.addSoftwareColour:
+                    if config.includeSoftwareVersion:
+                        softwareName = f"ProjectObsidian v. {__version__}"
+                    else:
+                        softwareName = "ProjectObsidian"
                 else:
-                    softwareName = f"&dProject&5Obsidian &fv. &a{__version__}&f"
+                    if config.includeSoftwareVersion:
+                        softwareName = f"&dProject&5Obsidian &fv. &a{__version__}&f"
+                    else:
+                        softwareName = "&dProject&5Obsidian&f"
 
                 # Generate parameters
                 params = {
@@ -153,8 +161,12 @@ class ClassiCubeApiModule(AbstractModule):
         public: bool = True
         web: bool = False
         defaultMaxSize: int = 1024
-        addSoftwareHeader: bool = False
-        # Server info overrides
-        nameOverride: Optional[str] = None
+        # Hostname and Port settings
         portOverride: Optional[int] = None
+        # Server Name Settings
+        addSoftwareHeader: bool = False
+        nameOverride: Optional[str] = None
+        # Server Software Settings
+        includeSoftwareVersion: bool = True
+        addSoftwareColour: bool = True
         softwareOverride: Optional[str] = None
