@@ -40,10 +40,10 @@ class AbstractBlock(AbstractSubmodule[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractBlock:
-        if argument in BlockManager:
+        try:
             # Try to grab the block from the blocks list
             return BlockManager.getBlock(argument)
-        else:
+        except KeyError:
             # Raise error if block not found
             raise ConverterError(f"Block {argument} Not Found!")
 
@@ -122,8 +122,15 @@ class _BlockManager(AbstractManager):
             raise BlockError(f"Block with BlockID {blockId} Not Found.")
 
     # Function To Get Block Object From Block Name
-    def getBlock(self, block: str) -> AbstractBlock:
-        return self._blockDict[block]
+    def getBlock(self, block: str, ignoreCase: bool = True) -> AbstractBlock:
+        if ignoreCase:
+            for bName, bObject in self._blockDict.items():
+                if bName.lower() == block.lower():
+                    return bObject
+            else:
+                raise KeyError(block)
+        else:
+            return self._blockDict[block]
 
     # Handles _BlockManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractBlock:

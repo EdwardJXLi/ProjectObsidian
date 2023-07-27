@@ -51,10 +51,10 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractWorldFormat:
-        if argument in WorldFormatManager:
+        try:
             # Try to grab the world format from the formats list
             return WorldFormatManager.getWorldFormat(argument)
-        else:
+        except KeyError:
             # Raise error if world format not found
             raise ConverterError(f"World Format {argument} Not Found!")
 
@@ -158,8 +158,15 @@ class _WorldFormatManager(AbstractManager):
         raise KeyError(f"World Format With Extension {ext} Not Found!")
 
     # Function To Get World Format Object From Format Name
-    def getWorldFormat(self, format: str) -> AbstractWorldFormat:
-        return self._formatDict[format]
+    def getWorldFormat(self, format: str, ignoreCase: bool = True) -> AbstractWorldFormat:
+        if ignoreCase:
+            for fName, fObject in self._formatDict.items():
+                if fName.lower() == format.lower():
+                    return fObject
+            else:
+                raise KeyError(format)
+        else:
+            return self._formatDict[format]
 
     # Handles _WorldFormatManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractWorldFormat:

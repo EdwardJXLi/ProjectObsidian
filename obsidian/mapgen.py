@@ -160,10 +160,10 @@ class AbstractMapGenerator(AbstractSubmodule[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractMapGenerator:
-        if argument in MapGeneratorManager:
+        try:
             # Try to grab the mag generator from the generators list
             return MapGeneratorManager.getMapGenerator(argument)
-        else:
+        except KeyError:
             # Raise error if map generator not found
             raise ConverterError(f"Map Generator {argument} Not Found!")
 
@@ -229,8 +229,15 @@ class _MapGeneratorManager(AbstractManager):
         return len(self._generatorDict)
 
     # Function To Get Map Generator Object From Generator Name
-    def getMapGenerator(self, generator: str) -> AbstractMapGenerator:
-        return self._generatorDict[generator]
+    def getMapGenerator(self, generator: str, ignoreCase: bool = True) -> AbstractMapGenerator:
+        if ignoreCase:
+            for gName, gObject in self._generatorDict.items():
+                if gName.lower() == generator.lower():
+                    return gObject
+            else:
+                raise KeyError(generator)
+        else:
+            return self._generatorDict[generator]
 
     # Handles _MapGeneratorManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractMapGenerator:

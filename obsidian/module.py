@@ -95,10 +95,10 @@ class AbstractModule(ABC):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractModule:
-        if argument in ModuleManager:
+        try:
             # Try to grab the module from the modules list
             return ModuleManager.getModule(formatName(argument))
-        else:
+        except KeyError:
             # Raise error if module not found
             raise ConverterError(f"Module {argument} Not Found!")
 
@@ -619,8 +619,15 @@ class _ModuleManager(AbstractManager):
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
 
     # Function To Get Module Object From Module Name
-    def getModule(self, module: str) -> AbstractModule:
-        return self._moduleDict[formatName(module)]
+    def getModule(self, module: str, ignoreCase: bool = True) -> AbstractModule:
+        if ignoreCase:
+            for mName, mObject in self._moduleDict.items():
+                if mName.lower() == module.lower():
+                    return mObject
+            else:
+                raise KeyError(module)
+        else:
+            return self._moduleDict[formatName(module)]
 
     # Handles _ModuleManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractModule:

@@ -67,10 +67,10 @@ class AbstractRequestPacket(AbstractPacket[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractRequestPacket:
-        if argument in PacketManager.RequestManager:
+        try:
             # Try to grab the request packet from the packets list
             return PacketManager.RequestManager.getPacket(argument)
-        else:
+        except KeyError:
             # Raise error if request packet not found
             raise ConverterError(f"Request Packet {argument} Not Found!")
 
@@ -85,10 +85,10 @@ class AbstractResponsePacket(AbstractPacket[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractResponsePacket:
-        if argument in PacketManager.ResponseManager:
+        try:
             # Try to grab the response packet from the packet list
             return PacketManager.ResponseManager.getPacket(argument)
-        else:
+        except KeyError:
             # Raise error if response packet not found
             raise ConverterError(f"Response Packet {argument} Not Found!")
 
@@ -166,8 +166,15 @@ class _DirectionalPacketManager(AbstractManager):
         raise PacketError(f"Packet {packetId} Was Not Found")
 
     # Function To Get Packet Object From Packet Name
-    def getPacket(self, packet: str):
-        return self._packetDict[packet]
+    def getPacket(self, packet: str, ignoreCase: bool = True):
+        if ignoreCase:
+            for pName, pObject in self._packetDict.items():
+                if pName.lower() == packet.lower():
+                    return pObject
+            else:
+                raise KeyError(packet)
+        else:
+            return self._packetDict[packet]
 
     # Handles _DirectionalPacketManager["item"]
     def __getitem__(self, *args, **kwargs):

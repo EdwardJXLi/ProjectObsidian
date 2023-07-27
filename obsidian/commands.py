@@ -38,10 +38,10 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
 
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractCommand:
-        if argument in CommandManager:
+        try:
             # Try to grab the command as a name first
             return CommandManager.getCommand(argument)
-        else:
+        except KeyError:
             try:
                 # If failed, try to grab as an activator
                 return CommandManager.getCommandFromActivator(argument.lower())
@@ -76,7 +76,7 @@ def _typeToString(annotation) -> str:
 
 # Take Parameter Info + Argument Info To Automatically Convert Types
 def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
-    Logger.verbose(f"Transforming Argument Data For Argument {name}", module="converter")
+    Logger.debug(f"Transforming Argument Data For Argument {name} with data '{arg}'", module="converter")
 
     # If There Is No Type To Convert, Ignore
     if param.annotation == inspect._empty:
@@ -105,14 +105,17 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
             union_types = get_args(param.annotation)  # Getting the different types.
             # Try every type in order and check if it works
             for annotation in union_types:
+                Logger.debug(f"Attempting to convert to type {annotation}", module="converter")
                 # If the type is a None type, ignore for now...
                 # This fixes some unexpected behavior with Optional s
                 if annotation is NoneType:
+                    Logger.debug("Argument Type is NoneType. Skipping", module="converter")
                     continue
                 # Attempting to convert...
                 try:
                     return _convertArgs(ctx, name, inspect.Parameter(param.name, param.kind, annotation=annotation), arg)
                 except CommandError:
+                    Logger.debug("Conversion Failed. Trying Next Type", module="converter")
                     pass
             # If none of the types work, raise an error
             raise CommandError(f"Arg '{name}' Expected {' or '.join([getattr(annotation, '__name__', 'Unknown') for annotation in union_types if annotation is not NoneType])} But Got '{type(arg).__name__}'")
@@ -174,6 +177,7 @@ def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
         # -> Positional "Rest" Methods (AKA VAR_POSITIONAL)
 
         if param.kind == param.POSITIONAL_OR_KEYWORD:
+            Logger.debug("Parsing Parameter As Positional Or Keyword", module="command")
             # Parse as Normal Keyword
             try:
                 # Convert Type
@@ -187,6 +191,7 @@ def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
                     args.append(param.default)
 
         elif param.kind == param.KEYWORD_ONLY:
+            Logger.debug("Parsing Parameter As Keyword Only", module="command")
             # KWarg Only Params Mean "Consume Rest"
             rest = []
             for value in dataIter:
@@ -206,6 +211,7 @@ def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
             break
 
         elif param.kind == param.VAR_POSITIONAL:
+            Logger.debug("Parsing Parameter As Var Positional", module="command")
             # Var Positional means to just append all extra values to the end of the function
             for value in dataIter:
                 transformed = _convertArgs(ctx, name, param, value)
@@ -311,8 +317,15 @@ class _CommandManager(AbstractManager):
             raise CommandError(f"Unknown Command '{name}'")
 
     # Function To Get Command Object From Command Name
-    def getCommand(self, command: str) -> AbstractCommand:
-        return self._commandDict[command]
+    def getCommand(self, command: str, ignoreCase: bool = True) -> AbstractCommand:
+        if ignoreCase:
+            for cName, cObject in self._commandDict.items():
+                if cName.lower() == command.lower():
+                    return cObject
+            else:
+                raise KeyError(command)
+        else:
+            return self._commandDict[command]
 
     # Function To Get Command Object From Command Name
     def getCommandFromActivator(self, command: str) -> AbstractCommand:
