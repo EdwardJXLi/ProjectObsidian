@@ -327,8 +327,8 @@ class CoreModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 int(protocolVersion),
-                bytearray(packageString(name)),
-                bytearray(packageString(motd)),
+                bytes(packageString(name)),
+                bytes(packageString(motd)),
                 int(userType)
             )
             return msg
@@ -407,7 +407,7 @@ class CoreModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 int(len(chunk)),
-                bytearray(formattedChunk),
+                bytes(formattedChunk),
                 int(percentComplete)
             )
             return msg
@@ -506,7 +506,7 @@ class CoreModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 int(playerId),
-                bytearray(packageString(playerName)),
+                bytes(packageString(playerName)),
                 int(x),
                 int(y),
                 int(z),
@@ -671,7 +671,7 @@ class CoreModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 int(playerId),
-                bytearray(packedMessage)
+                bytes(packedMessage)
             )
             return msg
 
@@ -698,7 +698,7 @@ class CoreModule(AbstractModule):
             msg = struct.pack(
                 self.FORMAT,
                 self.ID,
-                bytearray(packageString(reason))
+                bytes(packageString(reason))
             )
             return msg
 
@@ -749,7 +749,7 @@ class CoreModule(AbstractModule):
             msg = struct.pack(
                 self.FORMAT,
                 self.ID,
-                bytearray(packageString(serverSoftware)),
+                bytes(packageString(serverSoftware)),
                 int(extensionCount)
             )
             return msg
@@ -777,7 +777,7 @@ class CoreModule(AbstractModule):
             msg = struct.pack(
                 self.FORMAT,
                 self.ID,
-                bytearray(packageString(extensionName)),
+                bytes(packageString(extensionName)),
                 int(extensionVersion)
             )
             return msg

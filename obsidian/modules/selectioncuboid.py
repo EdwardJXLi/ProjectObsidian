@@ -68,7 +68,7 @@ class SelectionCuboidModule(AbstractModule):
                 self.FORMAT,
                 self.ID,
                 selectionId,
-                bytearray(packageString(label)),
+                bytes(packageString(label)),
                 startX,
                 startY,
                 startZ,

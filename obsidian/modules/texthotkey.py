@@ -90,8 +90,8 @@ class TextHotKeyModule(AbstractModule):
             msg = struct.pack(
                 self.FORMAT,
                 self.ID,
-                bytearray(packageString(label)),
-                bytearray(packageString(action)),
+                bytes(packageString(label)),
+                bytes(packageString(action)),
                 keyCode,
                 keyMods
             )
