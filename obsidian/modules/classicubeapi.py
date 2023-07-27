@@ -123,13 +123,13 @@ class ClassiCubeApiModule(AbstractModule):
                 time.sleep(10)
 
     @Command(
-        "ReloadCCApiConfig",
+        "ReloadCCApi",
         description="Reloads the Classicube API Config",
         version="v1.0.0"
     )
-    class ReloadCCApiConfigCommand(AbstractCommand["ClassiCubeApiModule"]):
+    class ReloadCCApiCommand(AbstractCommand["ClassiCubeApiModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["reloadccconfig"], OP=True)
+            super().__init__(*args, ACTIVATORS=["reloadccapi"], OP=True)
 
         async def execute(self, ctx: Player):
             # Reload Config
