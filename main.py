@@ -53,16 +53,18 @@ async def main():
     )
 
     # Capture SIGTERM and handle it
-    signal.signal(
-        signal.SIGTERM,
-        server.asyncStop  # Use this function to run async stop from outside async
-    )
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(
+            signal.SIGTERM,
+            server.asyncStop  # Use this function to run async stop from outside async
+        )
 
     # Capture SIGQUIT and handle it
-    signal.signal(
-        signal.SIGQUIT,
-        server.asyncStop  # Use this function to run async stop from outside async
-    )
+    if hasattr(signal, "SIGQUIT"):
+        signal.signal(
+            signal.SIGQUIT,
+            server.asyncStop  # Use this function to run async stop from outside async
+        )
 
     # Busy Operation To Keep Main Thread Alive
     # In the future, this would be dominated by a console thread
