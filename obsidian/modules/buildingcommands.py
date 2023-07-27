@@ -7,6 +7,7 @@ from obsidian.blocks import AbstractBlock
 
 from typing import Optional, cast
 
+
 @Module(
     "BuildingCommands",
     description="Adds commands for building.",
@@ -56,11 +57,16 @@ class BuildingCommandsModule(AbstractModule):
                 else:
                     raise CommandError("You must specify a block to use!")
 
+            # Convert 1 to the minimum value, and 2 to the maximum value
+            x1, x2 = min(x1, x2), max(x1, x2)
+            y1, y2 = min(y1, y2), max(y1, y2)
+            z1, z2 = min(z1, z2), max(z1, z2)
+
             # Calculate Block Updates
             blockUpdates: dict[tuple[int, int, int], AbstractBlock] = {}
-            for x in range(min(x1, x2), max(x1, x2) + 1):
-                for y in range(min(y1, y2), max(y1, y2) + 1):
-                    for z in range(min(z1, z2), max(z1, z2) + 1):
+            for x in range(x1, x2 + 1):
+                for y in range(y1, y2 + 1):
+                    for z in range(z1, z2 + 1):
                         blockUpdates[(x, y, z)] = block
 
             # Apply block updates to server
@@ -68,7 +74,7 @@ class BuildingCommandsModule(AbstractModule):
 
             # Send final message to player
             await ctx.sendMessage(f"&aCuboid of size {len(blockUpdates)} created!")
-    
+
     # Replace Command
     @Command(
         "Replace",
@@ -107,24 +113,28 @@ class BuildingCommandsModule(AbstractModule):
                 else:
                     raise CommandError("You must specify a block to replace with!")
 
+            # Convert 1 to the minimum value, and 2 to the maximum value
+            x1, x2 = min(x1, x2), max(x1, x2)
+            y1, y2 = min(y1, y2), max(y1, y2)
+            z1, z2 = min(z1, z2), max(z1, z2)
+
             # Calculate Block Updates
             blockUpdates: dict[tuple[int, int, int], AbstractBlock] = {}
-            for x in range(min(x1, x2), max(x1, x2) + 1):
-                for y in range(min(y1, y2), max(y1, y2) + 1):
-                    for z in range(min(z1, z2), max(z1, z2) + 1):
+            for x in range(x1, x2 + 1):
+                for y in range(y1, y2 + 1):
+                    for z in range(z1, z2 + 1):
                         if world.getBlock(x, y, z).ID == from_.ID:
                             blockUpdates[(x, y, z)] = to
 
             # Apply block updates to server
             await world.bulkBlockUpdate(blockUpdates)
 
-            cuboidSize = (max(x1, x2) - min(x1, x2) + 1) \
-                       * (max(y1, y2) - min(y1, y2) + 1) \
-                       * (max(z1, z2) - min(z1, z2) + 1)
+            # Get c
+            cuboidSize = (x2 - x1 + 1) * (y2 - y1 + 1) * (z2 - z1 + 1)
 
             # Send final message to player
             await ctx.sendMessage(f"&aReplaced {len(blockUpdates)} blocks in a cuboid of size {cuboidSize}!")
-    
+
     @Command(
         "Line",
         description="Creates a line of the selected block",
@@ -161,76 +171,77 @@ class BuildingCommandsModule(AbstractModule):
                     block = cast(AbstractBlock, getattr(ctx, "heldBlock"))
                 else:
                     raise CommandError("You must specify a block to use!")
-            
+
             # Calculate Block Updates
             blockUpdates: dict[tuple[int, int, int], AbstractBlock] = {}
-    
+
+            # Calculate Bresenham's Line Algorithm
             dx = abs(x2 - x1)
             dy = abs(y2 - y1)
             dz = abs(z2 - z1)
-            
+
             xs = 1 if x1 < x2 else -1
             ys = 1 if y1 < y2 else -1
             zs = 1 if z1 < z2 else -1
-            
+
             if dx >= dy and dx >= dz:
                 p1 = 2 * dy - dx
                 p2 = 2 * dz - dx
-                
+
                 while x1 != x2:
                     x1 += xs
-                    
+
                     if p1 >= 0:
                         y1 += ys
                         p1 -= 2 * dx
-                    
+
                     if p2 >= 0:
                         z1 += zs
                         p2 -= 2 * dx
-                    
+
                     p1 += 2 * dy
                     p2 += 2 * dz
-                    
+
                     blockUpdates[(x1, y1, z1)] = block
             elif dy >= dx and dy >= dz:
                 p1 = 2 * dx - dy
                 p2 = 2 * dz - dy
-                
+
                 while y1 != y2:
                     y1 += ys
-                    
+
                     if p1 >= 0:
                         x1 += xs
                         p1 -= 2 * dy
-                    
+
                     if p2 >= 0:
                         z1 += zs
                         p2 -= 2 * dy
-                    
+
                     p1 += 2 * dx
                     p2 += 2 * dz
-                    
+
                     blockUpdates[(x1, y1, z1)] = block
-            else:       
+            else:
                 p1 = 2 * dy - dz
                 p2 = 2 * dx - dz
-                
+
                 while z1 != z2:
                     z1 += zs
-                    
+
                     if p1 >= 0:
                         y1 += ys
                         p1 -= 2 * dz
-                    
+
                     if p2 >= 0:
                         x1 += xs
                         p2 -= 2 * dz
-                    
+
                     p1 += 2 * dy
                     p2 += 2 * dx
-                    
+
                     blockUpdates[(x1, y1, z1)] = block
-    
+
             # Apply block updates to server
             await world.bulkBlockUpdate(blockUpdates)
 
