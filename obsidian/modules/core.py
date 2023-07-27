@@ -2157,7 +2157,7 @@ class CoreModule(AbstractModule):
     )
     class ListPlayersCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["list", "players", "listplayers"])
+            super().__init__(*args, ACTIVATORS=["list", "plist", "players", "listplayers"])
 
         async def execute(self, ctx: Player, world: Optional[World | Player] = None):
             # If no world is passed, use players current world
@@ -2203,7 +2203,7 @@ class CoreModule(AbstractModule):
     )
     class ListAllPlayersCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["listall", "allplayers", "online"])
+            super().__init__(*args, ACTIVATORS=["listall", "pall", "online"])
 
         async def execute(self, ctx: Player):
             # Generate command output
@@ -2250,7 +2250,7 @@ class CoreModule(AbstractModule):
     )
     class ListStaffCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["staff", "liststaff", "listallstaff", "allstaff"])
+            super().__init__(*args, ACTIVATORS=["staff", "liststaff", "listallstaff", "allstaff", "slist"])
 
         async def execute(self, ctx: Player):
             staffList = list(ctx.server.playerManager.players.values())
@@ -2274,13 +2274,48 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
+        "ListAllClients",
+        description="Lists all player clients",
+        version="v1.0.0"
+    )
+    class ListAllClientsCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["listclients", "clientlist", "pclients"])
+
+        async def execute(self, ctx: Player):
+            # Generate command output
+            output = []
+
+            # Generate mapping of player -> client
+            playerClients: dict[str, list[Player]] = dict()
+            for player in ctx.server.playerManager.players.values():
+                client = player.clientSoftware
+                if client not in playerClients:
+                    playerClients[client] = []
+                playerClients[client].append(player)
+
+            # Add Header
+            output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Unique Clients: {len(playerClients)}", colour="&2"))
+            output.append("&7Use /player [name] to see additional details about a player")
+
+            # Generate Player List Output
+            for client, playersList in playerClients.items():
+                output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage=f"&d[{client}] &e", separator=", ", lineStart="&e")
+
+            # Add Footer
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
         "PlayerInfo",
         description="Detailed information for a specific player",
         version="v1.0.0"
     )
     class PlayerInfoCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["player", "playerinfo"])
+            super().__init__(*args, ACTIVATORS=["player", "playerinfo", "pinfo"])
 
         async def execute(self, ctx: Player, player: Optional[Player] = None):
             # If no player is passed, use self
@@ -2439,7 +2474,7 @@ class CoreModule(AbstractModule):
     )
     class ReloadWorldCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["reload", "reloadworld", "rw"])
+            super().__init__(*args, ACTIVATORS=["reload", "reloadworld", "wreload", "rw", "wr"])
 
         async def execute(self, ctx: Player):
             # Check if player is in a world
@@ -2456,7 +2491,7 @@ class CoreModule(AbstractModule):
     )
     class JoinWorldCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["join", "joinworld", "jw"])
+            super().__init__(*args, ACTIVATORS=["join", "joinworld", "wjoin", "jw", "wj"])
 
         async def execute(self, ctx: Player, world: World):
             await ctx.changeWorld(world)
@@ -2468,7 +2503,7 @@ class CoreModule(AbstractModule):
     )
     class ListWorldsCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["worlds", "listworlds", "lw"])
+            super().__init__(*args, ACTIVATORS=["worlds", "listworlds", "wlist", "lw", "wl"])
 
         async def execute(self, ctx: Player):
             # Get list of worlds
@@ -2497,7 +2532,7 @@ class CoreModule(AbstractModule):
     )
     class WorldInfoCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["world", "worldinfo"])
+            super().__init__(*args, ACTIVATORS=["world", "worldinfo", "winfo"])
 
         async def execute(self, ctx: Player, world: Optional[World] = None):
             # If no world is passed, use players current world
@@ -2538,7 +2573,7 @@ class CoreModule(AbstractModule):
     )
     class SeedCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["seed", "worldseed"])
+            super().__init__(*args, ACTIVATORS=["seed", "worldseed", "wseed"])
 
         async def execute(self, ctx: Player, world: Optional[World] = None):
             # If no world is passed, use players current world

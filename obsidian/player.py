@@ -60,7 +60,7 @@ class PlayerManager:
             raise ClientError("This Username Is Taken!")
 
         # Creating Player Class
-        player = Player(self, network, self.server, username, displayName, "Unknown", verificationKey)
+        player = Player(self, network, self.server, username, displayName, "Unknown/Classic", verificationKey)
 
         # Check if user is an operator and set their status
         await player.updateOperatorStatus(sendMessage=False)
