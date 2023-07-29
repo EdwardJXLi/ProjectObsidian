@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.player import Player
 from obsidian.errors import ServerError
@@ -17,6 +15,11 @@ from enum import Enum
 import struct
 
 
+class PingDirection(Enum):
+    CLIENT_TO_SERVER = 0
+    SERVER_TO_CLIENT = 1
+
+
 @Module(
     "TwoWayPing",
     description="Allows servers and clients to send identifiable ping packets.",
@@ -32,10 +35,6 @@ import struct
 class TwoWayPingModule(AbstractModule):
     def __init__(self, *args):
         super().__init__(*args)
-
-    class PingDirection(Enum):
-        CLIENT_TO_SERVER = 0
-        SERVER_TO_CLIENT = 1
 
     @RequestPacket(
         "PlayerPing",
@@ -60,9 +59,9 @@ class TwoWayPingModule(AbstractModule):
 
             # Convert direction ID to enum
             if directionId == 0:
-                direction = TwoWayPingModule.PingDirection.CLIENT_TO_SERVER
+                direction = PingDirection.CLIENT_TO_SERVER
             else:
-                direction = TwoWayPingModule.PingDirection.SERVER_TO_CLIENT
+                direction = PingDirection.SERVER_TO_CLIENT
 
             # Check if player was passed / initialized
             if ctx is None:
@@ -71,7 +70,7 @@ class TwoWayPingModule(AbstractModule):
             # Check if packet should be processed
             if handleUpdate:
                 # Check if direction is from client to server, and if so, send a response packet if client supports it
-                if direction == TwoWayPingModule.PingDirection.CLIENT_TO_SERVER and ctx.supports(CPEExtension("TwoWayPing", 1)):
+                if direction == PingDirection.CLIENT_TO_SERVER and ctx.supports(CPEExtension("TwoWayPing", 1)):
                     # Send packet right back
                     await ctx.networkHandler.dispatcher.sendPacket(
                         Packets.Response.ServerPing,
@@ -98,7 +97,7 @@ class TwoWayPingModule(AbstractModule):
                 CRITICAL=False
             )
 
-        async def serialize(self, direction: TwoWayPingModule.PingDirection, uniqueData: int):
+        async def serialize(self, direction: PingDirection, uniqueData: int):
             # <Set Text HotKey Packet>
             # (Byte) Packet ID
             # (Byte) Direction ID

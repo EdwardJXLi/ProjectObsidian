@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player
@@ -55,7 +53,7 @@ class ClassiCubeApiModule(AbstractModule):
                 server_self.serverHeartbeatThread.start()
 
     @staticmethod
-    def serverHeartbeat(server: Server, config: ClassiCubeApiModule.ClassiCubeApiConfig):
+    def serverHeartbeat(server: Server, config: "ClassiCubeApiConfig"):
         import requests
         Logger.info("Starting server heartbeat", module="classiccubeapi")
 
@@ -90,7 +88,7 @@ class ClassiCubeApiModule(AbstractModule):
                     if config.includeSoftwareVersion:
                         softwareName = f"> &dProject&5Obsidian &fv. &a{__version__}&f <"
                     else:
-                        softwareName = "> &dProject&5Obsidian&f <"
+                        softwareName = "> &dProject&5Obsidian&f <s"
 
                 # Calculate number of users
                 if config.countByIp:
