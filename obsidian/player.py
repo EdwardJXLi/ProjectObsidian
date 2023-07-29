@@ -448,7 +448,7 @@ class WorldPlayerManager:
     async def sendWorldMessage(
         self,
         message: str | list,
-        ignoreList: set[Player] = set()  # List of players to not send the message not
+        ignoreList: set[Player] = set()  # List of players to not send the message
     ) -> bool:
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
@@ -606,10 +606,10 @@ class Player:
             )
 
     async def sendMessage(self, message: str | list):
-        Logger.debug(f"Sending Player {self.name} Message {message}", module="player")
+        Logger.debug(f"Sending Player {self.name} Message {message}", module="player-message")
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
-            Logger.debug("Sending List Of Messages To Player!", "player-message")
+            Logger.debug("Sending List Of Messages To Player!", module="player-message")
             for msg in message:
                 await self.sendMessage(msg)
             return None  # Break Out of Function
