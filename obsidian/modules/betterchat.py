@@ -30,11 +30,8 @@ class BetterChatModule(AbstractModule):
             raise ValueError("Maximum line length cannot be greater than 64!")
 
     def initTextWrap(self):
-        # Create reference to textWrapConfig
-        textWrapConfig = self.textWrapConfig
-
         # Override the original processPlayerMessage method
-        @Override(target=WorldPlayerManager.processPlayerMessage)
+        @Override(target=WorldPlayerManager.processPlayerMessage, additionalContext={"textWrapConfig": self.textWrapConfig})
         async def processLinedWrappedMessage(
             self,
             player: Optional[Player],
@@ -42,7 +39,9 @@ class BetterChatModule(AbstractModule):
             world: None | str | World = None,
             globalMessage: bool = False,
             ignoreList: set[Player] = set(),
-            messageHandlerOverride: Optional[Callable[..., Awaitable]] = None
+            messageHandlerOverride: Optional[Callable[..., Awaitable]] = None,
+            *,
+            textWrapConfig: "BetterChatModule.TextWrapConfig"
         ):
             # Since we are injecting, set type of self to World
             self = cast(WorldPlayerManager, self)
@@ -109,14 +108,12 @@ class BetterChatModule(AbstractModule):
                 await player.sendMessage("&e[NOTICE] Your messages were truncated for length.")
 
     def initPlayerPing(self):
-        # Create reference to playerPingConfig
-        playerPingConfig = self.playerPingConfig
-
-        # Save reference back to original processPlayerMessage
-        processPlayerMessage = WorldPlayerManager.processPlayerMessage
-
         # Override the original processPlayerMessage method
-        @Override(target=WorldPlayerManager.processPlayerMessage)
+        @Override(
+            target=WorldPlayerManager.processPlayerMessage,
+            passSuper=True,
+            additionalContext={"playerPingConfig": self.playerPingConfig}
+        )
         async def processPlayerPingMessage(
             self,
             player: Player,
@@ -124,7 +121,10 @@ class BetterChatModule(AbstractModule):
             world: None | str | World = None,
             globalMessage: bool = False,
             ignoreList: set[Player] = set(),
-            messageHandlerOverride: Optional[Callable[..., Awaitable]] = None
+            messageHandlerOverride: Optional[Callable[..., Awaitable]] = None,
+            *,  # Get additional contexts
+            _super: Callable[..., Awaitable],
+            playerPingConfig: BetterChatModule.PlayerPingConfig
         ):
             # Since we are injecting, set type of self to World
             self = cast(WorldPlayerManager, self)
@@ -157,7 +157,7 @@ class BetterChatModule(AbstractModule):
 
                 # Send the message header to the pinged players
                 if playerPingConfig.sendHeadersAndFooters:
-                    await processPlayerMessage(
+                    await _super(
                         self,
                         None,
                         playerPingConfig.headerColor + playerPingConfig.headerCharacter * playerPingConfig.headerLength,
@@ -172,7 +172,7 @@ class BetterChatModule(AbstractModule):
                         highlightedMessage = highlightedMessage.replace(match, playerPingConfig.pingHighlightFormat.format(ping=match))
 
                     # Send highlighted message to pinged players
-                    await processPlayerMessage(
+                    await _super(
                         self,
                         player,
                         highlightedMessage,
@@ -181,7 +181,7 @@ class BetterChatModule(AbstractModule):
                     )
                 else:
                     # Send regular message to pinged players
-                    await processPlayerMessage(
+                    await _super(
                         self,
                         player,
                         message,
@@ -191,7 +191,7 @@ class BetterChatModule(AbstractModule):
 
                 # Send the message footer to the pinged players
                 if playerPingConfig.sendHeadersAndFooters:
-                    await processPlayerMessage(
+                    await _super(
                         self,
                         None,
                         playerPingConfig.footerColor + playerPingConfig.footerCharacter * playerPingConfig.footerLength,
@@ -199,7 +199,7 @@ class BetterChatModule(AbstractModule):
                     )
 
                 # Send message to rest of players as usual
-                await processPlayerMessage(
+                await _super(
                     self,
                     player,
                     message,
@@ -213,7 +213,7 @@ class BetterChatModule(AbstractModule):
                 return
 
             # Send message to all users as usual
-            await processPlayerMessage(
+            await _super(
                 self,
                 player,
                 message,

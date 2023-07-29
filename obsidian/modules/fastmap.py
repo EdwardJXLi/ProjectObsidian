@@ -13,7 +13,7 @@ from obsidian.packet import (
 )
 
 from dataclasses import dataclass
-from typing import cast
+from typing import Callable, Awaitable, cast
 import zlib
 import struct
 
@@ -36,15 +36,15 @@ class FastMapModule(AbstractModule):
         self.config = self.initConfig(self.FastMapConfig)
 
     def postInit(self, *args, **kwargs):
-        # Save pointer to original sendWorldData method
-        fallbackSendWorldData = NetworkHandler.sendWorldData
-
-        # Create closure for config
-        fastMapConfig = self.config
-
         # Override the original sendWorldData method to use the new FastMap protocol
-        @Override(target=NetworkHandler.sendWorldData)
-        async def sendWorldData(self, world: World):
+        @Override(target=NetworkHandler.sendWorldData, passSuper=True, additionalContext={"fastMapConfig": self.config})
+        async def sendWorldData(
+            self,
+            world: World,
+            *,
+            _super: Callable[[NetworkHandler, World], Awaitable],
+            fastMapConfig: "FastMapModule.FastMapConfig"
+        ):
             # Since we are injecting, set type of self to NetworkHandler
             self = cast(NetworkHandler, self)
 
@@ -56,7 +56,7 @@ class FastMapModule(AbstractModule):
             if not self.player.supports(CPEExtension("FastMap", 1)):
                 Logger.debug(f"{self.connectionInfo} | Player does not support FastMap. Falling back to original method.", module="network")
                 # If not, fallback to original method
-                return await fallbackSendWorldData(self, world)
+                return await _super(self, world)
             else:
                 Logger.debug(f"{self.connectionInfo} | Player supports FastMap. Upgrading to the FastMap protocol.", module="network")
 

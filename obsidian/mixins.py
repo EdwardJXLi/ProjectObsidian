@@ -1,4 +1,4 @@
-from typing import Callable, Type, Any
+from typing import Optional, Callable, Type, Any
 from enum import Enum
 import inspect
 
@@ -82,27 +82,28 @@ def _getMethodParentClass(function: Callable):
 def Override(
     target: Callable,
     passSuper: bool = False,  # passSuper allows for passing the original function as a parameter to the new function
-    abstract: bool = False  # Allows for modifying abstract methods (Removes Warning)
+    abstract: bool = False,  # Allows for modifying abstract methods (Removes Warning)
+    additionalContext: Optional[dict[str, Any]] = None  # Allows for passing additional keyword fields to the new function
 ):
     def internal(destination: Callable):
         Logger.debug(f"Overriding Method {target.__name__} ({target}) with {destination.__name__}", module="dynamic-method-override")
+
+        # Generate the additional contexts
+        ctxArgs = dict()
+        if additionalContext:
+            ctxArgs.update(additionalContext)  # Add additional context if it exists
+        if passSuper:
+            ctxArgs.update({"_super": target})  # Add super if passSuper is set
 
         # Check if both the target and the destination are either both async or both non async
         if inspect.iscoroutinefunction(target) is False and inspect.iscoroutinefunction(destination) is True:
             raise MixinError(f"Cannot override non-async function {target.__name__} with async function {destination.__name__}!")
         elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
             raise MixinError(f"Cannot override async function {target.__name__} with non-async function {destination.__name__}!")
-        # If user chooses not to pass super, then both implementation for async and non-async are the same, so we can just stop here
-        elif passSuper is False:
-            _overrideMethod(
-                target,
-                destination,
-                abstract=abstract
-            )
         # If both target and destination are async, implement the async override
         elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
             async def _asyncoverride(*args, **kwargs):
-                return await destination(*args, **kwargs, super=target)
+                return await destination(*args, **kwargs, **ctxArgs)
 
             _overrideMethod(
                 target,
@@ -112,52 +113,11 @@ def Override(
         # Both target and destination are non-async, implement the non-async override
         else:
             def _override(*args, **kwargs):
-                return destination(*args, **kwargs, super=target)
+                return destination(*args, **kwargs, **ctxArgs)
 
             _overrideMethod(
                 target,
                 _override,
-                abstract=abstract
-            )
-
-        return destination
-    return internal
-
-
-# Method Extension Decorator - Provides dynamic run-time method extension. Passes output of original function as argument of new function.
-# Used In @Extend
-def Extend(
-    target: Callable,
-    abstract: bool = False  # Allows for modifying abstract methods (Removes Warning)
-):
-    def internal(destination: Callable):
-        Logger.debug(f"Extending Method {target.__name__} ({target}) with {destination.__name__}", module="dynamic-method-extend")
-
-        # Check if both the target and the destination are either both async or both non async
-        if inspect.iscoroutinefunction(target) is False and inspect.iscoroutinefunction(destination) is True:
-            raise MixinError(f"Cannot extend non-async function {target.__name__} with async function {destination.__name__}!")
-        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
-            raise MixinError(f"Cannot extend async function {target.__name__} with non-async function {destination.__name__}!")
-        # If both target and destination are async, implement the async extension
-        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
-            async def _asyncextend(*args, **kwargs):
-                output = await target(*args, **kwargs)
-                return await destination(output)
-
-            _overrideMethod(
-                target,
-                _asyncextend,
-                abstract=abstract
-            )
-        # Both target and destination are non-async, implement the non-async extension
-        else:
-            def _extend(*args, **kwargs):
-                output = target(*args, **kwargs)
-                return destination(output)
-
-            _overrideMethod(
-                target,
-                _extend,
                 abstract=abstract
             )
 
@@ -170,12 +130,21 @@ def Extend(
 def Inject(
     target: Callable,
     at: InjectionPoint = InjectionPoint.AFTER,
-    abstract: bool = False  # Allows for modifying abstract methods (Removes Warning)
+    passResult: bool = False,  # passResult allows for passing the output of the original function as a parameter to the new function
+    abstract: bool = False,  # Allows for modifying abstract methods (Removes Warning)
+    additionalContext: Optional[dict[str, Any]] = None  # Allows for passing additional keyword fields to the new function
 ):
     def internal(destination: Callable):
         Logger.debug(f"Injecting Method {destination.__name__} {at} class {target.__name__} ({target})", module="dynamic-method-inject")
 
-        # TODO: Add more advanced Injection points. For now, this will do.
+        # Generate the additional contexts
+        ctxArgs = dict()
+        if additionalContext:
+            ctxArgs.update(additionalContext)  # Add additional context if it exists
+
+        # Sanity check PassResult
+        if passResult and at == InjectionPoint.BEFORE:
+            raise MixinError("Cannot pass result of original function to new function if injection point is BEFORE!")
 
         # Check if both the target and the destination are either both async or both non async
         if inspect.iscoroutinefunction(target) is False and inspect.iscoroutinefunction(destination) is True:
@@ -187,20 +156,25 @@ def Inject(
             if at == InjectionPoint.BEFORE:
                 async def _asyncinject(*args, **kwargs):
                     # Call new function
-                    await destination(*args, **kwargs)
+                    await destination(*args, **kwargs, **ctxArgs)
 
                     # Call original function
                     return await target(*args, **kwargs)
             elif at == InjectionPoint.AFTER:
-                async def _asyncinject(*args, **kwargs):
-                    # Call original function
-                    output = await target(*args, **kwargs)
+                if passResult:
+                    async def _asyncinject(*args, **kwargs):
+                        # Call original function
+                        output = await target(*args, **kwargs)
 
-                    # Call new function
-                    await destination(*args, **kwargs)
+                        # Call and return the new function
+                        return await destination(*args, **kwargs, **ctxArgs, _output=output)
+                else:
+                    async def _asyncinject(*args, **kwargs):
+                        # Call original function
+                        await target(*args, **kwargs)
 
-                    # Return original function's output
-                    return output
+                        # Call and return the new function
+                        return await destination(*args, **kwargs, **ctxArgs)
             else:
                 raise MixinError(f"Invalid Injection Point: {at}")
 
@@ -214,26 +188,78 @@ def Inject(
             if at == InjectionPoint.BEFORE:
                 def _inject(*args, **kwargs):
                     # Call new function
-                    destination(*args, **kwargs)
+                    destination(*args, **kwargs, **ctxArgs)
 
                     # Call original function
                     return target(*args, **kwargs)
             elif at == InjectionPoint.AFTER:
-                def _inject(*args, **kwargs):
-                    # Call original function
-                    output = target(*args, **kwargs)
+                if passResult:
+                    def _inject(*args, **kwargs):
+                        # Call original function
+                        output = target(*args, **kwargs)
 
-                    # Call new function
-                    destination(*args, **kwargs)
+                        # Call and return the new function
+                        return destination(*args, **kwargs, **ctxArgs, _output=output)
+                else:
+                    def _inject(*args, **kwargs):
+                        # Call original function
+                        target(*args, **kwargs)
 
-                    # Return original function's output
-                    return output
+                        # Call and return the new function
+                        return destination(*args, **kwargs, **ctxArgs)
             else:
                 raise MixinError(f"Invalid Injection Point: {at}")
 
             _overrideMethod(
                 target,
                 _inject,
+                abstract=abstract
+            )
+
+        return destination
+    return internal
+
+
+# Method Extension Decorator - Provides dynamic run-time method extension. Passes output of original function as argument of new function.
+# Used In @Extend
+def Extend(
+    target: Callable,
+    abstract: bool = False,  # Allows for modifying abstract methods (Removes Warning)
+    additionalContext: Optional[dict[str, Any]] = None  # Allows for passing additional keyword fields to the new function
+):
+    def internal(destination: Callable):
+        Logger.debug(f"Extending Method {target.__name__} ({target}) with {destination.__name__}", module="dynamic-method-extend")
+
+        # Generate the additional contexts
+        ctxArgs = dict()
+        if additionalContext:
+            ctxArgs.update(additionalContext)  # Add additional context if it exists
+
+        # Check if both the target and the destination are either both async or both non async
+        if inspect.iscoroutinefunction(target) is False and inspect.iscoroutinefunction(destination) is True:
+            raise MixinError(f"Cannot extend non-async function {target.__name__} with async function {destination.__name__}!")
+        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
+            raise MixinError(f"Cannot extend async function {target.__name__} with non-async function {destination.__name__}!")
+        # If both target and destination are async, implement the async extension
+        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
+            async def _asyncextend(*args, **kwargs):
+                output = await target(*args, **kwargs, **ctxArgs)
+                return await destination(output)
+
+            _overrideMethod(
+                target,
+                _asyncextend,
+                abstract=abstract
+            )
+        # Both target and destination are non-async, implement the non-async extension
+        else:
+            def _extend(*args, **kwargs):
+                output = target(*args, **kwargs, **ctxArgs)
+                return destination(output)
+
+            _overrideMethod(
+                target,
+                _extend,
                 abstract=abstract
             )
 
