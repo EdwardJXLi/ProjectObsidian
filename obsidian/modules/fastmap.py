@@ -6,7 +6,7 @@ from obsidian.world import World
 from obsidian.network import NetworkHandler
 from obsidian.errors import ServerError
 from obsidian.cpe import CPE, CPEExtension
-from obsidian.mixins import Override, InjectMethod
+from obsidian.mixins import Override
 from obsidian.packet import (
     AbstractResponsePacket,
     ResponsePacket
@@ -66,7 +66,7 @@ class FastMapModule(AbstractModule):
 
                 # Preparing To Send Map
                 Logger.debug(f"{self.connectionInfo} | Preparing To Send Map [Fast Map] ", module="network")
-                deflatedWorld = getattr(self, "deflateMap")(world)  # Generate Deflated Map
+                deflatedWorld = FastMapModule.deflateMap(self, world, compressionLevel=fastMapConfig.deflateCompressionLevel)  # Generate Deflated Map
                 # World Data Needs To Be Sent In Chunks Of 1024 Characters
                 chunks = [deflatedWorld[i: i + 1024] for i in range(0, len(deflatedWorld), 1024)]
 
@@ -86,42 +86,31 @@ class FastMapModule(AbstractModule):
                     world.sizeZ
                 )
 
-        @InjectMethod(target=NetworkHandler)
-        def deflateMap(self, world: World, compressionLevel: int = -1) -> bytes:
-            # Since we are injecting, set type of self to NetworkHandler
-            self = cast(NetworkHandler, self)
+    @staticmethod
+    def deflateMap(networkHandler: NetworkHandler, world: World, compressionLevel: int = 9) -> bytes:
+        # Check If Compression Level Is Valid
+        if compressionLevel >= 0 and compressionLevel <= 9:
+            pass
+        # Invalid Compression Level!
+        else:
+            raise ServerError(f"Invalid Deflate Compression Level Of {compressionLevel}!!!")
 
-            # If Deflate Compression Level Is -1, Use Default!
-            # includeSizeHeader Dictates If Output Should Include Map Size Header
-            # THIS IS NOT USED FOR FASTMAP!
+        Logger.debug(f"Compressing Map {world.name} With Compression Level {compressionLevel}", module="deflate")
+        # Create compressor object
+        compressor = zlib.compressobj(
+            level=compressionLevel,
+            method=zlib.DEFLATED,
+            wbits=-zlib.MAX_WBITS,
+            memLevel=zlib.DEF_MEM_LEVEL,
+            strategy=zlib.Z_DEFAULT_STRATEGY
+        )
 
-            # Check If Compression Is -1 (Use Config deflateCompressionLevel)
-            if compressionLevel == -1:
-                compressionLevel = fastMapConfig.deflateCompressionLevel
+        # Deflate Data
+        deflatedData = compressor.compress(world.mapArray)
+        deflatedData += compressor.flush()
 
-            # Check If Compression Level Is Valid
-            if compressionLevel >= 0 and compressionLevel <= 9:
-                pass
-            # Invalid Compression Level!
-            else:
-                raise ServerError(f"Invalid Deflate Compression Level Of {compressionLevel}!!!")
-
-            Logger.debug(f"Compressing Map {world.name} With Compression Level {compressionLevel}", module="deflate")
-            # Create compressor object
-            compressor = zlib.compressobj(
-                level=compressionLevel,
-                method=zlib.DEFLATED,
-                wbits=-zlib.MAX_WBITS,
-                memLevel=zlib.DEF_MEM_LEVEL,
-                strategy=zlib.Z_DEFAULT_STRATEGY
-            )
-
-            # Deflate Data
-            deflatedData = compressor.compress(world.mapArray)
-            deflatedData += compressor.flush()
-
-            Logger.debug(f"Deflated Map! DEFLATE SIZE: {len(deflatedData)}", module="deflate")
-            return deflatedData
+        Logger.debug(f"Deflated Map! DEFLATE SIZE: {len(deflatedData)}", module="deflate")
+        return deflatedData
 
     @ResponsePacket(
         "FastMapLevelInitialize",

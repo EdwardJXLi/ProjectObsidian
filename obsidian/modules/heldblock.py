@@ -5,11 +5,11 @@ from obsidian.commands import Command, AbstractCommand
 from obsidian.blocks import AbstractBlock, BlockManager
 from obsidian.player import Player
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets
-from obsidian.mixins import Inject, InjectionPoint, InjectMethod, addAttribute
+from obsidian.mixins import Inject, InjectionPoint, addAttribute
 from obsidian.errors import ServerError, CPEError, CommandError
 from obsidian.log import Logger
 
-from typing import Optional, cast
+from typing import Optional
 import struct
 
 
@@ -55,24 +55,32 @@ class HeldBlockModule(AbstractModule):
                 # Set held block of player
                 setattr(ctx, "heldBlock", BlockManager.getBlockById(heldBlock))
 
-        # Create helper function to set held block of a player
-        @InjectMethod(target=Player)
-        async def holdThis(self, block: AbstractBlock, preventChange: bool = False):
-            # Since we are injecting, set type of self to Player
-            self = cast(Player, self)
+    # Create helper function to set held block of a player
+    @staticmethod
+    async def holdThis(player: Player, block: AbstractBlock, preventChange: bool = False):
+        # Check if player supports the HeldBlock Extension
+        if not player.supports(CPEExtension("HeldBlock", 1)):
+            raise CPEError(f"Player {player.name} Does Not Support HeldBlock Extension!")
 
-            # Check if player supports the HeldBlock Extension
-            if not self.supports(CPEExtension("HeldBlock", 1)):
-                raise CPEError(f"Player {self.name} Does Not Support HeldBlock Extension!")
+        # Set held block of player
+        setattr(player, "heldBlock", block)
 
-            # Set held block of player
-            setattr(self, "heldBlock", block)
+        # Send HoldThis Packet
+        Logger.info(f"Setting held block for {player.username} to {block.NAME} ({block.ID}).", module="clickdistance")
+        if preventChange:
+            Logger.info(f"Preventing {player.username} from changing their held block.", module="clickdistance")
+        await player.networkHandler.dispatcher.sendPacket(Packets.Response.HoldThis, block, preventChange=preventChange)
 
-            # Send HoldThis Packet
-            Logger.info(f"Setting held block for {self.username} to {block.NAME} ({block.ID}).", module="clickdistance")
-            if preventChange:
-                Logger.info(f"Preventing {self.username} from changing their held block.", module="clickdistance")
-            await self.networkHandler.dispatcher.sendPacket(Packets.Response.HoldThis, block, preventChange=preventChange)
+    # Create helper function to get held block of a player
+    @staticmethod
+    def getHeldBlock(player: Player) -> AbstractBlock:
+        # Check if player supports the HeldBlock Extension
+        if not player.supports(CPEExtension("HeldBlock", 1)):
+            raise CPEError(f"Player {player.name} Does Not Support HeldBlock Extension!")
+
+        # Get held block of player
+        # Using cast to ignore type of player, as heldBlock is injected
+        return getattr(player, "heldBlock")
 
     # Packet to send to clients to force them to change their held block
     @ResponsePacket(
@@ -128,8 +136,7 @@ class HeldBlockModule(AbstractModule):
                 raise CommandError(f"Player {player.name} Does Not Support HeldBlock Extension!")
 
             # Force player to hold a specific block
-            # Using cast to ignore type of player, as holdThis is injected
-            await getattr(player, "holdThis")(block, preventChange)
+            await HeldBlockModule.holdThis(player, block, preventChange)
 
             # Notify Sender
             await ctx.sendMessage(f"&aSet {player.username}'s held block to {block.NAME}")
@@ -159,7 +166,7 @@ class HeldBlockModule(AbstractModule):
 
             # Get held block of player
             # Using cast to ignore type of player, as heldBlock is injected
-            heldBlock = getattr(player, "heldBlock")
+            heldBlock = HeldBlockModule.getHeldBlock(player)
 
             # Notify Sender
             await ctx.sendMessage(f"&a{player.username} is holding {heldBlock.NAME} (&9{heldBlock.ID}&a)")
