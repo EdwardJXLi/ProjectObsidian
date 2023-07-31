@@ -19,7 +19,7 @@ class LogoutLocationsModule(AbstractModule):
     def __init__(self, *args):
         super().__init__(*args)
 
-    def initializeMetadataHandlers(self):
+    def initMetadata(self):
         # Create readers and writers for ObsidianWorld
         def readLogoutLocation(data: dict):
             logoutLocations = LogoutLocationMetadata()
@@ -102,7 +102,7 @@ class LogoutLocationsModule(AbstractModule):
             WorldFormatManager.registerMetadataReader(WorldFormats.ClassicWorld, "obsidian", "logoutLocations", readLogoutLocationCW)
             WorldFormatManager.registerMetadataWriter(WorldFormats.ClassicWorld, "obsidian", "logoutLocations", writeLogoutLocationCW)
 
-    def initializeMixins(self):
+    def initMixins(self):
         # Send player logout location on join
         @Override(target=WorldPlayerManager.joinPlayer, passSuper=True)
         async def sendLastLogout(
@@ -163,10 +163,10 @@ class LogoutLocationsModule(AbstractModule):
         super().postInit()
 
         # Set up metadata handlers
-        self.initializeMetadataHandlers()
+        self.initMetadata()
 
         # Set up mixins
-        self.initializeMixins()
+        self.initMixins()
 
 
 class LogoutLocationMetadata(WorldMetadata):

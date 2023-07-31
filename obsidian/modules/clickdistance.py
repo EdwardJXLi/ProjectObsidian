@@ -32,9 +32,7 @@ class ClickDistanceModule(AbstractModule):
         super().__init__(*args)
         self.config = self.initConfig(self.ClickDistanceConfig)
 
-    def postInit(self):
-        super().postInit()
-
+    def initMetadata(self):
         # Create readers and writers for ObsidianWorld
         def readClickDistance(data: dict):
             clickDistanceMetadata = ClickDistanceModule.ClickDistanceMetadata()
@@ -84,6 +82,7 @@ class ClickDistanceModule(AbstractModule):
             WorldFormatManager.registerMetadataReader(WorldFormats.ClassicWorld, "CPE", "clickDistance", cwReadClickDistance)
             WorldFormatManager.registerMetadataWriter(WorldFormats.ClassicWorld, "CPE", "clickDistance", cwWriteClickDistance)
 
+    def initMixins(self):
         # Send player click distance on join
         @Inject(target=WorldPlayerManager.joinPlayer, at=InjectionPoint.AFTER)
         async def sendClickDistance(self, player: Player, *args, **kwargs):
@@ -111,6 +110,15 @@ class ClickDistanceModule(AbstractModule):
                 self.additionalMetadata[("CPE", "clickDistance")] = clickDistanceMetadata
 
             setattr(self, "clickDistanceMetadata", self.additionalMetadata[("CPE", "clickDistance")])
+
+    def postInit(self):
+        super().postInit()
+
+        # Set up metadata handlers
+        self.initMetadata()
+
+        # Set up mixins
+        self.initMixins()
 
     # Create helper function to set click distance of a player
     @staticmethod
