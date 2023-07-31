@@ -40,7 +40,7 @@ class SetHotbarModule(AbstractModule):
             )
 
         async def serialize(self, block: AbstractBlock, hotbarIndex: int):
-            # <Level Initialize Packet>
+            # <Set Hotbar Packet>
             # (Byte) Packet ID
             # (Byte) Block ID
             # (Byte) Hotbar Index

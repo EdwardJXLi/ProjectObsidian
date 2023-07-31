@@ -36,7 +36,7 @@ class HeldBlockModule(AbstractModule):
         # Change handler for MovementUpdate deserialization to use the (unused) PlayerID field to store the held block
         @Inject(target=CoreModule.MovementUpdatePacket.deserialize, at=InjectionPoint.AFTER)
         async def deserializeHeldBlock(self, ctx: Optional[Player], rawData: bytearray, handleUpdate: bool = True):
-            # <Player Movement Packet>
+            # <Held Block Packet Addition>
             # (Byte) Packet ID
             # (Byte) HeldBlock
             # (Short) Ignore

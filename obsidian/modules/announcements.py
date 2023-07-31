@@ -50,12 +50,14 @@ class AnnouncementsModule(AbstractModule):
         # Keep track of message index
         messageIndex = 0
 
+        # Create an event loop to run async tasks in
+        eventLoop = asyncio.new_event_loop()
+        Logger.verbose(f"Creating new event loop {eventLoop} to send announcement.", module="announcements")
+
         # Start hot-loop for heartbeat
         while True:
             try:
                 # Inject the message event into the existing event loop
-                eventLoop = asyncio.new_event_loop()
-                Logger.verbose(f"Creating new event loop {eventLoop} to send announcement.", module="announcements")
                 eventLoop.run_until_complete(AnnouncementsModule.sendAnnouncement(server, config, messageIndex=messageIndex))
                 messageIndex += 1
 

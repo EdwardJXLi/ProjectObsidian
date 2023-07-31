@@ -48,7 +48,7 @@ class LongerMessagesModule(AbstractModule):
             )
 
         async def deserialize(self, ctx: Optional[Player], rawData: bytearray, handleUpdate: bool = True):
-            # <Player Message Packet>
+            # <Longer Player Message Packet>
             # (Byte) Packet ID
             # (Byte) Partial Message Flag
             # (64String) Message

@@ -127,7 +127,7 @@ class FastMapModule(AbstractModule):
             )
 
         async def serialize(self, size: int):
-            # <Level Initialize Packet>
+            # <(FastMap) Level Initialize Packet>
             # (Byte) Packet ID
             # (Integer) Size Of Map
             msg = struct.pack(self.FORMAT, self.ID, size)

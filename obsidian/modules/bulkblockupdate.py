@@ -139,7 +139,7 @@ class BulkBlockUpdateModule(AbstractModule):
             )
 
         async def serialize(self, indices: list[int], blockIds: list[int]):
-            # <Hold This Packet>
+            # <Bulk Block Update Packet>
             # (Byte) Packet ID
             # (Byte) Number of Block Updates (minus 1)
             # (256 Int) Indices of Block Updates

@@ -39,7 +39,7 @@ class PlayerClickModule(AbstractModule):
             )
 
         async def deserialize(self, ctx: Optional[Player], rawData: bytearray, handleUpdate: bool = True):
-            # <Player Movement Packet>
+            # <Player Click Packet>
             # (Byte) Packet ID
             # (Byte) Button
             # (Byte) Action

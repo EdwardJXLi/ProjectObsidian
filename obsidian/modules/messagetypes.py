@@ -195,7 +195,7 @@ class MessageTypesModule(AbstractModule):
             )
 
         async def serialize(self, message: str, messageType: MessageType):
-            # <Player Message Packet>
+            # <(Enhanced) Server Message Packet>
             # (Byte) Packet ID
             # (Byte) MessageType
             # (64String) Message

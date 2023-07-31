@@ -51,7 +51,7 @@ class TwoWayPingModule(AbstractModule):
             )
 
         async def deserialize(self, ctx: Optional[Player], rawData: bytearray, handleUpdate: bool = True):
-            # <Player Movement Packet>
+            # <Player Ping Packet>
             # (Byte) Packet ID
             # (Byte) Direction ID
             # (Short) Unique Data
@@ -98,7 +98,7 @@ class TwoWayPingModule(AbstractModule):
             )
 
         async def serialize(self, direction: PingDirection, uniqueData: int):
-            # <Set Text HotKey Packet>
+            # <Server Ping Packet>
             # (Byte) Packet ID
             # (Byte) Direction ID
             # (Short) Unique Data
