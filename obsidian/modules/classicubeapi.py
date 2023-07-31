@@ -79,7 +79,7 @@ class ClassiCubeApiModule(AbstractModule):
                 # Generate Software Name
                 if config.softwareOverride:
                     softwareName = config.softwareOverride
-                elif not config.addSoftwareColour:
+                elif not config.addSoftwareColor:
                     if config.includeSoftwareVersion:
                         softwareName = f"> ProjectObsidian v. {__version__} <"
                     else:
@@ -175,5 +175,5 @@ class ClassiCubeApiModule(AbstractModule):
         nameOverride: Optional[str] = None
         # Server Software Settings
         includeSoftwareVersion: bool = True
-        addSoftwareColour: bool = True
+        addSoftwareColor: bool = True
         softwareOverride: Optional[str] = None

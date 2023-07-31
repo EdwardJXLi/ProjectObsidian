@@ -158,11 +158,11 @@ class ServerConfig(AbstractConfig):
     # CPE (Classic Protocol Extension) Configuration
     enableCPE: bool = True  # Enable CPE (Classic Protocol Extension)
     # Chat Configuration
-    playerChatColor: str = "&a"  # Colour Of Player Chat
-    operatorChatColor: str = "&4"  # Colour Of Operator Chat
-    worldChatColor: str = "&9"  # Colour Of World Chat Prefix
+    playerChatColor: str = "&a"  # Color Of Player Chat
+    operatorChatColor: str = "&4"  # Color Of Operator Chat
+    worldChatColor: str = "&9"  # Color Of World Chat Prefix
     globalChatMessages: bool = False  # Send Chat Messages To All Players Across Worlds
-    allowPlayerColor: bool = False  # Allow Players To Use Colour In Chat
+    allowPlayerColor: bool = False  # Allow Players To Use Color In Chat
     repeatCommands: bool = False  # Repeat Commands In Chat
     # Block Configuration
     disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks

@@ -12,7 +12,7 @@
 - `mcyetiworld` - Adds support for the mcyeti format
 - `betterchat` - Advanced chat support - Adds text wrapping, pinging, nicknames, and more!
 - `worldconvert` - World conversion module, converts worlds from one format to another
-- `colourpicker` - Test and preview colours in-game
+- `colorpicker` - Test and preview colors in-game
 
 ## Quality of Life Modules
 - `liquidplace` - Allows placements of liquids in the world without cheats

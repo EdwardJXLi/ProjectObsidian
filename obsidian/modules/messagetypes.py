@@ -3,7 +3,7 @@ from obsidian.cpe import CPE, CPEExtension
 from obsidian.player import Player, PlayerManager, WorldPlayerManager
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets, packageString
 from obsidian.errors import ConverterError, CPEError
-from obsidian.log import Logger, Colour
+from obsidian.log import Logger, Color
 
 from enum import Enum
 import struct
@@ -106,8 +106,8 @@ class MessageTypesModule(AbstractModule):
         Logger._log(
             str(message),
             tags=(Logger._getTimestamp(), messageType.name, "world", worldPlayerManager.world.name),
-            colour=Colour.GREEN,
-            textColour=Colour.WHITE
+            color=Color.GREEN,
+            textColor=Color.WHITE
         )
 
         # Generate list of players who do not support the MessageTypes extension
@@ -155,8 +155,8 @@ class MessageTypesModule(AbstractModule):
         Logger._log(
             str(message),
             tags=(Logger._getTimestamp(), messageType.name, "global"),
-            colour=Colour.GREEN,
-            textColour=Colour.WHITE
+            color=Color.GREEN,
+            textColor=Color.WHITE
         )
 
         # Generate list of players who do not support the MessageTypes extension

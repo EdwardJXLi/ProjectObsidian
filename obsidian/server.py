@@ -24,7 +24,7 @@ from obsidian.blocks import BlockManager
 from obsidian.player import PlayerManager
 from obsidian.cpe import CPEModuleManager, CPEExtension
 from obsidian.constants import (
-    Colour,
+    Color,
     __version__,
     PY_VERSION,
     MANAGERS_LIST,
@@ -40,7 +40,7 @@ class Server:
         port: int,
         name: str,
         motd: str,
-        colour: bool = True,
+        color: bool = True,
         # Configuration Information. Could Be Either:
         # None - Use Default Values
         # Str - Pass In Configuration File Location
@@ -63,9 +63,9 @@ class Server:
         self._worldManager: Optional[WorldManager] = None  # World Manager Class (initialized later)
         self._playerManager: Optional[PlayerManager] = None  # Player Manager Class (initialized later)
 
-        # Init Colour
-        if colour:
-            Colour.init()
+        # Init Color
+        if color:
+            Color.init()
 
         # Initialize Config, Depending On What Type It Is
         if config is None:
@@ -93,17 +93,17 @@ class Server:
 
     async def _init(self):
         # Print out logo on startup
-        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}========================================{Colour.MAGENTA}====================================", module="init")
-        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}    ____               _           __  {Colour.MAGENTA}____  __         _     ___           ", module="init")
-        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}   / __ \\_________    (_)__  _____/ /_{Colour.MAGENTA}/ __ \\/ /_  _____(_)___/ (_)___ _____ ", module="init")
-        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}  / /_/ / ___/ __ \\  / / _ \\/ ___/ __{Colour.MAGENTA}/ / / / __ \\/ ___/ / __  / / __ `/ __ \\", module="init")
-        Logger.info(f"{Colour.LIGHT_MAGENTA_EX} / ____/ /  / /_/ / / /  __/ /__/ /_{Colour.MAGENTA}/ /_/ / /_/ (__  ) / /_/ / / /_/ / / / /", module="init")
-        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}/_/   /_/   \\____/_/ /\\___/\\___/\\__/{Colour.MAGENTA}\\____/_.___/____/_/\\__,_/_/\\__,_/_/ /_/ ", module="init")
-        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}                /___/                                                       ", module="init")
-        Logger.info(f"{Colour.LIGHT_MAGENTA_EX}================================={Colour.MAGENTA}===========================================", module="init")
+        Logger.info(f"{Color.LIGHT_MAGENTA_EX}========================================{Color.MAGENTA}====================================", module="init")
+        Logger.info(f"{Color.LIGHT_MAGENTA_EX}    ____               _           __  {Color.MAGENTA}____  __         _     ___           ", module="init")
+        Logger.info(f"{Color.LIGHT_MAGENTA_EX}   / __ \\_________    (_)__  _____/ /_{Color.MAGENTA}/ __ \\/ /_  _____(_)___/ (_)___ _____ ", module="init")
+        Logger.info(f"{Color.LIGHT_MAGENTA_EX}  / /_/ / ___/ __ \\  / / _ \\/ ___/ __{Color.MAGENTA}/ / / / __ \\/ ___/ / __  / / __ `/ __ \\", module="init")
+        Logger.info(f"{Color.LIGHT_MAGENTA_EX} / ____/ /  / /_/ / / /  __/ /__/ /_{Color.MAGENTA}/ /_/ / /_/ (__  ) / /_/ / / /_/ / / / /", module="init")
+        Logger.info(f"{Color.LIGHT_MAGENTA_EX}/_/   /_/   \\____/_/ /\\___/\\___/\\__/{Color.MAGENTA}\\____/_.___/____/_/\\__,_/_/\\__,_/_/ /_/ ", module="init")
+        Logger.info(f"{Color.LIGHT_MAGENTA_EX}                /___/                                                       ", module="init")
+        Logger.info(f"{Color.LIGHT_MAGENTA_EX}================================={Color.MAGENTA}===========================================", module="init")
 
         # Print out Server Information
-        Logger.info(f"=== Starting {Colour.LIGHT_MAGENTA_EX}Project{Colour.MAGENTA}Obsidian{Colour.RESET} v. {Colour.CYAN}{__version__}{Colour.RESET} on {Colour.GREEN}{PY_VERSION}{Colour.RESET} ===", module="init")
+        Logger.info(f"=== Starting {Color.LIGHT_MAGENTA_EX}Project{Color.MAGENTA}Obsidian{Color.RESET} v. {Color.CYAN}{__version__}{Color.RESET} on {Color.GREEN}{PY_VERSION}{Color.RESET} ===", module="init")
         Logger.info(f"Initializing Server '{self.name}' on port: {self.port}", module="init")
         Logger.info(f"Server MOTD: {self.motd}", module="init")
 

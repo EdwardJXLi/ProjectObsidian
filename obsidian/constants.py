@@ -27,8 +27,8 @@ CRITICAL_RESPONSE_ERRORS = [
 # Message Constants
 MAX_MESSAGE_LENGTH = 64
 
-# Console Colour
-CSI = "\u001b["  # ANSI Colour Header
+# Console Color
+CSI = "\u001b["  # ANSI Color Header
 
 # Module Constants
 MODULES_FOLDER = "modules"
@@ -60,8 +60,8 @@ except FileNotFoundError:
     __version__ = "unknown"
 
 
-# Colour handler
-class Colour():
+# Color handler
+class Color():
     BLACK = ""
     RED = ""
     GREEN = ""
@@ -142,8 +142,8 @@ class Colour():
             cls.BACK_LIGHT_MAGENTA_EX = f"{CSI}105m"
             cls.BACK_LIGHT_CYAN_EX = f"{CSI}106m"
             cls.BACK_LIGHT_WHITE_EX = f"{CSI}107m"
-            # Set flag indicating colour support
+            # Set flag indicating color support
             cls.SYSTEM_SUPPORTS_COLORS = True
 
         else:
-            print("!!! COLOUR PRINTING IS NOT SUPPORTED FOR YOUR SYSTEM !!!")
+            print("!!! COLOR PRINTING IS NOT SUPPORTED FOR YOUR SYSTEM !!!")

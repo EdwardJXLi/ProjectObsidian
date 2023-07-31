@@ -89,7 +89,7 @@ class WorldConverterModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage("&e[WARNING]", colour="&4"))
+            output.append(CommandHelper.centerMessage("&e[WARNING]", color="&4"))
 
             # Add Warning
             output.append("&c[WARNING]&f You are about to perform a conversion")
@@ -100,7 +100,7 @@ class WorldConverterModule(AbstractModule):
             output.append("Type &aacknowledge &fto continue")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage("&e[WARNING]", colour="&4"))
+            output.append(CommandHelper.centerMessage("&e[WARNING]", color="&4"))
 
             # Send warning message
             await ctx.sendMessage(output)
@@ -116,7 +116,7 @@ class WorldConverterModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage("&eWorld Format Conversion", colour="&2"))
+            output.append(CommandHelper.centerMessage("&eWorld Format Conversion", color="&2"))
 
             # Add World Information
             output.append(f"&3[Current World File]&f {oldWorldPath.name}")
@@ -130,7 +130,7 @@ class WorldConverterModule(AbstractModule):
             output.append("Type &aacknowledge &fto continue")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eConverter Version: {self.VERSION}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eConverter Version: {self.VERSION}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)

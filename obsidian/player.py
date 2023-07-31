@@ -13,7 +13,7 @@ from obsidian.world import World
 from obsidian.log import Logger
 from obsidian.cpe import CPEExtension
 from obsidian.commands import Commands, _parseArgs
-from obsidian.constants import Colour, CRITICAL_RESPONSE_ERRORS
+from obsidian.constants import Color, CRITICAL_RESPONSE_ERRORS
 from obsidian.types import UsernameType, _formatUsername
 from obsidian.errors import (
     ServerError,
@@ -168,8 +168,8 @@ class PlayerManager:
         Logger._log(
             str(message),
             tags=(Logger._getTimestamp(), "chat", "global"),
-            colour=Colour.GREEN,
-            textColour=Colour.WHITE
+            color=Color.GREEN,
+            textColor=Color.WHITE
         )
         return await self.sendGlobalPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
 
@@ -461,8 +461,8 @@ class WorldPlayerManager:
         Logger._log(
             str(message),
             tags=(Logger._getTimestamp(), "chat", "world", self.world.name),
-            colour=Colour.GREEN,
-            textColour=Colour.WHITE
+            color=Color.GREEN,
+            textColor=Color.WHITE
         )
         return await self.sendWorldPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
 

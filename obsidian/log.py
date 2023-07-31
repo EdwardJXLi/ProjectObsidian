@@ -7,7 +7,7 @@ import datetime
 import sys
 
 from typing import Optional
-from obsidian.constants import Colour, SERVER_PATH
+from obsidian.constants import Color, SERVER_PATH
 
 
 class Logger:
@@ -15,7 +15,7 @@ class Logger:
     VERBOSE = False
     SERVER_MODE = False
     LOGFILE = None
-    COLOUR = Colour.SYSTEM_SUPPORTS_COLORS
+    COLOR = Color.SYSTEM_SUPPORTS_COLORS
     # These might be somewhat dangerous if the server crashes and stuff isn't logged.
     # Either way, its an option for servers with slower RWs.
     BUFFER_SIZE = 1
@@ -43,25 +43,25 @@ class Logger:
         print(f"Logging to {logPath}")
 
     @classmethod
-    def _log(cls, message: str, tags: tuple[str, ...] = tuple(), colour: str = Colour.NONE, textColour: str = Colour.NONE):
+    def _log(cls, message: str, tags: tuple[str, ...] = tuple(), color: str = Color.NONE, textColor: str = Color.NONE):
         cls.MESSAGES_LOGGED += 1
         # Generating Message (Add Tags, Message, Format, Etc)
         output = ""
         # Adding Tags
         for tag in tags:
-            if cls.COLOUR:
-                output += f"[{colour}{str(tag).upper()}{Colour.RESET}{Colour.BACK_RESET}]"
+            if cls.COLOR:
+                output += f"[{color}{str(tag).upper()}{Color.RESET}{Color.BACK_RESET}]"
             else:
                 output += f"[{str(tag).upper()}]"
         # Add Message
         if len(tags) != 0:
-            if cls.COLOUR:
-                output += f": {textColour}{message}{Colour.BACK_RESET}"
+            if cls.COLOR:
+                output += f": {textColor}{message}{Color.BACK_RESET}"
             else:
                 output += f": {message}"
         else:
-            if cls.COLOUR:
-                output += f"{textColour}{message}{Colour.BACK_RESET}"
+            if cls.COLOR:
+                output += f"{textColor}{message}{Color.BACK_RESET}"
             else:
                 output += f"{message}"
         # Log String Into LogFile (If Fail Skip)
@@ -80,8 +80,8 @@ class Logger:
                     cls.LOGFILE.flush()
             except Exception as e:
                 print(f"Error While Handing Log Message - {type(e).__name__}: {e}")
-        # Reset colour at the end of the line
-        output += Colour.RESET
+        # Reset color at the end of the line
+        output += Color.RESET
         # Print Final String
         print(output)
 
@@ -112,8 +112,8 @@ class Logger:
         cls._log(
             str(message),
             tags=(cls._getTimestamp(), "log", module),
-            colour=Colour.GREEN,
-            textColour=Colour.WHITE
+            color=Color.GREEN,
+            textColor=Color.WHITE
         )
 
     @classmethod
@@ -121,8 +121,8 @@ class Logger:
         cls._log(
             str(message),
             tags=(cls._getTimestamp(), "warn", module),
-            colour=Colour.YELLOW,
-            textColour=Colour.WHITE
+            color=Color.YELLOW,
+            textColor=Color.WHITE
         )
 
     @classmethod
@@ -132,8 +132,8 @@ class Logger:
         cls._log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
             tags=(cls._getTimestamp(), "error", module),
-            colour=Colour.RED,
-            textColour=Colour.WHITE
+            color=Color.RED,
+            textColor=Color.WHITE
         )
 
     @classmethod
@@ -143,8 +143,8 @@ class Logger:
         cls._log(
             str(message) + (" | Enable Debug For More Information" if not cls.DEBUG and printTb else ""),
             tags=(cls._getTimestamp(), "fatal", module),
-            colour=Colour.BLACK + Colour.BACK_RED,
-            textColour=Colour.WHITE
+            color=Color.BLACK + Color.BACK_RED,
+            textColor=Color.WHITE
         )
 
     @classmethod
@@ -153,8 +153,8 @@ class Logger:
             cls._log(
                 str(message),
                 tags=(cls._getTimestamp(), "debug", module),
-                colour=Colour.CYAN,
-                textColour=Colour.WHITE
+                color=Color.CYAN,
+                textColor=Color.WHITE
             )
 
     @classmethod
@@ -163,6 +163,6 @@ class Logger:
             cls._log(
                 str(message),
                 tags=(cls._getTimestamp(), "verbose", module),
-                colour=Colour.MAGENTA,
-                textColour=Colour.WHITE
+                color=Color.MAGENTA,
+                textColor=Color.WHITE
             )

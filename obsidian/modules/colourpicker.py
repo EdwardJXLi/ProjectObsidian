@@ -4,24 +4,24 @@ from obsidian.player import Player
 
 
 @Module(
-    "ColourPicker",
+    "ColorPicker",
     description="Preview colors in chat!",
     author="Obsidian",
     version="1.0.0",
     dependencies=[Dependency("core")]
 )
-class ColourPickerModule(AbstractModule):
+class ColorPickerModule(AbstractModule):
     def __init__(self, *args):
         super().__init__(*args)
 
     @Command(
-        "Colour",
+        "Color",
         description="Prints out all the colors",
         version="v1.0.0"
     )
-    class ColourCommand(AbstractCommand["ColourPickerModule"]):
+    class ColorCommand(AbstractCommand["ColorPickerModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["colours", "colors", "c"])
+            super().__init__(*args, ACTIVATORS=["colors", "c"])
 
         async def execute(self, ctx: Player, *, msg: str = "TEST"):
             for c in "0123456789abcdef":

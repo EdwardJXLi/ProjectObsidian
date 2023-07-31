@@ -94,7 +94,7 @@ class BetterChatModule(AbstractModule):
                     linesSent += 1
 
                     # Get last color of message
-                    if textWrapConfig.preserveColours:
+                    if textWrapConfig.preserveColors:
                         matches = re.findall(r'&[a-zA-Z0-9]', messageBuffer)
                         if matches:
                             # Set previousColor to the last match
@@ -260,7 +260,7 @@ class BetterChatModule(AbstractModule):
     @dataclass
     class TextWrapConfig(AbstractConfig):
         maximumLineLength: int = 64
-        preserveColours: bool = True
+        preserveColors: bool = True
         multilinePrefix: str = "&7 | "
         warnOnMessageOverflow: bool = False
         warnOnWordOverflow: bool = False

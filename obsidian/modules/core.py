@@ -1698,7 +1698,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", color="&2"))
             output.append("&7Use /help [n] to get the nth page of help.&f")
             output.append("&7Use /help [query] for help on a plugin or command.&f")
 
@@ -1716,7 +1716,7 @@ class CoreModule(AbstractModule):
                 output.append(f"{cmd.DESCRIPTION}")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eTotal Commands: {numCommands}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eTotal Commands: {numCommands}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1760,7 +1760,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", color="&2"))
             output.append(f"&d > Commands From {module.NAME}")
 
             # Add command information
@@ -1777,7 +1777,7 @@ class CoreModule(AbstractModule):
                 output.append(f"{cmd.DESCRIPTION}")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&e{module.NAME} Commands: {numCommands}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&e{module.NAME} Commands: {numCommands}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1800,7 +1800,7 @@ class CoreModule(AbstractModule):
                 raise CommandError("You do not have permission to view this command!")
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&eCommand Information: {cmd.NAME}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eCommand Information: {cmd.NAME}", color="&2"))
 
             # Add Command Description
             if cmd.DESCRIPTION:
@@ -1861,7 +1861,7 @@ class CoreModule(AbstractModule):
             if cmd.NAME in ctx.server.config.disabledCommands:
                 output.append("&4[NOTICE] &fThis Command Is DISABLED!")
 
-            output.append(CommandHelper.centerMessage(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlugin: {cmd.MODULE.NAME} v. {cmd.MODULE.VERSION}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1886,7 +1886,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage("&eListing All Commands", colour="&2"))
+            output.append(CommandHelper.centerMessage("&eListing All Commands", color="&2"))
             output.append("&7Use /help [query] for help on a plugin or command.&f")
             output.append("&7Use /cmdlist True  to show all command and aliases.&f")
 
@@ -1905,7 +1905,7 @@ class CoreModule(AbstractModule):
                 output += CommandHelper.formatList(fullCommandsList, initialMessage="&e", separator=", ", lineStart="&e")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eTotal Commands: {len(cmdList)}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eTotal Commands: {len(cmdList)}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1924,7 +1924,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&eServer Information: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Information: {ctx.server.name}", color="&2"))
 
             # Add Player Information
             output.append(f"&d[Server Name]&f {ctx.server.name}")
@@ -1944,7 +1944,7 @@ class CoreModule(AbstractModule):
             output.append("&7Use /software to learn more about ProjectObsidian.")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eServer Software: ProjectObsidian {__version__}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Software: ProjectObsidian {__version__}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -1985,7 +1985,7 @@ class CoreModule(AbstractModule):
             output.append("&7and contains absolutely no source code from Minecraft.")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage("Created by RadioactiveHydra/EdwardJXLi", colour="&2"))
+            output.append(CommandHelper.centerMessage("Created by RadioactiveHydra/EdwardJXLi", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2017,7 +2017,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage("&eCPE Extensions", colour="&2"))
+            output.append(CommandHelper.centerMessage("&eCPE Extensions", color="&2"))
             output.append("&7Use /modules to see all the modules loaded on the server")
 
             # Add additional info on client and server
@@ -2054,7 +2054,7 @@ class CoreModule(AbstractModule):
                 output.append("&9[Mutual Support]&f &cN/A")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eServer CPE Support: {ctx.server.supportsCPE}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer CPE Support: {ctx.server.supportsCPE}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2086,7 +2086,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eHelp Page {page}/{numPages}", color="&2"))
             output.append("&7Use /plugins [n] to get the nth page of plugins.&f")
             output.append("&7Use /plugin [plugin] for additional info on a plugin.&f")
 
@@ -2095,7 +2095,7 @@ class CoreModule(AbstractModule):
                 output.append(f"&e{moduleName}: &f{module.DESCRIPTION}")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eTotal Modules: {numModules}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eTotal Modules: {numModules}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2114,7 +2114,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&ePlugin Information: {plugin.NAME}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlugin Information: {plugin.NAME}", color="&2"))
 
             # Add Plugin Description
             if plugin.DESCRIPTION:
@@ -2145,7 +2145,7 @@ class CoreModule(AbstractModule):
             # Add # of Submodules
             output.append(f"&d[Submodules] &f{len(plugin.SUBMODULES)}")
 
-            output.append(CommandHelper.centerMessage(f"&ePlugins Installed: {len(ModuleManager._moduleDict)}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlugins Installed: {len(ModuleManager._moduleDict)}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2183,7 +2183,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(playersList)}/{manager.world.maxPlayers}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(playersList)}/{manager.world.maxPlayers}", color="&2"))
             output.append("&7Use /listall to see players in all worlds")
             output.append("&7Use /player [name] to see additional details about a player")
 
@@ -2191,7 +2191,7 @@ class CoreModule(AbstractModule):
             output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ", lineStart="&e")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eWorld Name: {manager.world.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eWorld Name: {manager.world.name}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2211,9 +2211,9 @@ class CoreModule(AbstractModule):
 
             # Add Header (Different depending on if server max size is set)
             if ctx.server.playerManager.maxSize is not None:
-                output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
+                output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} | Worlds: {len(ctx.server.worldManager.worlds)}", color="&2"))
             else:
-                output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Worlds: {len(ctx.server.worldManager.worlds)}", colour="&2"))
+                output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Worlds: {len(ctx.server.worldManager.worlds)}", color="&2"))
             output.append("&7Use /player [name] to see additional details about a player")
 
             # Keep track of the number of worlds that were hidden
@@ -2238,7 +2238,7 @@ class CoreModule(AbstractModule):
                 output.append("&7Use /worlds to see all worlds.")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2262,13 +2262,13 @@ class CoreModule(AbstractModule):
             playersList = [player for player in staffList if player.opStatus]
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&eStaff Online: {len(playersList)}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eStaff Online: {len(playersList)}", color="&2"))
 
             # Generate Player List Output
             output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage="&4", separator=", ", lineStart="&4")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2295,7 +2295,7 @@ class CoreModule(AbstractModule):
                 playerClients[client].add(player)
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Unique Clients: {len(playerClients)}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Unique Clients: {len(playerClients)}", color="&2"))
             output.append("&7Use /player [name] to see additional details about a player")
 
             # Generate Player List Output
@@ -2303,7 +2303,7 @@ class CoreModule(AbstractModule):
                 output += CommandHelper.formatList(playersList, processInput=lambda p: str(p.name), initialMessage=f"&d[{client}] &e", separator=", ", lineStart="&e")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2326,7 +2326,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&ePlayer Information: {player.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlayer Information: {player.name}", color="&2"))
 
             # Add Player Information
             output.append(f"&d[Joined World]&f {player.worldPlayerManager.world.name if player.worldPlayerManager else 'Unknown'}")
@@ -2343,7 +2343,7 @@ class CoreModule(AbstractModule):
                 output.append(f"&d[Internal Player Id]&f {player.playerId}")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2513,14 +2513,14 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&eWorlds Loaded: {len(worldList)}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eWorlds Loaded: {len(worldList)}", color="&2"))
             output.append("&7Use /world [world] to see additional details about a world")
 
             # Generate Player List Output
             output += CommandHelper.formatList(worldList, processInput=lambda p: str(p.name), initialMessage="&e", separator=", ", lineStart="&e")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -2546,7 +2546,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&eWorld Information: {world.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eWorld Information: {world.name}", color="&2"))
 
             # Add World Information
             output.append(f"&d[Seed]&f {world.seed}")
@@ -2561,7 +2561,7 @@ class CoreModule(AbstractModule):
             output.append(f"&d[Time Created]&f {world.timeCreated}")
 
             # Add Footer
-            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", colour="&2"))
+            output.append(CommandHelper.centerMessage(f"&eServer Name: {ctx.server.name}", color="&2"))
 
             # Send Message
             await ctx.sendMessage(output)
@@ -3257,18 +3257,18 @@ class CoreModule(AbstractModule):
 # Helper functions for the command generation
 class CommandHelper():
     @staticmethod
-    def centerMessage(message: str, colour: str = "", padCharacter: str = "=") -> str:
+    def centerMessage(message: str, color: str = "", padCharacter: str = "=") -> str:
         # Calculate the number of padding to add
         maxMessageLength = 64
         padSpace = max(
-            maxMessageLength - len(message) - 2 * (len(colour) + 1) - 2,
+            maxMessageLength - len(message) - 2 * (len(color) + 1) - 2,
             0  # Maxing at zero in case the final output goes into the negatives
         )
         padLeft = padSpace // 2
         padRight = padSpace - padLeft
 
         # Generate and return padded message
-        return (colour + padCharacter * padLeft) + (" " + message + " ") + (colour + padCharacter * padRight) + "&f"
+        return (color + padCharacter * padLeft) + (" " + message + " ") + (color + padCharacter * padRight) + "&f"
 
     @staticmethod
     def formatList(
