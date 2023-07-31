@@ -81,14 +81,14 @@ class ClassiCubeApiModule(AbstractModule):
                     softwareName = config.softwareOverride
                 elif not config.addSoftwareColor:
                     if config.includeSoftwareVersion:
-                        softwareName = f"> ProjectObsidian v. {__version__} <"
+                        softwareName = f"[ ProjectObsidian v. {__version__} ]"
                     else:
-                        softwareName = "> ProjectObsidian <"
+                        softwareName = "[ ProjectObsidian ]"
                 else:
                     if config.includeSoftwareVersion:
-                        softwareName = f"> &dProject&5Obsidian &fv. &a{__version__}&f <"
+                        softwareName = f"[ &dProject&5Obsidian &fv. &a{__version__}&f ]"
                     else:
-                        softwareName = "> &dProject&5Obsidian&f <s"
+                        softwareName = "[ &dProject&5Obsidian&f ]"
 
                 # Calculate number of users
                 if config.countByIp:
