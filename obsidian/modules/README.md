@@ -1,7 +1,7 @@
 # Project Obsidian Built-in Plugins/Modules List
 
 ## Core Modules
-- `core` - Core module, required by all other modules
+- `core` - Core module, required by all other modules - Implements all base features of the Minecraft Classic game.
 
 ## Libraries / Utilities
 - `nbtlib` - NBT Library, used for reading and writing NBT files
@@ -9,8 +9,15 @@
 
 ## Official Modules
 - `classicworld` - Adds support for the classicworld format
+- `mcyetiworld` - Adds support for the mcyeti format
+- `betterchat` - Advanced chat support - Adds text wrapping, pinging, nicknames, and more!
 - `worldconvert` - World conversion module, converts worlds from one format to another
-- `basiccuboid` - Adds basic support for the /cuboid command
+- `colourpicker` - Test and preview colours in-game
+
+## Quality of Life Modules
+- `liquidplace` - Allows placements of liquids in the world without cheats
+- `buildingcommands` - Adds some basic building commands
+- `announcements` - Adds support for periodic announcements
 
 # CPE Modules
 - `clickdistance` - Adds support for the ClickDistance CPE
@@ -18,17 +25,17 @@
 - `emotefix` - Adds support for the EmoteFix CPE
 - `texthotkey` - Adds support for the TextHotKey CPE
 - `selectioncuboid` - Adds support for the SelectionCuboid CPE
+- `messagetypes` - Adds support for the MessageTypes CPE
 - `playerclick` - Adds support for the PlayerClick CPE
 - `longermessages` - Adds support for the LongerMessages CPE
 - `bulkblockupdate` - Adds support for the BulkBlockUpdate CPE
+- `textcolors` - Adds support for the TextColors CPE
 - `twowayping` - Adds support for the TwoWayPing CPE
 - `instantmotd` - Adds support for the InstantMOTD CPE
 - `fastmap` - Adds support for the FastMap CPE
-
-## Quality of Life Modules
-- `liquidplace` - Allows placements of liquids in the world without cheats
-- `buildingcommands` - Adds some basic building commands
-- `announcements` - Adds support for periodic announcements
+- `sethotbar` - Adds support for the SetHotBar CPE
+- `setspawnpoint` - Adds support for the SetSpawnpoint CPE
+- `velocitycontrol` - Adds support for the VelocityControl CPE
 
 ## Community Modules
 TODO - Add community modules here
