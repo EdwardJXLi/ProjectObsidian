@@ -7,7 +7,7 @@
 - `nbtlib` - NBT Library, used for reading and writing NBT files
 - `classicubeapi` - Classicube API Library, used for interfacing with the Classicube API for server heartbeat and authentication
 
-## Critical Official Modules
+## Official Modules
 - `classicworld` - Adds support for the classicworld format
 - `mcyetiworld` - Adds support for the mcyeti format
 - `betterchat` - Advanced chat support - Adds text wrapping, pinging, nicknames, and more!

@@ -6,7 +6,7 @@ from obsidian.player import Player
 @Module(
     "ColorPicker",
     description="Preview colors in chat!",
-    author="Obsidian",
+    author="RadioactiveHydra",
     version="1.0.0",
     dependencies=[Dependency("core")]
 )

@@ -18,7 +18,7 @@ import random
 @Module(
     "Announcements",
     description="Sends periodic announcements in chat.",
-    author="Obsidian",
+    author="RadioactiveHydra",
     version="1.0.0",
     dependencies=[Dependency("core")]
 )

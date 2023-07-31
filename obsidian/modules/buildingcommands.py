@@ -11,7 +11,7 @@ from typing import Optional, cast
 @Module(
     "BuildingCommands",
     description="Adds commands for building.",
-    author="Obsidian",
+    author="Rainb0wSkeppy",
     version="1.0.0",
     dependencies=[Dependency("core")]
 )

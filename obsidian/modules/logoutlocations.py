@@ -11,7 +11,7 @@ from typing import Callable, Awaitable, Optional, cast
 @Module(
     "LogoutLocations",
     description="Respawns players at the last location they logged out at.",
-    author="Obsidian",
+    author="RadioactiveHydra",
     version="1.0.0",
     dependencies=[Dependency("core")]
 )
