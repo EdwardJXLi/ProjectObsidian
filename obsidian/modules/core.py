@@ -2280,7 +2280,7 @@ class CoreModule(AbstractModule):
     )
     class ListAllClientsCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["listclients", "clientlist", "pclients"])
+            super().__init__(*args, ACTIVATORS=["clients", "clientlist", "pclients"])
 
         async def execute(self, ctx: Player):
             # Generate command output
