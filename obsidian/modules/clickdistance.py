@@ -86,7 +86,7 @@ class ClickDistanceModule(AbstractModule):
 
         # Send player click distance on join
         @Inject(target=WorldPlayerManager.joinPlayer, at=InjectionPoint.AFTER)
-        async def sendClickDistance(self, player: Player):
+        async def sendClickDistance(self, player: Player, *args, **kwargs):
             # Since we are injecting, set type of self to WorldPlayerManager
             self = cast(WorldPlayerManager, self)
 

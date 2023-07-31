@@ -204,7 +204,7 @@ class WorldPlayerManager:
         self.playerManager: PlayerManager = playerManager
         self.playerSlots: list[Optional[Player]] = [None] * world.maxPlayers
 
-    async def joinPlayer(self, player: Player) -> None:
+    async def joinPlayer(self, player: Player, spawn: Optional[tuple[int, int, int, int, int]] = None) -> None:
         # Trying To Allocate Id
         # Fails If All Slots Are Taken
         try:
@@ -230,17 +230,13 @@ class WorldPlayerManager:
             self.world.spawnPitch
         )
 
-        posX, posY, posZ, yaw, pitch = defaultSpawn
-
-        # If last logout location is enabled, get it
-        if self.world.logoutLocations is not None and self.world.worldManager.server.config.savePlayerLogoutLocation:
-            playerLogoutLocation = self.world.logoutLocations.getLogoutLocation(player.name)
-            if playerLogoutLocation is not None:
-                Logger.debug(f"Last Logout Location is: {playerLogoutLocation}", module="world-player")
-                posX, posY, posZ, yaw, pitch = playerLogoutLocation
-            else:
-                Logger.debug("Last Logout Location is None! Using default spawn position instead!", module="world-player")
-                posX, posY, posZ, yaw, pitch = defaultSpawn
+        # Check if spawn is specified. If not, use default spawn
+        if spawn:
+            Logger.debug(f"Spawning Player At Specified Location {spawn}", module="world-player")
+            posX, posY, posZ, yaw, pitch = spawn
+        else:
+            Logger.debug(f"Spawning Player At Default Location {defaultSpawn}", module="world-player")
+            posX, posY, posZ, yaw, pitch = defaultSpawn
 
         # Check if player yaw and pitch is valid
         if not (0 <= yaw <= 255 and 0 <= pitch <= 255):
@@ -325,12 +321,6 @@ class WorldPlayerManager:
 
     async def removePlayer(self, player: Player, reason: Optional[str] = None) -> bool:
         Logger.debug(f"Removing Player {player.name} From World {self.world.name}", module="world-player")
-
-        # Check if last logout location is enabled
-        if self.world.logoutLocations is not None and self.world.worldManager.server.config.savePlayerLogoutLocation:
-            # Write last logout location for player
-            self.world.logoutLocations.setLogoutLocation(player.name, player.posX, player.posY, player.posZ, player.posYaw, player.posPitch)
-            Logger.debug(f"Saved Player {player.name} Last Logout Location {player.posX}, {player.posY}, {player.posZ}, {player.posYaw}, {player.posPitch}", module="world-player")
 
         # Delete User From Player List + Deallocate ID
         if player.playerId is not None:

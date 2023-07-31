@@ -4,7 +4,7 @@ from obsidian.types import _formatUsername, _formatIp
 from obsidian.log import Logger
 from obsidian.player import Player
 from obsidian.worldformat import AbstractWorldFormat, WorldFormat, WorldFormatManager
-from obsidian.world import World, WorldManager, WorldMetadata, LogoutLocationMetadata
+from obsidian.world import World, WorldManager, WorldMetadata
 from obsidian.mapgen import AbstractMapGenerator, MapGeneratorStatus, MapGenerator, MapGenerators
 from obsidian.commands import AbstractCommand, Command, Commands, CommandManager, _typeToString
 from obsidian.blocks import AbstractBlock, BlockManager, Block, Blocks
@@ -859,45 +859,6 @@ class CoreModule(AbstractModule):
                 EXTENSIONS=["obw"],
                 METADATA_SUPPORT=True
             )
-
-            # Create readers and writers for LogoutLocation
-            def readLogoutLocation(data: dict):
-                logoutLocations = LogoutLocationMetadata()
-
-                # Loop through all players and load logout location
-                Logger.debug("Loading Logout Locations", module="logout-location")
-                for player, coords in data.items():
-                    logX = coords["X"]
-                    logY = coords["Y"]
-                    logZ = coords["Z"]
-                    logYaw = coords["Yaw"]
-                    logPitch = coords["Pitch"]
-                    logoutLocations.setLogoutLocation(player, logX, logY, logZ, logYaw, logPitch)
-                    Logger.debug(f"Loaded Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="logout-location")
-
-                return logoutLocations
-
-            def writeLogoutLocation(logoutLocations: LogoutLocationMetadata):
-                data: dict = {}
-
-                # Loop through all logout locations and save them
-                Logger.debug("Saving Logout Locations", module="logout-location")
-                for player, coords in logoutLocations.getAllLogoutLocations().items():
-                    logX, logY, logZ, logYaw, logPitch = coords
-                    data[player] = {
-                        "X": logX,
-                        "Y": logY,
-                        "Z": logZ,
-                        "Yaw": logYaw,
-                        "Pitch": logPitch
-                    }
-                    Logger.debug(f"Saved Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="logout-location")
-
-                return data
-
-            # Register readers and writers
-            WorldFormatManager.registerMetadataReader(self, "obsidian", "logoutLocations", readLogoutLocation)
-            WorldFormatManager.registerMetadataWriter(self, "obsidian", "logoutLocations", writeLogoutLocation)
 
         criticalFields = {
             "version",

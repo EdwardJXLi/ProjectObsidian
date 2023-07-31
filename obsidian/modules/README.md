@@ -7,17 +7,18 @@
 - `nbtlib` - NBT Library, used for reading and writing NBT files
 - `classicubeapi` - Classicube API Library, used for interfacing with the Classicube API for server heartbeat and authentication
 
-## Official Modules
+## Critical Official Modules
 - `classicworld` - Adds support for the classicworld format
 - `mcyetiworld` - Adds support for the mcyeti format
 - `betterchat` - Advanced chat support - Adds text wrapping, pinging, nicknames, and more!
 - `worldconvert` - World conversion module, converts worlds from one format to another
-- `colorpicker` - Test and preview colors in-game
 
 ## Quality of Life Modules
 - `liquidplace` - Allows placements of liquids in the world without cheats
 - `buildingcommands` - Adds some basic building commands
 - `announcements` - Adds support for periodic announcements
+- `logoutlocations` - Respawns players at their logout location
+- `colorpicker` - Test and preview colors in-game
 
 # CPE Modules
 - `clickdistance` - Adds support for the ClickDistance CPE
@@ -31,6 +32,7 @@
 - `bulkblockupdate` - Adds support for the BulkBlockUpdate CPE
 - `textcolors` - Adds support for the TextColors CPE
 - `twowayping` - Adds support for the TwoWayPing CPE
+- `inventoryorder` - Adds support for the InventoryOrder CPE
 - `instantmotd` - Adds support for the InstantMOTD CPE
 - `fastmap` - Adds support for the FastMap CPE
 - `sethotbar` - Adds support for the SetHotBar CPE

@@ -1,6 +1,6 @@
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.log import Logger
-from obsidian.world import WorldMetadata, LogoutLocationMetadata
+from obsidian.world import WorldMetadata
 from obsidian.worldformat import WorldFormat, WorldFormatManager, AbstractWorldFormat
 from obsidian.mapgen import MapGenerators
 from obsidian.world import World, WorldManager
@@ -40,46 +40,6 @@ class ClassicWorldModule(AbstractModule):
                 EXTENSIONS=["cw"],
                 METADATA_SUPPORT=True
             )
-            from obsidian.modules.nbtlib import NBTLib
-
-            # Create readers and writers for LogoutLocation
-            def readLogoutLocation(data: NBTLib.TAG_Compound):
-                logoutLocations = LogoutLocationMetadata()
-
-                # Loop through all players and load logout location
-                Logger.debug("Loading Logout Locations", module="logout-location")
-                for player, coords in data.items():
-                    logX = coords["X"].value
-                    logY = coords["Y"].value
-                    logZ = coords["Z"].value
-                    logYaw = coords["H"].value
-                    logPitch = coords["P"].value
-                    logoutLocations.setLogoutLocation(player, logX, logY, logZ, logYaw, logPitch)
-                    Logger.debug(f"Loaded Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="logout-location")
-
-                return logoutLocations
-
-            def writeLogoutLocation(logoutLocations: LogoutLocationMetadata):
-                data: NBTLib.TAG_Compound = NBTLib.TAG_Compound(name="logoutLocations")
-
-                # Loop through all logout locations and save them
-                Logger.debug("Saving Logout Locations", module="logout-location")
-                for player, coords in logoutLocations.getAllLogoutLocations().items():
-                    logX, logY, logZ, logYaw, logPitch = coords
-                    playerData = NBTLib.TAG_Compound(name=player)
-                    playerData.tags.append(NBTLib.TAG_Short(name="X", value=logX))
-                    playerData.tags.append(NBTLib.TAG_Short(name="Y", value=logY))
-                    playerData.tags.append(NBTLib.TAG_Short(name="Z", value=logZ))
-                    playerData.tags.append(NBTLib.TAG_Short(name="H", value=logYaw))
-                    playerData.tags.append(NBTLib.TAG_Short(name="P", value=logPitch))
-                    data.tags.append(playerData)
-                    Logger.debug(f"Saved Logout Location x:{logX}, y:{logY}, z:{logZ}, yaw:{logYaw}, pitch:{logPitch} for player {player}", module="logout-location")
-
-                return data
-
-            # Register readers and writers
-            WorldFormatManager.registerMetadataReader(self, "obsidian", "logoutLocations", readLogoutLocation)
-            WorldFormatManager.registerMetadataWriter(self, "obsidian", "logoutLocations", writeLogoutLocation)
 
         # Helper function to convert classicworld naming to obsidian naming
         # For example:
