@@ -289,7 +289,7 @@ class BuildingCommandsModule(AbstractModule):
                 Logger.verbose(f"Using PIL version {PIL.Image.__version__}", module="buildingcommands")
             except ImportError:
                 self.enableTextDrawing = False
-                Logger.warning("The PIL library is not installed! Please install it to use /Write!")
+                Logger.warn("The PIL library is not installed! Please install it to use /Write!")
 
         def loadFont(self, isMonospaced: bool, fontSize: int, path: str):
             if isMonospaced:
@@ -353,7 +353,7 @@ class BuildingCommandsModule(AbstractModule):
         async def execute(self, ctx: Player, isMonospaced: bool, fontSize: int, text: str):
             if not self.enableTextDrawing:
                 raise CommandError(f"Text drawing is disabled because the PIL module is not installed!")
-            
+			
             block = None
             
             if ctx.worldPlayerManager is not None:
