@@ -3004,7 +3004,7 @@ class CoreModule(AbstractModule):
     )
     class SetWorldSpawnCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["setspawn", "setworldspawn"], OP=True)
+            super().__init__(*args, ACTIVATORS=["setworldspawn"], OP=True)
 
         async def execute(self, ctx: Player, world: Optional[World] = None):
             # If no world is passed, use players current world
