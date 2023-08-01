@@ -4,13 +4,14 @@ from obsidian.player import Player
 from obsidian.mixins import Inject, InjectionPoint
 from obsidian.constants import __version__
 from obsidian.config import AbstractConfig
-from obsidian.errors import ModuleError
 from obsidian.server import Server
 from obsidian.log import Logger
 
 from dataclasses import dataclass
 from threading import Thread
 from typing import Optional
+import urllib.request
+import urllib.parse
 import time
 
 
@@ -32,14 +33,6 @@ class ClassiCubeApiModule(AbstractModule):
             Logger.info("The ClassiCube API support is disabled! Not starting module.", module="classiccubeapi")
             return
 
-        # Check if the requests library is installed
-        # TODO: Fix this code
-        try:
-            import requests
-            Logger.verbose(f"Using requests version {requests.__version__}", module="classiccubeapi")
-        except ImportError:
-            raise ModuleError("The requests library is not installed! Please install it to use the ClassiCube API Module!")
-
         # Create heartbeat injector
         if self.config.heartbeat:
             Logger.debug("Injecting server heartbeat thread into ProjectObsidian", module="classiccubeapi")
@@ -54,7 +47,6 @@ class ClassiCubeApiModule(AbstractModule):
 
     @staticmethod
     def serverHeartbeat(server: Server, config: "ClassiCubeApiConfig"):
-        import requests
         Logger.info("Starting server heartbeat", module="classiccubeapi")
 
         # Save server url information
@@ -113,21 +105,25 @@ class ClassiCubeApiModule(AbstractModule):
 
                 # Send HTTP Request
                 Logger.verbose(f"Sending heartbeat to {url} with params {params}", module="classiccubeapi")
-                resp = requests.get(url, params=params)
+                # resp = requests.get(url, params=params)
+                data = urllib.parse.urlencode(params)
+                data = data.encode('ascii')  # data should be bytes
+                with urllib.request.urlopen(url, data) as response:
+                    message = response.read().decode('ascii')
 
                 # Check if response is valid json
-                Logger.verbose(f"Received response from server: {resp.text}", module="classiccubeapi")
+                Logger.verbose(f"Received response from server: {message}", module="classiccubeapi")
 
                 # Checking is response was successful
-                if config.playUri in resp.text:
+                if config.playUri in message:
                     if serverUrl is None:
-                        serverUrl = resp.text
+                        serverUrl = message
                         Logger.info(f"Server is now online on ClassiCube! Play at {serverUrl}", module="classiccubeapi")
-                    elif serverUrl != resp.text:
-                        serverUrl = resp.text
+                    elif serverUrl != message:
+                        serverUrl = message
                         Logger.warn(f"Server URL has changed! Play at {serverUrl}", module="classiccubeapi")
                 else:
-                    Logger.error(f"Server heartbeat failed! Response: {resp.text}", module="classiccubeapi")
+                    Logger.error(f"Server heartbeat failed! Response: {message}", module="classiccubeapi")
 
                 # Sleep
                 time.sleep(config.heartbeatInterval)
