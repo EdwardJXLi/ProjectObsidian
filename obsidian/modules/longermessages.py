@@ -63,7 +63,7 @@ class LongerMessagesModule(AbstractModule):
 
             # Check if partial message
             if partialMessageFlag and ctx.supports(CPEExtension("LongerMessages", 1)):
-                Logger.debug(f"Handing Partial Message from {ctx.username}", module="LongerMessages")
+                Logger.debug(f"Handing Partial Message from {ctx.username}", module="longer-messages")
                 return unpackString(message)
 
             # Get message from buffer

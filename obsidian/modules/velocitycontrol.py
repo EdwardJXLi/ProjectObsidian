@@ -3,6 +3,7 @@ from obsidian.cpe import CPE, CPEExtension
 from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player
 from obsidian.errors import CPEError, CommandError
+from obsidian.log import Logger
 from obsidian.packet import (
     AbstractResponsePacket,
     ResponsePacket,
@@ -37,6 +38,7 @@ class VelocityControlModule(AbstractModule):
     # Create helper method to set a player's velocity
     @staticmethod
     async def setPlayerVelocity(player: Player, xVelocity: int, yVelocity: int, zVelocity: int):
+        Logger.debug(f"Changing Player {player.name}'s Velocity to {xVelocity}, {yVelocity}, {zVelocity}", module="velocity-control")
         # Check if player supports the VelocityControl Extension
         if not player.supports(CPEExtension("VelocityControl", 1)):
             raise CPEError(f"Player {player.name} Does Not Support VelocityControl Extension!")
@@ -51,6 +53,8 @@ class VelocityControlModule(AbstractModule):
     # Create helper method to add to a a player's velocity
     @staticmethod
     async def addPlayerVelocity(player: Player, xVelocity: int, yVelocity: int, zVelocity: int):
+        Logger.debug(f"Adding {xVelocity}, {yVelocity}, {zVelocity} to Player {player.name}'s Velocity", module="velocity-control")
+
         # Check if player supports the VelocityControl Extension
         if not player.supports(CPEExtension("VelocityControl", 1)):
             raise CPEError(f"Player {player.name} Does Not Support VelocityControl Extension!")
