@@ -2,6 +2,7 @@ from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.player import Player, PlayerManager, WorldPlayerManager
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets, packageString
+from obsidian.commands import Command, AbstractCommand
 from obsidian.errors import ConverterError, CPEError
 from obsidian.log import Logger, Color
 
@@ -11,13 +12,15 @@ import struct
 
 class MessageType(Enum):
     CHAT = 0
-    STATUS1 = 1
-    STATUS2 = 2
-    STATUS3 = 3
-    BOTTOMRIGHT1 = 11
-    BOTTOMRIGHT2 = 12
-    BOTTOMRIGHT3 = 13
+    STATUS_1 = 1
+    STATUS_2 = 2
+    STATUS_3 = 3
+    BOTTOM_RIGHT_1 = 11
+    BOTTOM_RIGHT_2 = 12
+    BOTTOM_RIGHT_3 = 13
     ANNOUNCEMENT = 100
+    BIG_ANNOUNCEMENT = 101
+    SMALL_ANNOUNCEMENT = 102
 
     @staticmethod
     def _convertArgument(_, argument: str):
@@ -219,3 +222,16 @@ class MessageTypesModule(AbstractModule):
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
+
+    @Command(
+        "TestEnhancedMessage",
+        description="Sends a test message to the player, with customizable types.",
+        version="v1.0.0"
+    )
+    class TestEnhancedMessageCommand(AbstractCommand["MessageTypesModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["enhancedmsg", "emsg"])
+
+        async def execute(self, ctx: Player, messageType: MessageType, *, message: str):
+            # Send message to player
+            await MessageTypesModule.sendMessage(ctx, message, messageType=messageType)
