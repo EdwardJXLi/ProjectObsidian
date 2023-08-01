@@ -1,10 +1,12 @@
-# Project Obsidian
+# ProjectObsidian
 
-A fully featured & modular Minecraft Classic / Classicube Server fully reimplemented in Python!
+A fully featured and powerful **Minecraft Classic / Classicube Server** that is completely **built from scratch**! Unlike other server softwares, ProjectObsidian is **fully modular and customizable**, built on top of a powerful yet flexible plugin system.
 
 ![Minecraft Version 0.30_01c](https://img.shields.io/badge/Minecraft%20Version-0.30__01c-green)
 ![Protocol Version 7](https://img.shields.io/badge/Protocol%20Version-7-blue)
 ![Classic Server Version](https://img.shields.io/badge/Classic%20Server%20Version-1.10.1-purple)
+
+![Screenshot of ProjectObsidian](meta/obsidian.png)
 
 # Features
 - Full Implementation of the Minecraft Classic Protocol
@@ -13,16 +15,13 @@ A fully featured & modular Minecraft Classic / Classicube Server fully reimpleme
 - Highly Customizable and Modular
 - Multi-World Support
 - Supports Multiple World Formats
-- Fully featured plugin support
+- [Fully featured plugin support](obsidian/modules/README.md)
 
-# Instructions
-> Obsidian Server requires **no 3rd party libraries**, meaning that you can run this server with a stock python installation!
+# Installation Instructions
+> Obsidian Server requires **no 3rd party libraries**, meaning that you can run this server with a stock Python installation!
 
 On linux, install `python3.10` and clone the repository.
 ```
-sudo apt update && sudo apt upgrade -y
-sudo apt install software-properties-common -y
-sudo add-apt-repository ppa:deadsnakes/ppa
 apt-get install python3.10
 git clone https://github.com/RadioactiveHydra/ProjectObsidian.git
 ```

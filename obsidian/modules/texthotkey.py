@@ -33,6 +33,7 @@ class TextHotKeyModule(AbstractModule):
         super().postInit()
 
         # Get and verify hotkeys
+        Logger.info("Verifying Hotkey Config", module="texthotkey")
         hotkeys = self.config.hotkeys
         for label, data in hotkeys.items():
             if ("action" not in data) or (type(data["action"]) is not str):
@@ -41,6 +42,7 @@ class TextHotKeyModule(AbstractModule):
                 raise ModuleError(f"Invalid KeyCode Field For Hotkey {label}!")
             if ("keyMods" not in data) or (type(data["keyMods"]) is not int):
                 raise ModuleError(f"Invalid KeyMods Field For Hotkey {label}!")
+        Logger.info(f"{len(hotkeys)} Hotkeys Loaded: {hotkeys}", module="texthotkey")
 
         # Send text hotkeys once user joins
         @Inject(target=NetworkHandler._processPostLogin, at=InjectionPoint.AFTER)
@@ -54,10 +56,10 @@ class TextHotKeyModule(AbstractModule):
 
             # Check if player supports the TextHotKey Extension
             if self.player.supports(CPEExtension("TextHotKey", 1)):
-                Logger.debug(f"{self.connectionInfo} | Sending Hotkeys", module="network")
+                Logger.info(f"{self.connectionInfo} | Sending Hotkeys", module="texthotkey")
                 # Send hotkeys to player
                 for label, data in hotkeys.items():
-                    Logger.debug(f"{self.connectionInfo} | Sending Hotkey {label}", module="network")
+                    Logger.debug(f"{self.connectionInfo} | Sending Hotkey {label}", module="texthotkey")
                     await self.dispatcher.sendPacket(
                         Packets.Response.SetTextHotKey,
                         label,
@@ -65,6 +67,8 @@ class TextHotKeyModule(AbstractModule):
                         data["keyCode"],
                         data["keyMods"]
                     )
+            else:
+                Logger.info(f"{self.connectionInfo} | Skipping Hotkey Processing. (No CPE Support)", module="texthotkey")
 
     # Packet to send to clients to add a text hotkey
     @ResponsePacket(

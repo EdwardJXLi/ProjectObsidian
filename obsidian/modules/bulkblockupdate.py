@@ -12,7 +12,7 @@ from obsidian.packet import (
     ResponsePacket
 )
 
-from typing import cast
+from typing import Callable, Awaitable, cast
 import asyncio
 import datetime
 import struct
@@ -36,19 +36,31 @@ class BulkBlockUpdateModule(AbstractModule):
 
     def postInit(*args, **kwargs):
         # Override the original bulkBlockUpdate method to use the new BulkBlockUpdate packet
-        @Override(target=World.bulkBlockUpdate)
-        async def bulkBlockUpdate(self, blockUpdates: dict[tuple[int, int, int], AbstractBlock], sendPacket: bool = True):
+        @Override(target=World.bulkBlockUpdate, passSuper=True)
+        async def bulkBlockUpdate(
+            self,
+            blockUpdates: dict[tuple[int, int, int], AbstractBlock],
+            sendPacket: bool = True,
+            *,  # Get additional contexts
+            _super: Callable[..., Awaitable]
+        ):
             # Since we are injecting, set type of self to World
             self = cast(World, self)
 
+            # Check if the number of block updates pass the block update threshold.
+            if not len(blockUpdates) > 128:
+                Logger.debug("Number of block updates does not exceed the block update threshold. Falling back to original method.", module="bulk-update")
+                # If not, fallback to original method
+                return await _super(self, blockUpdates, sendPacket)
+
             # Handles Bulk Block Updates In Server + Checks If Block Placement Is Allowed
-            Logger.debug(f"Handling Bulk Block Update for {len(blockUpdates)} blocks", module="world")
+            Logger.debug(f"Handling Bulk Block Update for {len(blockUpdates)} blocks", module="bulk-update")
 
             # Set last modified date
             self.lastModified = datetime.datetime.now()
 
             # Update maparray with block updates
-            Logger.debug("Updating World Map Array", module="world")
+            Logger.debug("Updating World Map Array", module="bulk-update")
             for (blockX, blockY, blockZ), block in blockUpdates.items():
                 # Check If Block Is Out Of Range
                 if blockX >= self.sizeX or blockY >= self.sizeY or blockZ >= self.sizeZ:
@@ -60,7 +72,7 @@ class BulkBlockUpdateModule(AbstractModule):
             if sendPacket:
                 # Check if the number of block updates exceed the map reload threshold. If so, send a map refresh instead
                 if self.worldManager.server.config.blockUpdatesBeforeReload > 0 and len(blockUpdates) > self.worldManager.server.config.blockUpdatesBeforeReload:
-                    Logger.debug("Number of block updates exceed the map reload threshold. Sending map refresh instead.", module="world")
+                    Logger.debug("Number of block updates exceed the map reload threshold. Sending map refresh instead.", module="bulk-update")
                     for player in self.playerManager.getPlayers():
                         await player.reloadWorld()
                     return
@@ -75,11 +87,11 @@ class BulkBlockUpdateModule(AbstractModule):
                         bulkUpdatePlayers.add(player)
                     else:
                         regularUpdatePlayers.add(player)
-                Logger.verbose(f"Players who support BulkBlockUpdate: {bulkUpdatePlayers}", module="world")
-                Logger.verbose(f"Players who dont support BulkBlockUpdate: {regularUpdatePlayers}", module="world")
+                Logger.verbose(f"Players who support BulkBlockUpdate: {bulkUpdatePlayers}", module="bulk-update")
+                Logger.verbose(f"Players who dont support BulkBlockUpdate: {regularUpdatePlayers}", module="bulk-update")
 
                 # Chunk up updates and send bulk updates to players who support it
-                Logger.debug(f"Sending BulkBlockUpdate Packets to {len(bulkUpdatePlayers)} players", module="world")
+                Logger.debug(f"Sending BulkBlockUpdate Packets to {len(bulkUpdatePlayers)} players", module="bulk-update")
                 blockIndices: list[int] = [
                     blockX + self.sizeX * (blockZ + self.sizeZ * blockY)
                     for blockX, blockY, blockZ in blockUpdates.keys()
@@ -99,7 +111,7 @@ class BulkBlockUpdateModule(AbstractModule):
                         await asyncio.sleep(0)
 
                     # Send chunk to players who support BulkBlockUpdates
-                    Logger.verbose(f"Sending BulkBlockUpdate Chunk of size {len(blockIndicesChunk)} to {len(bulkUpdatePlayers)} players", module="world")
+                    Logger.verbose(f"Sending BulkBlockUpdate Chunk of size {len(blockIndicesChunk)} to {len(bulkUpdatePlayers)} players", module="bulk-update")
                     for player in bulkUpdatePlayers:
                         await player.networkHandler.dispatcher.sendPacket(
                             Packets.Response.BulkBlockUpdate,
@@ -108,9 +120,9 @@ class BulkBlockUpdateModule(AbstractModule):
                         )
 
                 # Loop through each block and handle update for players who dont support BulkBlockUpdate
-                Logger.debug(f"Sending Regular SetBlock Packets to {len(regularUpdatePlayers)} players", module="world")
+                Logger.debug(f"Sending Regular SetBlock Packets to {len(regularUpdatePlayers)} players", module="bulk-update")
                 for (blockX, blockY, blockZ), block in blockUpdates.items():
-                    Logger.verbose(f"Setting World Block {blockX}, {blockY}, {blockZ} to {block.ID}", module="world")
+                    Logger.verbose(f"Setting World Block {blockX}, {blockY}, {blockZ} to {block.ID}", module="bulk-update")
 
                     # If asynchronousBlockUpdates is enabled, run a 0 second sleep so that other tasks can operate
                     if self.worldManager.server.config.asynchronousBlockUpdates:
@@ -123,7 +135,7 @@ class BulkBlockUpdateModule(AbstractModule):
                             blockX, blockY, blockZ, block.ID
                         )
 
-                Logger.debug("Done processing bulkBlockUpdate", module="world")
+                Logger.debug("Done processing bulkBlockUpdate", module="bulk-update")
 
     @ResponsePacket(
         "BulkBlockUpdate",

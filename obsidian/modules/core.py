@@ -17,6 +17,7 @@ from obsidian.errors import (
     ConverterError
 )
 from obsidian.packet import (
+    Packets,
     RequestPacket,
     ResponsePacket,
     AbstractRequestPacket,
@@ -791,8 +792,8 @@ class CoreModule(AbstractModule):
 
     @WorldFormat(
         "Raw",
-        description="Raw Map Data File (WORLD HAS TO BE 256x256x256)",
-        version="v1.0.0"
+        description="Raw Map Data File",
+        version="v2.0.0"
     )
     class RawWorldFormat(AbstractWorldFormat["CoreModule"]):
         def __init__(self, *args):
@@ -807,25 +808,35 @@ class CoreModule(AbstractModule):
             worldManager: WorldManager,
             persistent: bool = True
         ):
-            Logger.warn("The 'Raw Map' save file format is meant as a placeholder and is not meant to be used in production.", module="raw-map")
-            Logger.warn("Although it will probably work, please install a more robust save format.", module="raw-map")
+            Logger.warn("The RawWorld save file format is not meant to be used in production.", module="raw-map")
+            Logger.warn("Please use a more robust format like ObsidianWorld instead!", module="raw-map")
 
-            rawData = gzip.GzipFile(fileobj=fileIO).read()
-            # Expected Map Size (MAX SIZE)
-            fileSize = 256 * 256 * 256
-            # Check If Given Map Is Largest Size
-            if len(rawData) != fileSize:
-                raise WorldFormatError(f"RawWorldFormat - Invalid World Size {len(rawData)}! Expected: {fileSize} (256 x 256 x 256)")
+            # Seek pointer
+            fileIO.seek(0)
+
+            # Read Gzip File
+            Logger.debug(f"Reading Gzip File {fileIO.name}", module="raw-map")
+            gzipData = io.BytesIO(gzip.GzipFile(fileobj=fileIO).read())
+
+            # Read Word Size
+            Logger.debug("Reading World Size", module="raw-map")
+            sizeX, sizeY, sizeZ = struct.unpack("!hhh", gzipData.read(6))
+            worldSize = sizeX * sizeY * sizeZ
+
+            # Read Map Data
+            Logger.debug("Reading Map Data", module="raw-map")
+            rawData = bytearray(gzipData.read(worldSize))
 
             # Create World Data
             return World(
                 worldManager,  # Pass In World Manager
                 Path(fileIO.name).stem,  # Pass In World Name (Save File Name Without EXT)
-                256, 256, 256,  # Passing World X, Y, Z
-                bytearray(rawData),  # Generating Map Data
+                sizeX, sizeY, sizeZ,  # Passing World X, Y, Z
+                rawData,  # Generating Map Data
                 0,  # World Seed (but ofc it doesn't exist)
                 persistent=persistent,  # Pass In Persistent Flag
-                fileIO=fileIO  # Pass In File Reader/Writer
+                fileIO=fileIO,  # Pass In File Reader/Writer
+                worldFormat=self  # Pass In World Format
             )
 
         def saveWorld(
@@ -834,18 +845,24 @@ class CoreModule(AbstractModule):
             fileIO: io.BufferedRandom,
             worldManager: WorldManager
         ):
-            Logger.warn("The 'Raw Map' save file format is meant as a placeholder and is not meant to be used in production.", module="raw-map")
-            Logger.warn("Although it will probably work, please install a more robust save format.", module="raw-map")
-
-            # Checking if file size matches!
-            if not (world.sizeX == 256 and world.sizeY == 256 and world.sizeZ == 256):
-                raise WorldFormatError(f"RawWorldFormat - Trying to save world that has invalid world size! Expected: 256, 256, 256! Got: {world.sizeX}, {world.sizeY}, {world.sizeZ}!")
+            Logger.warn("The RawWorld save file format is not meant to be used in production.", module="raw-map")
+            Logger.warn("Please use a more robust format like ObsidianWorld instead!", module="raw-map")
 
             # Clearing Current Save File
             fileIO.truncate(0)
             fileIO.seek(0)
+
             # Saving Map To File
-            fileIO.write(world.gzipMap())
+            fileIO.write(
+                gzip.compress(
+                    struct.pack(
+                        "!hhh",
+                        world.sizeX,
+                        world.sizeY,
+                        world.sizeZ
+                    ) + world.mapArray
+                )
+            )
 
     @WorldFormat(
         "ObsidianWorld",
@@ -2558,6 +2575,22 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player):
             await ctx.sendMOTD()
+
+    @Command(
+        "Ping",
+        description="Pong!",
+        version="v1.0.0"
+    )
+    class PingCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["ping"])
+
+        async def execute(self, ctx: Player):
+            # Send the ping packet, even though it doesn't really do anything
+            await ctx.networkHandler.dispatcher.sendPacket(
+                Packets.Response.Ping
+            )
+            await ctx.sendMessage("&aPong!")
 
     @Command(
         "Quit",

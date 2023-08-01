@@ -64,6 +64,8 @@ class TextColorsModule(AbstractModule):
 
     # Helper method to verify color config
     def verifyColorConfig(self):
+        Logger.info("Verifying Color Config", module="textcolors")
+
         # Get and verify colors
         colors = self.config.colors
         for label, data in colors.items():
@@ -104,6 +106,9 @@ class TextColorsModule(AbstractModule):
                 raise ModuleError(f"Missing color code value for color {label}!")
             elif type(data["colorCode"]) is not str or len(data["colorCode"]) != 1:
                 raise ModuleError(f"Color code value for color {label} must be a single character string!")
+
+        # Finish config verification
+        Logger.info(f"{len(colors)} Colors Loaded: {colors}", module="textcolors")
 
     # Packet to send to clients to add a text color
     @ResponsePacket(
@@ -155,10 +160,10 @@ class TextColorsModule(AbstractModule):
             # Send new colors to all players
             Logger.debug("Sending new colors to all players", module="textcolors")
             for player in ctx.playerManager.players.values():
-                Logger.debug(f"Sending Text Colors to Player {player}", module="network")
+                Logger.debug(f"Sending Text Colors to Player {player}", module="textcolors")
                 # Send colors to player
                 for label, data in self.module.config.colors.items():
-                    Logger.verbose(f"Sending Text Color {label}", module="network")
+                    Logger.verbose(f"Sending Text Color {label}", module="textcolors")
                     await player.networkHandler.dispatcher.sendPacket(
                         Packets.Response.SetTextColor,
                         data["red"],
@@ -170,6 +175,23 @@ class TextColorsModule(AbstractModule):
 
             # Notify the user
             await ctx.sendMessage("&aText Colors Reloaded!")
+
+    # Create command to test out colors.
+    # Override the original ColorCommand to use the new TextColors packet
+    @Command(
+        "Color",
+        description="Prints out all the colors + custom colors",
+        version="v1.0.0",
+        override=True
+    )
+    class ColorCommand(AbstractCommand["TextColorsModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["colors", "c"])
+
+        async def execute(self, ctx: Player, *, msg: str = "TEST"):
+            additionalColors = [c.get("colorCode") for c in self.module.config.colors.values()]
+            for c in "0123456789abcdef" + "".join(additionalColors):
+                await ctx.sendMessage(f"&{c}{c}: {msg}")
 
     # Config for text colors
     @dataclass
