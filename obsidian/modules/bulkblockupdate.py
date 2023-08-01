@@ -12,7 +12,7 @@ from obsidian.packet import (
     ResponsePacket
 )
 
-from typing import cast
+from typing import Callable, Awaitable, cast
 import asyncio
 import datetime
 import struct
@@ -36,10 +36,22 @@ class BulkBlockUpdateModule(AbstractModule):
 
     def postInit(*args, **kwargs):
         # Override the original bulkBlockUpdate method to use the new BulkBlockUpdate packet
-        @Override(target=World.bulkBlockUpdate)
-        async def bulkBlockUpdate(self, blockUpdates: dict[tuple[int, int, int], AbstractBlock], sendPacket: bool = True):
+        @Override(target=World.bulkBlockUpdate, passSuper=True)
+        async def bulkBlockUpdate(
+            self,
+            blockUpdates: dict[tuple[int, int, int], AbstractBlock],
+            sendPacket: bool = True,
+            *,  # Get additional contexts
+            _super: Callable[..., Awaitable]
+        ):
             # Since we are injecting, set type of self to World
             self = cast(World, self)
+
+            # Check if the number of block updates pass the block update threshold.
+            if not len(blockUpdates) > 128:
+                Logger.debug("Number of block updates does not exceed the block update threshold. Falling back to original method.", module="bulk-update")
+                # If not, fallback to original method
+                return await _super(self, blockUpdates, sendPacket)
 
             # Handles Bulk Block Updates In Server + Checks If Block Placement Is Allowed
             Logger.debug(f"Handling Bulk Block Update for {len(blockUpdates)} blocks", module="bulk-update")
