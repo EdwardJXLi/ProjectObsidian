@@ -38,11 +38,14 @@ class ClickDistanceModule(AbstractModule):
             clickDistanceMetadata = ClickDistanceModule.ClickDistanceMetadata()
 
             # Read click distance
+            Logger.debug(f"Reading Click Distance Metadata: {data}", module="clickdistance")
             clickDistanceMetadata.distance = data["distance"]
+            Logger.debug(f"Click Distance: {clickDistanceMetadata.distance}", module="clickdistance")
 
             return clickDistanceMetadata
 
         def writeClickDistance(distanceMetadata: ClickDistanceModule.ClickDistanceMetadata):
+            Logger.debug(f"Writing Click Distance Metadata: {distanceMetadata.distance}", module="clickdistance")
             return {"distance": distanceMetadata.distance}
 
         # Register readers and writers
@@ -63,7 +66,9 @@ class ClickDistanceModule(AbstractModule):
                     raise CPEError(f"ClassicWorld ClickDistance ExtensionVersion {data['ExtensionVersion'].value} is not supported!")
 
                 # Read click distance
+                Logger.debug(f"Reading Click Distance Metadata: {data}", module="clickdistance")
                 clickDistanceMetadata.distance = data["Distance"].value
+                Logger.debug(f"Click Distance: {clickDistanceMetadata.distance}", module="clickdistance")
 
                 return clickDistanceMetadata
 
@@ -74,6 +79,7 @@ class ClickDistanceModule(AbstractModule):
                 metadataNbt.tags.append(NBTLib.TAG_Short(name="ExtensionVersion", value=1))
 
                 # Write click distance
+                Logger.debug(f"Writing Click Distance Metadata: {distanceMetadata.distance}", module="clickdistance")
                 metadataNbt.tags.append(NBTLib.TAG_Short(name="Distance", value=distanceMetadata.distance))
 
                 return metadataNbt
@@ -137,6 +143,7 @@ class ClickDistanceModule(AbstractModule):
         clickDistanceMetadata: ClickDistanceModule.ClickDistanceMetadata = getattr(world, "clickDistanceMetadata")
 
         # Set click distance
+        Logger.info(f"Setting world click distance to {distance} for {world.name}", module="clickdistance")
         clickDistanceMetadata.distance = distance
 
         # If notifyPlayers is True, notify players of the change

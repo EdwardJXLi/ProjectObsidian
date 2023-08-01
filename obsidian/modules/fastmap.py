@@ -54,31 +54,31 @@ class FastMapModule(AbstractModule):
 
             # Check if player supports the FastMap extension
             if not self.player.supports(CPEExtension("FastMap", 1)):
-                Logger.debug(f"{self.connectionInfo} | Player does not support FastMap. Falling back to original method.", module="network")
+                Logger.debug(f"{self.connectionInfo} | Player does not support FastMap. Falling back to original method.", module="fastmap")
                 # If not, fallback to original method
                 return await _super(self, world)
             else:
-                Logger.debug(f"{self.connectionInfo} | Player supports FastMap. Upgrading to the FastMap protocol.", module="network")
+                Logger.debug(f"{self.connectionInfo} | Player supports FastMap. Upgrading to the FastMap protocol.", module="fastmap")
 
                 # Send Level Initialize Packet
-                Logger.debug(f"{self.connectionInfo} | Sending Level Initialize Packet [Fast Map]", module="network")
+                Logger.debug(f"{self.connectionInfo} | Sending Level Initialize Packet [Fast Map]", module="fastmap")
                 await self.dispatcher.sendPacket(Packets.Response.FastMapLevelInitialize, len(world.mapArray))
 
                 # Preparing To Send Map
-                Logger.debug(f"{self.connectionInfo} | Preparing To Send Map [Fast Map] ", module="network")
+                Logger.debug(f"{self.connectionInfo} | Preparing To Send Map [Fast Map] ", module="fastmap")
                 deflatedWorld = FastMapModule.deflateMap(self, world, compressionLevel=fastMapConfig.deflateCompressionLevel)  # Generate Deflated Map
                 # World Data Needs To Be Sent In Chunks Of 1024 Characters
                 chunks = [deflatedWorld[i: i + 1024] for i in range(0, len(deflatedWorld), 1024)]
 
                 # Looping Through All Chunks And Sending Data
-                Logger.debug(f"{self.connectionInfo} | Sending Chunk Data [Fast Map]", module="network")
+                Logger.debug(f"{self.connectionInfo} | Sending Chunk Data [Fast Map]", module="fastmap")
                 for chunkCount, chunk in enumerate(chunks):
                     # Sending Chunk Data
-                    Logger.verbose(f"{self.connectionInfo} | Sending Chunk Data {chunkCount + 1} of {len(chunks)} [Fast Map]", module="network")
+                    Logger.verbose(f"{self.connectionInfo} | Sending Chunk Data {chunkCount + 1} of {len(chunks)} [Fast Map]", module="fastmap")
                     await self.dispatcher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
 
                 # Send Level Finalize Packet
-                Logger.debug(f"{self.connectionInfo} | Sending Level Finalize Packet [Fast Map]", module="network")
+                Logger.debug(f"{self.connectionInfo} | Sending Level Finalize Packet [Fast Map]", module="fastmap")
                 await self.dispatcher.sendPacket(
                     Packets.Response.LevelFinalize,
                     world.sizeX,

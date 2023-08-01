@@ -64,6 +64,8 @@ class TextColorsModule(AbstractModule):
 
     # Helper method to verify color config
     def verifyColorConfig(self):
+        Logger.info("Verifying Color Config", module="textcolors")
+
         # Get and verify colors
         colors = self.config.colors
         for label, data in colors.items():
@@ -104,6 +106,9 @@ class TextColorsModule(AbstractModule):
                 raise ModuleError(f"Missing color code value for color {label}!")
             elif type(data["colorCode"]) is not str or len(data["colorCode"]) != 1:
                 raise ModuleError(f"Color code value for color {label} must be a single character string!")
+
+        # Finish config verification
+        Logger.info(f"{len(colors)} Colors Loaded: {colors}", module="textcolors")
 
     # Packet to send to clients to add a text color
     @ResponsePacket(
@@ -155,10 +160,10 @@ class TextColorsModule(AbstractModule):
             # Send new colors to all players
             Logger.debug("Sending new colors to all players", module="textcolors")
             for player in ctx.playerManager.players.values():
-                Logger.debug(f"Sending Text Colors to Player {player}", module="network")
+                Logger.debug(f"Sending Text Colors to Player {player}", module="textcolors")
                 # Send colors to player
                 for label, data in self.module.config.colors.items():
-                    Logger.verbose(f"Sending Text Color {label}", module="network")
+                    Logger.verbose(f"Sending Text Color {label}", module="textcolors")
                     await player.networkHandler.dispatcher.sendPacket(
                         Packets.Response.SetTextColor,
                         data["red"],

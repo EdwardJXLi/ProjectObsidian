@@ -66,9 +66,9 @@ class HeldBlockModule(AbstractModule):
         setattr(player, "heldBlock", block)
 
         # Send HoldThis Packet
-        Logger.info(f"Setting held block for {player.username} to {block.NAME} ({block.ID}).", module="clickdistance")
+        Logger.info(f"Setting held block for {player.username} to {block.NAME} ({block.ID}).", module="heldblock")
         if preventChange:
-            Logger.info(f"Preventing {player.username} from changing their held block.", module="clickdistance")
+            Logger.info(f"Preventing {player.username} from changing their held block.", module="heldblock")
         await player.networkHandler.dispatcher.sendPacket(Packets.Response.HoldThis, block, preventChange=preventChange)
 
     # Create helper function to get held block of a player
