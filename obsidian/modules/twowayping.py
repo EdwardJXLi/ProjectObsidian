@@ -2,6 +2,7 @@ from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.player import Player
 from obsidian.errors import ServerError
 from obsidian.cpe import CPE, CPEExtension
+from obsidian.commands import Command, AbstractCommand
 from obsidian.packet import (
     Packets,
     RequestPacket,
@@ -13,6 +14,7 @@ from obsidian.packet import (
 from typing import Optional
 from enum import Enum
 import struct
+import time
 
 
 class PingDirection(Enum):
@@ -112,3 +114,40 @@ class TwoWayPingModule(AbstractModule):
 
         def onError(self, *args, **kwargs):
             return super().onError(*args, **kwargs)
+
+    @Command(
+        "Ping",
+        description="Returns network ping from the server side.",
+        version="v1.0.0",
+        override=True
+    )
+    class PingCommand(AbstractCommand["TwoWayPingModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["ping"])
+
+        async def execute(self, ctx: Player):
+            # Check if player supports the TwoWayPing Extension
+            if ctx.supports(CPEExtension("TwoWayPing", 1)):
+                # Log start time
+                start = time.time()
+
+                # Send ping packet to client
+                await ctx.networkHandler.dispatcher.sendPacket(
+                    Packets.Response.ServerPing,
+                    direction=PingDirection.SERVER_TO_CLIENT,
+                    uniqueData=0
+                )
+
+                # Wait for ping response
+                await ctx.networkHandler.dispatcher.waitFor(Packets.Request.PlayerPing)
+
+                # Log end time
+                end = time.time()
+                ms_delta = int((end - start) * 1000)
+
+                # Notify the user
+                await ctx.sendMessage(f"&aPong! Roundtrip took {ms_delta}ms.")
+            else:
+                # Send a simple "Pong!" message with a warning
+                await ctx.sendMessage("&aPong!")
+                await ctx.sendMessage("&eWarning: TwoWayPing support is needed for network latency!")

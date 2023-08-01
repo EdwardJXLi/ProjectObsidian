@@ -17,6 +17,7 @@ from obsidian.errors import (
     ConverterError
 )
 from obsidian.packet import (
+    Packets,
     RequestPacket,
     ResponsePacket,
     AbstractRequestPacket,
@@ -2574,6 +2575,22 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player):
             await ctx.sendMOTD()
+
+    @Command(
+        "Ping",
+        description="Pong!",
+        version="v1.0.0"
+    )
+    class PingCommand(AbstractCommand["CoreModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["ping"])
+
+        async def execute(self, ctx: Player):
+            # Send the ping packet, even though it doesn't really do anything
+            await ctx.networkHandler.dispatcher.sendPacket(
+                Packets.Response.Ping
+            )
+            await ctx.sendMessage("&aPong!")
 
     @Command(
         "Quit",
