@@ -105,6 +105,9 @@ def Override(
             async def _asyncoverride(*args, **kwargs):
                 return await destination(*args, **kwargs, **ctxArgs)
 
+            # Spoof the signature of the original function
+            _asyncoverride.__signature__ = inspect.signature(target)
+
             _overrideMethod(
                 target,
                 _asyncoverride,
@@ -112,8 +115,12 @@ def Override(
             )
         # Both target and destination are non-async, implement the non-async override
         else:
+            # Create the new override function
             def _override(*args, **kwargs):
                 return destination(*args, **kwargs, **ctxArgs)
+
+            # Spoof the signature of the original function
+            _override.__signature__ = inspect.signature(target)
 
             _overrideMethod(
                 target,
@@ -178,6 +185,9 @@ def Inject(
             else:
                 raise MixinError(f"Invalid Injection Point: {at}")
 
+            # Spoof the signature of the original function
+            _asyncinject.__signature__ = inspect.signature(target)
+
             _overrideMethod(
                 target,
                 _asyncinject,
@@ -209,6 +219,9 @@ def Inject(
                         return destination(*args, **kwargs, **ctxArgs)
             else:
                 raise MixinError(f"Invalid Injection Point: {at}")
+
+            # Spoof the signature of the original function
+            _inject.__signature__ = inspect.signature(target)
 
             _overrideMethod(
                 target,
@@ -246,6 +259,9 @@ def Extend(
                 output = await target(*args, **kwargs, **ctxArgs)
                 return await destination(output)
 
+            # Spoof the signature of the original function
+            _asyncextend.__signature__ = inspect.signature(target)
+
             _overrideMethod(
                 target,
                 _asyncextend,
@@ -256,6 +272,9 @@ def Extend(
             def _extend(*args, **kwargs):
                 output = target(*args, **kwargs, **ctxArgs)
                 return destination(output)
+
+            # Spoof the signature of the original function
+            _extend.__signature__ = inspect.signature(target)
 
             _overrideMethod(
                 target,

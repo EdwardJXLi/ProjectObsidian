@@ -15,6 +15,7 @@ from obsidian.log import Logger
 from obsidian.errors import (
     InitRegisterError,
     CommandError,
+    ServerError,
     ConverterError,
 )
 from obsidian.types import formatName, T
@@ -216,6 +217,9 @@ def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
             for value in dataIter:
                 transformed = _convertArgs(ctx, name, param, value)
                 args.append(transformed)
+
+        else:
+            raise ServerError(f"Unknown Parameter Type {param.kind}")
 
     # At the end, if there were extra values, give error
     try:

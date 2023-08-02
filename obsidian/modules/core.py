@@ -2327,13 +2327,13 @@ class CoreModule(AbstractModule):
             await ctx.sendMessage(output)
 
     @Command(
-        "Message",
+        "PrivateMessage",
         description="Sends a private message to another user",
         version="v1.0.0"
     )
-    class MessageCommand(AbstractCommand["CoreModule"]):
+    class PrivateMessageCommand(AbstractCommand["CoreModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["msg", "message", "tell", "whisper", "dm", "w"])
+            super().__init__(*args, ACTIVATORS=["msg", "message", "tell", "whisper", "pm", "dm", "w"])
 
         async def execute(self, ctx: Player, recipient: Player, *, message: str):
             # Send Message

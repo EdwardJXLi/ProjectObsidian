@@ -5,6 +5,7 @@ from obsidian.player import Player, WorldPlayerManager
 from obsidian.commands import Command, AbstractCommand
 from obsidian.errors import ServerError
 from obsidian.config import AbstractConfig
+from obsidian.modules.core import CoreModule
 
 from typing import cast, Optional, Callable, Awaitable
 from dataclasses import dataclass
@@ -30,6 +31,55 @@ class BetterChatModule(AbstractModule):
             raise ValueError("Maximum line length cannot be greater than 64!")
 
     def initTextWrap(self):
+        # Create a help for text wrapping
+        @staticmethod
+        def textWrapHelper(message: str) -> list[str]:
+            # Keep track of split messages and message buffer
+            messageList = []
+            messageBuffer = ""
+
+            # Keep track of previous colors
+            previousColor = "&f"
+
+            # Break message into words
+            words = message.split(" ")
+
+            # Loop through all words to generate message
+            while words:
+                # Add word to buffer
+                messageBuffer += words.pop(0) + " "
+
+                # Check if the message buffer is too long. If so, truncate it.
+                if len(messageBuffer) > self.textWrapConfig.maximumLineLength:
+                    # Strip the extra space at the end of the message
+                    messageBuffer = messageBuffer[:-1]
+                    # Inject the overflow message back into the queue
+                    words.insert(0, messageBuffer[self.textWrapConfig.maximumLineLength:])
+                    messageBuffer = messageBuffer[:self.textWrapConfig.maximumLineLength]
+
+                # Check if we need to flush the message
+                if len(words) == 0 or (len(messageBuffer) + len(words[0]) + 1 > self.textWrapConfig.maximumLineLength):
+                    # Constantly remove the last character if it is a '&'
+                    # This crashes older clients, so we need to remove it
+                    while messageBuffer.endswith("&"):
+                        messageBuffer = messageBuffer[:-1]
+
+                    # Add current message in buffer to message list
+                    messageList.append(messageBuffer)
+
+                    # Get last color of message
+                    if self.textWrapConfig.preserveColors:
+                        matches = re.findall(r'&[a-zA-Z0-9]', messageBuffer)
+                        if matches:
+                            # Set previousColor to the last match
+                            previousColor = matches[-1]
+
+                    # Reset message buffer
+                    messageBuffer = self.textWrapConfig.multilinePrefix + previousColor
+
+            # Return the message list
+            return messageList
+
         # Override the original processPlayerMessage method
         @Override(target=WorldPlayerManager.processPlayerMessage, additionalContext={"textWrapConfig": self.textWrapConfig})
         async def processLinedWrappedMessage(
@@ -54,58 +104,31 @@ class BetterChatModule(AbstractModule):
             else:
                 sendMessage = self.sendWorldMessage
 
-            # Intelligently split message into multiple lines
-            words = message.split(" ")
+            # Generate Full Message
+            fullMessage = self.playerManager.generateMessage(message, author=player, world=world)
 
-            # Generate Message Header
-            messageBuffer = self.playerManager.generateMessage("", author=player, world=world)
-
-            # Keep track of previous colors
-            previousColor = "&f"
-
-            # Keep track of lines sent
-            linesSent = 0
-
-            # Loop through all words to generate message
-            while words:
-                # Add word to buffer
-                messageBuffer += words.pop(0) + " "
-
-                # Check if the message buffer is too long. If so, truncate it.
-                if len(messageBuffer) > textWrapConfig.maximumLineLength:
-                    # Strip the extra space at the end of the message
-                    messageBuffer = messageBuffer[:-1]
-                    # Inject the overflow message back into the queue
-                    words.insert(0, messageBuffer[textWrapConfig.maximumLineLength:])
-                    messageBuffer = messageBuffer[:textWrapConfig.maximumLineLength]
-                    # If we want to warn the player about the overflow, do so
-                    if textWrapConfig.warnOnMessageOverflow and player:
-                        await player.sendMessage("&e[NOTICE] One of your words were truncated for length.")
-
-                # Check if we need to flush the message
-                if len(words) == 0 or (len(messageBuffer) + len(words[0]) + 1 > textWrapConfig.maximumLineLength):
-                    # Constantly remove the last character if it is a '&'
-                    # This crashes older clients, so we need to remove it
-                    while messageBuffer.endswith("&"):
-                        messageBuffer = messageBuffer[:-1]
-
-                    # Flush message
-                    await sendMessage(messageBuffer, ignoreList=ignoreList)
-                    linesSent += 1
-
-                    # Get last color of message
-                    if textWrapConfig.preserveColors:
-                        matches = re.findall(r'&[a-zA-Z0-9]', messageBuffer)
-                        if matches:
-                            # Set previousColor to the last match
-                            previousColor = matches[-1]
-
-                    # Reset message buffer
-                    messageBuffer = textWrapConfig.multilinePrefix + previousColor
+            # Split message into lines
+            lines = textWrapHelper(fullMessage)
 
             # If we want to warn the player about the overflow, do so
-            if textWrapConfig.warnOnWordOverflow and linesSent > 1 and player:
+            if textWrapConfig.warnOnMessageOverflow and len(lines) > 1 and player:
                 await player.sendMessage("&e[NOTICE] Your messages were truncated for length.")
+
+            # Send message
+            await sendMessage(lines, ignoreList=ignoreList)
+
+        # Patch the broadcast command to also use text wrapping
+        @Override(target=CoreModule.BroadcastCommand.execute)
+        async def executeBC(self, ctx: Player, *, msg: str):
+            # Send message
+            await ctx.playerManager.sendGlobalMessage(textWrapHelper(f"&4[Broadcast] &f{msg}"))
+
+        # Patch the private message command to also use text wrapping
+        @Override(target=CoreModule.PrivateMessageCommand.execute)
+        async def executePM(self, ctx: Player, recipient: Player, *, message: str):
+            # Send Message
+            await recipient.sendMessage(textWrapHelper(f"&7[{ctx.name} -> You]: {message}"))
+            await ctx.sendMessage(textWrapHelper(f"&7[You -> {recipient.name}]: {message}"))
 
     def initPlayerPing(self):
         # Override the original processPlayerMessage method
@@ -263,7 +286,6 @@ class BetterChatModule(AbstractModule):
         preserveColors: bool = True
         multilinePrefix: str = "&7 | "
         warnOnMessageOverflow: bool = False
-        warnOnWordOverflow: bool = False
 
     # Config for PlayerPing
     @dataclass
