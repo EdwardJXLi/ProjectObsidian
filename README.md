@@ -2,11 +2,14 @@
 
 A fully featured and powerful **Minecraft Classic / Classicube Server** that is completely **built from scratch**! Unlike other server softwares, ProjectObsidian is **fully modular and customizable**, built on top of a powerful yet flexible plugin system.
 
+![Python 3.11.X](https://img.shields.io/badge/Python-3.11.X-blue)
 ![Minecraft Version 0.30_01c](https://img.shields.io/badge/Minecraft%20Version-0.30__01c-green)
-![Protocol Version 7](https://img.shields.io/badge/Protocol%20Version-7-blue)
+![Protocol Version 7](https://img.shields.io/badge/Protocol%20Version-7-yellow)
 ![Classic Server Version](https://img.shields.io/badge/Classic%20Server%20Version-1.10.1-purple)
 
 ![Screenshot of ProjectObsidian](meta/obsidian.png)
+
+> Now with 50% more color!
 
 # Features
 - Full Implementation of the Minecraft Classic Protocol
