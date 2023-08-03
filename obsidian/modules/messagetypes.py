@@ -58,7 +58,7 @@ class MessageTypesModule(AbstractModule):
         player: Player,
         message: str | list,
         messageType: MessageType = MessageType.CHAT,
-        fallbackToChat: bool = True
+        fallbackToChat: bool = False
     ):
         Logger.debug(f"Sending Player {player.name} Message {message} of type {messageType}", module="player-enhanced-message")
         # If Message Is A List, Recursively Send All Messages Within
@@ -89,7 +89,7 @@ class MessageTypesModule(AbstractModule):
         worldPlayerManager: WorldPlayerManager,
         message: str | list,
         messageType: MessageType = MessageType.CHAT,
-        fallbackToChat: bool = True,
+        fallbackToChat: bool = False,
         ignoreList: set[Player] = set()  # List of players to not send the message
     ):
         # If Message Is A List, Recursively Send All Messages Within
@@ -118,13 +118,14 @@ class MessageTypesModule(AbstractModule):
         hasSupport = (set(worldPlayerManager.getPlayers()) - noSupport)
 
         # Send message packet to all players who support the MessageTypes extension
-        Logger.debug(f"Sending Enhanced Message To {len(ignoreList | noSupport) - len(noSupport)} Players!", module="world-enhanced-message")
-        await worldPlayerManager.sendWorldPacket(
-            Packets.Response.SendEnhancedMessage,
-            message,
-            messageType,
-            ignoreList=ignoreList | noSupport
-        )
+        if fallbackToChat:
+            Logger.debug(f"Sending Enhanced Message To {len(ignoreList | noSupport) - len(noSupport)} Players!", module="world-enhanced-message")
+            await worldPlayerManager.sendWorldPacket(
+                Packets.Response.SendEnhancedMessage,
+                message,
+                messageType,
+                ignoreList=ignoreList | noSupport
+            )
 
         # Send message to all players who do not support the MessageTypes extension
         Logger.debug(f"Sending Fallback Message To {len(ignoreList | hasSupport)} Players!", module="world-enhanced-message")
@@ -140,6 +141,7 @@ class MessageTypesModule(AbstractModule):
         playerManager: PlayerManager,
         message: str | list,
         messageType: MessageType = MessageType.CHAT,
+        fallbackToChat: bool = False,
         ignoreList: set[Player] = set()  # List of players to not send the message not
     ):
         # If Message Is A List, Recursively Send All Messages Within
@@ -150,6 +152,7 @@ class MessageTypesModule(AbstractModule):
                     playerManager,
                     msg,
                     messageType=messageType,
+                    fallbackToChat=fallbackToChat,
                     ignoreList=ignoreList
                 )
             return True  # Break Out of Function
@@ -176,12 +179,13 @@ class MessageTypesModule(AbstractModule):
         )
 
         # Send message to all players who do not support the MessageTypes extension
-        Logger.debug(f"Sending Fallback Message To {len(ignoreList | hasSupport)} Players!", module="global-enhanced-message")
-        await playerManager.sendGlobalPacket(
-            Packets.Response.SendMessage,
-            message,
-            ignoreList=ignoreList | hasSupport
-        )
+        if fallbackToChat:
+            Logger.debug(f"Sending Fallback Message To {len(ignoreList | hasSupport)} Players!", module="global-enhanced-message")
+            await playerManager.sendGlobalPacket(
+                Packets.Response.SendMessage,
+                message,
+                ignoreList=ignoreList | hasSupport
+            )
 
     @ResponsePacket(
         "SendEnhancedMessage",
