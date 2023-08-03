@@ -330,7 +330,7 @@ class Server:
 
                 # Kick All Logged On Players
                 Logger.info("Kicking All Logged On Players", module="server-stop")
-                for player in list(self.playerManager.players.values()):
+                for player in self.playerManager.getPlayers():
                     await player.networkHandler.closeConnection("Server Shutting Down", notifyPlayer=True)
 
                 # Sending Disconnect Packet To Remaining Server Members

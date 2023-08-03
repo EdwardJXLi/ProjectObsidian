@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 if TYPE_CHECKING:
     from obsidian.server import Server
     from obsidian.player import Player
@@ -74,6 +74,9 @@ class WorldManager:
             return self.worlds[worldName]
         else:
             raise NameError("World Does Not Exist!")
+
+    def getWorlds(self) -> Iterable[World]:
+        return tuple(self.worlds.values())
 
     def createWorld(
         self,
