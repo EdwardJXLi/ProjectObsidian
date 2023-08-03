@@ -2161,7 +2161,7 @@ class CoreModule(AbstractModule):
             output = []
 
             # Add Header
-            output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(playersList)}/{manager.world.maxPlayers}", color="&2"))
+            output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(set(playersList))}/{manager.world.maxPlayers}", color="&2"))
             output.append("&7Use /listall to see players in all worlds")
             output.append("&7Use /player [name] to see additional details about a player")
 
@@ -2198,12 +2198,12 @@ class CoreModule(AbstractModule):
             numHidden = 0
 
             # Loop through all worlds and print their players
-            for world in ctx.server.worldManager.worlds.values():
+            for world in ctx.server.worldManager.getWorlds():
                 # Get the worlds player list
                 playersList = world.playerManager.getPlayers()
 
                 # If there are no players, hide this server from the list
-                if len(playersList) == 0:
+                if len(set(playersList)) == 0:
                     numHidden += 1
                     continue
 
@@ -2231,7 +2231,7 @@ class CoreModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["staff", "liststaff", "listallstaff", "allstaff", "slist"])
 
         async def execute(self, ctx: Player):
-            staffList = list(ctx.server.playerManager.players.values())
+            staffList = list(ctx.server.playerManager.getPlayers())
 
             # Generate command output
             output = []
@@ -2266,7 +2266,7 @@ class CoreModule(AbstractModule):
 
             # Generate mapping of player -> client
             playerClients: dict[str, set[Player]] = dict()
-            for player in ctx.server.playerManager.players.values():
+            for player in ctx.server.playerManager.getPlayers():
                 client = player.clientSoftware
                 if client not in playerClients:
                     playerClients[client] = set()
@@ -2485,7 +2485,7 @@ class CoreModule(AbstractModule):
 
         async def execute(self, ctx: Player):
             # Get list of worlds
-            worldList = list(ctx.server.worldManager.worlds.values())
+            worldList = list(ctx.server.worldManager.getWorlds())
 
             # Generate command output
             output = []
@@ -3158,7 +3158,7 @@ class CoreModule(AbstractModule):
             # Save Worlds
             if ctx.worldPlayerManager is not None:
                 # Get list of worlds (should only be used to notify player)
-                worldList = list(ctx.server.worldManager.worlds.values())
+                worldList = list(ctx.server.worldManager.getWorlds())
 
                 # Send world save message to entire server
                 await ctx.playerManager.sendGlobalMessage("&aStarting Manual World Save!")

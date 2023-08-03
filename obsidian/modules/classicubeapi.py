@@ -85,7 +85,7 @@ class ClassiCubeApiModule(AbstractModule):
                 # Calculate number of users
                 if config.countByIp:
                     uniqueIps = set()
-                    for player in server.playerManager.players.values():
+                    for player in server.playerManager.getPlayers():
                         uniqueIps.add(player.networkHandler.ip)
                     playerCount = len(uniqueIps)
                 else:

@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from obsidian.server import Server
     from obsidian.network import NetworkHandler
 
-from typing import Optional, Type, Callable, Awaitable
+from typing import Optional, Type, Callable, Awaitable, Iterable
 import asyncio
 
 from obsidian.packet import AbstractResponsePacket, Packets
@@ -69,11 +69,14 @@ class PlayerManager:
         self.players[username] = player
         return player
 
+    def getPlayers(self) -> Iterable[Player]:
+        return tuple(self.players.values())
+
     def getPlayersByIp(self, ip: str) -> list[Player]:
         Logger.verbose(f"Getting Players With Ip {ip}", module="player-manager")
         # Loop through all players and find those who need to be kicked
         matchingPlayers: list[Player] = []
-        for player in self.players.values():
+        for player in self.getPlayers():
             if player.networkHandler.ip == ip:
                 matchingPlayers.append(player)
         Logger.verbose(f"Found Players: {matchingPlayers}", module="player-manager")
@@ -137,7 +140,7 @@ class PlayerManager:
         # Send packet to ALL members connected to server (all worlds)
         Logger.verbose(f"Sending Packet {packet.NAME} To All Connected Players", module="global-packet-dispatcher")
         # Loop Through All Players
-        for player in self.players.values():
+        for player in tuple(self.getPlayers()):
             # Checking if player is not in ignoreList
             if player not in ignoreList:
                 try:
@@ -290,11 +293,7 @@ class WorldPlayerManager:
 
     async def spawnCurrentPlayers(self, playerSelf: Player) -> None:  # Update Joining Players of The Currently In-Game Players
         # Loop Through All Players
-        for player in self.playerSlots:
-            # Checking if Player Exists
-            if player is None:
-                continue
-
+        for player in self.getPlayers():
             # Checking if player is not self
             if player is playerSelf:
                 continue
@@ -365,14 +364,14 @@ class WorldPlayerManager:
 
         Logger.debug(f"Deallocated Id {playerId}", module="id-allocator")
 
-    def getPlayers(self) -> list[Player]:
+    def getPlayers(self) -> Iterable[Player]:
         # Loop through all players
         playersList = []
         for player in self.playerSlots:
             if player is not None:
                 # If its not none, its a player!
                 playersList.append(player)
-        return playersList
+        return tuple(playersList)
 
     async def sendWorldPacket(
         self,
@@ -384,7 +383,7 @@ class WorldPlayerManager:
         # Send packet to all members in world
         Logger.verbose(f"Sending Packet {packet.NAME} To All Players On {self.world.name}", module="world-packet-dispatcher")
         # Loop Through All Players
-        for player in self.playerSlots:
+        for player in self.getPlayers():
             # Checking if Player Exists
             if player is None:
                 continue

@@ -159,7 +159,7 @@ class TextColorsModule(AbstractModule):
 
             # Send new colors to all players
             Logger.debug("Sending new colors to all players", module="textcolors")
-            for player in ctx.playerManager.players.values():
+            for player in ctx.playerManager.getPlayers():
                 Logger.debug(f"Sending Text Colors to Player {player}", module="textcolors")
                 # Send colors to player
                 for label, data in self.module.config.colors.items():

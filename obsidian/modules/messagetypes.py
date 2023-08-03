@@ -166,8 +166,9 @@ class MessageTypesModule(AbstractModule):
         )
 
         # Generate list of players who do not support the MessageTypes extension
-        noSupport = {player for player in playerManager.players.values() if not player.supports(CPEExtension("MessageTypes", 1))}
-        hasSupport = (set(playerManager.players.values()) - noSupport)
+        allPlayers = playerManager.getPlayers()
+        noSupport = {player for player in allPlayers if not player.supports(CPEExtension("MessageTypes", 1))}
+        hasSupport = (set(allPlayers) - noSupport)
 
         # Send message packet to all players who support the MessageTypes extension
         Logger.debug(f"Sending Enhanced Message To {len(ignoreList | noSupport)} Players!", module="global-enhanced-message")
