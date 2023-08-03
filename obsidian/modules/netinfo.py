@@ -52,13 +52,13 @@ class NetInfoModule(AbstractModule):
     def postInit(self, **kwargs):
         # Start Logging Packets
         @Extend(target=_DirectionalPacketManager.getPacketById)
-        def logTxPacket(packet: AbstractPacket):
-            self.netinfo.logTx(packet.SIZE)
+        def logRxPacket(packet: AbstractPacket):
+            self.netinfo.logRx(packet.SIZE)
             return packet
 
         @Inject(target=NetworkDispatcher.sendPacket)
-        async def logRxPacket(_, packet: AbstractPacket, *args, **kwargs):
-            self.netinfo.logRx(packet.SIZE)
+        async def logTxPacket(_, packet: AbstractPacket, *args, **kwargs):
+            self.netinfo.logTx(packet.SIZE)
 
         @Inject(target=Server.run, at=InjectionPoint.BEFORE)
         async def startNetInfoThread(server_self, *args, **kwargs):
