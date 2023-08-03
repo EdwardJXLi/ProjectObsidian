@@ -1,6 +1,6 @@
-# ProjectObsidian
+# ⚠️ ProjectObsidian Experimental Netcode Branch ⚠️
 
-A fully featured and powerful **Minecraft Classic / Classicube Server** that is completely **built from scratch**! Unlike other server softwares, ProjectObsidian is **fully modular and customizable**, built on top of a powerful yet flexible plugin system.
+This is a fork of ProjectObsidian that aims to improve the netcode of the server. It is currently in a very early stage of development and is not recommended for use in production environments. This is essentially a playground for new ideas and concepts that may or may not be merged into the main branch.
 
 ![Minecraft Version 0.30_01c](https://img.shields.io/badge/Minecraft%20Version-0.30__01c-green)
 ![Protocol Version 7](https://img.shields.io/badge/Protocol%20Version-7-blue)
