@@ -3,7 +3,7 @@ from obsidian.cpe import CPE, CPEExtension
 from obsidian.player import Player, PlayerManager, WorldPlayerManager
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets, packageString
 from obsidian.commands import Command, AbstractCommand
-from obsidian.errors import ConverterError, CPEError
+from obsidian.errors import ConverterError
 from obsidian.log import Logger, Color
 
 from enum import Enum
@@ -76,12 +76,6 @@ class MessageTypesModule(AbstractModule):
                 str(message),
                 messageType
             )
-        # If not, check if we should fallback to chat
-        elif fallbackToChat:
-            Logger.debug(f"Player {player.name} Does Not Support MessageTypes Extension! Falling Back To Chat!", module="player-enhanced-message")
-            await player.sendMessage(message)
-        else:
-            raise CPEError(f"Player {player.name} Does Not Support MessageTypes Extension!")
 
     # Create helper method to send enhanced messages to a world
     @staticmethod
@@ -115,7 +109,6 @@ class MessageTypesModule(AbstractModule):
 
         # Generate list of players who do not support the MessageTypes extension
         noSupport = {player for player in worldPlayerManager.getPlayers() if not player.supports(CPEExtension("MessageTypes", 1))}
-        hasSupport = (set(worldPlayerManager.getPlayers()) - noSupport)
 
         # Send message packet to all players who support the MessageTypes extension
         Logger.debug(f"Sending Enhanced Message To {len(ignoreList | noSupport) - len(noSupport)} Players!", module="world-enhanced-message")
@@ -124,14 +117,6 @@ class MessageTypesModule(AbstractModule):
             message,
             messageType,
             ignoreList=ignoreList | noSupport
-        )
-
-        # Send message to all players who do not support the MessageTypes extension
-        Logger.debug(f"Sending Fallback Message To {len(ignoreList | hasSupport)} Players!", module="world-enhanced-message")
-        await worldPlayerManager.sendWorldPacket(
-            Packets.Response.SendMessage,
-            message,
-            ignoreList=ignoreList | hasSupport
         )
 
     # Create helper method to send enhanced messages to all players in all worlds
@@ -164,7 +149,6 @@ class MessageTypesModule(AbstractModule):
 
         # Generate list of players who do not support the MessageTypes extension
         noSupport = {player for player in playerManager.players.values() if not player.supports(CPEExtension("MessageTypes", 1))}
-        hasSupport = (set(playerManager.players.values()) - noSupport)
 
         # Send message packet to all players who support the MessageTypes extension
         Logger.debug(f"Sending Enhanced Message To {len(ignoreList | noSupport)} Players!", module="global-enhanced-message")
@@ -173,14 +157,6 @@ class MessageTypesModule(AbstractModule):
             message,
             messageType,
             ignoreList=ignoreList | noSupport
-        )
-
-        # Send message to all players who do not support the MessageTypes extension
-        Logger.debug(f"Sending Fallback Message To {len(ignoreList | hasSupport)} Players!", module="global-enhanced-message")
-        await playerManager.sendGlobalPacket(
-            Packets.Response.SendMessage,
-            message,
-            ignoreList=ignoreList | hasSupport
         )
 
     @ResponsePacket(
