@@ -49,6 +49,14 @@ class NetInfoModule(AbstractModule):
             Logger.debug(f"Starting net info thread {server_self.netInfoThread}", module="netinfo")
             server_self.netInfoThread.start()
 
+        @Inject(target=Server.run, at=InjectionPoint.BEFORE)
+        async def startHealthcheckThread(server_self, *args, **kwargs):
+            server_self.healthcheckThread = Thread(target=NetInfoModule.healthcheckThread, args=(server_self, self))
+            server_self.healthcheckThread.setName("HealthcheckThread")
+            server_self.healthcheckThread.setDaemon(True)
+            Logger.debug(f"Starting net info thread {server_self.healthcheckThread}", module="netinfo")
+            server_self.healthcheckThread.start()
+
     @staticmethod
     def netInfoThread(server: Server, module: "NetInfoModule"):
         from obsidian.modules.messagetypes import MessageTypesModule, MessageType
@@ -66,6 +74,12 @@ class NetInfoModule(AbstractModule):
 
                 async def sendNetInfo():
                     nonlocal lastStatus
+
+                    lastHealthcheck = getattr(server, "lastHealthcheck")
+                    if (time.time() - lastHealthcheck) > 5:
+                        healthy = False
+                    else:
+                        healthy = True
 
                     txPackets = module.txPackets
                     txBytes = module.txBytes
@@ -95,7 +109,7 @@ class NetInfoModule(AbstractModule):
 
                     await MessageTypesModule.sendGlobalMessage(
                         server.playerManager,
-                        "&dProject&5Obsidian&f  | ",
+                        f"&dProject&5Obsidian&f | &eEventLoop: &f{str(math.ceil(getattr(server, 'threadloopDelta'))) + 'ms &a[HEALTHY]' if healthy else '???ms &c[UNHEALTHY]'}",
                         messageType=MessageType.BOTTOM_RIGHT_3
                     )
 
@@ -104,7 +118,32 @@ class NetInfoModule(AbstractModule):
                     module.txPackets = 0
                     module.txBytes = 0
 
+                    if not healthy:
+                        Logger.warn(f"Server is unhealthy! Last response was {time.time() - lastHealthcheck} seconds ago.", module="netinfo")
+                        await server.playerManager.sendGlobalMessage(f"&cServer unhealthy! Last response was {(time.time() - lastHealthcheck):.2f} seconds ago.")
+
                 eventLoop.run_until_complete(sendNetInfo())
             except Exception as e:
                 Logger.error(f"Unhandled exception in net info thread - {type(e).__name__}: {e}", module="netinfo", printTb=True)
-                time.sleep(60)
+                time.sleep(1)
+
+    @staticmethod
+    def healthcheckThread(server: Server, module: "NetInfoModule"):
+        while True:
+            try:
+                start = time.time()
+
+                async def doStuff(server):
+                    setattr(server, "lastHealthcheck", time.time())
+                    # print("hello!")
+
+                future = asyncio.run_coroutine_threadsafe(doStuff(server), server._server.get_loop())  # type: ignore
+                future.result()
+
+                setattr(server, "threadloopDelta", (time.time() - start) / 1000)
+                print(time.time() - start)
+
+                time.sleep(1)
+            except Exception as e:
+                Logger.error(f"Unhandled exception in net info thread - {type(e).__name__}: {e}", module="netinfo", printTb=True)
+                time.sleep(1)
