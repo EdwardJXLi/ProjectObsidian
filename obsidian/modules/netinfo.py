@@ -76,7 +76,14 @@ class NetInfoModule(AbstractModule):
                     nonlocal lastStatus
 
                     lastHealthcheck = getattr(server, "lastHealthcheck")
+                    threadloopDelta = getattr(server, "threadloopDelta")
+
                     if (time.time() - lastHealthcheck) > 5:
+                        frozen = True
+                    else:
+                        frozen = False
+
+                    if threadloopDelta > 1000:  # 1 second
                         healthy = False
                     else:
                         healthy = True
@@ -107,9 +114,16 @@ class NetInfoModule(AbstractModule):
                         messageType=MessageType.BOTTOM_RIGHT_2
                     )
 
+                    if healthy and not frozen:
+                        eventloopStatus = f"&a{math.ceil(threadloopDelta)}ms &a[HEALTHY]"
+                    elif not healthy and not frozen:
+                        eventloopStatus = f"&e{math.ceil(threadloopDelta)}ms &e[UNHEALTHY]"
+                    else:
+                        eventloopStatus = "&c???ms &4[FROZEN/HUNG]"
+
                     await MessageTypesModule.sendGlobalMessage(
                         server.playerManager,
-                        f"&dProject&5Obsidian&f | &eEventLoop: &f{str(math.ceil(getattr(server, 'threadloopDelta'))) + 'ms &a[HEALTHY]' if healthy else '???ms &c[UNHEALTHY]'}",
+                        f"&dProject&5Obsidian&f | &eEventLoop: {eventloopStatus}",
                         messageType=MessageType.BOTTOM_RIGHT_3
                     )
 
@@ -118,9 +132,9 @@ class NetInfoModule(AbstractModule):
                     module.txPackets = 0
                     module.txBytes = 0
 
-                    if not healthy:
-                        Logger.warn(f"Server is unhealthy! Last response was {time.time() - lastHealthcheck} seconds ago.", module="netinfo")
-                        await server.playerManager.sendGlobalMessage(f"&cServer unhealthy! Last response was {(time.time() - lastHealthcheck):.2f} seconds ago.")
+                    if frozen:
+                        Logger.warn(f"SERVER FROZEN! Last response was {time.time() - lastHealthcheck} seconds ago.", module="netinfo")
+                        await server.playerManager.sendGlobalMessage(f"&cSERVER FROZEN! Last response was {(time.time() - lastHealthcheck):.2f} seconds ago.")
 
                 eventLoop.run_until_complete(sendNetInfo())
             except Exception as e:
