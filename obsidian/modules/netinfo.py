@@ -140,7 +140,7 @@ class NetInfoModule(AbstractModule):
                 future = asyncio.run_coroutine_threadsafe(doStuff(server), server._server.get_loop())  # type: ignore
                 future.result()
 
-                setattr(server, "threadloopDelta", (time.time() - start) / 1000)
+                setattr(server, "threadloopDelta", (time.time() - start) * 1000)
                 print(time.time() - start)
 
                 time.sleep(1)
