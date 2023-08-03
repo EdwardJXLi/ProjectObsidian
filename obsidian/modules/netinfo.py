@@ -10,31 +10,6 @@ import asyncio
 import time
 
 
-class NetInfoBundle:
-    def __init__(self):
-        self.txPackets = 0
-        self.txBytes = 0
-        self.rxPackets = 0
-        self.rxBytes = 0
-
-    def logTx(self, bytes: int):
-        self.txPackets += 1
-        self.txBytes += bytes
-
-    def logRx(self, bytes: int):
-        self.rxPackets += 1
-        self.rxBytes += bytes
-
-    def getStats(self):
-        return self.txPackets, self.txBytes, self.rxPackets, self.rxBytes
-
-    def clearStats(self):
-        self.txPackets = 0
-        self.txBytes = 0
-        self.rxPackets = 0
-        self.rxBytes = 0
-
-
 @Module(
     "NetInfo",
     description="Provides Live Network Information About The Server.",
@@ -47,18 +22,23 @@ class NetInfoModule(AbstractModule):
         super().__init__(*args)
         Logger.warn("This is a debug module used for testing.", module="netinfo")
         Logger.warn("Please do not use this module in production.", module="netinfo")
-        self.netinfo = NetInfoBundle()
+        self.txPackets = 0
+        self.txBytes = 0
+        self.rxPackets = 0
+        self.rxBytes = 0
 
     def postInit(self, **kwargs):
         # Start Logging Packets
         @Extend(target=_DirectionalPacketManager.getPacketById)
         def logRxPacket(packet: AbstractPacket):
-            self.netinfo.logRx(packet.SIZE)
+            self.rxPackets += 1
+            self.rxBytes += packet.SIZE
             return packet
 
         @Inject(target=NetworkDispatcher.sendPacket)
         async def logTxPacket(_, packet: AbstractPacket, *args, **kwargs):
-            self.netinfo.logTx(packet.SIZE)
+            self.txPackets += 1
+            self.txBytes += packet.SIZE
 
         @Inject(target=Server.run, at=InjectionPoint.BEFORE)
         async def startNetInfoThread(server_self, *args, **kwargs):
@@ -79,18 +59,15 @@ class NetInfoModule(AbstractModule):
         while True:
             try:
                 async def sendNetInfo():
-                    txPackets, txBytes, rxPackets, rxBytes = module.netinfo.getStats()
-                    module.netinfo.clearStats()
-
                     await MessageTypesModule.sendGlobalMessage(
                         server.playerManager,
-                        f"&cTx: &f{txPackets} packets/s &4[{txBytes} bytes/s]&f  | ",
+                        f"&cTx: &f{module.txPackets} packets/s &4[{module.txBytes} bytes/s]&f  | ",
                         messageType=MessageType.BOTTOM_RIGHT_1
                     )
 
                     await MessageTypesModule.sendGlobalMessage(
                         server.playerManager,
-                        f"&aRx: &f{rxPackets} packets/s &2[{rxBytes} bytes/s]&f  | ",
+                        f"&aRx: &f{module.rxPackets} packets/s &2[{module.rxBytes} bytes/s]&f  | ",
                         messageType=MessageType.BOTTOM_RIGHT_2
                     )
 
@@ -99,6 +76,11 @@ class NetInfoModule(AbstractModule):
                         "&dProject&5Obsidian &fNetcode Status",
                         messageType=MessageType.BOTTOM_RIGHT_3
                     )
+
+                    module.rxPackets = 0
+                    module.rxBytes = 0
+                    module.txPackets = 0
+                    module.txBytes = 0
 
                 eventLoop.run_until_complete(sendNetInfo())
 
