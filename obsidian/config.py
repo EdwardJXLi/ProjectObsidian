@@ -155,19 +155,19 @@ class ServerConfig(AbstractConfig):
     bannedIps: list[IpType] = field(default_factory=list)  # List Of Ips that are banned (Reject Connection)
     bannedPlayers: list[UsernameType] = field(default_factory=list)  # List Of Usernames that are banned (Reject Connection)
     disabledCommands: list[str] = field(default_factory=list)  # List Of Disabled Commands
-    verifyLogin: bool = True  # Flag to determine whether to verify player login with Mojang or Classicube
+    verifyLogin: bool = False  # Flag to determine whether to verify player login with Mojang or Classicube
     # CPE (Classic Protocol Extension) Configuration
     enableCPE: bool = True  # Enable CPE (Classic Protocol Extension)
     # Chat Configuration
     playerChatColor: str = "&a"  # Color Of Player Chat
     operatorChatColor: str = "&4"  # Color Of Operator Chat
     worldChatColor: str = "&9"  # Color Of World Chat Prefix
-    globalChatMessages: bool = False  # Send Chat Messages To All Players Across Worlds
-    allowPlayerColor: bool = False  # Allow Players To Use Color In Chat
-    repeatCommands: bool = False  # Repeat Commands In Chat
+    globalChatMessages: bool = True  # Send Chat Messages To All Players Across Worlds
+    allowPlayerColor: bool = True  # Allow Players To Use Color In Chat
+    repeatCommands: bool = True  # Repeat Commands In Chat
     # Block Configuration
     disallowedBlocks: list[int] = field(default_factory=list)  # List Of Disallowed Blocks
-    allowLiquidPlacement: bool = False  # Allow Players To Place Liquids
+    allowLiquidPlacement: bool = True  # Allow Players To Place Liquids
     asynchronousBlockUpdates: bool = True  # Allow Block Updates To Be Asynchronous
     blockUpdatesBeforeReload: int = 8192  # Number of block updates to warrant a reload of the map. -1 to disable
     # World Configuration

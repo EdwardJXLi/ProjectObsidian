@@ -127,7 +127,7 @@ class AnnouncementsModule(AbstractModule):
     @dataclass
     class AnnouncementsConfig(AbstractConfig):
         # Determine whether or not time announcements are enabled
-        enabled: bool = True
+        enabled: bool = False
         # Determine time between messages
         interval: int = 30
         # Determine where to send messages
