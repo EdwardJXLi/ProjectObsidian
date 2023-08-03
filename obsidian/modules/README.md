@@ -19,6 +19,7 @@
 - `announcements` - Adds support for periodic announcements
 - `logoutlocations` - Respawns players at their logout location
 - `colorpicker` - Test and preview colors in-game
+- `netinfo` - Provides live network information about the server
 
 # CPE Modules
 - `clickdistance` - Adds support for the ClickDistance CPE
