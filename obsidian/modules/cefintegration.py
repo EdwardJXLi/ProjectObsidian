@@ -40,7 +40,7 @@ class CEFIntegrationModule(AbstractModule):
                 Logger.warn("CEF Plugin Did Not Send /clients Command!", module="cef-integration")
 
         # Check if user has CEF installed. If so, send CEF player list
-        @Inject(target=NetworkHandler._processPostLogin, at=InjectionPoint.AFTER, additionalContext={"cefconfig": self.config})
+        @Inject(target=NetworkHandler._handleCPENegotiation, at=InjectionPoint.AFTER, additionalContext={"cefconfig": self.config})
         async def initCEFSupport(self, cefconfig: CEFIntegrationModule.CEFIntegrationConfig):
             # Since we are injecting, set type of self to Player
             self = cast(NetworkHandler, self)
@@ -52,11 +52,8 @@ class CEFIntegrationModule(AbstractModule):
             # Check if player supports the TextHotKey Extension
             Logger.info(f"{self.connectionInfo} | Checking CEF Support", module="cef-integration")
             if " + cef" in self.player.clientSoftware:
-                Logger.info(f"{self.connectionInfo} | Client Supports CEF! Waiting for /clients command", module="cef-integration")
+                Logger.info(f"{self.connectionInfo} | Client Supports CEF!", module="cef-integration")
                 setattr(self.player, "cefSupport", True)
-
-                # Asynchronously wait for the /clients command
-                asyncio.create_task(processCEFClientsCommand(self.player))
 
                 # Send warning about CEF Support
                 # TODO: Finish CEF Support
@@ -64,6 +61,21 @@ class CEFIntegrationModule(AbstractModule):
                     await self.player.sendMessage("&eWarning: CEF is only partially supported on ProjectObsidian!")
             else:
                 Logger.info(f"{self.connectionInfo} | No CEF Support", module="cef-integration")
+
+        # For all CEF-supporting clients, on map load, wait for the /clients command and override it
+        @Inject(target=Player.joinWorld, at=InjectionPoint.AFTER)
+        async def sendCEFClients(self, *args):
+            # Since we are injecting, set type of self to Player
+            self = cast(Player, self)
+
+            # Check if player is not None
+            if self is None:
+                raise ServerError("Trying To Process Post Login Actions Before Player Is Initialized!")
+
+            # Check if client supports CEF
+            if hasattr(self, "cefSupport") and getattr(self, "cefSupport"):
+                # Asynchronously wait for the /clients command
+                asyncio.create_task(processCEFClientsCommand(self))
 
     @Command(
         "CEFClients",
