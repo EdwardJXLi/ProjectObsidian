@@ -139,4 +139,4 @@ class FastMapModule(AbstractModule):
     # Config for default click distance
     @dataclass
     class FastMapConfig(AbstractConfig):
-        deflateCompressionLevel: int = 9
+        deflateCompressionLevel: int = 6

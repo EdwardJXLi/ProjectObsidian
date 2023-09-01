@@ -137,7 +137,7 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
         Logger.debug(f"Converting Argument of Type {param.annotation}", module="converter")
         transformed = param.annotation.__call__(arg)
         # Check if transformation is successful
-        if type(transformed) == param.annotation:
+        if isinstance(transformed, param.annotation):
             return transformed
         else:
             raise ConverterError(f"Unexpected Conversion. Expected {param.annotation} But Got {type(transformed)}")
