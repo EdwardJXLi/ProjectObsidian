@@ -66,6 +66,7 @@ class AbstractModule(ABC):
     AUTHOR: str
     VERSION: str
     DEPENDENCIES: list
+    SOFT_DEPENDENCIES: list
     SUBMODULES: list[AbstractSubmodule] = field(default_factory=list)
 
     def initConfig(
@@ -337,10 +338,10 @@ class _ModuleManager(AbstractManager):
                     if depName in self._modulePreloadDict.keys():
                         # Check if Version should be checked
                         if depVer is None:
-                            Logger.verbose(f"Skipping Version Check For Dependency {dependency}", module="module-resolve")
+                            Logger.verbose(f"Dependency {dependency} Satisfied (Version Check Not Specified)!", module="module-resolve")
                             pass  # No Version Check Needed
                         elif depVer == self._modulePreloadDict[dependency.NAME].VERSION:
-                            Logger.verbose(f"Dependencies {dependency} Satisfied!", module="module-resolve")
+                            Logger.verbose(f"Dependency {dependency} Satisfied!", module="module-resolve")
                             pass
                         else:
                             raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {depVer} | Has: {self._modulePreloadDict[dependency.NAME].VERSION})")
@@ -348,6 +349,30 @@ class _ModuleManager(AbstractManager):
                         dependency.MODULE = self._modulePreloadDict[dependency.NAME]
                     else:
                         raise DependencyError(f"Dependency '{dependency}' Not Found!")
+
+                Logger.debug(f"Checking Soft/Optional Dependencies for Module {moduleName}", module="module-resolve")
+                # Loop through all soft dependencies, check type, then check if exists
+                for dependency in moduleType.SOFT_DEPENDENCIES:
+                    # Get Variables
+                    depName = dependency.NAME
+                    depVer = dependency.VERSION
+                    Logger.verbose(f"Checking if Soft/Optional Dependency {depName} Exists", module="module-resolve")
+                    # Check if Soft Dependency is "Loaded"
+                    if depName in self._modulePreloadDict.keys():
+                        # Check if Version should be checked
+                        if depVer is None:
+                            Logger.verbose(f"Soft/Optional Dependency {dependency} Satisfied (Version Check Not Specified)!", module="module-resolve")
+                            pass  # No Version Check Needed
+                        elif depVer == self._modulePreloadDict[dependency.NAME].VERSION:
+                            Logger.verbose(f"Soft/Optional Dependency {dependency} Satisfied!", module="module-resolve")
+                            pass
+                        else:
+                            Logger.warn(f"Soft/Optional Dependency '{dependency}' Has Unmatched Version! (Requirement: {depVer} | Has: {self._modulePreloadDict[dependency.NAME].VERSION})", module="module-resolve")
+                        # If All Passes, Link Module Class
+                        dependency.MODULE = self._modulePreloadDict[dependency.NAME]
+                    else:
+                        Logger.info(f"Soft/Optional Dependency '{dependency}' Not Found! Continuing...", module="module-resolve")
+                        moduleType.SOFT_DEPENDENCIES.remove(dependency)
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e
@@ -375,9 +400,9 @@ class _ModuleManager(AbstractManager):
             if current.NAME in previous:
                 raise DependencyError(f"Circular dependency Detected: {' -> '.join([*previous, current.NAME])}")
 
-            Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES}", module="cycle-check")
+            Logger.verbose(f"Current Modules Has Dependencies {current.DEPENDENCIES} and Soft Dependencies {current.SOFT_DEPENDENCIES}", module="cycle-check")
             # Run DFS through All Dependencies
-            for dependency in current.DEPENDENCIES:
+            for dependency in current.DEPENDENCIES + current.SOFT_DEPENDENCIES:
                 _ensureNoCycles(dependency.MODULE, (*previous, current.NAME))
 
         for moduleName, moduleType in list(self._modulePreloadDict.items()):
@@ -418,8 +443,8 @@ class _ModuleManager(AbstractManager):
             visited.add(module.NAME)
 
             # DFS Going Bottom First
-            Logger.verbose(f"Attempting Topological Sort on {module.NAME}'s Dependencies {module.DEPENDENCIES}", module="topological-sort")
-            for dependency in module.DEPENDENCIES:
+            Logger.verbose(f"Attempting Topological Sort on {module.NAME}'s Dependencies {module.DEPENDENCIES} and Soft Dependencies {module.SOFT_DEPENDENCIES}", module="topological-sort")
+            for dependency in module.DEPENDENCIES + module.SOFT_DEPENDENCIES:
                 if dependency.NAME not in visited:
                     _topologicalSort(dependency.MODULE)
 
@@ -449,7 +474,8 @@ class _ModuleManager(AbstractManager):
                     module.DESCRIPTION,
                     module.AUTHOR,
                     module.VERSION,
-                    module.DEPENDENCIES
+                    module.DEPENDENCIES,
+                    module.SOFT_DEPENDENCIES
                 )
                 # Setting Item in _moduleDict with Initialized Version of _modulePreloadDict!
                 self._moduleDict[moduleName] = initializedModule
@@ -564,6 +590,7 @@ class _ModuleManager(AbstractManager):
         author: str,
         version: str,
         dependencies: Optional[list],
+        soft_dependencies: Optional[list],
         module: Type[AbstractModule]
     ) -> Type[AbstractModule]:
         Logger.info(f"Discovered Module {name}.", module="module-import")
@@ -580,6 +607,8 @@ class _ModuleManager(AbstractManager):
         # Format Empty Dependencies
         if dependencies is None:
             dependencies = []
+        if soft_dependencies is None:
+            soft_dependencies = []
         # Checking If Core Is Required
         if self._ensureCore:
             if "core" not in [m.NAME for m in dependencies] and name != "core":
@@ -591,6 +620,7 @@ class _ModuleManager(AbstractManager):
         module.AUTHOR = author
         module.VERSION = version
         module.DEPENDENCIES = dependencies
+        module.SOFT_DEPENDENCIES = soft_dependencies
         self._modulePreloadDict[name] = module
 
         return module
@@ -676,10 +706,11 @@ def Module(
     description: str,
     author: str,
     version: str,
-    dependencies: Optional[list] = None
+    dependencies: Optional[list] = None,
+    soft_dependencies: Optional[list] = None,
 ):
     def internal(cls):
-        ModuleManager.register(name, description, author, version, dependencies, cls)
+        ModuleManager.register(name, description, author, version, dependencies, soft_dependencies, cls)
         return cls
     return internal
 

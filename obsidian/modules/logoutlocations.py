@@ -13,7 +13,8 @@ from typing import Callable, Awaitable, Optional, cast
     description="Respawns players at the last location they logged out at.",
     author="RadioactiveHydra",
     version="1.0.0",
-    dependencies=[Dependency("core")]
+    dependencies=[Dependency("core")],
+    soft_dependencies=[Dependency("classicworld")]
 )
 class LogoutLocationsModule(AbstractModule):
     def __init__(self, *args):

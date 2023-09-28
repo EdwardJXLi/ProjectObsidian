@@ -19,7 +19,7 @@ import struct
     description="This extension allows the server to define custom text colors.",
     author="Obsidian",
     version="1.0.0",
-    dependencies=[Dependency("core")]
+    dependencies=[Dependency("core"), Dependency("ColorPicker")]
 )
 @CPE(
     extName="TextColors",

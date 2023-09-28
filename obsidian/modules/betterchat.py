@@ -17,7 +17,8 @@ import re
     description="Adds Quality-of-life Chat Features",
     author="Obsidian",
     version="1.0.0",
-    dependencies=[Dependency("core")]
+    dependencies=[Dependency("core")],
+    soft_dependencies=[Dependency("textcolors"), Dependency("longermessages")]
 )
 class BetterChatModule(AbstractModule):
     def __init__(self, *args):
