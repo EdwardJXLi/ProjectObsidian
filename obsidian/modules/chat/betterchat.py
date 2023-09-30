@@ -1,11 +1,10 @@
-from obsidian.module import Module, AbstractModule, Dependency
+from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.mixins import Override
 from obsidian.world import World
 from obsidian.player import Player, WorldPlayerManager
 from obsidian.commands import Command, AbstractCommand
 from obsidian.errors import ServerError
 from obsidian.config import AbstractConfig
-from obsidian.modules.core import CoreModule
 
 from typing import cast, Optional, Callable, Awaitable
 from dataclasses import dataclass
@@ -18,7 +17,7 @@ import re
     author="Obsidian",
     version="1.0.0",
     dependencies=[Dependency("core")],
-    soft_dependencies=[Dependency("textcolors"), Dependency("longermessages")]
+    soft_dependencies=[Dependency("textcolors"), Dependency("longermessages"), Dependency("essentials")]
 )
 class BetterChatModule(AbstractModule):
     def __init__(self, *args):
@@ -118,18 +117,22 @@ class BetterChatModule(AbstractModule):
             # Send message
             await sendMessage(lines, ignoreList=ignoreList)
 
-        # Patch the broadcast command to also use text wrapping
-        @Override(target=CoreModule.BroadcastCommand.execute)
-        async def executeBC(self, ctx: Player, *, msg: str):
-            # Send message
-            await ctx.playerManager.sendGlobalMessage(textWrapHelper(f"&4[Broadcast] &f{msg}"))
+        # Patch broadcase and private message if essentials is loaded
+        if "Essentials" in Modules:
+            from obsidian.modules.essentials import EssentialsModule
 
-        # Patch the private message command to also use text wrapping
-        @Override(target=CoreModule.PrivateMessageCommand.execute)
-        async def executePM(self, ctx: Player, recipient: Player, *, message: str):
-            # Send Message
-            await recipient.sendMessage(textWrapHelper(f"&7[{ctx.name} -> You]: {message}"))
-            await ctx.sendMessage(textWrapHelper(f"&7[You -> {recipient.name}]: {message}"))
+            # Patch the broadcast command to also use text wrapping
+            @Override(target=EssentialsModule.BroadcastCommand.execute)
+            async def executeBC(self, ctx: Player, *, msg: str):
+                # Send message
+                await ctx.playerManager.sendGlobalMessage(textWrapHelper(f"&4[Broadcast] &f{msg}"))
+
+            # Patch the private message command to also use text wrapping
+            @Override(target=EssentialsModule.PrivateMessageCommand.execute)
+            async def executePM(self, ctx: Player, recipient: Player, *, message: str):
+                # Send Message
+                await recipient.sendMessage(textWrapHelper(f"&7[{ctx.name} -> You]: {message}"))
+                await ctx.sendMessage(textWrapHelper(f"&7[You -> {recipient.name}]: {message}"))
 
     def initPlayerPing(self):
         # Override the original processPlayerMessage method

@@ -1,5 +1,4 @@
 from obsidian.module import Module, AbstractModule, Dependency
-from obsidian.modules.core import CommandHelper
 from obsidian.player import Player
 from obsidian.network import NetworkHandler
 from obsidian.config import AbstractConfig
@@ -87,6 +86,8 @@ class CEFIntegrationModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["cefclients"])
 
         async def execute(self, ctx: Player):
+            from obsidian.modules.core import CommandHelper
+
             # Generate command output
             output = []
 

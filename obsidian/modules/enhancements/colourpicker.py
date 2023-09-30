@@ -8,7 +8,8 @@ from obsidian.player import Player
     description="Preview colors in chat!",
     author="RadioactiveHydra",
     version="1.0.0",
-    dependencies=[Dependency("core")]
+    dependencies=[Dependency("core")],
+    soft_dependencies=[Dependency("essentials")]
 )
 class ColorPickerModule(AbstractModule):
     def __init__(self, *args):
