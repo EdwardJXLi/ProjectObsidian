@@ -124,7 +124,7 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
         if param.annotation in [Any]:
             Logger.debug("Argument Type is part of ignored types.", module="converter")
             return arg
-        # If the type is a boolean, run special logic to convert it
+        # Check if the type is a boolean, run special logic to convert it
         if param.annotation is bool:
             Logger.debug("Argument Type is a boolean. Attempting to convert", module="converter")
             if arg.lower() in ["true", "t", "yes", "y", "1"]:
@@ -133,6 +133,16 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
                 return False
             else:
                 raise CommandError(f"Arg '{name}' Expected {' or '.join(['True', 'False'])} But Got '{arg}'")
+        # Check if the type is a string. If so, tell the developer that stringed types are not supported.
+        if isinstance(param.annotation, str):
+            # TODO: ONCE PEP 563 – Postponed Evaluation of Annotations (https://peps.python.org/pep-0563/) IS INTEGRATED,
+            # NEED TO FIND A WAY TO MAKE ARGUMENT PARSING WORK WITH ONLY STRINGS!!!
+            raise ServerError(
+                f"Argument Type {name} is a string. This is not supported by the command parser!\n\n"
+                "[IMPORTANT] Check if you have `from __future__ import annotations` added to the top of the file!\n"
+                "If so, REMOVE IT! Modules do not support this feature yet (PEP 563 - Postponed Evaluation of Annotation)!\n"
+            )
+
         # Transform the argument
         Logger.debug(f"Converting Argument of Type {param.annotation}", module="converter")
         transformed = param.annotation.__call__(arg)
