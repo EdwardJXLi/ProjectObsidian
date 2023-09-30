@@ -121,7 +121,8 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
             # If none of the types work, raise an error
             raise CommandError(f"Arg '{name}' Expected {' or '.join([getattr(annotation, '__name__', 'Unknown') for annotation in union_types if annotation is not NoneType])} But Got '{type(arg).__name__}'")
         # Check if type is an "ignore type" -> Types that are not supported by the converter
-        if param.annotation in [Any]:
+        # Any is ignored, as any type is allowed. GenericAlias is allowed to python satisfy type checking LOL
+        if param.annotation is Any or param.annotation is GenericAlias:
             Logger.debug("Argument Type is part of ignored types.", module="converter")
             return arg
         # Check if the type is a boolean, run special logic to convert it
