@@ -11,7 +11,7 @@
 ## Chat Modules (`chat`)
 - `betterchat` - Advanced chat support - Adds text wrapping, pinging, nicknames, and more!
 
-# World Formats (`worldformat`)
+## World Formats (`worldformat`)
 - `classicworld` - Adds support for the classicworld format
 - `mcyetiworld` - Adds support for the mcyeti format
 - `worldconvert` - World conversion module, converts worlds from one format to another
@@ -23,7 +23,7 @@
 - `logoutlocations` - Respawns players at their logout location
 - `colorpicker` - Test and preview colors in-game
 
-# CPE Modules (`cpe`)
+## CPE Modules (`cpe`)
 - `clickdistance` - Adds support for the ClickDistance CPE
 - `heldblock` - Adds support for the HeldBlock CPE
 - `emotefix` - Adds support for the EmoteFix CPE
