@@ -1,4 +1,4 @@
-from obsidian.module import Module, AbstractModule, ModuleManager
+from obsidian.module import Module, AbstractModule, ModuleManager, Dependency
 from obsidian.constants import PY_VERSION, __version__
 from obsidian.types import _formatUsername, _formatIp
 from obsidian.player import Player
@@ -29,7 +29,8 @@ from obsidian.modules.core import CommandHelper
     "Essentials",
     description="Central Module For Additional Obsidian Features.",
     author="Obsidian",
-    version=__version__
+    version=__version__,
+    dependencies=[Dependency("core")]
 )
 class EssentialsModule(AbstractModule):
     def __init__(self, *args):
