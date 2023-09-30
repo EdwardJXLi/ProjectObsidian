@@ -9,6 +9,7 @@ from typing import Any, Type, Optional, Generic
 from pathlib import Path
 import importlib
 import pkgutil
+import fnmatch
 
 from obsidian.cpe import CPEModuleManager
 from obsidian.utils.ptl import PrettyTableLite
@@ -216,31 +217,86 @@ class _ModuleManager(AbstractManager):
     def _importModules(self):
         # Initialize Temporary List of Files Imported
         _moduleFiles = []
-        # Walk Through All Packages And Import Library
-        for _, moduleName, _ in pkgutil.walk_packages([str(Path(SERVER_PATH, MODULES_FOLDER))]):
-            # Load Modules
-            Logger.debug(f"Detected Module {moduleName}", module="module-import")
-            if moduleName not in self._moduleIgnorelist:
-                try:
-                    Logger.verbose(f"Module {moduleName} Not In Ignore List. Adding!", module="module-import")
-                    # Import Module
-                    _module = importlib.import_module(MODULES_IMPORT + moduleName)
-                    # Appending To A List of Module Files to be Used Later
-                    _moduleFiles.append(moduleName)
-                    # Set the Imported Module into the Global Scope
-                    globals()[moduleName] = _module
-                except FatalError as e:
-                    # Pass Down Fatal Error To Base Server
-                    raise e
-                except Exception as e:
-                    # Handle Exception if Error Occurs
-                    self._errorList.append((moduleName, "PreInit-Import"))  # Module Loaded WITH Errors
-                    # If the Error is a Register Error (raised on purpose), Don't print out TB
-                    Logger.error(f"Error While Importing Module {moduleName} - {type(e).__name__}: {e}\n", module="module-import", printTb=not isinstance(e, InitRegisterError))
-                    Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-import")
-                    Logger.askConfirmation()
+
+        # Helper method to load and initialize a discovered module
+        # Takes in the module name as an absolute module path
+        # i.e. obsidian.modules.core or obsidian.modules.lib.nbtlib
+        def loadModule(moduleName: str):
+            # Check if module is part of the moduleIgnoreList.
+            # For the moduleIgnoreList, we match 3 cases:
+            # 1. moduleName is the same as the ignorelist entry
+            # 2. the stem of the moduleName is the same as the ignorelist entry
+            # 3. the path of the moduleName (converted from dot to slash notation) matches the ignorelist wildcard
+            #    (i.e. obsidian.modules.lib.*)
+            for ignore in self._moduleIgnorelist:
+                if moduleName == ignore or moduleName.split(".")[-1] == ignore or fnmatch.fnmatch(moduleName.replace(".", "/"), ignore.replace(".", "/")):
+                    Logger.verbose(f"Module {moduleName} In Ignore List. Skipping!", module="module-import")
+                    return
+
+            try:
+                Logger.verbose(f"Module {moduleName} Not In Ignore List. Adding!", module="module-import")
+                # Import Module
+                _module = importlib.import_module(moduleName)
+                # Appending To A List of Module Files to be Used Later
+                _moduleFiles.append(moduleName)
+                # Set the Imported Module into the Global Scope
+                globals()[moduleName] = _module
+            except FatalError as e:
+                # Pass Down Fatal Error To Base Server
+                raise e
+            except Exception as e:
+                # Handle Exception if Error Occurs
+                self._errorList.append((moduleName, "PreInit-Import"))  # Module Loaded WITH Errors
+                # If the Error is a Register Error (raised on purpose), Don't print out TB
+                Logger.error(f"Error While Importing Module {moduleName} - {type(e).__name__}: {e}\n", module="module-import", printTb=not isinstance(e, InitRegisterError))
+                Logger.warn("!!! Fatal Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-import")
+                Logger.askConfirmation()
+
+        # Helper function to recursively iterate through a directory for modules
+        # If folder contains __init__.py, assume the entire directory is a single module and load it as such
+        # Else, load each python file individually and continue iterating through subfolders
+        def recursiveModuleLoader(path: Path):
+            Logger.debug(f"Recursively Loading Modules From {path}", module="module-import")
+            # Get the relative path of the module from the server path in dot notation
+            relative_path = path.relative_to(Path(SERVER_PATH, MODULES_FOLDER))
+
+            # Get the absolute import path of the module
+            # i.e.
+            if path == Path(SERVER_PATH, MODULES_FOLDER):
+                abs_import = MODULES_IMPORT
             else:
-                Logger.verbose(f"Skipping Module {moduleName} Due To Ignore List", module="module-import")
+                abs_import = MODULES_IMPORT + "." + relative_path.as_posix().replace("/", ".")
+
+            # Check if the relative path matches one in the ignore list.
+            # i.e obsidian.modules.lib.* will match obsidian.modules.lib.nbtlib
+            # If so, break out
+            for ignore in self._moduleIgnorelist:
+                if fnmatch.fnmatch(relative_path.as_posix(), ignore.replace(".", "/")):
+                    Logger.verbose(f"Directory {relative_path.as_posix()} In Ignore List. Skipping!", module="module-import")
+                    return
+
+            # If __init__.py is defined in the folder, treat the entire directory as the module
+            if Path(path, "__init__.py").exists():
+                Logger.debug(f"Detected __init__.py in {path}. Treating as module.", module="module-import")
+                # abs_import is already in the correct format to load the module
+                loadModule(abs_import)
+            else:
+                # Treat the directory as a collection of modules
+                for _, moduleName, _ in pkgutil.iter_modules(
+                    path=[str(path)],
+                    prefix=abs_import + "."
+                ):
+                    # moduleName is already formatted with abs_import, as is the point of the prefix parameter
+                    loadModule(moduleName)
+
+                # Recursively iterate through all sub-folders of current directory
+                for folder in path.iterdir():
+                    if folder.is_dir():
+                        recursiveModuleLoader(folder)
+
+        # Begin recursive module discovery on the initial modules path
+        recursiveModuleLoader(Path(SERVER_PATH, MODULES_FOLDER))
+
         Logger.verbose(f"Detected and Imported Module Files {_moduleFiles}", module="module-import")
         # Check If Core Was Loaded
         if self._ensureCore:
@@ -351,6 +407,9 @@ class _ModuleManager(AbstractManager):
                         raise DependencyError(f"Dependency '{dependency}' Not Found!")
 
                 Logger.debug(f"Checking Soft/Optional Dependencies for Module {moduleName}", module="module-resolve")
+                # Keep track of dependencies to remove
+                invalid_soft_dependencies = []
+
                 # Loop through all soft dependencies, check type, then check if exists
                 for dependency in moduleType.SOFT_DEPENDENCIES:
                     # Get Variables
@@ -372,7 +431,14 @@ class _ModuleManager(AbstractManager):
                         dependency.MODULE = self._modulePreloadDict[dependency.NAME]
                     else:
                         Logger.info(f"Soft/Optional Dependency '{dependency}' Not Found! Continuing...", module="module-resolve")
+                        invalid_soft_dependencies.append(dependency)
+
+                # Remove all invalid soft dependencies
+                if invalid_soft_dependencies:
+                    Logger.debug(f"Removing Invalid Soft/Optional Dependencies {invalid_soft_dependencies} From Module {moduleName}", module="module-resolve")
+                    for dependency in invalid_soft_dependencies:
                         moduleType.SOFT_DEPENDENCIES.remove(dependency)
+
             except FatalError as e:
                 # Pass Down Fatal Error To Base Server
                 raise e

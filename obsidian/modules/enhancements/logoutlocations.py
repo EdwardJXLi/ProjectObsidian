@@ -62,7 +62,7 @@ class LogoutLocationsModule(AbstractModule):
 
         # If ClassicWorld is installed, create readers and writers for ClassicWorld
         if "ClassicWorld" in WorldFormats:
-            from obsidian.modules.nbtlib import NBTLib
+            from obsidian.modules.lib.nbtlib import NBTLib
 
             # Create readers and writers for LogoutLocation
             def readLogoutLocationCW(data: NBTLib.TAG_Compound):

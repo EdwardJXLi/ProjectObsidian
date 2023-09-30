@@ -32,7 +32,7 @@ CSI = "\u001b["  # ANSI Color Header
 
 # Module Constants
 MODULES_FOLDER = "modules"
-MODULES_IMPORT = "obsidian.modules."
+MODULES_IMPORT = "obsidian.modules"
 
 # Managers
 # Dynamically generated list of registered managers.

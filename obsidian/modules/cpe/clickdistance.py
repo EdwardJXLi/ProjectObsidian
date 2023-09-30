@@ -54,7 +54,7 @@ class ClickDistanceModule(AbstractModule):
 
         # If ClassicWorld is installed, create readers and writers for ClassicWorld
         if "ClassicWorld" in WorldFormats:
-            from obsidian.modules.nbtlib import NBTLib
+            from obsidian.modules.lib.nbtlib import NBTLib
 
             # Create readers and writers for ClassicWorld
             def cwReadClickDistance(data: NBTLib.TAG_Compound):

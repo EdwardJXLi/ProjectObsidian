@@ -77,7 +77,7 @@ class ClassicWorldModule(AbstractModule):
             worldManager: WorldManager,
             persistent: bool = True
         ):
-            from obsidian.modules.nbtlib import NBTLib
+            from obsidian.modules.lib.nbtlib import NBTLib
 
             # Open, read, and parse NBT file
             Logger.debug("Reading ClassicWorld NBT File", module="classicworld")
@@ -310,7 +310,7 @@ class ClassicWorldModule(AbstractModule):
             fileIO: io.BufferedRandom,
             worldManager: WorldManager
         ):
-            from obsidian.modules.nbtlib import NBTLib
+            from obsidian.modules.lib.nbtlib import NBTLib
 
             # Begin creating NBT File
             Logger.debug("Creating NBT File", module="classicworld")

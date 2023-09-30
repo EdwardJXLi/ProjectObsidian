@@ -3,24 +3,27 @@
 ## Core Modules
 - `core` - Core module, required by all other modules - Implements all base features of the Minecraft Classic game.
 
-## Libraries / Utilities
+## Libraries / Utilities (`lib`)
 - `nbtlib` - NBT Library, used for reading and writing NBT files
+- `cefingegration` - Adds initial support for the Chrome Embedded Framework (CEF) Plugin - Allows for in-game web browsing
 - `classicubeapi` - Classicube API Library, used for interfacing with the Classicube API for server heartbeat and authentication
 
-## Official Modules
+## Chat Modules (`chat`)
+- `betterchat` - Advanced chat support - Adds text wrapping, pinging, nicknames, and more!
+
+# World Formats (`worldformat`)
 - `classicworld` - Adds support for the classicworld format
 - `mcyetiworld` - Adds support for the mcyeti format
-- `betterchat` - Advanced chat support - Adds text wrapping, pinging, nicknames, and more!
 - `worldconvert` - World conversion module, converts worlds from one format to another
 
-## Quality of Life Modules
+## Quality of Life Modules (`enhancements`)
 - `liquidplace` - Allows placements of liquids in the world without cheats
 - `buildingcommands` - Adds some basic building commands
 - `announcements` - Adds support for periodic announcements
 - `logoutlocations` - Respawns players at their logout location
 - `colorpicker` - Test and preview colors in-game
 
-# CPE Modules
+# CPE Modules (`cpe`)
 - `clickdistance` - Adds support for the ClickDistance CPE
 - `heldblock` - Adds support for the HeldBlock CPE
 - `emotefix` - Adds support for the EmoteFix CPE
