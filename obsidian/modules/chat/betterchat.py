@@ -118,7 +118,7 @@ class BetterChatModule(AbstractModule):
             await sendMessage(lines, ignoreList=ignoreList)
 
         # Patch broadcase and private message if essentials is loaded
-        if "Essentials" in Modules:
+        if "essentials" in Modules:
             from obsidian.modules.essentials import EssentialsModule
 
             # Patch the broadcast command to also use text wrapping

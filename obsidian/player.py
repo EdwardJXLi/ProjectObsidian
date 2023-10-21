@@ -159,7 +159,7 @@ class PlayerManager:
         self,
         message: str | list,
         ignoreList: set[Player] = set()  # List of players to not send the message not
-    ) -> bool:
+    ):
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
             Logger.debug("Sending List Of Messages!", module="global-message")
@@ -174,7 +174,7 @@ class PlayerManager:
             color=Color.GREEN,
             textColor=Color.WHITE
         )
-        return await self.sendGlobalPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
+        await self.sendGlobalPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
 
     def generateMessage(self, message: str, author: None | str | Player = None, world: None | str | World = None):
         # Hacky Way To Get World Type
@@ -438,7 +438,7 @@ class WorldPlayerManager:
         self,
         message: str | list,
         ignoreList: set[Player] = set()  # List of players to not send the message
-    ) -> bool:
+    ):
         # If Message Is A List, Recursively Send All Messages Within
         if isinstance(message, list):
             Logger.debug("Sending List Of Messages!", module="world-message")
@@ -453,7 +453,7 @@ class WorldPlayerManager:
             color=Color.GREEN,
             textColor=Color.WHITE
         )
-        return await self.sendWorldPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
+        await self.sendWorldPacket(Packets.Response.SendMessage, message, ignoreList=ignoreList)
 
 
 class Player:
@@ -692,6 +692,15 @@ class Player:
     async def handlePlayerMessage(self, message: str):
         # Format, Process, and Handle incoming player message requests.
         Logger.debug(f"Handling Player Message '{message}' From Player {self.name}", module="player")
+
+        # Check if message is valid
+        if not message.isprintable():
+            await self.sendMessage("&4ERROR: Message Failed To Send - Invalid Character In Message&f")
+            return None  # Don't Complete Message Sending
+        # Check if string is empty
+        if len(message) == 0:
+            await self.sendMessage("&4ERROR: Message Failed To Send - Empty Message&f")
+            return None  # Don't Complete Message Sending
 
         # Checking If Message Is A Command
         if message[0] == "/":

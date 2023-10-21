@@ -24,11 +24,11 @@ class PacketDirections(enum.Enum):
 
 
 # Packet Utils
-def unpackString(data, encoding: str = "ascii") -> str:
+def unpackString(data: bytearray, encoding: str = "ascii") -> str:
     Logger.verbose(f"Unpacking String {data}", module="packet")
     # Decode Data From Bytes To String
     # Remove Excess Zeros and Null characters
-    return data.replace(b'\x00', b'').decode(encoding).strip()
+    return data.replace(b'\x00', b'').decode(encoding, errors="ignore").strip()
 
 
 def packageString(data: str, maxSize: int = 64, encoding: str = "ascii") -> bytearray:

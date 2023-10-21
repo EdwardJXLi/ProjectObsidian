@@ -1,4 +1,4 @@
-from obsidian.module import Module, AbstractModule, Dependency
+from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.player import Player, PlayerManager, WorldPlayerManager
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets, packageString
@@ -41,7 +41,8 @@ class MessageType(Enum):
     description="This extension adds new ways of presenting messages in the client.",
     author="Obsidian",
     version="1.0.0",
-    dependencies=[Dependency("core")]
+    dependencies=[Dependency("core")],
+    soft_dependencies=[Dependency("fullcp437")]
 )
 @CPE(
     extName="MessageTypes",
@@ -70,6 +71,11 @@ class MessageTypesModule(AbstractModule):
 
         # Check if user supports the MessageTypes extension
         if player.supports(CPEExtension("MessageTypes", 1)):
+            # If Server supports FullCP437, but the client does not, convert message to ascii
+            if not message.isascii() and "fullcp437" in Modules and not player.supports(CPEExtension("FullCP437", 1)):
+                from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
+                message = replaceNonAsciiCharacters(message)
+
             # Send message packet to user
             await player.networkHandler.dispatcher.sendPacket(
                 Packets.Response.SendEnhancedMessage,
@@ -117,9 +123,34 @@ class MessageTypesModule(AbstractModule):
         noSupport = {player for player in worldPlayerManager.getPlayers() if not player.supports(CPEExtension("MessageTypes", 1))}
         hasSupport = (set(worldPlayerManager.getPlayers()) - noSupport)
 
-        # Send message packet to all players who support the MessageTypes extension
-        if fallbackToChat:
-            Logger.debug(f"Sending Enhanced Message To {len(ignoreList | noSupport) - len(noSupport)} Players!", module="world-enhanced-message")
+        # Handle edge-cases with FullCP437
+        if not message.isascii() and "fullcp437" in Modules:
+            from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
+
+            # Generate list of players who do not support the FullCP437 extension
+            noCP437Support = {player for player in worldPlayerManager.getPlayers() if not player.supports(CPEExtension("FullCP437", 1))}
+            hasCP437Support = (set(worldPlayerManager.getPlayers()) - noSupport)
+
+            # Send message packet to all players who support the MessageTypes and FullCP437 extension
+            Logger.debug(f"Sending Enhanced Message To {len(hasSupport & hasCP437Support)} Players!", module="world-enhanced-message")
+            await worldPlayerManager.sendWorldPacket(
+                Packets.Response.SendEnhancedMessage,
+                message,
+                messageType,
+                ignoreList=ignoreList | noSupport | noCP437Support
+            )
+
+            # Send fallback message packet to all players who support the MessageTypes but not the FullCP437 extension
+            Logger.debug(f"Sending Fallback Enhanced Message To {len(hasSupport & noCP437Support)} Players! (No FullCP437 Support)", module="world-enhanced-message")
+            await worldPlayerManager.sendWorldPacket(
+                Packets.Response.SendEnhancedMessage,
+                replaceNonAsciiCharacters(message),
+                messageType,
+                ignoreList=ignoreList | noSupport | hasCP437Support
+            )
+        else:
+            # Send message packet to all players who support the MessageTypes extension
+            Logger.debug(f"Sending Enhanced Message To {len(hasSupport)} Players!", module="world-enhanced-message")
             await worldPlayerManager.sendWorldPacket(
                 Packets.Response.SendEnhancedMessage,
                 message,
@@ -128,12 +159,19 @@ class MessageTypesModule(AbstractModule):
             )
 
         # Send message to all players who do not support the MessageTypes extension
-        Logger.debug(f"Sending Fallback Message To {len(ignoreList | hasSupport)} Players!", module="world-enhanced-message")
-        await worldPlayerManager.sendWorldPacket(
-            Packets.Response.SendMessage,
-            message,
-            ignoreList=ignoreList | hasSupport
-        )
+        if fallbackToChat:
+            Logger.debug(f"Sending Fallback Message To {len(noSupport)} Players!", module="world-enhanced-message")
+
+            # If Server supports FullCP437, convert message to ascii in case the client does not support FullCP437
+            if "fullcp437" in Modules:
+                from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
+                message = replaceNonAsciiCharacters(message)
+
+            await worldPlayerManager.sendWorldPacket(
+                Packets.Response.SendMessage,
+                message,
+                ignoreList=ignoreList | hasSupport
+            )
 
     # Create helper method to send enhanced messages to all players in all worlds
     @staticmethod
@@ -170,18 +208,50 @@ class MessageTypesModule(AbstractModule):
         noSupport = {player for player in allPlayers if not player.supports(CPEExtension("MessageTypes", 1))}
         hasSupport = (set(allPlayers) - noSupport)
 
-        # Send message packet to all players who support the MessageTypes extension
-        Logger.debug(f"Sending Enhanced Message To {len(ignoreList | noSupport)} Players!", module="global-enhanced-message")
-        await playerManager.sendGlobalPacket(
-            Packets.Response.SendEnhancedMessage,
-            message,
-            messageType,
-            ignoreList=ignoreList | noSupport
-        )
+        # Handle edge-cases with FullCP437
+        if not message.isascii() and "fullcp437" in Modules:
+            from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
+
+            # Generate list of players who do not support the FullCP437 extension
+            noCP437Support = {player for player in allPlayers if not player.supports(CPEExtension("FullCP437", 1))}
+            hasCP437Support = (set(allPlayers) - noSupport)
+
+            # Send message packet to all players who support the MessageTypes and FullCP437 extension
+            Logger.debug(f"Sending Enhanced Message To {len(hasSupport & hasCP437Support)} Players!", module="global-enhanced-message")
+            await playerManager.sendGlobalPacket(
+                Packets.Response.SendEnhancedMessage,
+                message,
+                messageType,
+                ignoreList=ignoreList | noSupport | noCP437Support
+            )
+
+            # Send message packet to all players who support the MessageTypes extension
+            Logger.debug(f"Sending Enhanced Fallback Message To {len(hasSupport & noCP437Support)} Players! (No FullCP437 Support)", module="global-enhanced-message")
+            await playerManager.sendGlobalPacket(
+                Packets.Response.SendEnhancedMessage,
+                replaceNonAsciiCharacters(message),
+                messageType,
+                ignoreList=ignoreList | noSupport | hasCP437Support
+            )
+        else:
+            # Send message packet to all players who support the MessageTypes extension
+            Logger.debug(f"Sending Enhanced Message To {len(hasSupport)} Players!", module="global-enhanced-message")
+            await playerManager.sendGlobalPacket(
+                Packets.Response.SendEnhancedMessage,
+                message,
+                messageType,
+                ignoreList=ignoreList | noSupport
+            )
 
         # Send message to all players who do not support the MessageTypes extension
         if fallbackToChat:
-            Logger.debug(f"Sending Fallback Message To {len(ignoreList | hasSupport)} Players!", module="global-enhanced-message")
+            Logger.debug(f"Sending Fallback Message To {len(noSupport)} Players!", module="global-enhanced-message")
+
+            # If Server supports FullCP437, convert message to ascii in case the client does not support FullCP437
+            if "fullcp437" in Modules:
+                from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
+                message = replaceNonAsciiCharacters(message)
+
             await playerManager.sendGlobalPacket(
                 Packets.Response.SendMessage,
                 message,
@@ -210,8 +280,15 @@ class MessageTypesModule(AbstractModule):
             if len(message) > 64:
                 Logger.warn(f"Trying to send message '{message}' over the 64 character limit!", module="packet-serializer")
 
+            # If FullCP437 extension is enabled, ise the FullCP437 packing method
+            if "fullcp437" in Modules:
+                from obsidian.modules.lib.emojilib import packageCP437String
+                packageStringMethod = packageCP437String
+            else:
+                packageStringMethod = packageString
+
             # Format Message Packet
-            packedMessage = packageString(message)
+            packedMessage = packageStringMethod(message)
             if len(packedMessage) > 0 and packedMessage[-1] == ord("&"):  # Using the ascii value as it is packed into a bytearray already
                 Logger.warn(f"Trying to send message '{message}' with '&' as the last character!", module="packet-serializer")
                 packedMessage = packedMessage[:-1]  # This isnt supposed to prevent any exploits, just to prevent accidents if the message gets cut off short

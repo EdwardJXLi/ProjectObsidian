@@ -79,7 +79,7 @@ class CoreModule(AbstractModule):
                 raise ClientError("Invalid Character In Username")
             # Verification String
             verificationKey = unpackString(verificationKey)
-            if not username.isprintable():
+            if not verificationKey.isprintable():
                 raise ClientError("Invalid Character In Verification Key")
 
             # Check Username Length (Hard Capped At 16 To Prevent Length Bugs)
@@ -210,15 +210,6 @@ class CoreModule(AbstractModule):
             # Unpack String
             message = unpackString(message)
 
-            # Check if string is valid
-            if not message.isprintable():
-                await ctx.sendMessage("&4ERROR: Message Failed To Send - Invalid Character In Message&f")
-                return None  # Don't Complete Message Sending
-            # Check if string is empty
-            if len(message) == 0:
-                await ctx.sendMessage("&4ERROR: Message Failed To Send - Empty Message&f")
-                return None  # Don't Complete Message Sending
-
             # Handle Player Message
             if handleUpdate:
                 await ctx.handlePlayerMessage(message)
@@ -282,7 +273,7 @@ class CoreModule(AbstractModule):
 
             # Unpack Extension Name
             extensionName = unpackString(extensionName)
-            if not extensionName.isprintable():
+            if not extensionName.isalnum():
                 raise ClientError("Invalid Character In Client Extension Name.")
 
             # Return ExtEntry Data

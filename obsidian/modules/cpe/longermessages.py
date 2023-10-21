@@ -1,4 +1,4 @@
-from obsidian.module import Module, AbstractModule, Dependency
+from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.errors import ServerError
 from obsidian.player import Player
 from obsidian.mixins import addAttribute
@@ -19,7 +19,8 @@ import struct
     description="Allows clients to accept messages longer than 64 characters, and send them to the server in parts.",
     author="Obsidian",
     version="1.0.0",
-    dependencies=[Dependency("core")]
+    dependencies=[Dependency("core")],
+    soft_dependencies=[Dependency("fullcp437")],
 )
 @CPE(
     extName="LongerMessages",
@@ -34,7 +35,7 @@ class LongerMessagesModule(AbstractModule):
 
     @RequestPacket(
         "PlayerMessage",
-        description="Received When Player Sends A Message. Supports LongerMessages CPE.",
+        description="Received When Player Sends A Message. Supports LongerMessages CPE and (optionally) FullCP437 CPE.",
         override=True
     )
     class LongerPlayerMessagePacket(AbstractRequestPacket["LongerMessagesModule"]):
@@ -58,13 +59,20 @@ class LongerMessagesModule(AbstractModule):
             if ctx is None:
                 raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
 
+            # If FullCP437 extension is enabled, ise the FullCP437 unpacking method
+            if "fullcp437" in Modules:
+                from obsidian.modules.lib.emojilib import unpackCP437String
+                unpackStringMethod = unpackCP437String
+            else:
+                unpackStringMethod = unpackString
+
             # Add message to buffer
             setattr(ctx, "partialMessageBuffer", getattr(ctx, "partialMessageBuffer") + message)
 
             # Check if partial message
             if partialMessageFlag and ctx.supports(CPEExtension("LongerMessages", 1)):
                 Logger.debug(f"Handing Partial Message from {ctx.username}", module="longer-messages")
-                return unpackString(message)
+                return unpackStringMethod(message)
 
             # Get message from buffer
             message = getattr(ctx, "partialMessageBuffer")
@@ -73,16 +81,7 @@ class LongerMessagesModule(AbstractModule):
             setattr(ctx, "partialMessageBuffer", bytearray())
 
             # Unpack String
-            message = unpackString(message)
-
-            # Check if string is valid
-            if not message.isprintable():
-                await ctx.sendMessage("&4ERROR: Message Failed To Send - Invalid Character In Message&f")
-                return None  # Don't Complete Message Sending
-            # Check if string is empty
-            if len(message) == 0:
-                await ctx.sendMessage("&4ERROR: Message Failed To Send - Empty Message&f")
-                return None  # Don't Complete Message Sending
+            message = unpackStringMethod(message)
 
             # Handle Player Message
             if handleUpdate:
