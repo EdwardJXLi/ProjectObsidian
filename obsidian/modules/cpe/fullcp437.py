@@ -1,6 +1,7 @@
 from obsidian.module import Module, AbstractModule, Dependency
-from obsidian.mixins import Override
+from obsidian.mixins import Override, Inject, InjectionPoint
 from obsidian.errors import ServerError
+from obsidian.network import NetworkHandler
 from obsidian.player import Player, WorldPlayerManager, PlayerManager
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.log import Logger
@@ -22,7 +23,7 @@ import struct
     description="This extension allows players to send and receive chat with all characters in code page 437, rather than just the 0 to 127 characters.",
     author="Obsidian",
     version="1.0.0",
-    dependencies=[Dependency("core"), Dependency("emojilib")]
+    dependencies=[Dependency("core"), Dependency("emojilib"), Dependency("emotefix")]
 )
 @CPE(
     extName="FullCP437",
@@ -32,6 +33,27 @@ import struct
 class FullCP437Module(AbstractModule):
     def __init__(self, *args):
         super().__init__(*args)
+
+    def postInit(self):
+        super().postInit()
+
+        # Send warning message if player has FullCP437 support without EmoteFix support
+        @Inject(target=NetworkHandler._processPostLogin, at=InjectionPoint.AFTER)
+        async def sendEmoteFixWarning(self):
+            # Since we are injecting, set type of self to Player
+            self = cast(NetworkHandler, self)
+
+            # Check if player is not None
+            if self.player is None:
+                raise ServerError("Trying To Process Post Login Actions Before Player Is Initialized!")
+
+            # Check if player supports the FullCP437 Extension but not the EmoteFix Extension
+            if self.player.supports(CPEExtension("FullCP437", 1)) and not self.player.supports(CPEExtension("EmoteFix", 1)):
+                Logger.warn(f"Player {self.player.name} supports FullCP437 but not EmoteFix! Sending warning to user!", module="texthotkey")
+                # Send warning to user
+                await self.player.sendMessage("&eYour client supports FullCP437 but not EmoteFix!")
+                await self.player.sendMessage("&eThis means that you will not be able to see emojis in chat!")
+                await self.player.sendMessage("&ePlease upgrade to a newer client to be able to see emojis.")
 
         # Override sendMessage, sendWorldMessage, and sendGlobalMessage to use the FullCP437MessagePacket
         @Override(target=Player.sendMessage)
@@ -54,12 +76,12 @@ class FullCP437Module(AbstractModule):
             if message.isascii():
                 # Send message packet to user
                 await self.networkHandler.dispatcher.sendPacket(Packets.Response.SendMessage, message)
-            elif self.supports(CPEExtension("FullCP437", 1)):
+            elif self.supports(CPEExtension("FullCP437", 1)) and self.supports(CPEExtension("EmoteFix", 1)):
                 # Send message packet to user
                 await self.networkHandler.dispatcher.sendPacket(Packets.Response.SendCP437Message, message)
             else:
                 # Send fallback message to user
-                Logger.warn(f"Player {self.name} Does Not Support FullCP437 Extension! Using Fallback Characters!", module="player-message")
+                Logger.warn(f"Player {self.name} Does Not Support FullCP437 or EmoteFix Extension! Using Fallback Characters!", module="player-message")
                 await self.networkHandler.dispatcher.sendPacket(Packets.Response.SendMessage, replaceNonAsciiCharacters(message))
 
         @Override(target=WorldPlayerManager.sendWorldMessage)
@@ -89,14 +111,14 @@ class FullCP437Module(AbstractModule):
                 textColor=Color.WHITE
             )
 
-            # If message contains non-ascii characters, send message packet to all players who support the FullCP437 extension.
+            # If message contains non-ascii characters, send message packet to all players who support the FullCP437 and EmoteFix extension.
             # Else, send message as normal.
             if not message.isascii():
-                # Generate list of players who do not support the FullCP437 extension
-                noSupport = {player for player in self.getPlayers() if not player.supports(CPEExtension("FullCP437", 1))}
+                # Generate list of players who do not support the FullCP437 or EmoteFix extension
+                noSupport = {player for player in self.getPlayers() if not (player.supports(CPEExtension("FullCP437", 1)) and player.supports(CPEExtension("EmoteFix", 1)))}
                 hasSupport = (set(self.getPlayers()) - noSupport)
 
-                # Send message packet to all players who support the FullCP437 extension
+                # Send message packet to all players who support the FullCP437 and EmoteFix extension
                 Logger.debug(f"Sending Message To {len(hasSupport)} Players!", module="world-message")
                 await self.sendWorldPacket(
                     Packets.Response.SendCP437Message,
@@ -104,8 +126,8 @@ class FullCP437Module(AbstractModule):
                     ignoreList=ignoreList | noSupport
                 )
 
-                # Send message to all players who do not support the FullCP437 extension
-                Logger.debug(f"Sending Fallback Message To {len(noSupport)} Players! (No CP437 Support)", module="world-message")
+                # Send message to all players who do not support the FullCP437 or EmoteFix extension
+                Logger.debug(f"Sending Fallback Message To {len(noSupport)} Players! (No FullCP437 or EmoteFix Support)", module="world-message")
                 await self.sendWorldPacket(
                     Packets.Response.SendMessage,
                     replaceNonAsciiCharacters(message),
@@ -141,15 +163,15 @@ class FullCP437Module(AbstractModule):
                 textColor=Color.WHITE
             )
 
-            # If message contains non-ascii characters, send message packet to all players who support the FullCP437 extension.
+            # If message contains non-ascii characters, send message packet to all players who support the FullCP437 and EmoteFix extension.
             # Else, send message as normal.
             if not message.isascii():
-                # Generate list of players who do not support the FullCP437 extension
+                # Generate list of players who do not support the FullCP437 or EmoteFix extension
                 allPlayers = self.getPlayers()
-                noSupport = {player for player in allPlayers if not player.supports(CPEExtension("FullCP437", 1))}
+                noSupport = {player for player in allPlayers if not (player.supports(CPEExtension("FullCP437", 1)) and player.supports(CPEExtension("EmoteFix", 1)))}
                 hasSupport = (set(allPlayers) - noSupport)
 
-                # Send message packet to all players who support the FullCP437 extension
+                # Send message packet to all players who support the FullCP437 and EmoteFix extension
                 Logger.debug(f"Sending Message To {len(hasSupport)} Players!", module="global-message")
                 await self.sendGlobalPacket(
                     Packets.Response.SendCP437Message,
@@ -157,8 +179,8 @@ class FullCP437Module(AbstractModule):
                     ignoreList=ignoreList | noSupport
                 )
 
-                # Send message to all players who do not support the FullCP437 extension
-                Logger.debug(f"Sending Fallback Message To {len(noSupport)} Players! (No CP437 Support)", module="global-message")
+                # Send message to all players who do not support the FullCP437 or EmoteFix extension
+                Logger.debug(f"Sending Fallback Message To {len(noSupport)} Players! (No FullCP437 or EmoteFix Support)", module="global-message")
                 await self.sendGlobalPacket(
                     Packets.Response.SendMessage,
                     replaceNonAsciiCharacters(message),
