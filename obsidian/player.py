@@ -15,6 +15,7 @@ from obsidian.cpe import CPEExtension
 from obsidian.commands import Commands, _parseArgs
 from obsidian.constants import Color, CRITICAL_RESPONSE_ERRORS
 from obsidian.types import UsernameType, _formatUsername
+from obsidian.utils.replace import restricted_replace
 from obsidian.errors import (
     ServerError,
     WorldError,
@@ -689,9 +690,33 @@ class Player:
             ignoreList={self}  # not sending to self as that may cause some de-sync issues
         )
 
+    def parsePlayerMessage(self, message: str):
+        # Using restricted_replace to ignore values with leading backslashes
+        # For example, if we are replacing "world" in "hello world"
+        # It would match "hello world" but not "hello \world"
+        #
+        # If color chat is enabled, replace '%' characters with '&'
+        if self.server.config.allowPlayerColor:
+            message = restricted_replace(message, "%", "&")
+            # Also allow "%%" (now replaced to "&&") to represent "%"
+            message = restricted_replace(message, "&&", "%")
+
+        # Replace all remaining backslashes
+        message = restricted_replace(message, "\\", "")
+
+        # Constantly remove the last character if it is a '&'
+        # This crashes older clients, so we need to remove it
+        while message.endswith("&"):
+            message = message[:-1]
+
+        return message
+
     async def handlePlayerMessage(self, message: str):
         # Format, Process, and Handle incoming player message requests.
         Logger.debug(f"Handling Player Message '{message}' From Player {self.name}", module="player")
+
+        # Parse player message for special tags
+        message = self.parsePlayerMessage(message)
 
         # Check if message is valid
         if not message.isprintable():
@@ -714,15 +739,6 @@ class Player:
         if self.worldPlayerManager is None:
             Logger.debug(f"Player {self.name} Trying To handlePlayerMessage When No World Is Joined", module="player")
             return None  # Skip Rest
-
-        # If color chat is enabled, replace '%' characters with '&'
-        if self.server.config.allowPlayerColor:
-            message = message.replace("%", "&")
-
-        # Constantly remove the last character if it is a '&'
-        # This crashes older clients, so we need to remove it
-        while message.endswith("&"):
-            message = message[:-1]
 
         # Check if message should be sent to single world or to all worlds
         if self.server.config.globalChatMessages:
