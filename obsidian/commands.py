@@ -18,7 +18,7 @@ from obsidian.errors import (
     ServerError,
     ConverterError,
 )
-from obsidian.types import formatName, T
+from obsidian.types import formatName, T, asciistr
 
 
 # Command Decorator
@@ -151,7 +151,11 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
         if isinstance(transformed, param.annotation):
             return transformed
         else:
-            raise ConverterError(f"Unexpected Conversion. Expected {param.annotation} But Got {type(transformed)}")
+            # Add edge case for asciistr
+            if isinstance(transformed, str) and param.annotation is asciistr:
+                return transformed
+            else:
+                raise ConverterError(f"Unexpected Conversion. Expected {param.annotation} But Got {type(transformed)}")
     except ValueError:
         raise CommandError(f"Arg '{name}' Expected {getattr(param.annotation, '__name__', 'Unknown')} But Got '{type(arg).__name__}'")
     except TypeError:

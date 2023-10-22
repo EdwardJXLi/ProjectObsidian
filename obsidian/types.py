@@ -12,6 +12,16 @@ UsernameType = NewType("UsernameType", str)
 IpType = NewType("IpType", str)
 
 
+# Custom string type for ascii strings
+# Uses metaclasses to pretend to look like a new type, but instead returns a normal string when invoked.
+class asciistr(str):
+    def __new__(cls, value, *args, **kwargs):
+        s = str(value, *args, **kwargs)
+        if not all(ord(char) < 128 for char in s):
+            raise ValueError("Non-ascii characters in string!")
+        return s
+
+
 # Formatting Functions
 def _formatUsername(name: str) -> UsernameType:
     return UsernameType(name.lower())

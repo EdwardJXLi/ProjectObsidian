@@ -784,12 +784,16 @@ class Player:
             Logger.error(f"Error While Parsing Command! {str(e)}")
             await self.sendMessage("&cAn Unknown Internal Server Error Has Occurred!")
 
-    async def getNextMessage(self, *args, **kwargs) -> str:
+    async def getNextMessage(self, *args, checkAscii: bool = True, **kwargs) -> str:
         Logger.debug(f"Getting Next Message From Player {self.name}", module="player")
         # Create a listener for the next message packet sent from player
         response = await self.networkHandler.dispatcher.waitFor(Packets.Request.PlayerMessage, *args, **kwargs)
         # Parse raw packet into a usable string
         message = await Packets.Request.PlayerMessage.deserialize(self, response, handleUpdate=False)
+
+        # Check if message contains non-ascii characters
+        if checkAscii and not message.isascii():
+            raise CommandError("Message Contains Non-Ascii Characters")
 
         # Return processed message back to user
         Logger.debug(f"Got Message From Player! {message=}", module="player")
