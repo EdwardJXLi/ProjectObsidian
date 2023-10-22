@@ -716,6 +716,7 @@ class Player:
         Logger.debug(f"Handling Player Message '{message}' From Player {self.name}", module="player")
 
         # Parse player message for special tags
+        Logger.debug(f"Parsing Player Message {message}", module="player")
         message = self.parsePlayerMessage(message)
 
         # Check if message is valid

@@ -251,6 +251,7 @@ class BetterChatModule(AbstractModule):
             )
 
     def postInit(self):
+        super().postInit()
         # Check if text wrapping is enabled
         if self.config.enableTextWrap:
             self.initTextWrap()
