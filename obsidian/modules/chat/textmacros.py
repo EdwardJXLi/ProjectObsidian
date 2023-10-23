@@ -1,10 +1,12 @@
 from obsidian.module import Module, AbstractModule, Dependency, Modules
+from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player
 from obsidian.mixins import Override
 from obsidian.config import AbstractConfig
 from obsidian.errors import ModuleError
 from obsidian.log import Logger
 from obsidian.utils.replace import restricted_replace
+from obsidian.modules.core import CommandHelper
 
 import re
 from typing import Callable
@@ -152,6 +154,53 @@ class TextMacrosModule(AbstractModule):
 
         # Log total number of text macros loaded
         Logger.info(f"{len(self.textMacros)} Total Text Macros Loaded", module="textmacros")
+
+    @Command(
+        "ListTextMacros",
+        description="Lists all the available text macros",
+        version="v1.0.0"
+    )
+    class ListTextMacrosCommand(AbstractCommand["TextMacrosModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["macros", "listmacros"])
+
+        async def execute(self, ctx: Player):
+            # Get list of text macros
+            textMacros: dict[str, str] = getattr(Modules.TextMacros, "textMacros")
+            textMacrosConfig: TextMacrosModule.TextMacrosConfig = getattr(Modules.TextMacros, "config")
+
+            # Generate command output
+            output = []
+
+            # Add Header
+            output.append(CommandHelper.centerMessage("&eListing All Text Macros", color="&2"))
+
+            # Generate List of Commands
+            output += CommandHelper.formatList(textMacros.keys(), initialMessage="&e", separator=", ", lineStart="&e")
+
+            # Add additional help statement at the end
+            output.append(f"&7Use {textMacrosConfig.macroStartChar}macro_name{textMacrosConfig.macroEndChar} to use any macros/emojis in chat!&f")
+
+            # Add Footer
+            output.append(CommandHelper.centerMessage(f"&eTotal Text Macros: {len(textMacros)}", color="&2"))
+
+            # Send Message
+            await ctx.sendMessage(output)
+
+    @Command(
+        "ReloadMacrosConfig",
+        description="Reloads the TextMacros Config",
+        version="v1.0.0"
+    )
+    class ReloadChatConfigCommand(AbstractCommand["TextMacrosModule"]):
+        def __init__(self, *args):
+            super().__init__(*args, ACTIVATORS=["reloadmacros"], OP=True)
+
+        async def execute(self, ctx: Player):
+            # Reload Config
+            self.module.config.reload()
+            # Send Response Back
+            await ctx.sendMessage("&aTextMacros Config Reloaded!")
 
     # Config for TextMacrosConfig
     @dataclass
