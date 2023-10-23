@@ -79,8 +79,67 @@ class TextMacrosModule(AbstractModule):
                 # Add emoji to text macros
                 self.textMacros[key.lower()] = value
 
+            # Add dictionary of additional hard-coded text macros for the emojis
+            # This is for adding additional functionality as well as providing
+            # compatibility with the fcraft emoji system
+            self.textMacros.update({
+                # fCraft Emojis
+                ":)": Emojis.SMILE,
+                "<3": Emojis.HEART,
+                "8": Emojis.EIGHTH_NOTE,
+                "!!": Emojis.DOUBLE_EXCLAMATION_MARK,
+                "p": Emojis.PARAGRAPH,
+                "s": Emojis.SELECTION,
+                "*": Emojis.BULLET,
+                "o": Emojis.CIRCLE,
+                "-": Emojis.BAR,
+                "_": Emojis.BAR,
+                "l": Emojis.RIGHT_ANGLE,
+                "^": Emojis.UP_ARROW,
+                "v": Emojis.DOWN_ARROW,
+                ">": Emojis.RIGHT_ARROW,
+                "->": Emojis.RIGHT_ARROW,
+                "<": Emojis.LEFT_ARROW,
+                "<-": Emojis.LEFT_ARROW,
+                "^^": Emojis.UP_TRIANGLE,
+                "vv": Emojis.DOWN_TRIANGLE,
+                ">>": Emojis.RIGHT_TRIANGLE,
+                "<<": Emojis.LEFT_TRIANGLE,
+                "<>": Emojis.LEFT_RIGHT_ARROW,
+                "<->": Emojis.LEFT_RIGHT_ARROW,
+                "^v": Emojis.UP_DOWN_ARROW,
+                "^v_": Emojis.UP_DOWN_ARROW_WITH_BASE,
+                # Add caret, tilde, and grave characters for vanilla classic client compatibility
+                "caret": "^",
+                "hat": "^",
+                "tilde": "~",
+                "wave": "~",
+                "'": "`",
+                "grave": "`",
+                # Custom ProjectObsidian Emoji Macros
+                ":D": Emojis.SMILE,
+                ".": Emojis.DOT,
+                "<=>": Emojis.LEFT_RIGHT_ARROW,
+                "?_": Emojis.INVERSE_QUESTION_MARK,
+                "!_": Emojis.INVERSE_EXCLAMATION_MARK,
+                "1/2": Emojis.ONE_HALF,
+                "1/4": Emojis.ONE_FOURTH,
+                "<<<": Emojis.LEFT_GUILLEMET,
+                ">>>": Emojis.RIGHT_GUILLEMET,
+                "|": Emojis.BOX_DRAWINGS_LIGHT_VERTICAL,
+                "==": Emojis.IDENTICAL_TO,
+                "+-": Emojis.PLUS_MINUS,
+                ">=": Emojis.GREATER_THAN_OR_EQUAL_TO,
+                "<=": Emojis.LESS_THAN_OR_EQUAL_TO,
+                "/": Emojis.DIVISION_SIGN,
+                "~=": Emojis.ALMOST_EQUAL_TO,
+                "^n": Emojis.SUPERSCRIPT_N,
+                "^2": Emojis.SUPERSCRIPT_TWO,
+                "[]": Emojis.BLACK_SQUARE,
+            })
+
             # Add additional text macros
-            Logger.info(f"{len(self.textMacros)} Emoji Text Macros Loaded", module="textmacros")
+            Logger.debug(f"{len(self.textMacros)} Emoji Text Macros Loaded", module="textmacros")
 
         # Load custom text macros from config
         Logger.info("Loading Custom Text Macros", module="textmacros")
@@ -89,7 +148,10 @@ class TextMacrosModule(AbstractModule):
             if not isinstance(key, str) and not isinstance(value, str):
                 raise ModuleError(f"Invalid Key or Value for Custom Macro {key}: {value}!")
             self.textMacros[key.lower()] = value
-        Logger.info(f"{len(customMacros)} Custom Text Macros Loaded: {customMacros}", module="texthotkey")
+        Logger.debug(f"{len(customMacros)} Custom Text Macros Loaded: {customMacros}", module="texthotkey")
+
+        # Log total number of text macros loaded
+        Logger.info(f"{len(self.textMacros)} Total Text Macros Loaded", module="textmacros")
 
     # Config for TextMacrosConfig
     @dataclass
