@@ -98,15 +98,19 @@ class NetworkHandler:
             raise ClientError(f"Client Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion})")
 
         # Verify login - Calculates if md5(salt + name) is equal to verificationKey
-        if self.server.config.verifyLogin:
-            if verificationKey != hashlib.md5(self.server.salt.encode() + username.encode()).hexdigest():
-                Logger.warn(f"User {username} tried logging in with invalid verification key {verificationKey}!", module="network")
+        if verificationKey != hashlib.md5(self.server.salt.encode() + username.encode()).hexdigest():
+            authenticated = False
+            Logger.warn(f"User {username} tried logging in with invalid verification key {verificationKey}!", module="network")
+            Logger.debug(f"{self.connectionInfo} | Login verification FAILED for Player {username}", module="network")
+            if self.server.config.verifyLogin:
                 raise ClientError("Username Verification Failed!")
-        Logger.debug(f"{self.connectionInfo} | Login verified for Player {username}", module="network")
+        else:
+            authenticated = True
+            Logger.debug(f"{self.connectionInfo} | Login verified for Player {username}", module="network")
 
         # Create Player
         Logger.debug(f"{self.connectionInfo} | Creating Player {username}", module="network")
-        self.player = await self.server.playerManager.createPlayer(self, username, verificationKey)
+        self.player = await self.server.playerManager.createPlayer(self, username, verificationKey, authenticated)
 
         # If client supports CPE and if server enables CPE, start CPE negotiation
         # CPE stands for Classic Protocol Extension, and is defined here: https://wiki.vg/Classic_Protocol_Extension

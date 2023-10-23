@@ -774,17 +774,18 @@ class EssentialsModule(AbstractModule):
             output.append(CommandHelper.centerMessage(f"&ePlayer Information: {player.name}", color="&2"))
 
             # Add Player Information
+            output.append(f"&d[Username]&f {player.name} &7({player.username})")
             output.append(f"&d[Joined World]&f {player.worldPlayerManager.world.name if player.worldPlayerManager else 'Unknown'}")
             output.append(f"&d[Coordinates]&f &7x:&f{player.posX//32} &7y:&f{player.posY//32} &7z:&f{player.posZ//32}")
             output.append(f"&d[Client Software]&f {player.clientSoftware}")
             output.append(f"&d[CPE Enabled]&f {player.supportsCPE} ({len(player._extensions)} extensions supported)")
-            output.append(f"&d[Operator]&f {player.opStatus}")
 
             # Add self-only Player Information
             if player is ctx:
                 output.append("&7(Only you can see the information below)")
                 output.append(f"&d[Network Information]&f {player.networkHandler.ip}:{player.networkHandler.port}")
                 output.append(f"&d[Verification Key]&f {player.verificationKey}")
+                output.append(f"&d[Authentication]&f {player.authenticated}")
                 output.append(f"&d[Internal Player Id]&f {player.playerId}")
 
             # Add Footer

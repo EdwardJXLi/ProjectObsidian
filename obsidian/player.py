@@ -39,7 +39,13 @@ class PlayerManager:
         else:
             self.maxSize: Optional[int] = maxSize
 
-    async def createPlayer(self, network: NetworkHandler, displayName: str, verificationKey: str) -> Player:
+    async def createPlayer(
+        self,
+        network: NetworkHandler,
+        displayName: str,
+        verificationKey: str,
+        authenticated: bool
+    ) -> Player:
         Logger.debug(f"Creating Player For Ip {network.connectionInfo}", module="player-manager")
         # Check if name is alphanumeric
         if not displayName.isalnum():
@@ -61,7 +67,7 @@ class PlayerManager:
             raise ClientError("This Username Is Taken!")
 
         # Creating Player Class
-        player = Player(self, network, self.server, username, displayName, "Unknown/Classic", verificationKey)
+        player = Player(self, network, self.server, username, displayName, "Unknown/Classic", verificationKey, authenticated)
 
         # Check if user is an operator and set their status
         await player.updateOperatorStatus(sendMessage=False)
@@ -466,14 +472,16 @@ class Player:
         username: UsernameType,
         displayName: str,
         clientSoftware: str,
-        key: str
+        verificationKey: str,
+        authenticated: bool
     ):
         # Player Information
         self.server: Server = server
         self.username: UsernameType = username
         self.name: str = displayName
         self.clientSoftware: str = clientSoftware
-        self.verificationKey: str = key
+        self.verificationKey: str = verificationKey
+        self.authenticated: bool = authenticated
 
         # Player State
         self.posX: int = 0
