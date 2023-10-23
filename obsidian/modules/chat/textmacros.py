@@ -162,7 +162,7 @@ class TextMacrosModule(AbstractModule):
     )
     class ListTextMacrosCommand(AbstractCommand["TextMacrosModule"]):
         def __init__(self, *args):
-            super().__init__(*args, ACTIVATORS=["macros", "listmacros"])
+            super().__init__(*args, ACTIVATORS=["macros", "listmacros", "emojis", "listemojis"])
 
         async def execute(self, ctx: Player):
             # Get list of text macros
