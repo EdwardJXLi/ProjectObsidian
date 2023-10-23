@@ -275,13 +275,17 @@ class _ModuleManager(AbstractManager):
                     Logger.verbose(f"Directory {relative_path.as_posix()} In Ignore List. Skipping!", module="module-import")
                     return
 
+            # If a .obignore file exists in the folder, ignore the entire folder
+            if Path(path, ".obignore").exists():
+                Logger.verbose(f"Directory {relative_path.as_posix()} has '.obignore' file. Skipping!", module="module-import")
+                return
             # If __init__.py is defined in the folder, treat the entire directory as the module
-            if Path(path, "__init__.py").exists():
+            elif Path(path, "__init__.py").exists():
                 Logger.debug(f"Detected __init__.py in {path}. Treating as module.", module="module-import")
                 # abs_import is already in the correct format to load the module
                 loadModule(abs_import)
+            # Treat the directory as a collection of modules
             else:
-                # Treat the directory as a collection of modules
                 for _, moduleName, _ in pkgutil.iter_modules(
                     path=[str(path)],
                     prefix=abs_import + "."

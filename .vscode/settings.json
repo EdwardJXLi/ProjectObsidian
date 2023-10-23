@@ -50,6 +50,7 @@
         "nargs",
         "nbtlib",
         "nologging",
+        "obignore",
         "objclass",
         "obsidianworld",
         "peername",
