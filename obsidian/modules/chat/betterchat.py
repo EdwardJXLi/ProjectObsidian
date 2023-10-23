@@ -187,6 +187,12 @@ class BetterChatModule(AbstractModule):
                     await _super(
                         self,
                         None,
+                        "",
+                        messageHandlerOverride=sendMessageToPingedPlayers
+                    )
+                    await _super(
+                        self,
+                        None,
                         playerPingConfig.headerColor + playerPingConfig.headerCharacter * playerPingConfig.headerLength,
                         messageHandlerOverride=sendMessageToPingedPlayers
                     )
@@ -222,6 +228,12 @@ class BetterChatModule(AbstractModule):
                         self,
                         None,
                         playerPingConfig.footerColor + playerPingConfig.footerCharacter * playerPingConfig.footerLength,
+                        messageHandlerOverride=sendMessageToPingedPlayers
+                    )
+                    await _super(
+                        self,
+                        None,
+                        "",
                         messageHandlerOverride=sendMessageToPingedPlayers
                     )
 
@@ -296,7 +308,7 @@ class BetterChatModule(AbstractModule):
     @dataclass
     class PlayerPingConfig(AbstractConfig):
         pingRegex: str = "(?<!\\w)@\\w+"
-        highlightPing: bool = False
+        highlightPing: bool = True
         pingHighlightFormat: str = "&e[{ping}]&f"
         sendHeadersAndFooters: bool = True
         headerColor: str = "&e"
