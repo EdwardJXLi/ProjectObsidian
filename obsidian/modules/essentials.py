@@ -784,7 +784,6 @@ class EssentialsModule(AbstractModule):
             if player is ctx:
                 output.append("&7(Only you can see the information below)")
                 output.append(f"&d[Network Information]&f {player.networkHandler.ip}:{player.networkHandler.port}")
-                output.append(f"&d[Verification Key]&f {player.verificationKey}")
                 output.append(f"&d[Authentication]&f {player.authenticated}")
                 output.append(f"&d[Internal Player Id]&f {player.playerId}")
 
