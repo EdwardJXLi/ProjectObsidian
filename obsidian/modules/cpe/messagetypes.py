@@ -31,8 +31,8 @@ class MessageType(Enum):
             # If fail, try to get message type as a string
             try:
                 return MessageType[argument.upper()]
-            except ValueError:
-                # Raise error if block not found
+            except (KeyError, ValueError):
+                # Raise error if message type not found
                 raise ConverterError(f"MessageType {argument} Not Found!")
 
 

@@ -39,14 +39,14 @@ class ClickDistanceModule(AbstractModule):
 
             # Read click distance
             Logger.debug(f"Reading Click Distance Metadata: {data}", module="clickdistance")
-            clickDistanceMetadata.distance = data["distance"]
-            Logger.debug(f"Click Distance: {clickDistanceMetadata.distance}", module="clickdistance")
+            clickDistanceMetadata.setClickDistance(data["distance"])
+            Logger.debug(f"Click Distance: {clickDistanceMetadata.getClickDistance()}", module="clickdistance")
 
             return clickDistanceMetadata
 
         def writeClickDistance(distanceMetadata: ClickDistanceModule.ClickDistanceMetadata):
-            Logger.debug(f"Writing Click Distance Metadata: {distanceMetadata.distance}", module="clickdistance")
-            return {"distance": distanceMetadata.distance}
+            Logger.debug(f"Writing Click Distance Metadata: {distanceMetadata.getClickDistance()}", module="clickdistance")
+            return {"distance": distanceMetadata.getClickDistance()}
 
         # Register readers and writers
         WorldFormatManager.registerMetadataReader(WorldFormats.ObsidianWorld, "CPE", "clickDistance", readClickDistance)
@@ -67,8 +67,8 @@ class ClickDistanceModule(AbstractModule):
 
                 # Read click distance
                 Logger.debug(f"Reading Click Distance Metadata: {data}", module="clickdistance")
-                clickDistanceMetadata.distance = data["Distance"].value
-                Logger.debug(f"Click Distance: {clickDistanceMetadata.distance}", module="clickdistance")
+                clickDistanceMetadata.setClickDistance(data["Distance"].value)
+                Logger.debug(f"Click Distance: {clickDistanceMetadata.getClickDistance()}", module="clickdistance")
 
                 return clickDistanceMetadata
 
@@ -79,8 +79,8 @@ class ClickDistanceModule(AbstractModule):
                 metadataNbt.tags.append(NBTLib.TAG_Short(name="ExtensionVersion", value=1))
 
                 # Write click distance
-                Logger.debug(f"Writing Click Distance Metadata: {distanceMetadata.distance}", module="clickdistance")
-                metadataNbt.tags.append(NBTLib.TAG_Short(name="Distance", value=distanceMetadata.distance))
+                Logger.debug(f"Writing Click Distance Metadata: {distanceMetadata.getClickDistance()}", module="clickdistance")
+                metadataNbt.tags.append(NBTLib.TAG_Short(name="Distance", value=distanceMetadata.getClickDistance()))
 
                 return metadataNbt
 
@@ -89,9 +89,9 @@ class ClickDistanceModule(AbstractModule):
             WorldFormatManager.registerMetadataWriter(WorldFormats.ClassicWorld, "CPE", "clickDistance", cwWriteClickDistance)
 
     def initMixins(self):
-        # Send player click distance on join
+        # Send world click distance on join
         @Inject(target=WorldPlayerManager.joinPlayer, at=InjectionPoint.AFTER)
-        async def sendClickDistance(self, player: Player, *args, **kwargs):
+        async def sendWorldClickDistance(self, player: Player, *args, **kwargs):
             # Since we are injecting, set type of self to WorldPlayerManager
             self = cast(WorldPlayerManager, self)
 
@@ -111,6 +111,7 @@ class ClickDistanceModule(AbstractModule):
 
             # If "clickDistance" metadata is not present, create it
             if self.additionalMetadata.get(("CPE", "clickDistance")) is None:
+                Logger.debug(f"Creating Click Distance Metadata for {self.name}", module="clickdistance")
                 clickDistanceMetadata = ClickDistanceModule.ClickDistanceMetadata()
                 clickDistanceMetadata.setClickDistance(defaultClickDistance)
                 self.additionalMetadata[("CPE", "clickDistance")] = clickDistanceMetadata
@@ -144,7 +145,7 @@ class ClickDistanceModule(AbstractModule):
 
         # Set click distance
         Logger.info(f"Setting world click distance to {distance} for {world.name}", module="clickdistance")
-        clickDistanceMetadata.distance = distance
+        clickDistanceMetadata.setClickDistance(distance)
 
         # If notifyPlayers is True, notify players of the change
         if notifyPlayers:
@@ -155,9 +156,9 @@ class ClickDistanceModule(AbstractModule):
 
     # Create helper function to get click distance of a world
     @staticmethod
-    def getWorldClickDistance(world: World):
+    def getWorldClickDistance(world: World) -> int:
         # Return click distance
-        return getattr(world, "clickDistanceMetadata").distance
+        return getattr(world, "clickDistanceMetadata").getClickDistance()
 
     # Packet to send to clients to change click distance
     @ResponsePacket(
@@ -274,7 +275,7 @@ class ClickDistanceModule(AbstractModule):
 
             # Check if distance is specified. If not, then simply print the click distance
             if distance is None:
-                return await ctx.sendMessage(f"&aClick distance for world {world.name} is {getattr(world, 'clickDistance').getClickDistance()}")
+                return await ctx.sendMessage(f"&aClick distance for world {world.name} is {getattr(world, 'clickDistanceMetadata').getClickDistance()}")
 
             # Set world click distance
             await ClickDistanceModule.setWorldClickDistance(world, distance, notifyPlayers=True)
@@ -321,7 +322,7 @@ class ClickDistanceModule(AbstractModule):
         def setClickDistance(self, distance: int):
             self.distance = distance
 
-        def getClickDistance(self):
+        def getClickDistance(self) -> int:
             return self.distance
 
     # Config for default click distance
