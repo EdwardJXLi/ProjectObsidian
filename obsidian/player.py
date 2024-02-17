@@ -48,8 +48,8 @@ class PlayerManager:
     ) -> Player:
         Logger.debug(f"Creating Player For Ip {network.connectionInfo}", module="player-manager")
         # Check if name is alphanumeric
-        if not displayName.isalnum():
-            raise ClientError("Username Must Be Alphanumeric Only!")
+        if not displayName.replace("_", "").isalnum():
+            raise ClientError("Invalid Character In Username")
 
         # Format Username
         username = _formatUsername(displayName)
