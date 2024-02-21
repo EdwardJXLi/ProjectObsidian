@@ -75,7 +75,7 @@ class CoreModule(AbstractModule):
             # Unpack String
             # Username
             username = unpackString(username)
-            if not username.isalnum():
+            if not username.replace("_", "").isalnum():
                 raise ClientError("Invalid Character In Username")
             # Verification String
             verificationKey = unpackString(verificationKey)
