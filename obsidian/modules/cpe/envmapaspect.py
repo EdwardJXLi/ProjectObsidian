@@ -2,7 +2,7 @@ from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player, WorldPlayerManager
-from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets
+from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets, packageString
 from obsidian.world import World, WorldMetadata
 from obsidian.worldformat import WorldFormatManager, WorldFormats
 from obsidian.blocks import AbstractBlock, Blocks
@@ -64,7 +64,7 @@ _AspectPropertyAttributeMap = {
 
 @Module(
     "EnvMapAspect",
-    description="This extension allows the server to specify custom texture packs, and tweak appearance of a map",
+    description="This extension allows the server to specify custom appearance packs, and tweak appearance of a map",
     author="Obsidian",
     version="1.0.0",
     dependencies=[Dependency("core")]
@@ -133,9 +133,31 @@ class EnvMapAspectModule(AbstractModule):
                 "mapEdgeOffset": mapAspectMetadata.mapEdgeOffset
             }
 
+        def readEnvMapAppearance(data: dict):
+            mapAppearance = EnvMapAspectModule.EnvMapAppearanceMetadata()
+
+            # Read map appearance
+            Logger.debug(f"Reading Map Appearance Metadata: {data}", module="extmapaspect")
+            if "textureUrl" in data:
+                mapAppearance.setTexturePack(data["textureUrl"])
+            else:
+                Logger.warn("textureUrl not found in map appearance metadata", module="extmapaspect")
+
+            Logger.debug(f"Map Appearance: Texture Pack: {mapAppearance.getTexturePack()}", module="extmapaspect")
+
+            return mapAppearance
+
+        def writeEnvMapAppearance(mapAppearance: EnvMapAspectModule.EnvMapAppearanceMetadata):
+            Logger.debug(f"Writing Map Appearance Metadata: Texture Pack: {mapAppearance.getTexturePack()}", module="extmapaspect")
+            return {
+                "textureUrl": mapAppearance.getTexturePack()
+            }
+
         # Register readers and writers
         WorldFormatManager.registerMetadataReader(WorldFormats.ObsidianWorld, "CPE", "envMapAspect", readMapAspect)
         WorldFormatManager.registerMetadataWriter(WorldFormats.ObsidianWorld, "CPE", "envMapAspect", writeMapAspect)
+        WorldFormatManager.registerMetadataReader(WorldFormats.ObsidianWorld, "CPE", "envMapAppearance", readEnvMapAppearance)
+        WorldFormatManager.registerMetadataWriter(WorldFormats.ObsidianWorld, "CPE", "envMapAppearance", writeEnvMapAppearance)
 
         # If ClassicWorld is installed, create readers and writers for ClassicWorld
         if "ClassicWorld" in WorldFormats:
@@ -207,9 +229,37 @@ class EnvMapAspectModule(AbstractModule):
 
                 return metadataNbt
 
+            def cwReadMapAppearance(data: NBTLib.TAG_Compound):
+                mapAppearance = EnvMapAspectModule.EnvMapAppearanceMetadata()
+
+                # Read map appearance
+                Logger.debug(f"Reading Map Appearance Metadata: {data}", module="extmapaspect")
+                if "TextureURL" in data:
+                    mapAppearance.setTexturePack(data["TextureURL"].value)
+                else:
+                    Logger.warn("TextureURL not found in map appearance metadata", module="extmapaspect")
+
+                Logger.debug(f"Map Appearance: Texture Pack: {mapAppearance.getTexturePack()}", module="extmapaspect")
+
+                return mapAppearance
+
+            def cwWriteMapAppearance(mapAppearance: EnvMapAspectModule.EnvMapAppearanceMetadata):
+                metadataNbt = NBTLib.TAG_Compound(name="EnvMapAppearance")
+
+                # Write map appearance
+                Logger.debug(f"Writing Map Appearance Metadata: Texture Pack: {mapAppearance.getTexturePack()}", module="extmapaspect")
+                metadataNbt.tags.append(NBTLib.TAG_String(name="TextureURL", value=mapAppearance.getTexturePack() or ""))
+                metadataNbt.tags.append(NBTLib.TAG_Byte(name="EdgeBlock", value=-1))
+                metadataNbt.tags.append(NBTLib.TAG_Byte(name="SideBlock", value=-1))
+                metadataNbt.tags.append(NBTLib.TAG_Short(name="SideLevel", value=-1))
+
+                return metadataNbt
+
             # Register readers and writers
             WorldFormatManager.registerMetadataReader(WorldFormats.ClassicWorld, "CPE", "envMapAspect", cwReadMapAspect)
             WorldFormatManager.registerMetadataWriter(WorldFormats.ClassicWorld, "CPE", "envMapAspect", cwWriteMapAspect)
+            WorldFormatManager.registerMetadataReader(WorldFormats.ClassicWorld, "CPE", "envMapAppearance", cwReadMapAppearance)
+            WorldFormatManager.registerMetadataWriter(WorldFormats.ClassicWorld, "CPE", "envMapAppearance", cwWriteMapAppearance)
 
     def initMixins(self):
         # Send map aspect on join
@@ -226,6 +276,9 @@ class EnvMapAspectModule(AbstractModule):
                 # Send map aspects to player
                 for aspectPropertyType, (attrName, _) in _AspectPropertyAttributeMap.items():
                     await EnvMapAspectModule.setMapAspect(player, aspectPropertyType, getattr(mapAspectMetadata, attrName))
+
+                # Send map appearance
+                await EnvMapAspectModule.setMapAppearance(player, getattr(self.world, "mapAppearanceMetadata").getTexturePack())
 
         # Load map aspect during world load
         @Inject(target=World.__init__, at=InjectionPoint.AFTER)
@@ -250,6 +303,9 @@ class EnvMapAspectModule(AbstractModule):
                 AspectPropertyType.SKYBOX_VERTICAL_SPEED: mapAspectConfig.defaultSkyboxVerticalSpeed
             }
 
+            # Get default map appearance from config
+            defaultTexturePack = mapAspectConfig.defaultTexturePack
+
             # If "mapAspectMetadata" metadata is not present, create it
             if self.additionalMetadata.get(("CPE", "envMapAspect")) is None:
                 Logger.debug(f"Creating Map Aspect Metadata for {self.name}", module="extmapaspect")
@@ -257,7 +313,15 @@ class EnvMapAspectModule(AbstractModule):
                 mapAspectMetadata.setBulkMapAspect(*defaultMapAspect.values())
                 self.additionalMetadata[("CPE", "envMapAspect")] = mapAspectMetadata
 
+            # If "mapAppearanceMetadata" metadata is not present, create it
+            if self.additionalMetadata.get(("CPE", "envMapAppearance")) is None:
+                Logger.debug(f"Creating Map Appearance Metadata for {self.name}", module="extmapaspect")
+                mapAppearanceMetadata = EnvMapAspectModule.EnvMapAppearanceMetadata()
+                mapAppearanceMetadata.setTexturePack(defaultTexturePack)
+                self.additionalMetadata[("CPE", "envMapAppearance")] = mapAppearanceMetadata
+
             setattr(self, "mapAspectMetadata", self.additionalMetadata[("CPE", "envMapAspect")])
+            setattr(self, "mapAppearanceMetadata", self.additionalMetadata[("CPE", "envMapAppearance")])
 
     def postInit(self):
         super().postInit()
@@ -300,12 +364,56 @@ class EnvMapAspectModule(AbstractModule):
     def getWorldMapAspect(world: World, aspectPropertyType: AspectPropertyType) -> Any:
         return getattr(world, "mapAspectMetadata").getMapAspect(aspectPropertyType)
 
+    # Create helper function to set map appearance for a player
+    @staticmethod
+    async def setMapAppearance(player: Player, textureUrl: Optional[str]):
+        # Check if player supports the EnvMapAspect Extension
+        if not player.supports(CPEExtension("EnvMapAspect", 1)):
+            raise CPEError(f"Player {player.name} Does Not Support EnvMapAspect Extension!")
+
+        Logger.info(f"Setting map appearance to {textureUrl} for {player.username}", module="extmapaspect")
+        await player.networkHandler.dispatcher.sendPacket(Packets.Response.SetMapEnvUrl, textureUrl)
+
+    # Create helper function to set map appearance of a world
+    @staticmethod
+    async def setWorldMapAppearance(world: World, textureUrl: Optional[str], notifyPlayers: bool = True):
+        # Set the map appearance
+        Logger.info(f"Setting map appearance to {textureUrl} for {world.name}", module="extmapaspect")
+        setattr(world, "mapAppearanceMetadata", textureUrl)
+
+        # If notifyPlayers is True, notify players of the change
+        if notifyPlayers:
+            for player in world.playerManager.getPlayers():
+                # Only send map aspect to players that support the extension
+                if player.supports(CPEExtension("EnvMapAspect", 1)):
+                    await EnvMapAspectModule.setMapAppearance(player, textureUrl)
+
+    # Create helper function to get map appearance of a world
+    @staticmethod
+    def getWorldMapAppearance(world: World) -> Optional[str]:
+        return getattr(world, "mapAppearanceMetadata").getTexturePack()
+
+    # Create alias for setMapAppearance
+    @staticmethod
+    def setTexturePack(player: Player, textureUrl: Optional[str]):
+        return EnvMapAspectModule.setMapAppearance(player, textureUrl)
+
+    # Create alias for setWorldMapAppearance
+    @staticmethod
+    def setWorldTexturePack(world: World, textureUrl: Optional[str], notifyPlayers: bool = True):
+        return EnvMapAspectModule.setWorldMapAppearance(world, textureUrl, notifyPlayers)
+
+    # Create alias for getWorldMapAppearance
+    @staticmethod
+    def getTexturePack(world: World) -> Optional[str]:
+        return EnvMapAspectModule.getWorldMapAppearance(world)
+
     # Packet to send to clients to change map aspect
     @ResponsePacket(
         "SetMapAspect",
         description="Changes Player Map Aspect",
     )
-    class SetMapAspect(AbstractResponsePacket["EnvMapAspectModule"]):
+    class SetMapAspectPacket(AbstractResponsePacket["EnvMapAspectModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -333,6 +441,34 @@ class EnvMapAspectModule(AbstractModule):
                 value = int(value * 128)
 
             msg = struct.pack(self.FORMAT, self.ID, aspectPropertyType.value, value)
+            return msg
+
+        def onError(self, *args, **kwargs):
+            return super().onError(*args, **kwargs)
+
+    # Packet to send to clients to change texturepacks
+    @ResponsePacket(
+        "SetMapEnvUrl",
+        description="Changes Map Environment (texture) URL",
+    )
+    class SetMapEnvUrlPacket(AbstractResponsePacket["EnvMapAspectModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ID=0x28,
+                FORMAT="!B64s",
+                CRITICAL=False
+            )
+
+        async def serialize(self, textureUrl: str):
+            # <Set Map Environment/TexturePack Url>
+            # (Byte) Packet ID
+            # (64String) Texture Pack URL
+
+            # If no texturepack, set as empty string
+            textureUrl = textureUrl or ""
+
+            msg = struct.pack(self.FORMAT, self.ID, packageString(textureUrl))
             return msg
 
         def onError(self, *args, **kwargs):
@@ -451,6 +587,88 @@ class EnvMapAspectModule(AbstractModule):
             # Notify Sender
             await ctx.sendMessage(f"&aReset map aspects for world {world.name}")
 
+    # Command to get the current world texturepack
+    @Command(
+        "GetWorldTexturePack",
+        description="Gets the current world texture pack",
+        version="v1.0.0"
+    )
+    class GetWorldTexturePackCommand(AbstractCommand["EnvMapAspectModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ACTIVATORS=["texturepack", "textures"],
+                OP=True
+            )
+
+        async def execute(self, ctx: Player, world: Optional[World] = None):
+            # If no world is passed, use players current world
+            if world is None:
+                if ctx.worldPlayerManager is not None:
+                    world = ctx.worldPlayerManager.world
+                else:
+                    raise CommandError("You are not in a world!")
+
+            # Get texture pack
+            texturePack = EnvMapAspectModule.getTexturePack(world)
+
+            # Notify Sender
+            await ctx.sendMessage(f"&aTexture Pack for world {world.name} is:")
+            await ctx.sendMessage(texturePack or "N/A")
+
+    # Command to set the world texturepack
+    @Command(
+        "SetWorldTexturePack",
+        description="Sets the world texture pack",
+        version="v1.0.0"
+    )
+    class SetWorldTexturePackCommand(AbstractCommand["EnvMapAspectModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ACTIVATORS=["settexturepack", "settextures"],
+                OP=True
+            )
+
+        async def execute(self, ctx: Player, textureUrl: Optional[str] = None, world: Optional[World] = None):
+            # If no world is passed, use players current world
+            if world is None:
+                if ctx.worldPlayerManager is not None:
+                    world = ctx.worldPlayerManager.world
+                else:
+                    raise CommandError("You are not in a world!")
+
+            # Set texture pack
+            await EnvMapAspectModule.setWorldTexturePack(world, textureUrl, notifyPlayers=True)
+
+            # Notify Sender
+            await ctx.sendMessage(f"&aSet Texture Pack for world {world.name} to {textureUrl}")
+
+    # Command to set either self, or another player's textures
+    @Command(
+        "SetPlayerTexturePack",
+        description="Sets the texture pack for a player",
+        version="v1.0.0"
+    )
+    class SetPlayerTexturePackCommand(AbstractCommand["EnvMapAspectModule"]):
+        def __init__(self, *args):
+            super().__init__(
+                *args,
+                ACTIVATORS=["setplayertexture"],
+                OP=True
+            )
+
+        async def execute(self, ctx: Player, textureUrl: Optional[str] = None, player: Optional[Player] = None):
+            # If no player is passed, use the sender
+            if player is None:
+                player = ctx
+
+            # Set texture pack
+            await EnvMapAspectModule.setTexturePack(player, textureUrl)
+
+            # Notify Sender
+            await ctx.sendMessage(f"&aSet Texture Pack for {player.username} to {textureUrl}")
+
     # World Metadata for map aspects
     class EnvMapAspectMetadata(WorldMetadata):
         def __init__(self):
@@ -541,6 +759,17 @@ class EnvMapAspectModule(AbstractModule):
                 self.skyboxHorizontalSpeed,
                 self.skyboxVerticalSpeed
             )
+
+    # World Metadata for World Appearance
+    class EnvMapAppearanceMetadata(WorldMetadata):
+        def __init__(self):
+            self.texturePack: Optional[str] = None
+
+        def setTexturePack(self, texturePack: Optional[str]):
+            self.texturePack = texturePack
+
+        def getTexturePack(self):
+            return self.texturePack
 
     # Config for default map aspects
     @dataclass
