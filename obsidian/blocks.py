@@ -48,7 +48,10 @@ class AbstractBlock(AbstractSubmodule[T], Generic[T]):
     def _convertArgument(_, argument: str) -> AbstractBlock:
         try:
             # Try to grab the block from the blocks list
-            return BlockManager.getBlock(argument)
+            try:
+                return BlockManager.getBlockById(int(argument))
+            except (BlockError, ValueError):
+                return BlockManager.getBlock(argument)
         except KeyError:
             # Raise error if block not found
             raise ConverterError(f"Block {argument} Not Found!")
