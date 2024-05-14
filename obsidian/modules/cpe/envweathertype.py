@@ -118,7 +118,7 @@ class EnvWeatherTypeModule(AbstractModule):
             # Check if player supports the EnvWeatherType Extension
             if player.supports(CPEExtension("EnvWeatherType", 1)):
                 # Send weather type packet to player
-                await EnvWeatherTypeModule.setWeatherType(player, EnvWeatherTypeModule.getWorldWeatherType(self.world))
+                await EnvWeatherTypeModule.setPlayerWeatherType(player, EnvWeatherTypeModule.getWorldWeatherType(self.world))
 
         # Load weather type during world load
         @Inject(target=World.__init__, at=InjectionPoint.AFTER)
@@ -149,7 +149,7 @@ class EnvWeatherTypeModule(AbstractModule):
 
     # Create helper function to set weather type of a player
     @staticmethod
-    async def setWeatherType(player: Player, weatherType: WeatherType):
+    async def setPlayerWeatherType(player: Player, weatherType: WeatherType):
         # Check if player supports the EnvWeatherType Extension
         if not player.supports(CPEExtension("EnvWeatherType", 1)):
             raise CPEError(f"Player {player.name} Does Not Support EnvWeatherType Extension!")
@@ -172,7 +172,7 @@ class EnvWeatherTypeModule(AbstractModule):
             for player in world.playerManager.getPlayers():
                 # Only send weather type to players that support the EnvWeatherType Extension
                 if player.supports(CPEExtension("EnvWeatherType", 1)):
-                    await EnvWeatherTypeModule.setWeatherType(player, weatherType)
+                    await EnvWeatherTypeModule.setPlayerWeatherType(player, weatherType)
 
     # Create helper function to get weather type of a world
     @staticmethod
