@@ -46,6 +46,12 @@ class AbstractPacket(AbstractSubmodule[T], Generic[T]):
     FORMAT: str = ""        # Packet Structure Format
     CRITICAL: bool = False  # Packet Criticality. Dictates What Event Should Occur When Error
 
+    def __repr__(self):
+        return f"<Packet {self.NAME} ({self.ID})>"
+
+    def __str__(self):
+        return self.NAME
+
     # Error Handler. Called If Critical If False And An Error Occurs
     @classmethod
     def onError(cls, error: Exception):
@@ -61,6 +67,12 @@ class AbstractRequestPacket(AbstractPacket[T], Generic[T]):
     # Mandatory Values Defined In Packet Init
     PLAYERLOOP: bool = False            # Accept Packet During Player Loop
     DIRECTION: PacketDirections = PacketDirections.REQUEST  # Network Direction (Response or Response)
+
+    def __repr__(self):
+        return f"<RequestPacket {self.NAME} ({self.ID})>"
+
+    def __str__(self):
+        return self.NAME
 
     async def deserialize(self, ctx: Optional[Player], *args, **kwargs) -> Any:
         raise NotImplementedError("Deserialization For This Packet Is Not Implemented")
@@ -79,6 +91,12 @@ class AbstractRequestPacket(AbstractPacket[T], Generic[T]):
 class AbstractResponsePacket(AbstractPacket[T], Generic[T]):
     # Mandatory Values Defined In Packet Init
     DIRECTION = PacketDirections.REQUEST  # Network Direction (Response or Response)
+
+    def __repr__(self):
+        return f"<ResponsePacket {self.NAME} ({self.ID})>"
+
+    def __str__(self):
+        return self.NAME
 
     async def serialize(self, *args, **kwargs) -> bytearray:
         return bytearray()

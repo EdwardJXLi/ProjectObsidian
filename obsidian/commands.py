@@ -34,6 +34,12 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
     ACTIVATORS: list[str] = field(default_factory=list)
     OP: bool = False
 
+    def __repr__(self):
+        return f"<Command {self.NAME}>"
+
+    def __str__(self):
+        return self.NAME
+
     async def execute(self, ctx: Player, *args, **kwargs):
         raise NotImplementedError("Command Handler Not Implemented")
 

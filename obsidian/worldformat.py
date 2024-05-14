@@ -29,6 +29,12 @@ class AbstractWorldFormat(AbstractSubmodule[T], Generic[T]):
     METADATA_WRITERS: dict[tuple[str, str], Callable] = field(default_factory=dict)  # List of metadata writers
     METADATA_READERS: dict[tuple[str, str], Callable] = field(default_factory=dict)  # List of metadata readers
 
+    def __repr__(self):
+        return f"<World Format {self.NAME}>"
+
+    def __str__(self):
+        return self.NAME
+
     def loadWorld(
         self,
         fileIO: io.BufferedRandom,

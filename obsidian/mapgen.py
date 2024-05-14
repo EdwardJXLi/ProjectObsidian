@@ -158,6 +158,12 @@ class AbstractMapGenerator(AbstractSubmodule[T], Generic[T]):
     ) -> bytearray:
         raise NotImplementedError("Map Generation Not Implemented")
 
+    def __repr__(self):
+        return f"<Map Generator {self.NAME}>"
+
+    def __str__(self):
+        return self.NAME
+
     @staticmethod
     def _convertArgument(_, argument: str) -> AbstractMapGenerator:
         try:

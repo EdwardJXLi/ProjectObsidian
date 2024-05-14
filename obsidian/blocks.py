@@ -25,6 +25,12 @@ def Block(*args, **kwargs):
 class AbstractBlock(AbstractSubmodule[T], Generic[T]):
     ID: int = 0
 
+    def __repr__(self):
+        return f"<Block {self.NAME} ({self.ID})>"
+
+    def __str__(self):
+        return self.NAME
+
     async def placeBlock(self, ctx: Player, blockX: int, blockY: int, blockZ: int):
         # Check edge case in which player is not connected to any world.
         if ctx.worldPlayerManager is None:
