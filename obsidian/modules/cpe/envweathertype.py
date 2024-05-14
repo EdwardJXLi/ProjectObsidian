@@ -87,7 +87,7 @@ class EnvWeatherTypeModule(AbstractModule):
 
                 # Read weather type
                 Logger.debug(f"Reading Weather Type Metadata: {data}", module="envweathertype")
-                weatherTypeMetadata.setWeatherType(WeatherType(data["WeatherType"]))  # Convert weather type to WeatherType enum
+                weatherTypeMetadata.setWeatherType(WeatherType(data["WeatherType"].value))  # Convert weather type to WeatherType enum
                 Logger.debug(f"Weather Type: {weatherTypeMetadata.getWeatherType().name}", module="envweathertype")
 
                 return weatherTypeMetadata
@@ -243,7 +243,7 @@ class EnvWeatherTypeModule(AbstractModule):
     # World Metadata for weather type
     class EnvWeatherTypeMetadata(WorldMetadata):
         def __init__(self):
-            self.weatherType: int = 0
+            self.weatherType: int = WeatherType.SUN.value
 
         def setWeatherType(self, weatherType: WeatherType):
             self.weatherType = weatherType.value

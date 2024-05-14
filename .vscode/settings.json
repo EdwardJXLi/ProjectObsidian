@@ -81,5 +81,8 @@
         ".vscode",
         "**/testing/**",
         "**/protocol-test/*"
+    ],
+    "flake8.args": [
+        "--ignore=E501"
     ]
 }

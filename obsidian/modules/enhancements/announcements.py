@@ -54,7 +54,7 @@ class AnnouncementsModule(AbstractModule):
         eventLoop = asyncio.new_event_loop()
         Logger.verbose(f"Creating new event loop {eventLoop} to send announcement.", module="announcements")
 
-        # Start hot-loop for heartbeat
+        # Start hot-loop for announcements
         while True:
             try:
                 # Inject the message event into the existing event loop
@@ -64,7 +64,7 @@ class AnnouncementsModule(AbstractModule):
                 # Sleep
                 time.sleep(config.interval)
             except Exception as e:
-                Logger.error(f"Unhandled exception in heartbeat thread - {type(e).__name__}: {e}", module="announcements", printTb=True)
+                Logger.error(f"Unhandled exception in announcements thread - {type(e).__name__}: {e}", module="announcements", printTb=True)
                 time.sleep(60)
 
     @staticmethod
