@@ -98,7 +98,7 @@ class ClickDistanceModule(AbstractModule):
             # Check if player supports the ClickDistance Extension
             if player.supports(CPEExtension("ClickDistance", 1)):
                 # Send click distance packet to player
-                await ClickDistanceModule.setClickDistance(player, ClickDistanceModule.getWorldClickDistance(self.world))
+                await ClickDistanceModule.setPlayerClickDistance(player, ClickDistanceModule.getWorldClickDistance(self.world))
 
         # Load click distance during world load
         @Inject(target=World.__init__, at=InjectionPoint.AFTER)
@@ -129,7 +129,7 @@ class ClickDistanceModule(AbstractModule):
 
     # Create helper function to set click distance of a player
     @staticmethod
-    async def setClickDistance(player: Player, distance: int):
+    async def setPlayerClickDistance(player: Player, distance: int):
         # Check if player supports the ClickDistance Extension
         if not player.supports(CPEExtension("ClickDistance", 1)):
             raise CPEError(f"Player {player.name} Does Not Support ClickDistance Extension!")
@@ -152,7 +152,7 @@ class ClickDistanceModule(AbstractModule):
             for player in world.playerManager.getPlayers():
                 # Only send click distance to players that support the ClickDistance Extension
                 if player.supports(CPEExtension("ClickDistance", 1)):
-                    await ClickDistanceModule.setClickDistance(player, distance)
+                    await ClickDistanceModule.setPlayerClickDistance(player, distance)
 
     # Create helper function to get click distance of a world
     @staticmethod
@@ -186,11 +186,11 @@ class ClickDistanceModule(AbstractModule):
 
     # Command to get and set an individual player's click distance.
     @Command(
-        "ClickDistance",
+        "PlayerClickDistance",
         description="Gets or sets the click distance for a player",
         version="v1.0.0"
     )
-    class ClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
+    class PlayerClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
@@ -212,7 +212,7 @@ class ClickDistanceModule(AbstractModule):
                 return await ctx.sendMessage("&eTo get the click distance of a world, use &d/worldclickdistance")
 
             # Send click distance to player
-            await ClickDistanceModule.setClickDistance(ctx, distance)
+            await ClickDistanceModule.setPlayerClickDistance(ctx, distance)
 
             # Notify Sender
             await ctx.sendMessage(f"&aSet click distance for {player.username} to {distance}")
@@ -221,15 +221,15 @@ class ClickDistanceModule(AbstractModule):
 
     # Command to reset a player's click distance to the default
     @Command(
-        "ResetClickDistance",
+        "ResetPlayerClickDistance",
         description="Resets the click distance for a player to the default",
         version="v1.0.0"
     )
-    class ResetClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
+    class ResetPlayerClickDistanceCommand(AbstractCommand["ClickDistanceModule"]):
         def __init__(self, *args):
             super().__init__(
                 *args,
-                ACTIVATORS=["resetclickdistance", "resetreach"],
+                ACTIVATORS=["resetclickdistance", "resetreach", "resetcd"],
                 OP=True
             )
 
@@ -246,7 +246,7 @@ class ClickDistanceModule(AbstractModule):
             defaultClickDistance = self.module.config.defaultClickDistance
 
             # Send click distance to player
-            await ClickDistanceModule.setClickDistance(ctx, defaultClickDistance)
+            await ClickDistanceModule.setPlayerClickDistance(ctx, defaultClickDistance)
 
             # Notify Sender
             await ctx.sendMessage(f"&aReset click distance for {player.username} to {defaultClickDistance}")
