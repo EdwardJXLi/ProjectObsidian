@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from threading import Thread
+import asyncio
+import time
+import random
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player
@@ -7,12 +13,6 @@ from obsidian.mixins import Inject, InjectionPoint
 from obsidian.config import AbstractConfig
 from obsidian.server import Server
 from obsidian.log import Logger
-
-from dataclasses import dataclass, field
-from threading import Thread
-import asyncio
-import time
-import random
 
 
 @Module(
@@ -75,17 +75,14 @@ class AnnouncementsModule(AbstractModule):
             return
 
         # Get announcement message
-        if config.random:
-            message = random.choice(config.messages)
-        else:
-            message = config.messages[messageIndex % len(config.messages)]
+        message = random.choice(config.messages) if config.random \
+            else config.messages[messageIndex % len(config.messages)]
 
         # Add prefix
         if isinstance(message, str):
             message = config.announcementPrefix + message
         else:
-            for i in range(len(message)):
-                message[i] = config.announcementPrefix + message[i]
+            message = [config.announcementPrefix + msg for msg in message]
         Logger.verbose(f"Sending announcement '{message}'", module="announcements")
 
         # Check if we should send the message

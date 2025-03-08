@@ -1,11 +1,11 @@
+from typing import Optional, cast
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.commands import AbstractCommand, Command
 from obsidian.cpe import CPEExtension
 from obsidian.player import Player
 from obsidian.errors import CommandError
 from obsidian.blocks import AbstractBlock
-
-from typing import Optional, cast
 
 
 @Module(

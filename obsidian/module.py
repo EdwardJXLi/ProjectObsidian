@@ -1,11 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from obsidian.server import Server
 
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, Type, Optional, Generic
+from typing import Any, Type, Optional, Generic, TYPE_CHECKING
 from pathlib import Path
 import importlib
 import pkgutil
@@ -32,6 +29,9 @@ from obsidian.errors import (
     FatalError
 )
 from obsidian.types import formatName, T
+
+if TYPE_CHECKING:
+    from obsidian.server import Server
 
 
 # Manager Skeleton
@@ -92,7 +92,7 @@ class AbstractModule(ABC):
         # Initialize and Return the config
         return config(name, *args, rootPath=rootPath, autoInit=True, hideWarning=True, **kwargs)
 
-    def postInit(*args, **kwargs):
+    def postInit(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -131,8 +131,8 @@ class _ModuleManager(AbstractManager):
         super().__init__("Module", AbstractModule)
 
         # Creates List Of Modules That Has The Module Name As Keys
-        self._modulePreloadDict: dict[str, Type[AbstractModule]] = dict()
-        self._moduleDict: dict[str, AbstractModule] = dict()
+        self._modulePreloadDict: dict[str, Type[AbstractModule]] = {}
+        self._moduleDict: dict[str, AbstractModule] = {}
         self._moduleIgnorelist: list[str] = []
         self._sortedModuleGraph: list[Type[AbstractModule]] = []
         self._completed: bool = False
@@ -280,7 +280,7 @@ class _ModuleManager(AbstractManager):
                 Logger.verbose(f"Directory {relative_path.as_posix()} has '.obignore' file. Skipping!", module="module-import")
                 return
             # If __init__.py is defined in the folder, treat the entire directory as the module
-            elif Path(path, "__init__.py").exists():
+            if Path(path, "__init__.py").exists():
                 Logger.debug(f"Detected __init__.py in {path}. Treating as module.", module="module-import")
                 # abs_import is already in the correct format to load the module
                 loadModule(abs_import)
@@ -304,7 +304,7 @@ class _ModuleManager(AbstractManager):
         Logger.verbose(f"Detected and Imported Module Files {_moduleFiles}", module="module-import")
         # Check If Core Was Loaded
         if self._ensureCore:
-            if "core" not in self._modulePreloadDict.keys():
+            if "core" not in self._modulePreloadDict:
                 self._errorList.append(("core", "PreInit-EnsureCore"))  # Module Loaded WITH Errors
                 raise FatalError("Error While Loading Module core - Critical Module Not Found")
 
@@ -395,14 +395,13 @@ class _ModuleManager(AbstractManager):
                     depVer = dependency.VERSION
                     Logger.verbose(f"Checking if Dependency {depName} Exists", module="module-resolve")
                     # Check if Dependency is "Loaded"
-                    if depName in self._modulePreloadDict.keys():
+                    if depName in self._modulePreloadDict:
                         # Check if Version should be checked
                         if depVer is None:
                             Logger.verbose(f"Dependency {dependency} Satisfied (Version Check Not Specified)!", module="module-resolve")
-                            pass  # No Version Check Needed
+                            # No Version Check Needed
                         elif depVer == self._modulePreloadDict[dependency.NAME].VERSION:
                             Logger.verbose(f"Dependency {dependency} Satisfied!", module="module-resolve")
-                            pass
                         else:
                             raise DependencyError(f"Dependency '{dependency}' Has Unmatched Version! (Requirement: {depVer} | Has: {self._modulePreloadDict[dependency.NAME].VERSION})")
                         # If All Passes, Link Module Class
@@ -421,16 +420,19 @@ class _ModuleManager(AbstractManager):
                     depVer = dependency.VERSION
                     Logger.verbose(f"Checking if Soft/Optional Dependency {depName} Exists", module="module-resolve")
                     # Check if Soft Dependency is "Loaded"
-                    if depName in self._modulePreloadDict.keys():
+                    if depName in self._modulePreloadDict:
                         # Check if Version should be checked
                         if depVer is None:
                             Logger.verbose(f"Soft/Optional Dependency {dependency} Satisfied (Version Check Not Specified)!", module="module-resolve")
-                            pass  # No Version Check Needed
+                            # No Version Check Needed
                         elif depVer == self._modulePreloadDict[dependency.NAME].VERSION:
                             Logger.verbose(f"Soft/Optional Dependency {dependency} Satisfied!", module="module-resolve")
-                            pass
                         else:
-                            Logger.warn(f"Soft/Optional Dependency '{dependency}' Has Unmatched Version! (Requirement: {depVer} | Has: {self._modulePreloadDict[dependency.NAME].VERSION})", module="module-resolve")
+                            Logger.warn(
+                                f"Soft/Optional Dependency '{dependency}' Has Unmatched Version! " + \
+                                f"(Requirement: {depVer} | Has: {self._modulePreloadDict[dependency.NAME].VERSION})",
+                                module="module-resolve"
+                            )
                         # If All Passes, Link Module Class
                         dependency.MODULE = self._modulePreloadDict[dependency.NAME]
                     else:
@@ -523,7 +525,7 @@ class _ModuleManager(AbstractManager):
             Logger.verbose(f"Added {module.NAME} To Dependency Graph. DG Is Now {self._sortedModuleGraph}", module="topological-sort")
 
         # Run Topological Sort on All Non-Visited Modules
-        for moduleName in list(self._modulePreloadDict.keys()):
+        for moduleName in list(self._modulePreloadDict):
             Logger.verbose(f"Attempting Topological Sort on {moduleName}", module="module-prep")
             if moduleName not in visited:
                 _topologicalSort(self._modulePreloadDict[moduleName])
@@ -533,7 +535,7 @@ class _ModuleManager(AbstractManager):
 
     # Intermediate Function to Initialize Modules
     def _initModules(self):
-        for idx, module in enumerate(self._sortedModuleGraph):
+        for _, module in enumerate(self._sortedModuleGraph):
             # Get the module name
             moduleName = module.NAME
             try:
@@ -557,7 +559,7 @@ class _ModuleManager(AbstractManager):
                 # Handle Exception if Error Occurs
                 self._errorList.append((moduleName, "Init-Module"))  # Module Loaded WITH Errors
                 # If the Error is an Init Error (raised on purpose), Don't print out TB
-                Logger.error(f"Error While Initializing Modules For {moduleName} - {type(e).__name__}: {e}\n", module="module-init", printTb=not not isinstance(e, InitError))
+                Logger.error(f"Error While Initializing Modules For {moduleName} - {type(e).__name__}: {e}\n", module="module-init", printTb=isinstance(e, InitError))
                 Logger.warn("!!! Module Errors May Cause Compatibility Issues And/Or Data Corruption !!!\n", module="module-init")
                 Logger.warn(f"Skipping Module {moduleName}?", module="module-init")
                 Logger.askConfirmation()
@@ -669,7 +671,7 @@ class _ModuleManager(AbstractManager):
         # Format Name
         name = formatName(name)
         # Checking If Module Is Already In Modules List
-        if name in self._modulePreloadDict.keys():
+        if name in self._modulePreloadDict:
             raise InitRegisterError(f"Module {name} Has Already Been Registered!")
         # Check If Module Is Ignored
         if name in self._moduleIgnorelist:
@@ -717,6 +719,7 @@ class _ModuleManager(AbstractManager):
             raise e
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
+            return None
 
     # Function To Get Module Object From Module Name
     def getModule(self, module: str, ignoreCase: bool = True) -> AbstractModule:
@@ -724,10 +727,8 @@ class _ModuleManager(AbstractManager):
             for mName, mObject in self._moduleDict.items():
                 if mName.lower() == module.lower():
                     return mObject
-            else:
-                raise KeyError(module)
-        else:
-            return self._moduleDict[formatName(module)]
+            raise KeyError(module)
+        return self._moduleDict[formatName(module)]
 
     # Handles _ModuleManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractModule:

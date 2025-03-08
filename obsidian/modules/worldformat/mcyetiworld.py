@@ -1,12 +1,12 @@
+from pathlib import Path
+import struct
+import io
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.log import Logger
 from obsidian.worldformat import WorldFormat, AbstractWorldFormat
 from obsidian.world import World, WorldManager
 from obsidian.errors import WorldFormatError
-
-from pathlib import Path
-import struct
-import io
 
 
 @Module(

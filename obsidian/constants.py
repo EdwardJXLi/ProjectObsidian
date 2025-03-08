@@ -42,14 +42,14 @@ MANAGERS_LIST = []
 # Helper function to get git hash
 def get_git_revision():
     git_dir = pathlib.Path(SERVER_PATH, "../", ".git").resolve()
-    with pathlib.Path(git_dir, 'HEAD').open('r') as head:
+    with pathlib.Path(git_dir, 'HEAD').open('r', encoding="utf-8") as head:
         line = head.readline()
         if line.startswith("ref: "):
             ref = line.split(' ')[-1].strip()
         else:
             return line
 
-    with pathlib.Path(git_dir, ref).open('r') as git_hash:
+    with pathlib.Path(git_dir, ref).open('r', encoding="utf-8") as git_hash:
         return git_hash.readline().strip()
 
 

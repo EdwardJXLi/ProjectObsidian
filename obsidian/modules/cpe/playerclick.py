@@ -1,11 +1,11 @@
+from typing import Optional
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.packet import RequestPacket, AbstractRequestPacket
 from obsidian.player import Player
 from obsidian.errors import ServerError
 from obsidian.cpe import CPE
-
-from typing import Optional
-import struct
 
 
 @Module(

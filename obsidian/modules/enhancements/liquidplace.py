@@ -57,7 +57,7 @@ class LiquidPlaceModule(AbstractModule):
                     updateSelf=True
                 )
         else:
-            return await super(type(block_self), block_self).placeBlock(ctx, blockX, blockY, blockZ)
+            return await block_self.placeBlock(ctx, blockX, blockY, blockZ)
 
     @Command(
         "ToggleLiquidPlace",

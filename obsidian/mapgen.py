@@ -105,9 +105,8 @@ class MapGeneratorStatus:
         if self.error:
             # Raise error if error is set
             raise self.error
-        else:
-            # Else, return the current status
-            return self.done, self.progress, self.status
+        # Else, return the current status
+        return self.done, self.progress, self.status
 
     # Waits for status to update
     # TODO: Maybe make an async version of this?
@@ -116,13 +115,12 @@ class MapGeneratorStatus:
         if self.error:
             # Raise error if error is set
             raise self.error
-        elif self.done:
+        if self.done:
             # If done, no need to wait
             return self.done, self.progress, self.status
-        else:
-            # Else, wait for status to update
-            self._event.wait()
-            return self.done, self.progress, self.status
+        # Else, wait for status to update
+        self._event.wait()
+        return self.done, self.progress, self.status
 
     # Sets the final map. Should be done
     # TODO: Make updates to map during generation?
@@ -135,12 +133,11 @@ class MapGeneratorStatus:
     def getFinalMap(self):
         if not self.done:
             raise RuntimeError("Map Generation Not Complete!")
-        elif self.error:
+        if self.error:
             raise RuntimeError("Map Generation Failed!")
-        elif not self._map:
+        if not self._map:
             raise RuntimeError("Map Is Empty! setFinalMap() was never called!")
-        else:
-            return self._map
+        return self._map
 
 
 # Map Generator Skeleton
@@ -181,7 +178,7 @@ class _MapGeneratorManager(AbstractManager):
         super().__init__("Map Generator", AbstractMapGenerator)
 
         # Creates List Of Map Generators That Has The Generator Name As Keys
-        self._generatorDict: dict[str, AbstractMapGenerator] = dict()
+        self._generatorDict: dict[str, AbstractMapGenerator] = {}
 
     # Registration. Called by Map Generator Decorator
     def register(self, mapGenClass: Type[AbstractMapGenerator], module: AbstractModule) -> AbstractMapGenerator:
@@ -196,14 +193,17 @@ class _MapGeneratorManager(AbstractManager):
         if mapGen.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if mapGen.NAME not in self._generatorDict.keys():
-                Logger.warn(f"Map Generator {mapGen.NAME} From Module {mapGen.MODULE.NAME} Is Trying To Override A Map Generator That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            if mapGen.NAME not in self._generatorDict:
+                Logger.warn(
+                    f"Map Generator {mapGen.NAME} From Module {mapGen.MODULE.NAME} Is Trying To Override A Map Generator That Does Not Exist! " + \
+                    "If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init"
+                )
             else:
                 Logger.debug(f"Map Generator {mapGen.NAME} Is Overriding Map Generator {self._generatorDict[mapGen.NAME].NAME}", module=f"{module.NAME}-submodule-init")
 
         # Checking If Map Generator Name Is Already In Generators List
         # Ignoring if OVERRIDE is set
-        if mapGen.NAME in self._generatorDict.keys() and not mapGen.OVERRIDE:
+        if mapGen.NAME in self._generatorDict and not mapGen.OVERRIDE:
             raise InitRegisterError(f"Map Generator {mapGen.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Add Map Generator to Map Generators List
@@ -228,6 +228,7 @@ class _MapGeneratorManager(AbstractManager):
             return table
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
+            return None
 
     # Property Method To Get Number Of Map Generators
     @property
@@ -240,10 +241,8 @@ class _MapGeneratorManager(AbstractManager):
             for gName, gObject in self._generatorDict.items():
                 if gName.lower() == generator.lower():
                     return gObject
-            else:
-                raise KeyError(generator)
-        else:
-            return self._generatorDict[generator]
+            raise KeyError(generator)
+        return self._generatorDict[generator]
 
     # Handles _MapGeneratorManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractMapGenerator:

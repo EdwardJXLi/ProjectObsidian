@@ -1,3 +1,7 @@
+from dataclasses import dataclass, field
+from typing import cast
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets
@@ -8,10 +12,6 @@ from obsidian.errors import ServerError, ModuleError
 from obsidian.commands import AbstractCommand, Command
 from obsidian.player import Player
 from obsidian.log import Logger
-
-from dataclasses import dataclass, field
-from typing import cast
-import struct
 
 
 @Module(
@@ -72,39 +72,39 @@ class TextColorsModule(AbstractModule):
             # Check the red label
             if "red" not in data:
                 raise ModuleError(f"Missing red value for color {label}!")
-            elif type(data["red"]) is not int:
+            if not isinstance(data["red"], int):
                 raise ModuleError(f"Red value for color {label} must be int!")
-            elif data["red"] > 255 or data["red"] < 0:
+            if data["red"] > 255 or data["red"] < 0:
                 raise ModuleError(f"Red value for color {label} must be between 0 and 255!")
 
             # Check the green label
             if "green" not in data:
                 raise ModuleError(f"Missing green value for color {label}!")
-            elif type(data["green"]) is not int:
+            if not isinstance(data["green"], int):
                 raise ModuleError(f"Green value for color {label} must be int!")
-            elif data["green"] > 255 or data["green"] < 0:
+            if data["green"] > 255 or data["green"] < 0:
                 raise ModuleError(f"Green value for color {label} must be between 0 and 255!")
 
             # Check the blue label
             if "blue" not in data:
                 raise ModuleError(f"Missing blue value for color {label}!")
-            elif type(data["blue"]) is not int:
+            if not isinstance(data["blue"], int):
                 raise ModuleError(f"Blue value for color {label} must be int!")
-            elif data["blue"] > 255 or data["blue"] < 0:
+            if data["blue"] > 255 or data["blue"] < 0:
                 raise ModuleError(f"Blue value for color {label} must be between 0 and 255!")
 
             # Check the alpha label
             if "alpha" not in data:
                 raise ModuleError(f"Missing alpha value for color {label}!")
-            elif type(data["alpha"]) is not int:
+            if not isinstance(data["alpha"], int):
                 raise ModuleError(f"Alpha value for color {label} must be int!")
-            elif data["alpha"] > 255 or data["alpha"] < 0:
+            if data["alpha"] > 255 or data["alpha"] < 0:
                 raise ModuleError(f"Alpha value for color {label} must be between 0 and 255!")
 
             # Check the color code
             if "colorCode" not in data:
                 raise ModuleError(f"Missing color code value for color {label}!")
-            elif type(data["colorCode"]) is not str or len(data["colorCode"]) != 1:
+            if not isinstance(data["colorCode"], str) or len(data["colorCode"]) != 1:
                 raise ModuleError(f"Color code value for color {label} must be a single character string!")
 
         # Finish config verification

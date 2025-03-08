@@ -1,3 +1,6 @@
+from enum import Enum
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.player import Player, PlayerManager, WorldPlayerManager
@@ -5,9 +8,7 @@ from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets, pac
 from obsidian.commands import Command, AbstractCommand
 from obsidian.errors import ConverterError, CPEError
 from obsidian.log import Logger, Color
-
-from enum import Enum
-import struct
+from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters, packageCP437String
 
 
 class MessageType(Enum):
@@ -73,7 +74,6 @@ class MessageTypesModule(AbstractModule):
         if player.supports(CPEExtension("MessageTypes", 1)):
             # If Server supports FullCP437, but the client does not support FullCP437 or EmoteFix, convert message to ascii
             if not message.isascii() and "fullcp437" in Modules and not (player.supports(CPEExtension("FullCP437", 1)) and player.supports(CPEExtension("EmoteFix", 1))):
-                from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
                 Logger.warn(f"Player {player.name} Does Not Support FullCP437 or EmoteFix Extension! Using Fallback Characters!", module="player-enhanced-message")
                 message = replaceNonAsciiCharacters(message)
 
@@ -122,15 +122,13 @@ class MessageTypesModule(AbstractModule):
 
         # Generate list of players who do not support the MessageTypes extension
         noSupport = {player for player in worldPlayerManager.getPlayers() if not player.supports(CPEExtension("MessageTypes", 1))}
-        hasSupport = (set(worldPlayerManager.getPlayers()) - noSupport)
+        hasSupport = set(worldPlayerManager.getPlayers()) - noSupport
 
         # Handle edge-cases with FullCP437
         if not message.isascii() and "fullcp437" in Modules:
-            from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
-
             # Generate list of players who do not support the FullCP437 or EmoteFix extension
             noCP437Support = {player for player in worldPlayerManager.getPlayers() if not (player.supports(CPEExtension("FullCP437", 1)) and player.supports(CPEExtension("EmoteFix", 1)))}
-            hasCP437Support = (set(worldPlayerManager.getPlayers()) - noSupport)
+            hasCP437Support = set(worldPlayerManager.getPlayers()) - noSupport
 
             # Send message packet to all players who support the MessageTypes, FullCP437, and EmoteFix extension
             Logger.debug(f"Sending Enhanced Message To {len(hasSupport & hasCP437Support)} Players!", module="world-enhanced-message")
@@ -165,7 +163,6 @@ class MessageTypesModule(AbstractModule):
 
             # If Server supports FullCP437, convert message to ascii in case the client does not support FullCP437 or EmoteFix
             if "fullcp437" in Modules:
-                from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
                 message = replaceNonAsciiCharacters(message)
 
             await worldPlayerManager.sendWorldPacket(
@@ -207,15 +204,13 @@ class MessageTypesModule(AbstractModule):
         # Generate list of players who do not support the MessageTypes extension
         allPlayers = playerManager.getPlayers()
         noSupport = {player for player in allPlayers if not player.supports(CPEExtension("MessageTypes", 1))}
-        hasSupport = (set(allPlayers) - noSupport)
+        hasSupport = set(allPlayers) - noSupport
 
         # Handle edge-cases with FullCP437
         if not message.isascii() and "fullcp437" in Modules:
-            from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
-
             # Generate list of players who do not support the FullCP437 or EmoteFix extension
             noCP437Support = {player for player in allPlayers if not (player.supports(CPEExtension("FullCP437", 1)) and player.supports(CPEExtension("EmoteFix", 1)))}
-            hasCP437Support = (set(allPlayers) - noSupport)
+            hasCP437Support = set(allPlayers) - noSupport
 
             # Send message packet to all players who support the MessageTypes, FullCP437, and EmoteFix extension
             Logger.debug(f"Sending Enhanced Message To {len(hasSupport & hasCP437Support)} Players!", module="global-enhanced-message")
@@ -250,7 +245,6 @@ class MessageTypesModule(AbstractModule):
 
             # If Server supports FullCP437, convert message to ascii in case the client does not support FullCP437 or EmoteFix
             if "fullcp437" in Modules:
-                from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
                 message = replaceNonAsciiCharacters(message)
 
             await playerManager.sendGlobalPacket(
@@ -283,7 +277,6 @@ class MessageTypesModule(AbstractModule):
 
             # If FullCP437 extension is enabled, ise the FullCP437 packing method
             if "fullcp437" in Modules:
-                from obsidian.modules.lib.emojilib import packageCP437String
                 packageStringMethod = packageCP437String
             else:
                 packageStringMethod = packageString

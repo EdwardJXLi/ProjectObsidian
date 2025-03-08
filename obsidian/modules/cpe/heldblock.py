@@ -1,3 +1,6 @@
+from typing import Optional
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.modules.core import CoreModule
 from obsidian.cpe import CPE, CPEExtension
@@ -8,9 +11,6 @@ from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets
 from obsidian.mixins import Inject, InjectionPoint, addAttribute
 from obsidian.errors import ServerError, CPEError, CommandError
 from obsidian.log import Logger
-
-from typing import Optional
-import struct
 
 
 @Module(

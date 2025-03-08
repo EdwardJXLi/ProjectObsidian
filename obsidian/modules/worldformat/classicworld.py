@@ -1,10 +1,6 @@
-from obsidian.module import Module, AbstractModule, Dependency
-from obsidian.log import Logger
-from obsidian.world import WorldMetadata
-from obsidian.worldformat import WorldFormat, WorldFormatManager, AbstractWorldFormat
-from obsidian.mapgen import MapGenerators
-from obsidian.world import World, WorldManager
-from obsidian.errors import WorldFormatError
+'''
+ClassicWorld World Format Support as documented at https://wiki.vg/ClassicWorld_file_format
+'''
 
 from pathlib import Path
 import datetime
@@ -12,9 +8,14 @@ import time
 import io
 import uuid
 
-'''
-ClassicWorld World Format Support as documented at https://wiki.vg/ClassicWorld_file_format
-'''
+from obsidian.module import Module, AbstractModule, Dependency
+from obsidian.log import Logger
+from obsidian.world import WorldMetadata
+from obsidian.worldformat import WorldFormat, WorldFormatManager, AbstractWorldFormat
+from obsidian.mapgen import MapGenerators
+from obsidian.world import World, WorldManager
+from obsidian.errors import WorldFormatError
+from obsidian.modules.lib.nbtlib import NBTLib
 
 
 @Module(
@@ -77,7 +78,6 @@ class ClassicWorldModule(AbstractModule):
             worldManager: WorldManager,
             persistent: bool = True
         ):
-            from obsidian.modules.lib.nbtlib import NBTLib
 
             # Open, read, and parse NBT file
             Logger.debug("Reading ClassicWorld NBT File", module="classicworld")
@@ -225,7 +225,7 @@ class ClassicWorldModule(AbstractModule):
             # Try parsing world generator
             Logger.debug("Parsing World Generator", module="classicworld")
             if mapGeneratorSoftware == "Obsidian":
-                if type(mapGeneratorName) is str and mapGeneratorName in MapGenerators:
+                if isinstance(mapGeneratorName, str) and mapGeneratorName in MapGenerators:
                     generator = MapGenerators[mapGeneratorName]
                 else:
                     Logger.info(f"Unknown World Generator {mapGeneratorName}.", module="classicworld")
@@ -310,8 +310,6 @@ class ClassicWorldModule(AbstractModule):
             fileIO: io.BufferedRandom,
             worldManager: WorldManager
         ):
-            from obsidian.modules.lib.nbtlib import NBTLib
-
             # Begin creating NBT File
             Logger.debug("Creating NBT File", module="classicworld")
             nbtFile = NBTLib.NBTFile()

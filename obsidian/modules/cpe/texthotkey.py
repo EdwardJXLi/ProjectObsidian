@@ -1,3 +1,7 @@
+from dataclasses import dataclass, field
+from typing import cast
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, Packets, packageString
@@ -6,10 +10,6 @@ from obsidian.config import AbstractConfig
 from obsidian.mixins import Inject, InjectionPoint
 from obsidian.errors import ServerError, ModuleError
 from obsidian.log import Logger
-
-from dataclasses import dataclass, field
-from typing import cast
-import struct
 
 
 @Module(
@@ -36,11 +36,11 @@ class TextHotKeyModule(AbstractModule):
         Logger.info("Verifying Hotkey Config", module="texthotkey")
         hotkeys = self.config.hotkeys
         for label, data in hotkeys.items():
-            if ("action" not in data) or (type(data["action"]) is not str):
+            if not ("action" in data or isinstance(data["action"], str)):
                 raise ModuleError(f"Invalid Action Field For Hotkey {label}!")
-            if ("keyCode" not in data) or (type(data["keyCode"]) is not int):
+            if not ("keyCode" in data or isinstance(data["keyCode"], str)):
                 raise ModuleError(f"Invalid KeyCode Field For Hotkey {label}!")
-            if ("keyMods" not in data) or (type(data["keyMods"]) is not int):
+            if not ("keyMods" in data or isinstance(data["keyMods"], int)):
                 raise ModuleError(f"Invalid KeyMods Field For Hotkey {label}!")
         Logger.info(f"{len(hotkeys)} Hotkeys Loaded: {hotkeys}", module="texthotkey")
 

@@ -1,11 +1,12 @@
+from typing import Callable, Awaitable, Optional, cast
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.player import Player, WorldPlayerManager
 from obsidian.world import World, WorldMetadata
 from obsidian.worldformat import WorldFormatManager, WorldFormats
 from obsidian.mixins import Inject, InjectionPoint, Override
 from obsidian.log import Logger
-
-from typing import Callable, Awaitable, Optional, cast
+from obsidian.modules.lib.nbtlib import NBTLib
 
 
 @Module(
@@ -62,8 +63,6 @@ class LogoutLocationsModule(AbstractModule):
 
         # If ClassicWorld is installed, create readers and writers for ClassicWorld
         if "ClassicWorld" in WorldFormats:
-            from obsidian.modules.lib.nbtlib import NBTLib
-
             # Create readers and writers for LogoutLocation
             def readLogoutLocationCW(data: NBTLib.TAG_Compound):
                 logoutLocations = LogoutLocationMetadata()
@@ -119,15 +118,15 @@ class LogoutLocationsModule(AbstractModule):
             # If spawn is set, ignore logout location
             if spawn:
                 return await _super(self, player, spawn=spawn)
-            else:
-                # Get the logoutLocation metadata
-                logoutLocation: LogoutLocationMetadata = getattr(self.world, "logoutLocations")
 
-                # Get the player's logout location -> Can either return tuple of (x, y, z, yaw, pitch) or None
-                playerLogoutLocation = logoutLocation.getLogoutLocation(player.name)
+            # Get the logoutLocation metadata
+            logoutLocation: LogoutLocationMetadata = getattr(self.world, "logoutLocations")
 
-                # Continue with normal joinPlayer
-                return await _super(self, player, spawn=playerLogoutLocation)
+            # Get the player's logout location -> Can either return tuple of (x, y, z, yaw, pitch) or None
+            playerLogoutLocation = logoutLocation.getLogoutLocation(player.name)
+
+            # Continue with normal joinPlayer
+            return await _super(self, player, spawn=playerLogoutLocation)
 
         # Save player logout location on leave
         @Inject(target=WorldPlayerManager.removePlayer, at=InjectionPoint.BEFORE)
@@ -172,7 +171,7 @@ class LogoutLocationsModule(AbstractModule):
 
 class LogoutLocationMetadata(WorldMetadata):
     def __init__(self):
-        self.logoutLocations: dict[str, tuple[int, int, int, int, int]] = dict()
+        self.logoutLocations: dict[str, tuple[int, int, int, int, int]] = {}
 
     def setLogoutLocation(self, name: str, x: int, y: int, z: int, yaw: int, pitch: int):
         self.logoutLocations[name] = (x, y, z, yaw, pitch)
@@ -180,8 +179,7 @@ class LogoutLocationMetadata(WorldMetadata):
     def getLogoutLocation(self, name: str):
         if name in self.logoutLocations:
             return self.logoutLocations[name]
-        else:
-            return None
+        return None
 
     def getAllLogoutLocations(self):
         return self.logoutLocations

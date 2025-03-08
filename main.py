@@ -2,23 +2,25 @@
 Copyright (C) RadioactiveHydra (Edward) 2023
 """
 
-# Check python version to see if compatible
-import sys
-if sys.version_info.major < 3 or sys.version_info.minor < 10:
-    raise Exception("Python Version Out Of Date! Minimum Required: 3.10.0")
-
 import argparse
 import asyncio
 import signal
+import sys
 import traceback
 
 from obsidian.server import Server
 from obsidian.log import Logger
 
+# Check python version to see if compatible
+if sys.version_info.major < 3 or sys.version_info.minor < 10:
+    raise RuntimeError("Python Version Out Of Date! Minimum Required: 3.10.0")
+
 
 async def main():
     # Initiate Argument Parser
-    parser = argparse.ArgumentParser(description="Project Obsidian - Open Source Minecraft Classic Server Reverse Engineer And Reimplementation Project")
+    parser = argparse.ArgumentParser(
+        description="Project Obsidian - Open Source Minecraft Classic Server Reverse Engineer And Reimplementation Project"
+    )
     # parser.add_argument('-x', "--TEMPLATE", type=int, nargs='?', help="TEMPLATE", default=TEMPLATE)
     parser.add_argument('-a', "--address", type=str, nargs='?', help="The Address The Minecraft Server Would Bind To.", default="0.0.0.0")
     parser.add_argument('-p', "--port", type=int, nargs='?', help="The Port The Minecraft Server Would Bind To.", default=25565)

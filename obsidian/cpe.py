@@ -1,14 +1,14 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from obsidian.module import AbstractModule
 
-from typing import Type
+from typing import Type, TYPE_CHECKING
 from collections import namedtuple
-from obsidian.utils.ptl import PrettyTableLite
 
+from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.errors import CPEError, FatalError
+
+if TYPE_CHECKING:
+    from obsidian.module import AbstractModule
 
 
 # Define new type for extension classes
@@ -78,7 +78,7 @@ class _CPEModuleManager():
     # Returns True if there is a naming conflict with the given CPE Extension
     def hasCPENameConflict(self, checkModule: Type[AbstractModule]) -> bool:
         moduleCpeName = self.getCPE(checkModule).name
-        for module, (extName, extVersion) in self._cpeExtensions.items():
+        for module, (extName, _) in self._cpeExtensions.items():
             # Ignore self
             if module == checkModule:
                 continue
@@ -101,8 +101,10 @@ class _CPEModuleManager():
         except FatalError as e:
             # Pass Down Fatal Error To Base Server
             raise e
+            return None
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
+            return None
 
     # Property Method To Get Number Of CPE Extensions
     @property

@@ -1,3 +1,8 @@
+from dataclasses import dataclass
+from typing import Callable, Any, Optional, cast
+from enum import Enum
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.commands import Command, AbstractCommand
@@ -10,11 +15,7 @@ from obsidian.config import AbstractConfig
 from obsidian.mixins import Inject, InjectionPoint
 from obsidian.errors import CPEError, CommandError, ConverterError
 from obsidian.log import Logger
-
-from dataclasses import dataclass
-from typing import Callable, Any, Optional, cast
-from enum import Enum
-import struct
+from obsidian.modules.lib.nbtlib import NBTLib
 
 
 class AspectPropertyType(Enum):
@@ -102,7 +103,7 @@ class EnvMapAspectModule(AbstractModule):
                 ("skyboxVerticalSpeed", float, 0.0),
             ]
 
-            mapAspectValues = list()
+            mapAspectValues = []
             for key, conversion, default in mapAspectKeys:
                 if key in data:
                     mapAspectValues.append(conversion(data[key]))
@@ -110,6 +111,7 @@ class EnvMapAspectModule(AbstractModule):
                     mapAspectValues.append(default)
                     Logger.warn(f"{key} not found in map aspect metadata. Defaulting to {default}", module="extmapaspect")
 
+            # pylint: disable-next=no-value-for-parameter
             mapAspectMetadata.setBulkMapAspect(
                 *mapAspectValues
             )
@@ -161,8 +163,6 @@ class EnvMapAspectModule(AbstractModule):
 
         # If ClassicWorld is installed, create readers and writers for ClassicWorld
         if "ClassicWorld" in WorldFormats:
-            from obsidian.modules.lib.nbtlib import NBTLib
-
             # Create readers and writers for ClassicWorld
             def cwReadMapAspect(data: NBTLib.TAG_Compound):
                 mapAspectMetadata = EnvMapAspectModule.EnvMapAspectMetadata()
@@ -190,7 +190,7 @@ class EnvMapAspectModule(AbstractModule):
                     ("SkyboxVer", float, 0.0),
                 ]
 
-                mapAspectValues = list()
+                mapAspectValues = []
                 for key, conversion, default in mapAspectKeys:
                     if key in data:
                         mapAspectValues.append(conversion(data[key].value))
@@ -198,6 +198,7 @@ class EnvMapAspectModule(AbstractModule):
                         mapAspectValues.append(default)
                         Logger.warn(f"{key} not found in map aspect metadata. Defaulting to {default}", module="extmapaspect")
 
+                # pylint: disable-next=no-value-for-parameter
                 mapAspectMetadata.setBulkMapAspect(
                     *mapAspectValues
                 )

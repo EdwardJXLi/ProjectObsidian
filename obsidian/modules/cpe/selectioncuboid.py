@@ -1,8 +1,8 @@
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.packet import ResponsePacket, AbstractResponsePacket, packageString
 from obsidian.cpe import CPE
-
-import struct
 
 
 @Module(

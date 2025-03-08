@@ -1,3 +1,8 @@
+from typing import Optional
+import inspect
+import random
+import math
+
 from obsidian.module import Module, AbstractModule, ModuleManager, Dependency
 from obsidian.constants import PY_VERSION, __version__
 from obsidian.types import _formatUsername, _formatIp
@@ -15,11 +20,6 @@ from obsidian.errors import (
 from obsidian.packet import (
     Packets,
 )
-
-from typing import Optional
-import inspect
-import random
-import math
 
 # Load Command Helper
 from obsidian.modules.core import CommandHelper
@@ -112,10 +112,9 @@ class EssentialsModule(AbstractModule):
                 # Process First as a plugin
                 if module:
                     return await Commands.HelpPlugin.execute(ctx, module=module, page=pageNum)
-                elif command:
+                if command:
                     return await Commands.HelpCmd.execute(ctx, cmd=command)
-                else:
-                    raise CommandError(f"{query} is not a plugin or a command.")
+                raise CommandError(f"{query} is not a plugin or a command.")
 
             # Generate and Parse list of commands
             cmdList = CommandManager._commandDict
@@ -280,7 +279,7 @@ class EssentialsModule(AbstractModule):
                             paramStr += f"&7({_typeToString(param.annotation)})"
                         paramStr += f"&b=&6{param.default}&b]"
                 # Capture arguments use {}
-                elif param.kind == param.VAR_POSITIONAL or param.kind == param.KEYWORD_ONLY:
+                elif param.kind in (param.VAR_POSITIONAL, param.KEYWORD_ONLY):
                     paramStr += f"&b{{{name}..."
                     if param.annotation != inspect._empty:
                         paramStr += f"&7({_typeToString(param.annotation)})"
@@ -656,7 +655,12 @@ class EssentialsModule(AbstractModule):
 
             # Add Header (Different depending on if server max size is set)
             if ctx.server.playerManager.maxSize is not None:
-                output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} | Worlds: {len(ctx.server.worldManager.worlds)}", color="&2"))
+                output.append(
+                    CommandHelper.centerMessage(
+                        f"&ePlayers Online: {len(ctx.server.playerManager.players)}/{ctx.server.playerManager.maxSize} | Worlds: {len(ctx.server.worldManager.worlds)}",
+                        color="&2"
+                    )
+                )
             else:
                 output.append(CommandHelper.centerMessage(f"&ePlayers Online: {len(ctx.server.playerManager.players)} | Worlds: {len(ctx.server.worldManager.worlds)}", color="&2"))
             output.append("&7Use /player [name] to see additional details about a player")
@@ -732,7 +736,7 @@ class EssentialsModule(AbstractModule):
             output = []
 
             # Generate mapping of player -> client
-            playerClients: dict[str, set[Player]] = dict()
+            playerClients: dict[str, set[Player]] = {}
             for player in ctx.server.playerManager.getPlayers():
                 client = player.clientSoftware
                 if client not in playerClients:
@@ -859,11 +863,11 @@ class EssentialsModule(AbstractModule):
             # Check if both players are in the same world!
             if ctx.worldPlayerManager is None:
                 raise CommandError("You are not in a world!")
-            elif teleportWho.worldPlayerManager is None:
+            if teleportWho.worldPlayerManager is None:
                 raise CommandError(f"{teleportWho.name} is not in a world!")
-            elif teleportTo.worldPlayerManager is None:
+            if teleportTo.worldPlayerManager is None:
                 raise CommandError(f"{teleportTo.name} is not in a world!")
-            elif teleportWho.worldPlayerManager.world != teleportTo.worldPlayerManager.world:
+            if teleportWho.worldPlayerManager.world != teleportTo.worldPlayerManager.world:
                 raise CommandError(f"{teleportWho.name} and {teleportTo.name} are not in the same world!")
 
             # Check if the player teleporting to is within the world boundaries
