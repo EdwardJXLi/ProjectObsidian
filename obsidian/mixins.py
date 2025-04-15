@@ -89,7 +89,7 @@ def Override(
         Logger.debug(f"Overriding Method {target.__name__} ({target}) with {destination.__name__}", module="dynamic-method-override")
 
         # Generate the additional contexts
-        ctxArgs = dict()
+        ctxArgs = {}
         if additionalContext:
             ctxArgs.update(additionalContext)  # Add additional context if it exists
         if passSuper:
@@ -98,10 +98,10 @@ def Override(
         # Check if both the target and the destination are either both async or both non async
         if inspect.iscoroutinefunction(target) is False and inspect.iscoroutinefunction(destination) is True:
             raise MixinError(f"Cannot override non-async function {target.__name__} with async function {destination.__name__}!")
-        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
+        if inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
             raise MixinError(f"Cannot override async function {target.__name__} with non-async function {destination.__name__}!")
         # If both target and destination are async, implement the async override
-        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
+        if inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
             async def _asyncoverride(*args, **kwargs):
                 return await destination(*args, **kwargs, **ctxArgs)
 
@@ -145,7 +145,7 @@ def Inject(
         Logger.debug(f"Injecting Method {destination.__name__} {at} class {target.__name__} ({target})", module="dynamic-method-inject")
 
         # Generate the additional contexts
-        ctxArgs = dict()
+        ctxArgs = {}
         if additionalContext:
             ctxArgs.update(additionalContext)  # Add additional context if it exists
 
@@ -156,10 +156,10 @@ def Inject(
         # Check if both the target and the destination are either both async or both non async
         if inspect.iscoroutinefunction(target) is False and inspect.iscoroutinefunction(destination) is True:
             raise MixinError(f"Cannot inject async function {destination.__name__} into non-async function {target.__name__}!")
-        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
+        if inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
             raise MixinError(f"Cannot inject non-async function {destination.__name__} into async function {target.__name__}!")
         # If both target and destination are async, implement the async injection
-        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
+        if inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
             if at == InjectionPoint.BEFORE:
                 async def _asyncinject(*args, **kwargs):
                     # Call new function
@@ -244,17 +244,17 @@ def Extend(
         Logger.debug(f"Extending Method {target.__name__} ({target}) with {destination.__name__}", module="dynamic-method-extend")
 
         # Generate the additional contexts
-        ctxArgs = dict()
+        ctxArgs = {}
         if additionalContext:
             ctxArgs.update(additionalContext)  # Add additional context if it exists
 
         # Check if both the target and the destination are either both async or both non async
         if inspect.iscoroutinefunction(target) is False and inspect.iscoroutinefunction(destination) is True:
             raise MixinError(f"Cannot extend non-async function {target.__name__} with async function {destination.__name__}!")
-        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
+        if inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is False:
             raise MixinError(f"Cannot extend async function {target.__name__} with non-async function {destination.__name__}!")
         # If both target and destination are async, implement the async extension
-        elif inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
+        if inspect.iscoroutinefunction(target) is True and inspect.iscoroutinefunction(destination) is True:
             async def _asyncextend(*args, **kwargs):
                 output = await target(*args, **kwargs, **ctxArgs)
                 return await destination(output)

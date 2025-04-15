@@ -1,3 +1,8 @@
+from typing import Callable, Awaitable, cast
+import asyncio
+import datetime
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.log import Logger
 from obsidian.packet import Packets
@@ -11,11 +16,6 @@ from obsidian.packet import (
     AbstractResponsePacket,
     ResponsePacket
 )
-
-from typing import Callable, Awaitable, cast
-import asyncio
-import datetime
-import struct
 
 
 @Module(
@@ -34,7 +34,7 @@ class BulkBlockUpdateModule(AbstractModule):
     def __init__(self, *args):
         super().__init__(*args)
 
-    def postInit(*args, **kwargs):
+    def postInit(self, *args, **kwargs):
         # Override the original bulkBlockUpdate method to use the new BulkBlockUpdate packet
         @Override(target=World.bulkBlockUpdate, passSuper=True)
         async def bulkBlockUpdate(

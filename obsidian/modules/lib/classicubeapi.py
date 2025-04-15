@@ -1,3 +1,10 @@
+from dataclasses import dataclass
+from threading import Thread
+from typing import Optional
+import urllib.request
+import urllib.parse
+import time
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player
@@ -6,13 +13,6 @@ from obsidian.constants import __version__
 from obsidian.config import AbstractConfig
 from obsidian.server import Server
 from obsidian.log import Logger
-
-from dataclasses import dataclass
-from threading import Thread
-from typing import Optional
-import urllib.request
-import urllib.parse
-import time
 
 
 @Module(

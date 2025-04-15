@@ -1,3 +1,14 @@
+from typing import Optional, Iterable, Callable, Any
+from pathlib import Path
+import datetime
+import zipfile
+import struct
+import json
+import gzip
+import time
+import uuid
+import io
+
 from obsidian.module import Module, AbstractModule
 from obsidian.constants import MAX_MESSAGE_LENGTH, __version__
 from obsidian.log import Logger
@@ -19,18 +30,6 @@ from obsidian.packet import (
     unpackString,
     packageString
 )
-
-from typing import Optional, Iterable, Callable, Any
-from pathlib import Path
-import datetime
-import zipfile
-import struct
-import json
-import gzip
-import time
-import uuid
-import io
-
 
 @Module(
     "Core",
@@ -83,14 +82,11 @@ class CoreModule(AbstractModule):
                 raise ClientError("Invalid Character In Verification Key")
 
             # Check Username Length (Hard Capped At 16 To Prevent Length Bugs)
-            if (len(username) > 16):
+            if len(username) > 16:
                 raise ClientError("Your Username Is Too Long (Max 16 Chars)")
 
             # Check if player supports CPE
-            if magicByte == 0x42:
-                supportsCPE = True
-            else:
-                supportsCPE = False
+            supportsCPE = magicByte == 0x42
 
             # Return User Identification
             return protocolVersion, username, verificationKey, supportsCPE
@@ -874,154 +870,154 @@ class CoreModule(AbstractModule):
         ):
             # Open Zip File
             Logger.debug("Loading OBW File", module="obsidianworld")
-            zipFile = zipfile.ZipFile(fileIO)
+            with zipfile.ZipFile(fileIO) as zipFile:
 
-            # Keep track of which files have not been touched
-            # We will add these back to the zip file later when saving, as to maintain backward compatibility
-            untouchedFiles = set(zipFile.namelist())
+                # Keep track of which files have not been touched
+                # We will add these back to the zip file later when saving, as to maintain backward compatibility
+                untouchedFiles = set(zipFile.namelist())
 
-            # Check validity of zip file
-            Logger.debug("Checking OBW File Validity", module="obsidianworld")
-            if "metadata" not in zipFile.namelist() or "map" not in zipFile.namelist():
-                raise WorldFormatError("ObsidianWorldFormat - Invalid OBW File! Missing Critical Data!")
+                # Check validity of zip file
+                Logger.debug("Checking OBW File Validity", module="obsidianworld")
+                if "metadata" not in zipFile.namelist() or "map" not in zipFile.namelist():
+                    raise WorldFormatError("ObsidianWorldFormat - Invalid OBW File! Missing Critical Data!")
 
-            # Load Metadata
-            Logger.debug("Loading Metadata", module="obsidianworld")
-            worldMetadata = json.loads(zipFile.read("metadata").decode("utf-8"))
-            untouchedFiles.remove("metadata")
-            Logger.debug(f"Loaded Metadata: {worldMetadata}", module="obsidianworld")
+                # Load Metadata
+                Logger.debug("Loading Metadata", module="obsidianworld")
+                worldMetadata = json.loads(zipFile.read("metadata").decode("utf-8"))
+                untouchedFiles.remove("metadata")
+                Logger.debug(f"Loaded Metadata: {worldMetadata}", module="obsidianworld")
 
-            # Check if metadata is valid
-            if self.criticalFields.intersection(set(worldMetadata.keys())) != self.criticalFields:
-                raise WorldFormatError("ObsidianWorldFormat - Invalid Metadata! Missing Critical Data!")
+                # Check if metadata is valid
+                if self.criticalFields.intersection(set(worldMetadata.keys())) != self.criticalFields:
+                    raise WorldFormatError("ObsidianWorldFormat - Invalid Metadata! Missing Critical Data!")
 
-            # Get information out of world metadata
-            Logger.debug("Parsing Metadata", module="obsidianworld")
-            # Critical Values
-            version = worldMetadata.get("version")
-            name = worldMetadata.get("name")
-            sizeX = worldMetadata.get("X")
-            sizeY = worldMetadata.get("Y")
-            sizeZ = worldMetadata.get("Z")
-            # Optional Values
-            spawnX = worldMetadata.get("spawnX", None)
-            spawnY = worldMetadata.get("spawnY", None)
-            spawnZ = worldMetadata.get("spawnZ", None)
-            spawnYaw = worldMetadata.get("spawnYaw", None)
-            spawnPitch = worldMetadata.get("spawnPitch", None)
-            # Misc Values
-            seed = worldMetadata.get("seed", None)
-            canEdit = worldMetadata.get("canEdit", True)
-            worldUUID = uuid.UUID(worldMetadata.get("worldUUID")) if "worldUUID" in worldMetadata else None
-            worldCreationService = worldMetadata.get("worldCreationService", None)
-            worldCreationPlayer = worldMetadata.get("worldCreationPlayer", None)
-            mapGeneratorSoftware = worldMetadata.get("mapGeneratorSoftware", None)
-            mapGeneratorName = worldMetadata.get("mapGeneratorName", None)
-            timeCreated = datetime.datetime.fromtimestamp(worldMetadata.get("timeCreated")) if "timeCreated" in worldMetadata else None
-            lastModified = datetime.datetime.fromtimestamp(worldMetadata.get("lastModified")) if "lastModified" in worldMetadata else None
-            lastAccessed = datetime.datetime.fromtimestamp(worldMetadata.get("lastAccessed")) if "lastAccessed" in worldMetadata else None
+                # Get information out of world metadata
+                Logger.debug("Parsing Metadata", module="obsidianworld")
+                # Critical Values
+                version = worldMetadata.get("version")
+                name = worldMetadata.get("name")
+                sizeX = worldMetadata.get("X")
+                sizeY = worldMetadata.get("Y")
+                sizeZ = worldMetadata.get("Z")
+                # Optional Values
+                spawnX = worldMetadata.get("spawnX", None)
+                spawnY = worldMetadata.get("spawnY", None)
+                spawnZ = worldMetadata.get("spawnZ", None)
+                spawnYaw = worldMetadata.get("spawnYaw", None)
+                spawnPitch = worldMetadata.get("spawnPitch", None)
+                # Misc Values
+                seed = worldMetadata.get("seed", None)
+                canEdit = worldMetadata.get("canEdit", True)
+                worldUUID = uuid.UUID(worldMetadata.get("worldUUID")) if "worldUUID" in worldMetadata else None
+                worldCreationService = worldMetadata.get("worldCreationService", None)
+                worldCreationPlayer = worldMetadata.get("worldCreationPlayer", None)
+                mapGeneratorSoftware = worldMetadata.get("mapGeneratorSoftware", None)
+                mapGeneratorName = worldMetadata.get("mapGeneratorName", None)
+                timeCreated = datetime.datetime.fromtimestamp(worldMetadata.get("timeCreated")) if "timeCreated" in worldMetadata else None
+                lastModified = datetime.datetime.fromtimestamp(worldMetadata.get("lastModified")) if "lastModified" in worldMetadata else None
+                lastAccessed = datetime.datetime.fromtimestamp(worldMetadata.get("lastAccessed")) if "lastAccessed" in worldMetadata else None
 
-            # Try parsing world generator
-            Logger.debug("Parsing World Generator", module="obsidianworld")
-            if mapGeneratorSoftware == "Obsidian":
-                if mapGeneratorName in MapGenerators:
-                    generator = MapGenerators[mapGeneratorName]
+                # Try parsing world generator
+                Logger.debug("Parsing World Generator", module="obsidianworld")
+                if mapGeneratorSoftware == "Obsidian":
+                    if mapGeneratorName in MapGenerators:
+                        generator = MapGenerators[mapGeneratorName]
+                    else:
+                        Logger.info(f"ObsidianWorldFormat - Unknown World Generator {mapGeneratorName}.", module="obsidianworld")
+                        generator = None  # Continue with no generator
                 else:
-                    Logger.info(f"ObsidianWorldFormat - Unknown World Generator {mapGeneratorName}.", module="obsidianworld")
-                    generator = None  # Continue with no generator
-            else:
-                Logger.info(f"ObsidianWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="obsidianworld")
-                generator = None
+                    Logger.info(f"ObsidianWorldFormat - Unknown World Generator Software {mapGeneratorSoftware}.", module="obsidianworld")
+                    generator = None
 
-            # Check if version is valid
-            Logger.debug("Checking Version", module="obsidianworld")
-            if version != self.VERSION:
-                Logger.warn(f"ObsidianWorldFormat - World Version Mismatch! Expected: {self.VERSION} Got: {version}", module="obsidianworld")
+                # Check if version is valid
+                Logger.debug("Checking Version", module="obsidianworld")
+                if version != self.VERSION:
+                    Logger.warn(f"ObsidianWorldFormat - World Version Mismatch! Expected: {self.VERSION} Got: {version}", module="obsidianworld")
 
-            # Check if world names are the same
-            Logger.debug("Checking World Name", module="obsidianworld")
-            if name != Path(fileIO.name).stem:
-                Logger.warn(f"ObsidianWorldFormat - World Name Mismatch! Expected: {Path(fileIO.name).stem} Got: {name}", module="obsidianworld")
+                # Check if world names are the same
+                Logger.debug("Checking World Name", module="obsidianworld")
+                if name != Path(fileIO.name).stem:
+                    Logger.warn(f"ObsidianWorldFormat - World Name Mismatch! Expected: {Path(fileIO.name).stem} Got: {name}", module="obsidianworld")
 
-            # Load Additional Metadata
-            Logger.debug("Loading Additional Metadata", module="obsidianworld")
-            additionalMetadata: dict[tuple[str, str], WorldMetadata] = {}
-            for filename in zipFile.namelist():
-                Logger.verbose(f"Checking File: {filename}", module="obsidianworld")
-                # Check if file is additional metadata
-                if filename.startswith("extmetadata/"):
-                    Logger.verbose(f"File {filename} is additional metadata file. Parsing File.", module="obsidianworld")
-                    # Check if metadata is valid
-                    if len(filename.split("/")) != 3:
-                        Logger.warn(f"ObsidianWorldFormat - Invalid Additional Metadata File! Expected: extmetadata/<software>/<name>! Got: {filename}", module="obsidianworld")
-                        continue
+                # Load Additional Metadata
+                Logger.debug("Loading Additional Metadata", module="obsidianworld")
+                additionalMetadata: dict[tuple[str, str], WorldMetadata] = {}
+                for filename in zipFile.namelist():
+                    Logger.verbose(f"Checking File: {filename}", module="obsidianworld")
+                    # Check if file is additional metadata
+                    if filename.startswith("extmetadata/"):
+                        Logger.verbose(f"File {filename} is additional metadata file. Parsing File.", module="obsidianworld")
+                        # Check if metadata is valid
+                        if len(filename.split("/")) != 3:
+                            Logger.warn(f"ObsidianWorldFormat - Invalid Additional Metadata File! Expected: extmetadata/<software>/<name>! Got: {filename}", module="obsidianworld")
+                            continue
 
-                    # Get metadata software and name
-                    _, metadataSoftware, metadataName = filename.split("/")
-                    Logger.verbose(f"File {filename} is additional metadata file for [{metadataSoftware}]{metadataName}", module="obsidianworld")
+                        # Get metadata software and name
+                        _, metadataSoftware, metadataName = filename.split("/")
+                        Logger.verbose(f"File {filename} is additional metadata file for [{metadataSoftware}]{metadataName}", module="obsidianworld")
 
-                    # Get the metadata reader
-                    metadataReader = WorldFormatManager.getMetadataReader(self, metadataSoftware, metadataName)
-                    if metadataReader is None:
-                        Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Reading Metadata: [{metadataSoftware}]{metadataName}", module="obsidianworld")
-                        continue
-                    Logger.verbose(f"Metadata [{metadataSoftware}]{metadataName} uses reader {metadataReader}", module="obsidianworld]")
+                        # Get the metadata reader
+                        metadataReader = WorldFormatManager.getMetadataReader(self, metadataSoftware, metadataName)
+                        if metadataReader is None:
+                            Logger.warn(f"ObsidianWorldFormat - World Format Does Not Support Reading Metadata: [{metadataSoftware}]{metadataName}", module="obsidianworld")
+                            continue
+                        Logger.verbose(f"Metadata [{metadataSoftware}]{metadataName} uses reader {metadataReader}", module="obsidianworld]")
 
-                    # Read metadata file
-                    metadataDict = json.loads(zipFile.read(filename).decode("utf-8"))
-                    Logger.debug(f"Loading Additional Metadata: [{metadataSoftware}]{metadataName} - {metadataDict}", module="obsidianworld")
-                    additionalMetadata[(metadataSoftware, metadataName)] = metadataReader(metadataDict)
-                    untouchedFiles.remove(filename)
+                        # Read metadata file
+                        metadataDict = json.loads(zipFile.read(filename).decode("utf-8"))
+                        Logger.debug(f"Loading Additional Metadata: [{metadataSoftware}]{metadataName} - {metadataDict}", module="obsidianworld")
+                        additionalMetadata[(metadataSoftware, metadataName)] = metadataReader(metadataDict)
+                        untouchedFiles.remove(filename)
 
-            # Load Map Data
-            Logger.debug("Loading Map Data", module="obsidianworld")
-            rawData = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
-            untouchedFiles.remove("map")
+                # Load Map Data
+                Logger.debug("Loading Map Data", module="obsidianworld")
+                rawData = bytearray(gzip.GzipFile(fileobj=io.BytesIO(zipFile.read("map"))).read())
+                untouchedFiles.remove("map")
 
-            # Sanity Check File Size
-            if (sizeX * sizeY * sizeZ) != len(rawData):
-                raise WorldFormatError(f"ObsidianWorldFormat - Invalid Map Data! Expected: {sizeX * sizeY * sizeZ} Got: {len(rawData)}")
+                # Sanity Check File Size
+                if (sizeX * sizeY * sizeZ) != len(rawData):
+                    raise WorldFormatError(f"ObsidianWorldFormat - Invalid Map Data! Expected: {sizeX * sizeY * sizeZ} Got: {len(rawData)}")
 
-            # Create World Data
-            world = World(
-                worldManager,  # Pass In World Manager
-                name,
-                sizeX, sizeY, sizeZ,
-                rawData,
-                seed=seed,
-                spawnX=spawnX,
-                spawnY=spawnY,
-                spawnZ=spawnZ,
-                spawnYaw=spawnYaw,
-                spawnPitch=spawnPitch,
-                generator=generator,
-                worldFormat=self,
-                persistent=persistent,  # Pass In Persistent Flag
-                fileIO=fileIO,  # Pass In File Reader/Writer
-                canEdit=canEdit,
-                worldUUID=worldUUID,
-                worldCreationService=worldCreationService,
-                worldCreationPlayer=worldCreationPlayer,
-                mapGeneratorSoftware=mapGeneratorSoftware,
-                mapGeneratorName=mapGeneratorName,
-                timeCreated=timeCreated,
-                lastModified=lastModified,
-                lastAccessed=lastAccessed,
-                additionalMetadata=additionalMetadata
-            )
+                # Create World Data
+                world = World(
+                    worldManager,  # Pass In World Manager
+                    name,
+                    sizeX, sizeY, sizeZ,
+                    rawData,
+                    seed=seed,
+                    spawnX=spawnX,
+                    spawnY=spawnY,
+                    spawnZ=spawnZ,
+                    spawnYaw=spawnYaw,
+                    spawnPitch=spawnPitch,
+                    generator=generator,
+                    worldFormat=self,
+                    persistent=persistent,  # Pass In Persistent Flag
+                    fileIO=fileIO,  # Pass In File Reader/Writer
+                    canEdit=canEdit,
+                    worldUUID=worldUUID,
+                    worldCreationService=worldCreationService,
+                    worldCreationPlayer=worldCreationPlayer,
+                    mapGeneratorSoftware=mapGeneratorSoftware,
+                    mapGeneratorName=mapGeneratorName,
+                    timeCreated=timeCreated,
+                    lastModified=lastModified,
+                    lastAccessed=lastAccessed,
+                    additionalMetadata=additionalMetadata
+                )
 
-            # Check if there are any files left in the zip file
-            if len(untouchedFiles) > 0:
-                Logger.warn(f"ObsidianWorldFormat - {len(untouchedFiles)} Unknown Files In OBW File: {untouchedFiles}", module="obsidianworld")
-                unrecognizedFiles: dict[str, io.BytesIO] = dict()
-                # Make a copy of each unrecognized file and put them in unrecognizedFiles
-                for filename in untouchedFiles:
-                    unrecognizedFiles[filename] = io.BytesIO(zipFile.read(filename))
-                # Add unrecognizedFiles to world
-                setattr(world, "unrecognizedFiles", unrecognizedFiles)
+                # Check if there are any files left in the zip file
+                if len(untouchedFiles) > 0:
+                    Logger.warn(f"ObsidianWorldFormat - {len(untouchedFiles)} Unknown Files In OBW File: {untouchedFiles}", module="obsidianworld")
+                    unrecognizedFiles: dict[str, io.BytesIO] = {}
+                    # Make a copy of each unrecognized file and put them in unrecognizedFiles
+                    for filename in untouchedFiles:
+                        unrecognizedFiles[filename] = io.BytesIO(zipFile.read(filename))
+                    # Add unrecognizedFiles to world
+                    setattr(world, "unrecognizedFiles", unrecognizedFiles)
 
-            # Close Zip File
-            zipFile.close()
+                # Close Zip File
+                zipFile.close()
 
             # Return World
             return world
@@ -1575,7 +1571,7 @@ class CommandHelper():
     @staticmethod
     def formatList(
         values: Iterable[Any],
-        processInput: Callable[[Any], str] = lambda s: str(s),
+        processInput: Callable[[Any], str] = str,
         initialMessage: str = "",
         separator: str = "",
         lineStart: str = "",
@@ -1602,7 +1598,7 @@ class CommandHelper():
             output[-1] += val
 
         # Remove final separator from the last line
-        if len(separator) and not isEmpty:
+        if separator and not isEmpty:
             output[-1] = output[-1][:-len(separator)]
 
         return output

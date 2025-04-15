@@ -1,3 +1,5 @@
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.commands import Command, AbstractCommand
@@ -8,8 +10,6 @@ from obsidian.packet import (
     ResponsePacket,
     Packets
 )
-
-import struct
 
 
 @Module(

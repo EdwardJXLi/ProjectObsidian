@@ -1,10 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Iterable
-if TYPE_CHECKING:
-    from obsidian.server import Server
-    from obsidian.player import Player
 
-from typing import Optional
+from typing import Optional, Iterable, TYPE_CHECKING
 from pathlib import Path
 from threading import Lock
 import io
@@ -37,12 +33,17 @@ from obsidian.errors import (
     WorldSaveError,
     ConverterError
 )
+from obsidian.player import WorldPlayerManager
+
+if TYPE_CHECKING:
+    from obsidian.server import Server
+    from obsidian.player import Player
 
 
 class WorldManager:
     def __init__(self, server: Server, ignorelist: set[str] = set()):
         self.server: Server = server
-        self.worlds: dict[str, World] = dict()
+        self.worlds: dict[str, World] = {}
         self.ignorelist: set[str] = ignorelist
         self.persistent: bool = self.server.config.persistentWorlds
         self.lock: Lock = Lock()
@@ -72,8 +73,7 @@ class WorldManager:
         # Check if world is in the server
         if worldName in self.worlds:
             return self.worlds[worldName]
-        else:
-            raise NameError("World Does Not Exist!")
+        raise NameError("World Does Not Exist!")
 
     def getWorlds(self) -> Iterable[World]:
         return tuple(self.worlds.values())
@@ -97,7 +97,7 @@ class WorldManager:
     ) -> World:
         Logger.info(f"Creating New World {worldName}...", module="world-create")
         # Check If World Already Exists
-        if worldName in self.worlds.keys():
+        if worldName in self.worlds:
             raise WorldError(f"Trying To Generate World With Already Existing Name {worldName}!")
 
         # Creating Save File If World Is Persistent
@@ -105,7 +105,6 @@ class WorldManager:
         if self.persistent and self.server.config.worldSaveLocation:
             fileIO = self.createWorldFile(self.server.config.worldSaveLocation, worldName)
             Logger.debug(f"World Is Persistent! Created New FileIO {fileIO}", module="world-create")
-            pass
         else:
             Logger.debug("World Is Not Persistent!", module="world-create")
             fileIO = None
@@ -223,7 +222,7 @@ class WorldManager:
                         Logger.info(f"Ignoring World File {saveFile}. World Name Is On Ignore List!", module="world-load")
 
                     # Also Check If World Name Is Already Loaded (Same File Names with Different Extensions)
-                    elif saveName in self.worlds.keys():
+                    elif saveName in self.worlds:
                         if not reload:
                             Logger.warn(f"Ignoring World File {saveFile}. World With Similar Name Has Already Been Registered!", module="world-load")
                             Logger.warn(f"World File {self.worlds[saveName].name} Conflicts With World File {saveFile}!", module="world-load")
@@ -255,16 +254,16 @@ class WorldManager:
                         # (Attempt) To Load Up World
                         try:
                             Logger.info(f"Loading World {saveName}", module="world-load")
-                            fileIO = open(saveFile, "rb+")
-                            self.worlds[saveName] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
+                            with open(saveFile, "rb+") as fileIO:
+                                self.worlds[saveName] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
                         except Exception as e:
                             Logger.error(f"Error While Loading World {saveFile} - {type(e).__name__}: {e}", module="world-load")
                             Logger.askConfirmation()
 
             # Check If Default World Is Loaded
-            if self.server.config.defaultWorld not in self.worlds.keys():
+            if self.server.config.defaultWorld not in self.worlds:
                 # Check if other worlds were loaded as well
-                if len(self.worlds.keys()) > 0:
+                if len(self.worlds) > 0:
                     if self.server.config.newWorldWarning:
                         # Warn User That Default World Was Not Loaded
                         Logger.warn(f"Default World {self.server.config.defaultWorld} Not Loaded.", module="world-load")
@@ -480,7 +479,7 @@ class World:
 
         # Finally process any additional world metadata
         if additionalMetadata is None:
-            self.additionalMetadata: dict[tuple[str, str], WorldMetadata] = dict()
+            self.additionalMetadata: dict[tuple[str, str], WorldMetadata] = {}
         else:
             self.additionalMetadata: dict[tuple[str, str], WorldMetadata] = additionalMetadata
 
@@ -492,14 +491,15 @@ class World:
             if self.fileIO is None:
                 # Setting persistance to false because fileIO was not given
                 self.persistent = False
-                Logger.error(f"World Format {self.worldManager.worldFormat.NAME} Created Persistent World Without Providing FileIO! Please Report To Author! Setting World As Non-Persistent.", "world-load")
+                Logger.error(
+                    f"World Format {self.worldManager.worldFormat.NAME} Created Persistent World Without Providing FileIO! " + \
+                    "Please Report To Author! Setting World As Non-Persistent.", "world-load"
+                )
                 Logger.askConfirmation()
             else:
                 Logger.debug(f"Persistent World Has FileIO {self.fileIO}", "world-load")
 
         # Initialize WorldPlayerManager
-        # World has to be imported now to prevent circular imports
-        from obsidian.player import WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
         self.playerManager = WorldPlayerManager(self, self.worldManager.server.playerManager)
 
@@ -561,10 +561,8 @@ class World:
                 if "Air" in Blocks._blockDict:
                     if block.ID == Blocks.Air.ID:
                         raise ClientError("You Do Not Have Permission To Break This Block")
-                    else:
-                        raise ClientError("You Do Not Have Permission To Place This Block")
-                else:
-                    raise ClientError("You Do Not Have Permission To Modify This Block")
+                    raise ClientError("You Do Not Have Permission To Place This Block")
+                raise ClientError("You Do Not Have Permission To Modify This Block")
         # else, everything is ay okay
         return True
 
@@ -706,9 +704,9 @@ class World:
                     backupPath.unlink()
 
                 return True
-            else:
-                Logger.warn(f"World {self.name} Is Not Persistent! Not Saving.", module="world-save")
-                return False
+
+            Logger.warn(f"World {self.name} Is Not Persistent! Not Saving.", module="world-save")
+            return False
 
     def verifyWorldSave(self) -> None:
         Logger.info(f"Verifying World Save For World {self.name}", module="world-save")
@@ -736,7 +734,7 @@ class World:
             compressionLevel = self.worldManager.server.config.gzipCompressionLevel
 
         # Check If Compression Level Is Valid
-        if compressionLevel >= 0 and compressionLevel <= 9:
+        if 0 <= compressionLevel <= 9:
             pass
         # Invalid Compression Level!
         else:

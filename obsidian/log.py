@@ -38,7 +38,7 @@ class Logger:
         logPath.mkdir(parents=True, exist_ok=True)
         # Open File
         logPath = Path(logPath, f"{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log")
-        cls.LOGFILE = open(logPath, "a")
+        cls.LOGFILE = open(logPath, "a", encoding="utf-8")
         # Write debug message
         print(f"Logging to {logPath}")
 
@@ -95,7 +95,7 @@ class Logger:
                 if userInput.lower() in ["y", "yes"]:
                     cls._log("")
                     return True
-                elif userInput.lower() in ["n", "no"]:
+                if userInput.lower() in ["n", "no"]:
                     if exit_on_no:
                         cls.warn("Ok Exiting...", module="confirmation")
                         sys.exit()

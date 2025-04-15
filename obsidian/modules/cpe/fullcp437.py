@@ -1,3 +1,6 @@
+from typing import Optional, cast
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.mixins import Override, Inject, InjectionPoint
 from obsidian.errors import ServerError
@@ -13,9 +16,7 @@ from obsidian.packet import (
     ResponsePacket,
     Packets
 )
-
-from typing import Optional, cast
-import struct
+from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters, unpackCP437String, packageCP437String
 
 
 @Module(
@@ -61,9 +62,6 @@ class FullCP437Module(AbstractModule):
             # Since we are overriding, set type of self to Player
             self = cast(Player, self)
 
-            # Import helper function to replace non-ascii characters
-            from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
-
             Logger.debug(f"Sending Player {self.name} Message {message}", module="player-message")
             # If Message Is A List, Recursively Send All Messages Within
             if isinstance(message, list):
@@ -93,9 +91,6 @@ class FullCP437Module(AbstractModule):
             # Since we are overriding, set type of self to WorldPlayerManager
             self = cast(WorldPlayerManager, self)
 
-            # Import helper function to replace non-ascii characters
-            from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
-
             # If Message Is A List, Recursively Send All Messages Within
             if isinstance(message, list):
                 Logger.debug("Sending List Of Messages!", module="world-message")
@@ -116,7 +111,7 @@ class FullCP437Module(AbstractModule):
             if not message.isascii():
                 # Generate list of players who do not support the FullCP437 or EmoteFix extension
                 noSupport = {player for player in self.getPlayers() if not (player.supports(CPEExtension("FullCP437", 1)) and player.supports(CPEExtension("EmoteFix", 1)))}
-                hasSupport = (set(self.getPlayers()) - noSupport)
+                hasSupport = set(self.getPlayers()) - noSupport
 
                 # Send message packet to all players who support the FullCP437 and EmoteFix extension
                 Logger.debug(f"Sending Message To {len(hasSupport)} Players!", module="world-message")
@@ -145,9 +140,6 @@ class FullCP437Module(AbstractModule):
             # Since we are overriding, set type of self to PlayerManager
             self = cast(PlayerManager, self)
 
-            # Import helper function to replace non-ascii characters
-            from obsidian.modules.lib.emojilib import replaceNonAsciiCharacters
-
             # If Message Is A List, Recursively Send All Messages Within
             if isinstance(message, list):
                 Logger.debug("Sending List Of Messages!", module="global-message")
@@ -169,7 +161,7 @@ class FullCP437Module(AbstractModule):
                 # Generate list of players who do not support the FullCP437 or EmoteFix extension
                 allPlayers = self.getPlayers()
                 noSupport = {player for player in allPlayers if not (player.supports(CPEExtension("FullCP437", 1)) and player.supports(CPEExtension("EmoteFix", 1)))}
-                hasSupport = (set(allPlayers) - noSupport)
+                hasSupport = set(allPlayers) - noSupport
 
                 # Send message packet to all players who support the FullCP437 and EmoteFix extension
                 Logger.debug(f"Sending Message To {len(hasSupport)} Players!", module="global-message")
@@ -211,9 +203,6 @@ class FullCP437Module(AbstractModule):
             # (64String) Message
             _, _, message = struct.unpack(self.FORMAT, bytearray(rawData))
 
-            # Import CP437 version of unpackString
-            from obsidian.modules.lib.emojilib import unpackCP437String
-
             # Check if player was passed / initialized
             if ctx is None:
                 raise ServerError("Player Context Was Not Passed And/Or Was Not Initialized!")
@@ -252,9 +241,6 @@ class FullCP437Module(AbstractModule):
             # (64String) Message
             if len(message) > 64:
                 Logger.warn(f"Trying to send message '{message}' over the 64 character limit!", module="packet-serializer")
-
-            # Import CP437 version of packageString
-            from obsidian.modules.lib.emojilib import packageCP437String
 
             # Format Message Packet
             packedMessage = packageCP437String(message)

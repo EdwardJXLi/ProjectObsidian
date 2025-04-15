@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from obsidian.player import Player
-
-from typing import Type, Generic
+from typing import Type, Generic, TYPE_CHECKING
 from dataclasses import dataclass
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
@@ -12,6 +8,10 @@ from obsidian.utils.ptl import PrettyTableLite
 from obsidian.errors import InitRegisterError, BlockError, ClientError, ConverterError
 from obsidian.log import Logger
 from obsidian.types import T
+
+if TYPE_CHECKING:
+    from obsidian.player import Player
+
 
 
 # Block Decorator
@@ -64,9 +64,9 @@ class _BlockManager(AbstractManager):
         super().__init__("Block", AbstractBlock)
 
         # Creates List Of Blocks That Has The Block Name As Keys
-        self._blockDict: dict[str, AbstractBlock] = dict()
+        self._blockDict: dict[str, AbstractBlock] = {}
         # Create Cache Of Block Ids to Obj
-        self._blockIds: dict[int, AbstractBlock] = dict()
+        self._blockIds: dict[int, AbstractBlock] = {}
 
     # Registration. Called by Block Decorator
     def register(self, blockClass: Type[AbstractBlock], module: AbstractModule) -> AbstractBlock:
@@ -81,24 +81,30 @@ class _BlockManager(AbstractManager):
         if block.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if (block.ID not in self._blockIds) and (block.NAME not in self._blockDict.keys()):
-                Logger.warn(f"Block {block.NAME} (ID: {block.ID}) From Module {block.MODULE.NAME} Is Trying To Override A Block That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            if (block.ID not in self._blockIds) and (block.NAME not in self._blockDict):
+                Logger.warn(
+                    f"Block {block.NAME} (ID: {block.ID}) from module {block.MODULE.NAME} is trying to override a block that does not exist! " + \
+                    "If this is an accident, remove the 'override' flag.",
+                    module=f"{module.NAME}-submodule-init"
+                )
             else:
-                Logger.debug(f"Block {block.NAME} Is Overriding Block {self._blockIds[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Block {block.NAME} is overriding block {self._blockIds[block.ID].NAME} (ID: {block.ID})", module=f"{module.NAME}-submodule-init")
 
         # Checking If Block Name Is Already In Blocks List
         # Ignoring if OVERRIDE is set
-        if block.NAME in self._blockDict.keys() and not block.OVERRIDE:
-            raise InitRegisterError(f"Block {block.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
+        if block.NAME in self._blockDict and not block.OVERRIDE:
+            raise InitRegisterError(f"Block {block.NAME} has already been registered! If this is intentional, set the 'override' flag to True")
 
         # Add Block To Cache
-        Logger.verbose(f"Adding BlockId {block.ID} To Block Cache", module=f"{module.NAME}-submodule-init")
+        Logger.verbose(f"Adding BlockId {block.ID} to block cache", module=f"{module.NAME}-submodule-init")
         # If Block Id Already Registered, Error
         # Ignoring if OVERRIDE is set
         if block.ID not in self._blockIds or block.OVERRIDE:
             self._blockIds[block.ID] = block
         else:
-            raise InitRegisterError(f"Block Id {block.ID} Has Been Already Registered. Conflicting Blocks Are '{self._blockIds[block.ID].NAME} ({self._blockIds[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
+            raise InitRegisterError(
+                f"Block ID {block.ID} has already been registered. " + \
+                f"Conflicting blocks are '{self._blockIds[block.ID].NAME} ({self._blockIds[block.ID].MODULE.NAME})' and '{block.NAME} ({block.MODULE.NAME})'")
 
         # Add Block to Blocks List
         self._blockDict[block.NAME] = block
@@ -118,6 +124,7 @@ class _BlockManager(AbstractManager):
             return table
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
+            return None
 
     # Generate a List of All Block Ids
     def getAllBlockIds(self) -> list[int]:
@@ -125,10 +132,9 @@ class _BlockManager(AbstractManager):
 
     # Function To Get Block Object From BlockId
     def getBlockById(self, blockId: int) -> AbstractBlock:
-        if blockId in self._blockIds.keys():
+        if blockId in self._blockIds:
             return self._blockIds[blockId]
-        else:
-            raise BlockError(f"Block with BlockID {blockId} Not Found.")
+        raise BlockError(f"Block with BlockID {blockId} Not Found.")
 
     # Function To Get Block Object From Block Name
     def getBlock(self, block: str, ignoreCase: bool = True) -> AbstractBlock:
@@ -136,10 +142,8 @@ class _BlockManager(AbstractManager):
             for bName, bObject in self._blockDict.items():
                 if bName.lower() == block.lower():
                     return bObject
-            else:
-                raise KeyError(block)
-        else:
-            return self._blockDict[block]
+            raise KeyError(block)
+        return self._blockDict[block]
 
     # Handles _BlockManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractBlock:

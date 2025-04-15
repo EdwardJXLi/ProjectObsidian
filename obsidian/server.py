@@ -103,7 +103,10 @@ class Server:
         Logger.info(f"{Color.LIGHT_MAGENTA_EX}================================={Color.MAGENTA}===========================================", module="init")
 
         # Print out Server Information
-        Logger.info(f"=== Starting {Color.LIGHT_MAGENTA_EX}Project{Color.MAGENTA}Obsidian{Color.RESET} v. {Color.CYAN}{__version__}{Color.RESET} on {Color.GREEN}{PY_VERSION}{Color.RESET} ===", module="init")
+        Logger.info(
+            f"=== Starting {Color.LIGHT_MAGENTA_EX}Project{Color.MAGENTA}Obsidian{Color.RESET} v. {Color.CYAN}{__version__}{Color.RESET} on {Color.GREEN}{PY_VERSION}{Color.RESET} ===",
+            module="init"
+        )
         Logger.info(f"Initializing Server '{self.name}' on port: {self.port}", module="init")
         Logger.info(f"Server MOTD: {self.motd}", module="init")
 
@@ -371,6 +374,7 @@ class Server:
             # If server fails to stop, force terminate
             Logger.fatal("Server Failed To Terminate! Force Terminating Server", module="server-stop", printTb=False)
             os._exit(-1)
+
         except Exception as e:
             # Server Stop Failed! Last Ditch Attempt To Clean Up
             # Not Using Logger Incase Thats What Breaks It

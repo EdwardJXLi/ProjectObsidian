@@ -1,0 +1,17 @@
+[MAIN]
+init-hook='import sys; sys.path.append("obsidian")'
+
+[MESSAGES CONTROL]
+disable=missing-module-docstring,
+        missing-class-docstring,
+        missing-function-docstring,
+        too-few-public-methods,
+        pointless-string-statement,
+        too-many-instance-attributes,
+        invalid-name
+
+[REPORTS]
+output-format=colorized
+
+[FORMAT]
+max-line-length=200

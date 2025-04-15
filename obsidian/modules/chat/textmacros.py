@@ -1,3 +1,7 @@
+import re
+from typing import Callable
+from dataclasses import dataclass, field
+
 from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.commands import Command, AbstractCommand
 from obsidian.player import Player
@@ -7,10 +11,7 @@ from obsidian.errors import ModuleError
 from obsidian.log import Logger
 from obsidian.utils.replace import restricted_replace
 from obsidian.modules.core import CommandHelper
-
-import re
-from typing import Callable
-from dataclasses import dataclass, field
+from obsidian.modules.lib.emojilib import Emojis
 
 
 @Module(
@@ -70,8 +71,6 @@ class TextMacrosModule(AbstractModule):
         # Load emoji macros
         if self.config.emojiMacros and "emojilib" in Modules:
             Logger.info("Loading Emoji Text Macros", module="textmacros")
-            from obsidian.modules.lib.emojilib import Emojis
-
             # Iterate through all Emojis and add its value as the macro
             for key, value in Emojis.__dict__.items():
                 # Skip all dunder fields

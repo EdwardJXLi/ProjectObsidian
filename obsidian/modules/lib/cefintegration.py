@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+from typing import cast
+import asyncio
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.player import Player
 from obsidian.network import NetworkHandler
@@ -6,10 +10,7 @@ from obsidian.mixins import Inject, InjectionPoint, addAttribute
 from obsidian.commands import AbstractCommand, Command, Commands
 from obsidian.errors import ServerError
 from obsidian.log import Logger
-
-from dataclasses import dataclass
-from typing import cast
-import asyncio
+from obsidian.modules.core import CommandHelper
 
 
 @Module(
@@ -86,13 +87,11 @@ class CEFIntegrationModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["cefclients"])
 
         async def execute(self, ctx: Player):
-            from obsidian.modules.core import CommandHelper
-
             # Generate command output
             output = []
 
             # Generate mapping of player -> client
-            playerClients: dict[str, set[Player]] = dict()
+            playerClients: dict[str, set[Player]] = {}
             for player in ctx.server.playerManager.getPlayers():
                 client = player.clientSoftware
                 if client not in playerClients:

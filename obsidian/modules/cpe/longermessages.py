@@ -1,3 +1,6 @@
+from typing import Optional
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.errors import ServerError
 from obsidian.player import Player
@@ -9,9 +12,7 @@ from obsidian.packet import (
     RequestPacket,
     unpackString,
 )
-
-from typing import Optional
-import struct
+from obsidian.modules.lib.emojilib import unpackCP437String
 
 
 @Module(
@@ -61,7 +62,6 @@ class LongerMessagesModule(AbstractModule):
 
             # If FullCP437 extension is enabled, ise the FullCP437 unpacking method
             if "fullcp437" in Modules:
-                from obsidian.modules.lib.emojilib import unpackCP437String
                 unpackStringMethod = unpackCP437String
             else:
                 unpackStringMethod = unpackString

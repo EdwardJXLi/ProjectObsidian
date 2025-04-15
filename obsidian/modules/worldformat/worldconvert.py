@@ -1,3 +1,6 @@
+from typing import Optional
+from pathlib import Path
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.log import Logger
 from obsidian.commands import Command, AbstractCommand, CommandError
@@ -5,9 +8,7 @@ from obsidian.world import WorldManager
 from obsidian.worldformat import WorldFormatManager, WorldFormats
 from obsidian.player import Player
 from obsidian.constants import SERVER_PATH
-
-from typing import Optional
-from pathlib import Path
+from obsidian.modules.core import CommandHelper
 
 
 @Module(
@@ -31,8 +32,6 @@ class WorldConverterModule(AbstractModule):
             super().__init__(*args, ACTIVATORS=["convertworld"], OP=True)
 
         async def execute(self, ctx: Player, worldFile: str, formatName: Optional[str] = None):
-            from obsidian.modules.core import CommandHelper
-
             # If no world format is passed, use current world format.
             # Else, get the requested world format.
             if formatName:

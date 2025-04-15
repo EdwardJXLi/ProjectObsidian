@@ -1,3 +1,8 @@
+from typing import Optional
+from enum import Enum
+import struct
+import time
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.player import Player
 from obsidian.errors import ServerError
@@ -10,11 +15,6 @@ from obsidian.packet import (
     ResponsePacket,
     AbstractResponsePacket
 )
-
-from typing import Optional
-from enum import Enum
-import struct
-import time
 
 
 class PingDirection(Enum):

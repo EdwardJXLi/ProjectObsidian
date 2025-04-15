@@ -1,11 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from obsidian.server import Server
 
 import asyncio
 import hashlib
-from typing import Type, Optional, Callable
+from typing import Type, Optional, Callable, TYPE_CHECKING
 
 from obsidian.log import Logger
 from obsidian.world import World
@@ -29,6 +26,9 @@ from obsidian.errors import (
 from obsidian.types import (
     IpType
 )
+
+if TYPE_CHECKING:
+    from obsidian.server import Server
 
 
 class NetworkHandler:
@@ -66,8 +66,8 @@ class NetworkHandler:
             Logger.error(f"Error While Handling Connection {self.connectionInfo} - {type(e).__name__}: {e}", module="network")
             try:
                 await self.closeConnection("Internal Server Error", notifyPlayer=True)
-            except Exception as e:
-                Logger.error(f"Close Connected Failed To Complete Successfully - {type(e).__name__}: {e}", module="network")
+            except Exception as ex:
+                Logger.error(f"Close Connected Failed To Complete Successfully - {type(ex).__name__}: {ex}", module="network")
 
     async def _initConnection(self):
         # Log Connection
@@ -94,7 +94,7 @@ class NetworkHandler:
         # Checking Client Protocol Version
         if protocolVersion > self.server.protocolVersion:
             raise ClientError(f"Server Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion})")
-        elif protocolVersion < self.server.protocolVersion:
+        if protocolVersion < self.server.protocolVersion:
             raise ClientError(f"Client Outdated (Client: {protocolVersion}, Server: {self.server.protocolVersion})")
 
         # Verify login - Calculates if md5(salt + name) is equal to verificationKey
@@ -351,9 +351,8 @@ class NetworkDispatcher:
         except Exception as e:
             if packet.CRITICAL or type(e) in CRITICAL_REQUEST_ERRORS or critical:
                 raise e  # Pass Down Exception To Lower Layer
-            else:
-                packet.onError(e)
-                raise e
+            packet.onError(e)
+            raise e
 
     # Used in main listen loop; expect multiple types of packets!
     async def listenForPackets(
@@ -399,7 +398,7 @@ class NetworkDispatcher:
                 # Keep track on whether packet should continue to be processed after being handled
                 continueProcessing = True
                 # Get all the listeners
-                listeners = self._listeners.get(type(packet), list())
+                listeners = self._listeners.get(type(packet), [])
                 # Check if there are listeners in the queue
                 if len(listeners) > 0:
                     # Create a hacky "check failed" list to store unmatched listeners to be put back into the dict
@@ -449,8 +448,7 @@ class NetworkDispatcher:
             except Exception as e:
                 if packet.CRITICAL or type(e) in CRITICAL_REQUEST_ERRORS:
                     raise e  # Pass Down Exception To Lower Layer
-                else:
-                    return packetHeader, packet.onError(e)
+                return packetHeader, packet.onError(e)
 
         except asyncio.TimeoutError:
             # Some clients don't send info when not moving
@@ -483,8 +481,7 @@ class NetworkDispatcher:
             # Making Sure These Errors Always Gets Raised (Ignore onError)
             if packet.CRITICAL or type(e) in CRITICAL_RESPONSE_ERRORS:
                 raise e  # Pass Down Exception To Lower Layer
-            else:
-                return packet.onError(e)
+            return packet.onError(e)
 
     # Create Dispatch Listener to capture incoming packets
     def waitFor(
@@ -500,7 +497,7 @@ class NetworkDispatcher:
         future = asyncio.get_event_loop().create_future()
 
         # Add Future Event to Listeners
-        self._listeners.setdefault(type(packet), list()).append((future, check, shouldContinue))
+        self._listeners.setdefault(type(packet), []).append((future, check, shouldContinue))
 
         # Return Future
         return asyncio.wait_for(future, timeout)

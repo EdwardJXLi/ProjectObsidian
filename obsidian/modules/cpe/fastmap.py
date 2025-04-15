@@ -1,3 +1,8 @@
+from dataclasses import dataclass
+from typing import Callable, Awaitable, cast
+import zlib
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency
 from obsidian.log import Logger
 from obsidian.packet import Packets
@@ -11,11 +16,6 @@ from obsidian.packet import (
     AbstractResponsePacket,
     ResponsePacket
 )
-
-from dataclasses import dataclass
-from typing import Callable, Awaitable, cast
-import zlib
-import struct
 
 
 @Module(
@@ -57,42 +57,39 @@ class FastMapModule(AbstractModule):
                 Logger.debug(f"{self.connectionInfo} | Player does not support FastMap. Falling back to original method.", module="fastmap")
                 # If not, fallback to original method
                 return await _super(self, world)
-            else:
-                Logger.debug(f"{self.connectionInfo} | Player supports FastMap. Upgrading to the FastMap protocol.", module="fastmap")
 
-                # Send Level Initialize Packet
-                Logger.debug(f"{self.connectionInfo} | Sending Level Initialize Packet [Fast Map]", module="fastmap")
-                await self.dispatcher.sendPacket(Packets.Response.FastMapLevelInitialize, len(world.mapArray))
+            Logger.debug(f"{self.connectionInfo} | Player supports FastMap. Upgrading to the FastMap protocol.", module="fastmap")
 
-                # Preparing To Send Map
-                Logger.debug(f"{self.connectionInfo} | Preparing To Send Map [Fast Map] ", module="fastmap")
-                deflatedWorld = FastMapModule.deflateMap(self, world, compressionLevel=fastMapConfig.deflateCompressionLevel)  # Generate Deflated Map
-                # World Data Needs To Be Sent In Chunks Of 1024 Characters
-                chunks = [deflatedWorld[i: i + 1024] for i in range(0, len(deflatedWorld), 1024)]
+            # Send Level Initialize Packet
+            Logger.debug(f"{self.connectionInfo} | Sending Level Initialize Packet [Fast Map]", module="fastmap")
+            await self.dispatcher.sendPacket(Packets.Response.FastMapLevelInitialize, len(world.mapArray))
 
-                # Looping Through All Chunks And Sending Data
-                Logger.debug(f"{self.connectionInfo} | Sending Chunk Data [Fast Map]", module="fastmap")
-                for chunkCount, chunk in enumerate(chunks):
-                    # Sending Chunk Data
-                    Logger.verbose(f"{self.connectionInfo} | Sending Chunk Data {chunkCount + 1} of {len(chunks)} [Fast Map]", module="fastmap")
-                    await self.dispatcher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
+            # Preparing To Send Map
+            Logger.debug(f"{self.connectionInfo} | Preparing To Send Map [Fast Map] ", module="fastmap")
+            deflatedWorld = FastMapModule.deflateMap(self, world, compressionLevel=fastMapConfig.deflateCompressionLevel)  # Generate Deflated Map
+            # World Data Needs To Be Sent In Chunks Of 1024 Characters
+            chunks = [deflatedWorld[i: i + 1024] for i in range(0, len(deflatedWorld), 1024)]
 
-                # Send Level Finalize Packet
-                Logger.debug(f"{self.connectionInfo} | Sending Level Finalize Packet [Fast Map]", module="fastmap")
-                await self.dispatcher.sendPacket(
-                    Packets.Response.LevelFinalize,
-                    world.sizeX,
-                    world.sizeY,
-                    world.sizeZ
-                )
+            # Looping Through All Chunks And Sending Data
+            Logger.debug(f"{self.connectionInfo} | Sending Chunk Data [Fast Map]", module="fastmap")
+            for chunkCount, chunk in enumerate(chunks):
+                # Sending Chunk Data
+                Logger.verbose(f"{self.connectionInfo} | Sending Chunk Data {chunkCount + 1} of {len(chunks)} [Fast Map]", module="fastmap")
+                await self.dispatcher.sendPacket(Packets.Response.LevelDataChunk, chunk, percentComplete=int((100 / len(chunks)) * chunkCount))
+
+            # Send Level Finalize Packet
+            Logger.debug(f"{self.connectionInfo} | Sending Level Finalize Packet [Fast Map]", module="fastmap")
+            await self.dispatcher.sendPacket(
+                Packets.Response.LevelFinalize,
+                world.sizeX,
+                world.sizeY,
+                world.sizeZ
+            )
 
     @staticmethod
     def deflateMap(networkHandler: NetworkHandler, world: World, compressionLevel: int = 9) -> bytes:
-        # Check If Compression Level Is Valid
-        if compressionLevel >= 0 and compressionLevel <= 9:
-            pass
         # Invalid Compression Level!
-        else:
+        if not 0 <= compressionLevel <= 9:
             raise ServerError(f"Invalid Deflate Compression Level Of {compressionLevel}!!!")
 
         Logger.debug(f"Compressing Map {world.name} With Compression Level {compressionLevel}", module="deflate")

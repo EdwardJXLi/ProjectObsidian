@@ -11,12 +11,12 @@ class PrettyTableLite():
 
     @field_names.setter
     def field_names(self, fields):
-        if(self.field_names != []):
+        if self.field_names:
             raise Exception("Fields Value Has Already Been Set")
         self._data[0] = fields
 
     def add_row(self, row):
-        if(len(row) != len(self._data[0])):
+        if len(row) != len(self._data[0]):
             raise Exception(f"Field name list has incorrect number of values (Expected {len(row)} got {len(self._data[0])})")
         self._data.append(row)
 
@@ -29,10 +29,10 @@ class PrettyTableLite():
 
     def generate(self):
         self.maxCellWidth = [
-            max([
+            max(
                 len(str(self._data[row][col]))  # Get Length Of Each String
                 for row in range(len(self._data))  # Loop Through All Rows
-            ])  # Find Longest String
+            )  # Find Longest String
             for col in range(len(self._data[0]))  # Loop Through All Cols
         ]
         divider = '+' + '+'.join(['-' * (width + 2) for width in self.maxCellWidth]) + '+'  # Generate Divider For Top, Middle, and Bottom

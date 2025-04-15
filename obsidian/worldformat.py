@@ -1,10 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from obsidian.world import World, WorldManager
-    import io
 
-from typing import Type, Generic, Callable
+from typing import Type, Generic, Callable, TYPE_CHECKING
 from dataclasses import dataclass, field
 
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
@@ -13,6 +9,9 @@ from obsidian.errors import InitRegisterError, ConverterError
 from obsidian.log import Logger
 from obsidian.types import T
 
+if TYPE_CHECKING:
+    from obsidian.world import World, WorldManager
+    import io
 
 # World Format Decorator
 # Used In @WorldFormat
@@ -72,7 +71,7 @@ class _WorldFormatManager(AbstractManager):
         super().__init__("World Format", AbstractWorldFormat)
 
         # Creates List Of World Formats That Has The World Format Name As Keys
-        self._formatDict: dict[str, AbstractWorldFormat] = dict()
+        self._formatDict: dict[str, AbstractWorldFormat] = {}
 
     # Registration. Called by World Format Decorator
     def register(self, worldFormatClass: Type[AbstractWorldFormat], module: AbstractModule) -> AbstractWorldFormat:
@@ -87,14 +86,17 @@ class _WorldFormatManager(AbstractManager):
         if worldFormat.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if worldFormat.NAME not in self._formatDict.keys():
-                Logger.warn(f"World Format {worldFormat.NAME} From Module {worldFormat.MODULE.NAME} Is Trying To Override A World Format That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            if worldFormat.NAME not in self._formatDict:
+                Logger.warn(
+                    f"World Format {worldFormat.NAME} From Module {worldFormat.MODULE.NAME} Is Trying To Override A World Format That Does Not Exist! " + \
+                    "If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init"
+                )
             else:
                 Logger.debug(f"World Format {worldFormat.NAME} Is Overriding World Format {self._formatDict[worldFormat.NAME].NAME}", module=f"{module.NAME}-submodule-init")
 
         # Checking If World Format Name Is Already In Formats List
         # Ignoring if OVERRIDE is set
-        if worldFormat.NAME in self._formatDict.keys() and not worldFormat.OVERRIDE:
+        if worldFormat.NAME in self._formatDict and not worldFormat.OVERRIDE:
             raise InitRegisterError(f"World Format {worldFormat.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
 
         # Add World Format to World Formats List
@@ -155,24 +157,23 @@ class _WorldFormatManager(AbstractManager):
             return table
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
+            return None
 
     # Function To Get World Format Object From File Extension
     def getWorldFormatFromExtension(self, ext: str) -> AbstractWorldFormat:
-        for format in self._formatDict.values():
-            if ext in format.EXTENSIONS:
-                return format
+        for fmt in self._formatDict.values():
+            if ext in fmt.EXTENSIONS:
+                return fmt
         raise KeyError(f"World Format With Extension {ext} Not Found!")
 
     # Function To Get World Format Object From Format Name
-    def getWorldFormat(self, format: str, ignoreCase: bool = True) -> AbstractWorldFormat:
+    def getWorldFormat(self, fmt: str, ignoreCase: bool = True) -> AbstractWorldFormat:
         if ignoreCase:
             for fName, fObject in self._formatDict.items():
-                if fName.lower() == format.lower():
+                if fName.lower() == fmt.lower():
                     return fObject
-            else:
-                raise KeyError(format)
-        else:
-            return self._formatDict[format]
+            raise KeyError(fmt)
+        return self._formatDict[fmt]
 
     # Handles _WorldFormatManager["item"]
     def __getitem__(self, *args, **kwargs) -> AbstractWorldFormat:
@@ -187,8 +188,8 @@ class _WorldFormatManager(AbstractManager):
         return len(self._formatDict)
 
     # Check if world format exists
-    def __contains__(self, format: str) -> bool:
-        return format in self._formatDict
+    def __contains__(self, fmt: str) -> bool:
+        return fmt in self._formatDict
 
 
 # Creates Global WorldFormatManager As Singleton

@@ -1,10 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from obsidian.server import Server
-    from obsidian.network import NetworkHandler
 
-from typing import Optional, Type, Callable, Awaitable, Iterable
+from typing import Optional, Type, Callable, Awaitable, Iterable, TYPE_CHECKING
 import asyncio
 
 from obsidian.packet import AbstractResponsePacket, Packets
@@ -26,6 +22,10 @@ from obsidian.errors import (
     ConverterError,
     CPEError
 )
+
+if TYPE_CHECKING:
+    from obsidian.server import Server
+    from obsidian.network import NetworkHandler
 
 
 # The Overall Server Player Manager
@@ -115,9 +115,9 @@ class PlayerManager:
             await player.networkHandler.closeConnection(reason, notifyPlayer=True, chatMessage="Kicked By Server")
             Logger.debug(f"Successfully Kicked Player {username}", module="player")
             return True
-        else:
-            Logger.warn(f"Player {username} Does Not Exist", module="player-manager")
-            return False
+
+        Logger.warn(f"Player {username} Does Not Exist", module="player-manager")
+        return False
 
     async def kickPlayerByIp(self, ip: str, reason: str = "Kicked By Server") -> bool:
         Logger.info(f"Kicking Player(s) by Ip {ip}", module="player-manager")
@@ -156,7 +156,10 @@ class PlayerManager:
                 except Exception as e:
                     if e not in CRITICAL_RESPONSE_ERRORS:
                         # Something Broke!
-                        Logger.error(f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}", module="global-packet-dispatcher")
+                        Logger.error(
+                            f"An Error Occurred While Sending Global Packet {packet.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}",
+                            module="global-packet-dispatcher"
+                        )
                     else:
                         # Bad Timing with Connection Closure. Ignoring
                         Logger.debug(f"Ignoring Error While Sending Global Packet {packet.NAME} To {player.networkHandler.connectionInfo}", module="global-packet-dispatcher")
@@ -320,7 +323,10 @@ class WorldPlayerManager:
             except Exception as e:
                 if e not in CRITICAL_RESPONSE_ERRORS:
                     # Something Broke!
-                    Logger.error(f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}", module="world-packet-dispatcher")
+                    Logger.error(
+                        f"An Error Occurred While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.connectionInfo} - {type(e).__name__}: {e}",
+                        module="world-packet-dispatcher"
+                    )
                 else:
                     # Bad Timing with Connection Closure. Ignoring
                     Logger.debug(f"Ignoring Error While Sending World Packet {Packets.Response.SpawnPlayer.NAME} To {player.networkHandler.connectionInfo}", module="world-packet-dispatcher")
@@ -895,7 +901,7 @@ class Player:
             motdMessage = self.playerManager.server.config.defaultMOTD
 
         # Quick undocumented feature! If motdMessage is a command, run that command for the user.
-        if type(motdMessage) is str and motdMessage.startswith("/"):
+        if isinstance(motdMessage, str) and motdMessage.startswith("/"):
             return await self.handlePlayerCommand(motdMessage[1:])
 
         # Send MOTD To Player

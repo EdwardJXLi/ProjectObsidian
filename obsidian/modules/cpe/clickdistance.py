@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+from typing import Optional, cast
+import struct
+
 from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.cpe import CPE, CPEExtension
 from obsidian.commands import Command, AbstractCommand
@@ -9,10 +13,7 @@ from obsidian.config import AbstractConfig
 from obsidian.mixins import Inject, InjectionPoint
 from obsidian.errors import CPEError, CommandError
 from obsidian.log import Logger
-
-from dataclasses import dataclass
-from typing import Optional, cast
-import struct
+from obsidian.modules.lib.nbtlib import NBTLib
 
 
 @Module(
@@ -54,8 +55,6 @@ class ClickDistanceModule(AbstractModule):
 
         # If ClassicWorld is installed, create readers and writers for ClassicWorld
         if "ClassicWorld" in WorldFormats:
-            from obsidian.modules.lib.nbtlib import NBTLib
-
             # Create readers and writers for ClassicWorld
             def cwReadClickDistance(data: NBTLib.TAG_Compound):
                 clickDistanceMetadata = ClickDistanceModule.ClickDistanceMetadata()

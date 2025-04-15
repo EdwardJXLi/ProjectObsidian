@@ -1,11 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from obsidian.player import Player
 
 import enum
 import struct
-from typing import Any, Type, Optional, Generic
+from typing import Any, Type, Optional, Generic, TYPE_CHECKING
 from dataclasses import dataclass
 from obsidian.module import Submodule, AbstractModule, AbstractSubmodule, AbstractManager
 
@@ -15,6 +12,8 @@ from obsidian.utils.ptl import PrettyTableLite
 from obsidian.log import Logger
 from obsidian.types import T
 
+if TYPE_CHECKING:
+    from obsidian.player import Player
 
 # Enums
 class PacketDirections(enum.Enum):
@@ -130,7 +129,7 @@ class _DirectionalPacketManager(AbstractManager):
         super().__init__(f"{direction.name.title()} Packet", AbstractPacket)
 
         # Creates List Of Packets That Has The Packet Name As Keys
-        self._packetDict = dict()  # Not putting a type here as it breaks more things than it fixes
+        self._packetDict = {}  # Not putting a type here as it breaks more things than it fixes
         self.direction: PacketDirections = direction
         # Only Used If Request
         if self.direction is PacketDirections.REQUEST:
@@ -149,14 +148,17 @@ class _DirectionalPacketManager(AbstractManager):
         if packet.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if (packet.ID not in self._packetDict.keys()) and (packet.NAME not in self.getAllPacketIds()):
-                Logger.warn(f"Packet {packet.NAME} (ID: {packet.ID}) From Module {packet.MODULE.NAME} Is Trying To Override A Packet That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            if (packet.ID not in self._packetDict) and (packet.NAME not in self.getAllPacketIds()):
+                Logger.warn(
+                    f"Packet {packet.NAME} (ID: {packet.ID}) From Module {packet.MODULE.NAME} Is Trying To Override A Packet That Does Not Exist! " + \
+                    "If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init"
+                )
             else:
                 Logger.debug(f"Packet {packet.NAME} Is Overriding Packet {self._packetDict[packet.NAME].NAME} (ID: {packet.ID})", module=f"{module.NAME}-submodule-init")
 
         # Checking If Packet And PacketId Is Already In Packets List
         # Ignoring if OVERRIDE is set
-        if packet.NAME in self._packetDict.keys() and not packet.OVERRIDE:
+        if packet.NAME in self._packetDict and not packet.OVERRIDE:
             raise InitRegisterError(f"Packet {packet.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
         if packet.ID in self.getAllPacketIds() and not packet.OVERRIDE:
             raise InitRegisterError(f"Packet Id {packet.ID} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
@@ -189,10 +191,8 @@ class _DirectionalPacketManager(AbstractManager):
             for pName, pObject in self._packetDict.items():
                 if pName.lower() == packet.lower():
                     return pObject
-            else:
-                raise KeyError(packet)
-        else:
-            return self._packetDict[packet]
+            raise KeyError(packet)
+        return self._packetDict[packet]
 
     # Handles _DirectionalPacketManager["item"]
     def __getitem__(self, *args, **kwargs):
@@ -236,10 +236,11 @@ class _PacketManager:
                 responsePacket: AbstractResponsePacket = packet
                 # Adding Row To Table
                 table.add_row(["Response", responsePacket.NAME, responsePacket.ID, "N/A", responsePacket.MODULE.NAME])
-
             return table
+
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
+            return None
 
     # Get Number Of Packets
     def __len__(self) -> int:

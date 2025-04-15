@@ -21,7 +21,7 @@ class AbstractConfig:
     # autoSave: bool = True  # Not Implemented
     # Init Vars (Temporary and will not be duplicated)
     rootPath: InitVar[Path] = Path("configs")
-    ignoreValues: InitVar[list] = list()
+    ignoreValues: InitVar[list] = []
     autoInit: InitVar[bool] = False
     hideWarning: InitVar[bool] = False
 
@@ -75,11 +75,11 @@ class AbstractConfig:
         if self.configPath.is_file():
             Logger.debug("Config File Exists! Loading Config.", "config")
             try:
-                with open(self.configPath, "r") as configFile:
+                with open(self.configPath, "r", encoding="utf-8") as configFile:
                     self._load(configFile)
                 # Save Config After Load (To Update And Fix Any Issues)
                 if self.saveAfterConfigLoad:
-                    with open(self.configPath, "w") as configFile:
+                    with open(self.configPath, "w", encoding="utf-8") as configFile:
                         self._save(configFile)
                 else:
                     Logger.info("Skipping Save After Config Load", "config")
@@ -87,13 +87,13 @@ class AbstractConfig:
                 if attemptRecovery:
                     Logger.error(f"Failed To Load Json File! - {type(e).__name__}: {e}", "config")
                     Logger.askConfirmation(message="Override Old Config With Default Values?")
-                    with open(self.configPath, "w") as configFile:
+                    with open(self.configPath, "w", encoding="utf-8") as configFile:
                         self._save(configFile)
                 else:
                     raise e
         else:
             Logger.debug("Config File Does Not Exist! Creating Config File.", "config")
-            with open(self.configPath, "w") as configFile:
+            with open(self.configPath, "w", encoding="utf-8") as configFile:
                 self._save(configFile)
 
     # Save Config To File
@@ -101,7 +101,7 @@ class AbstractConfig:
         Logger.debug(f"Saving Config {self.name}", "config")
         # Make sure folder path exists
         self.configPath.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.configPath, "w") as configFile:
+        with open(self.configPath, "w", encoding="utf-8") as configFile:
             self._save(configFile)
 
     def _load(self, fileIO: io.TextIOWrapper):

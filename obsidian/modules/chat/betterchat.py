@@ -1,3 +1,7 @@
+from typing import cast, Optional, Callable, Awaitable
+from dataclasses import dataclass
+import re
+
 from obsidian.module import Module, AbstractModule, Dependency, Modules
 from obsidian.mixins import Override
 from obsidian.world import World
@@ -5,10 +9,7 @@ from obsidian.player import Player, WorldPlayerManager
 from obsidian.commands import Command, AbstractCommand
 from obsidian.errors import ServerError
 from obsidian.config import AbstractConfig
-
-from typing import cast, Optional, Callable, Awaitable
-from dataclasses import dataclass
-import re
+from obsidian.modules.essentials import EssentialsModule
 
 
 @Module(
@@ -119,8 +120,6 @@ class BetterChatModule(AbstractModule):
 
         # Patch broadcase and private message if essentials is loaded
         if "essentials" in Modules:
-            from obsidian.modules.essentials import EssentialsModule
-
             # Patch the broadcast command to also use text wrapping
             @Override(target=EssentialsModule.BroadcastCommand.execute)
             async def executeBC(self, ctx: Player, *, msg: str):

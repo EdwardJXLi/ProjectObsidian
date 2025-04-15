@@ -1,10 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from obsidian.player import Player
-    from obsidian.server import Server
 
-from typing import Any, Union, Type, Generic, get_args, get_origin
+from typing import Any, Union, Type, Generic, get_args, get_origin, TYPE_CHECKING
 from dataclasses import dataclass, field
 from types import UnionType, GenericAlias, NoneType
 import inspect
@@ -19,6 +15,10 @@ from obsidian.errors import (
     ConverterError,
 )
 from obsidian.types import formatName, T, asciistr
+
+if TYPE_CHECKING:
+    from obsidian.player import Player
+    from obsidian.server import Server
 
 
 # Command Decorator
@@ -62,23 +62,24 @@ class AbstractCommand(AbstractSubmodule[T], Generic[T]):
 def _typeToString(annotation) -> str:
     if annotation == inspect._empty:
         return "None"
-    elif isinstance(annotation, str):
+    if isinstance(annotation, str):
         return annotation
-    elif isinstance(annotation, list):
+    if isinstance(annotation, list):
         return f"[{', '.join([_typeToString(x) for x in annotation])}]"
-    elif get_origin(annotation):
+
+    if get_origin(annotation):
         if get_origin(annotation) is Union or get_origin(annotation) is UnionType:
             args = get_args(annotation)
             if NoneType in args:
                 return f"optional[{' | '.join([_typeToString(a) for a in args if a is not NoneType])}]"
-            else:
-                return f"{' | '.join([_typeToString(a) for a in args])}"
+            return f"{' | '.join([_typeToString(a) for a in args])}"
         return f"{_typeToString(get_origin(annotation))}[{', '.join([_typeToString(arg) for arg in get_args(annotation)])}]"
-    elif hasattr(annotation, "__name__"):
+
+    if hasattr(annotation, "__name__"):
         return annotation.__name__
-    else:
-        Logger.warn(f"Unknown annotation type {annotation}", module="command")
-        return "Unknown"
+
+    Logger.warn(f"Unknown annotation type {annotation}", module="command")
+    return "Unknown"
 
 
 # Take Parameter Info + Argument Info To Automatically Convert Types
@@ -122,10 +123,12 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
                 try:
                     return _convertArgs(ctx, name, inspect.Parameter(param.name, param.kind, annotation=annotation), arg)
                 except CommandError:
-                    Logger.debug("Conversion Failed. Trying Next Type", module="converter")
-                    pass
+                    Logger.debug("Conversion failed. Trying next type", module="converter")
+
             # If none of the types work, raise an error
-            raise CommandError(f"Arg '{name}' Expected {' or '.join([getattr(annotation, '__name__', 'Unknown') for annotation in union_types if annotation is not NoneType])} But Got '{type(arg).__name__}'")
+            raise CommandError(
+                f"Arg '{name}' expected {' or '.join([getattr(annotation, '__name__', 'Unknown') for annotation in union_types if annotation is not NoneType])} but got '{type(arg).__name__}'"
+            )
         # Check if type is an "ignore type" -> Types that are not supported by the converter
         # Any is ignored, as any type is allowed. GenericAlias is allowed to python satisfy type checking LOL
         if param.annotation is Any or param.annotation is GenericAlias:
@@ -136,10 +139,9 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
             Logger.debug("Argument Type is a boolean. Attempting to convert", module="converter")
             if arg.lower() in ["true", "t", "yes", "y", "1"]:
                 return True
-            elif arg.lower() in ["false", "f", "no", "n", "0"]:
+            if arg.lower() in ["false", "f", "no", "n", "0"]:
                 return False
-            else:
-                raise CommandError(f"Arg '{name}' Expected {' or '.join(['True', 'False'])} But Got '{arg}'")
+            raise CommandError(f"Arg '{name}' Expected {' or '.join(['True', 'False'])} But Got '{arg}'")
         # Check if the type is a string. If so, tell the developer that stringed types are not supported.
         if isinstance(param.annotation, str):
             # TODO: ONCE PEP 563 – Postponed Evaluation of Annotations (https://peps.python.org/pep-0563/) IS INTEGRATED,
@@ -152,16 +154,15 @@ def _convertArgs(ctx: Server, name: str, param: inspect.Parameter, arg: Any):
 
         # Transform the argument
         Logger.debug(f"Converting Argument of Type {param.annotation}", module="converter")
-        transformed = param.annotation.__call__(arg)
+        transformed = param.annotation(arg)
         # Check if transformation is successful
         if isinstance(transformed, param.annotation):
             return transformed
-        else:
-            # Add edge case for asciistr
-            if isinstance(transformed, str) and param.annotation is asciistr:
-                return transformed
-            else:
-                raise ConverterError(f"Unexpected Conversion. Expected {param.annotation} But Got {type(transformed)}")
+
+        # Add edge case for asciistr
+        if isinstance(transformed, str) and param.annotation is asciistr:
+            return transformed
+        raise ConverterError(f"Unexpected Conversion. Expected {param.annotation} But Got {type(transformed)}")
     except ValueError:
         raise CommandError(f"Arg '{name}' Expected {getattr(param.annotation, '__name__', 'Unknown')} But Got '{type(arg).__name__}'")
     except TypeError:
@@ -209,8 +210,7 @@ def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
                 # Not Enough Data, Check If Error Or Use Default Value
                 if param.default == inspect._empty:
                     raise CommandError(f"Expected Field '{name}' But Got Nothing")
-                else:
-                    args.append(param.default)
+                args.append(param.default)
 
         elif param.kind == param.KEYWORD_ONLY:
             Logger.debug("Parsing Parameter As Keyword Only", module="command")
@@ -220,11 +220,10 @@ def _parseArgs(ctx: Server, command: AbstractCommand, data: list):
                 rest.append(value)
 
             # If Empty, Check If Default Value Was Requested
-            if rest == []:
+            if not rest:
                 if param.default == inspect._empty:
                     raise CommandError(f"Expected Field '{name}' But Got Nothing")
-                else:
-                    kwargs[name] = param.default
+                kwargs[name] = param.default
             else:
                 # Join and Convert
                 joinedRest = " ".join(rest)
@@ -257,9 +256,9 @@ class _CommandManager(AbstractManager):
         super().__init__("Command", AbstractCommand)
 
         # Creates List Of Commands That Has The Command Name As Keys
-        self._commandDict: dict[str, AbstractCommand] = dict()
+        self._commandDict: dict[str, AbstractCommand] = {}
         # Create Cache Of Activator to Obj
-        self._activators: dict[str, AbstractCommand] = dict()
+        self._activators: dict[str, AbstractCommand] = {}
 
     # Registration. Called by Command Decorator
     def register(self, commandClass: Type[AbstractCommand], module: AbstractModule) -> AbstractCommand:
@@ -274,20 +273,23 @@ class _CommandManager(AbstractManager):
         if command.OVERRIDE:
             # Check If Override Is Going To Do Anything
             # If Not, Warn
-            if command.NAME not in self._commandDict.keys():
-                Logger.warn(f"Command {command.NAME}  From Module {command.MODULE.NAME} Is Trying To Override A Command That Does Not Exist! If This Is An Accident, Remove The 'override' Flag.", module=f"{module.NAME}-submodule-init")
+            if command.NAME not in self._commandDict:
+                Logger.warn(
+                    f"Command {command.NAME} from module {command.MODULE.NAME} is trying to override a command that does not exist! " + \
+                    "If this is an accident, remove the 'override' flag.", module=f"{module.NAME}-submodule-init"
+                )
             else:
-                Logger.debug(f"Command {command.NAME} Is Overriding Command {self._commandDict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Command {command.NAME} is overriding command {self._commandDict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
                 # Un-registering All Activators for the Command Being Overwritten. Prevents Issues!
-                Logger.debug(f"Un-registering Activators for Command {self._commandDict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
+                Logger.debug(f"Un-registering activators for command {self._commandDict[command.NAME].NAME}", module=f"{module.NAME}-submodule-init")
                 for activator in list(self._commandDict[command.NAME].ACTIVATORS):
                     # Deleting from Cache
                     del self._activators[activator]
 
         # Checking If Command Name Is Already In Commands List
         # Ignoring if OVERRIDE is set
-        if command.NAME in self._commandDict.keys() and not command.OVERRIDE:
-            raise InitRegisterError(f"Command {command.NAME} Has Already Been Registered! If This Is Intentional, Set the 'override' Flag to True")
+        if command.NAME in self._commandDict and not command.OVERRIDE:
+            raise InitRegisterError(f"Command {command.NAME} has already been registered! If this is intentional, set the 'override' flag to True")
 
         # Setting Activators To Default If None
         if command.ACTIVATORS is None:
@@ -333,13 +335,13 @@ class _CommandManager(AbstractManager):
             return table
         except Exception as e:
             Logger.error(f"Error While Printing Table - {type(e).__name__}: {e}", module="table")
+            return None
 
     # FUnction To Get Command Object From Command Name
     def getCommandFromName(self, name: str) -> AbstractCommand:
-        if name in self._activators.keys():
+        if name in self._activators:
             return self._activators[name]
-        else:
-            raise CommandError(f"Unknown Command '{name}'")
+        raise CommandError(f"Unknown Command '{name}'")
 
     # Function To Get Command Object From Command Name
     def getCommand(self, command: str, ignoreCase: bool = True) -> AbstractCommand:
@@ -347,10 +349,8 @@ class _CommandManager(AbstractManager):
             for cName, cObject in self._commandDict.items():
                 if cName.lower() == command.lower():
                     return cObject
-            else:
-                raise KeyError(command)
-        else:
-            return self._commandDict[command]
+            raise KeyError(command)
+        return self._commandDict[command]
 
     # Function To Get Command Object From Command Name
     def getCommandFromActivator(self, command: str) -> AbstractCommand:

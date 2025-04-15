@@ -1,23 +1,23 @@
-# type: ignore
-from obsidian.module import Module, AbstractModule
-
-from struct import Struct, error as StructError
-from gzip import GzipFile
-from collections.abc import MutableMapping, MutableSequence, Sequence
-
-'''
+"""
 Modified NBT Editor Code From https://github.com/twoolie/NBT
 Edited To Work On Older Minecraft Versions
 + Few Minor Changes (Typing, Formatting, Etc.)
 
 !! Licensed Under MIT License !!
-'''
 
-"""
+
+
 Handle the NBT (Named Binary Tag) data format
 For more information about the NBT format:
 https://minecraft.gamepedia.com/NBT_format
 """
+
+from struct import Struct, error as StructError
+from gzip import GzipFile
+from collections.abc import MutableMapping, MutableSequence, Sequence
+
+# type: ignore
+from obsidian.module import Module, AbstractModule
 
 
 @Module(
@@ -49,11 +49,11 @@ class NBTLib(AbstractModule):
 
     class MalformedFileError(Exception):
         """Exception raised on parse error."""
-        pass
 
-    class TAG(object):
+    class TAG():
         """TAG, a variable with an intrinsic name."""
         id = None
+        fmt = None
 
         def __init__(self, value=None, name=None):
             self.name = name
@@ -70,7 +70,7 @@ class NBTLib(AbstractModule):
         def tag_info(self):
             """Return Unicode string with class, name and unnested value."""
             return self.__class__.__name__ + (
-                '(%r)' % self.name if self.name
+                f'({self.name})' if self.name
                 else "") + ": " + self.valuestr()
 
         def valuestr(self):
@@ -103,8 +103,7 @@ class NBTLib(AbstractModule):
         def __repr__(self):
             """Return a string (ascii formated for Python 2, unicode for Python 3)
             describing the class, name and id for debugging purposes."""
-            return "<%s(%r) at 0x%x>" % (
-                self.__class__.__name__, self.name, id(self))
+            return f"<{self.__class__.__name__}({self.name}) at 0x{id(self):x}>"
 
     class _TAG_Numeric(TAG):
         """_TAG_Numeric, comparable to int with an intrinsic name"""
@@ -135,8 +134,7 @@ class NBTLib(AbstractModule):
             # corrupt gzip.GzipFile
             value = self.fmt.unpack(buffer.read(1))[0]
             if value != 0:
-                raise ValueError(
-                    "A Tag End must be rendered as '0', not as '%d'." % value)
+                raise ValueError(f"A Tag End must be rendered as '0', not as '{value}'.")
 
         def _render_buffer(self, buffer):
             buffer.write(b'\x00')
@@ -233,7 +231,7 @@ class NBTLib(AbstractModule):
             self.value[key] = value
 
         def __delitem__(self, key):
-            del (self.value[key])
+            del self.value[key]
 
         def insert(self, key, value):
             # TODO: check type of value, or is this done by self.value already?
@@ -241,13 +239,13 @@ class NBTLib(AbstractModule):
 
         # Printing and Formatting of tree
         def valuestr(self):
-            return "[%i byte(s)]" % len(self.value)
+            return f"[{len(self.value)} byte(s)]"
 
         def __unicode__(self):
-            return '[' + ",".join([NBTLib.unicode(x) for x in self.value]) + ']'
+            return f'[{",".join([NBTLib.unicode(x) for x in self.value])}]'
 
         def __str__(self):
-            return '[' + ",".join([str(x) for x in self.value]) + ']'
+            return f'[{",".join([str(x) for x in self.value])}]'
 
     class TAG_Int_Array(TAG, MutableSequence):
         """
@@ -295,14 +293,14 @@ class NBTLib(AbstractModule):
             self.value[key] = value
 
         def __delitem__(self, key):
-            del (self.value[key])
+            del self.value[key]
 
         def insert(self, key, value):
             self.value.insert(key, value)
 
         # Printing and Formatting of tree
         def valuestr(self):
-            return "[%i int(s)]" % len(self.value)
+            return f"[{len(self.value)} int(s)]"
 
     class TAG_Long_Array(TAG, MutableSequence):
         """
@@ -313,12 +311,12 @@ class NBTLib(AbstractModule):
         def __init__(self, name=None, buffer=None):
             self.id = NBTLib.TAG_LONG_ARRAY
             super(NBTLib.TAG_Long_Array, self).__init__(name=name)
-            if NBTLib.buffer:
+            if buffer:
                 self._parse_buffer(buffer)
 
         def update_fmt(self, length):
             """ Adjust struct format description to length given """
-            self.fmt = Struct(">" + str(length) + "q")
+            self.fmt = Struct(f">{str(length)}q")
 
         # Parsers and Generators
         def _parse_buffer(self, buffer):
@@ -349,14 +347,14 @@ class NBTLib(AbstractModule):
             self.value[key] = value
 
         def __delitem__(self, key):
-            del (self.value[key])
+            del self.value[key]
 
         def insert(self, key, value):
             self.value.insert(key, value)
 
         # Printing and Formatting of tree
         def valuestr(self):
-            return "[%i long(s)]" % len(self.value)
+            return f"[{len(self.value)} long(s)]"
 
     class TAG_String(TAG, Sequence):
         """
@@ -407,11 +405,11 @@ class NBTLib(AbstractModule):
         TAG_List, comparable to a collections.UserList with an intrinsic name
         """
 
-        def __init__(self, type=None, value=None, name=None, buffer=None):
+        def __init__(self, typ=None, value=None, name=None, buffer=None):
             self.id = NBTLib.TAG_LIST
             super(NBTLib.TAG_List, self).__init__(value, name)
-            if type:
-                self.tagID = type.id
+            if typ:
+                self.tagID = typ.id
             else:
                 self.tagID = None
             self.tags = []
@@ -425,7 +423,7 @@ class NBTLib(AbstractModule):
             self.tagID = NBTLib.TAG_Byte(buffer=buffer).value
             self.tags = []
             length = NBTLib.TAG_Int(buffer=buffer)
-            for x in range(length.value):
+            for _ in range(length.value):
                 self.tags.append(NBTLib.TAGLIST[self.tagID](buffer=buffer))
 
         def _render_buffer(self, buffer):
@@ -435,8 +433,7 @@ class NBTLib(AbstractModule):
             for i, tag in enumerate(self.tags):
                 if tag.id != self.tagID:
                     raise ValueError(
-                        "List element %d(%s) has type %d != container type %d" %
-                        (i, tag, tag.id, self.tagID))
+                        f"List element {i}({tag}) has type {tag.id} != container type {self.tagID}")
                 tag._render_buffer(buffer)
 
         # Mixin methods
@@ -456,29 +453,28 @@ class NBTLib(AbstractModule):
             self.tags[key] = value
 
         def __delitem__(self, key):
-            del (self.tags[key])
+            del self.tags[key]
 
         def insert(self, key, value):
             self.tags.insert(key, value)
 
         # Printing and Formatting of tree
         def __repr__(self):
-            return "%i entries of type %s" % (
-                len(self.tags), NBTLib.TAGLIST[self.tagID].__name__)
+            return f"{len(self.tags)} entries of type {NBTLib.TAGLIST[self.tagID].__name__}"
 
         # Printing and Formatting of tree
         def valuestr(self):
-            return "[%i %s(s)]" % (len(self.tags), NBTLib.TAGLIST[self.tagID].__name__)
+            return f"[{len(self.tags)} {NBTLib.TAGLIST[self.tagID].__name__}(s)]"
 
         def __unicode__(self):
-            return "[" + ", ".join([tag.tag_info() for tag in self.tags]) + "]"
+            return f'[{", ".join([tag.tag_info() for tag in self.tags])}]'
 
         def __str__(self):
-            return "[" + ", ".join([tag.tag_info() for tag in self.tags]) + "]"
+            return f'[{", ".join([tag.tag_info() for tag in self.tags])}]'
 
         def pretty_tree(self, indent=0):
             output = [super(NBTLib.TAG_List, self).pretty_tree(indent)]
-            if len(self.tags):
+            if self.tags:
                 output.append(("\t" * indent) + "{")
                 output.extend([tag.pretty_tree(indent + 1) for tag in self.tags])
                 output.append(("\t" * indent) + "}")
@@ -502,19 +498,18 @@ class NBTLib(AbstractModule):
         # Parsers and Generators
         def _parse_buffer(self, buffer):
             while True:
-                type = NBTLib.TAG_Byte(buffer=buffer)
-                if type.value == NBTLib.TAG_END:
+                typ = NBTLib.TAG_Byte(buffer=buffer)
+                if typ.value == NBTLib.TAG_END:
                     # print("found tag_end")
                     break
-                else:
-                    name = NBTLib.TAG_String(buffer=buffer).value
-                    try:
-                        tag = NBTLib.TAGLIST[type.value]()
-                    except KeyError:
-                        raise ValueError("Unrecognized tag type %d" % type.value)
-                    tag.name = name
-                    self.tags.append(tag)
-                    tag._parse_buffer(buffer)
+                name = NBTLib.TAG_String(buffer=buffer).value
+                try:
+                    tag = NBTLib.TAGLIST[typ.value]()
+                except KeyError:
+                    raise ValueError(f"Unrecognized tag type {typ.value}")
+                tag.name = name
+                self.tags.append(tag)
+                tag._parse_buffer(buffer)
 
         def _render_buffer(self, buffer):
             for tag in self.tags:
@@ -534,28 +529,27 @@ class NBTLib(AbstractModule):
         def __contains__(self, key):
             if isinstance(key, int):
                 return key <= len(self.tags)
-            elif isinstance(key, NBTLib.basestring):
+            if isinstance(key, NBTLib.basestring):
                 for tag in self.tags:
                     if tag.name == key:
                         return True
                 return False
-            elif isinstance(key, NBTLib.TAG):
+            if isinstance(key, NBTLib.TAG):
                 return key in self.tags
             return False
 
         def __getitem__(self, key):
             if isinstance(key, int):
                 return self.tags[key]
-            elif isinstance(key, NBTLib.basestring):
+            if isinstance(key, NBTLib.basestring):
                 for tag in self.tags:
                     if tag.name == key:
                         return tag
-                else:
-                    raise KeyError("Tag %s does not exist" % key)
-            else:
-                raise TypeError(
-                    "key needs to be either name of tag, or index of tag, "
-                    "not a %s" % type(key).__name__)
+                raise KeyError(f"Tag {key} does not exist")
+
+            raise TypeError(
+                "key needs to be either name of tag, or index of tag, "
+                f"not a {type(key).__name__}")
 
         def __setitem__(self, key, value):
             assert isinstance(value, NBTLib.TAG), "value must be an nbt.TAG"
@@ -572,7 +566,7 @@ class NBTLib(AbstractModule):
 
         def __delitem__(self, key):
             if isinstance(key, int):
-                del (self.tags[key])
+                del self.tags[key]
             elif isinstance(key, NBTLib.basestring):
                 self.tags.remove(self.__getitem__(key))
             else:
@@ -598,7 +592,7 @@ class NBTLib(AbstractModule):
 
         def pretty_tree(self, indent=0):
             output = [super(NBTLib.TAG_Compound, self).pretty_tree(indent)]
-            if len(self.tags):
+            if self.tags:
                 output.append(("\t" * indent) + "{")
                 output.extend([tag.pretty_tree(indent + 1) for tag in self.tags])
                 output.append(("\t" * indent) + "}")
@@ -670,8 +664,8 @@ class NBTLib(AbstractModule):
                 self.file = GzipFile(fileobj=fileobj)
             if self.file:
                 try:
-                    type = NBTLib.TAG_Byte(buffer=self.file)
-                    if type.value == self.id:
+                    typ = NBTLib.TAG_Byte(buffer=self.file)
+                    if typ.value == self.id:
                         name = NBTLib.TAG_String(buffer=self.file).value
                         self._parse_buffer(self.file)
                         self.name = name
@@ -730,12 +724,8 @@ class NBTLib(AbstractModule):
             debugging purposes.
             """
             if self.filename:
-                return "<%s(%r) with %s(%r) at 0x%x>" % (
-                    self.__class__.__name__, self.filename,
-                    NBTLib.TAG_Compound.__name__, self.name, id(self)
-                )
-            else:
-                return "<%s with %s(%r) at 0x%x>" % (
-                    self.__class__.__name__, NBTLib.TAG_Compound.__name__,
-                    self.name, id(self)
-                )
+                return (f"<{self.__class__.__name__}({self.filename}) "
+                    f"with {NBTLib.TAG_Compound.__name__}({self.name}) at 0x{id(self):x}>")
+
+            return (f"<{self.__class__.__name__} with {NBTLib.TAG_Compound.__name__}"
+                f"({self.name}) at 0x{id(self):x}>")
