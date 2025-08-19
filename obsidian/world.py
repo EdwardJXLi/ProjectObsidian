@@ -33,7 +33,6 @@ from obsidian.errors import (
     WorldSaveError,
     ConverterError
 )
-from obsidian.player import WorldPlayerManager
 
 if TYPE_CHECKING:
     from obsidian.server import Server
@@ -254,8 +253,8 @@ class WorldManager:
                         # (Attempt) To Load Up World
                         try:
                             Logger.info(f"Loading World {saveName}", module="world-load")
-                            with open(saveFile, "rb+") as fileIO:
-                                self.worlds[saveName] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
+                            fileIO = open(saveFile, "rb+")
+                            self.worlds[saveName] = self.worldFormat.loadWorld(fileIO, self, persistent=self.persistent)
                         except Exception as e:
                             Logger.error(f"Error While Loading World {saveFile} - {type(e).__name__}: {e}", module="world-load")
                             Logger.askConfirmation()
@@ -500,6 +499,8 @@ class World:
                 Logger.debug(f"Persistent World Has FileIO {self.fileIO}", "world-load")
 
         # Initialize WorldPlayerManager
+        # World has to be imported now to prevent circular imports
+        from obsidian.player import WorldPlayerManager
         Logger.info("Initializing World Player Manager", module="init-world")
         self.playerManager = WorldPlayerManager(self, self.worldManager.server.playerManager)
 
